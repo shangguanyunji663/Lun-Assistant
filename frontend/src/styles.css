@@ -14,7 +14,7 @@ input:focus, textarea:focus { border-color: var(--primary); }
 .err { color: #d64545; font-size: 13px; margin-top: 8px; }
 .link { cursor: pointer; text-decoration: underline; }
 
-/* ---------- 登录 ---------- */
+/* ---------- ??? ---------- */
 .auth-wrap { display: flex; align-items: center; justify-content: center; height: 100vh; }
 .auth-card { width: 340px; display: flex; flex-direction: column; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; }
 .auth-card h1 { text-align: center; letter-spacing: 8px; }
@@ -22,7 +22,7 @@ input:focus, textarea:focus { border-color: var(--primary); }
 .auth-card button { background: var(--primary); color: #fff; border: none; padding: 10px; font-size: 15px; }
 .center { display: flex; height: 100vh; align-items: center; justify-content: center; }
 
-/* ---------- 布局 ---------- */
+/* ---------- ???? ---------- */
 .app { height: 100vh; display: flex; flex-direction: column; }
 header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--card); border-bottom: 1px solid var(--border); }
 header h1 { font-size: 18px; letter-spacing: 4px; }
@@ -34,15 +34,28 @@ main { flex: 1; overflow: hidden; }
 .chat-layout { display: flex; height: 100%; }
 .chat-col { flex: 1; display: flex; flex-direction: column; padding: 16px; gap: 10px; min-width: 0; }
 
-/* ---------- 消息 ---------- */
+/* ---------- ??? ---------- */
 .messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 8px 4px; }
 .msg { display: flex; }
 .msg.user { justify-content: flex-end; }
 .msg .bubble { max-width: 72%; padding: 10px 14px; border-radius: 12px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; font-size: 14px; }
 .msg.user .bubble { background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
 .msg.assistant .bubble { background: var(--card); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.msg.assistant .bubble h1, .msg.assistant .bubble h2, .msg.assistant .bubble h3,
+.msg.assistant .bubble h4 { margin: 12px 0 6px; line-height: 1.4; }
+.msg.assistant .bubble p { margin: 6px 0; }
+.msg.assistant .bubble ul, .msg.assistant .bubble ol { margin: 6px 0; padding-left: 22px; }
+.msg.assistant .bubble li { margin: 3px 0; }
+.msg.assistant .bubble table { border-collapse: collapse; margin: 8px 0; font-size: 13px; width: 100%; }
+.msg.assistant .bubble th, .msg.assistant .bubble td { border: 1px solid var(--border); padding: 5px 8px; text-align: left; }
+.msg.assistant .bubble th { background: #f1f4f8; }
+.msg.assistant .bubble code { background: #f1f4f8; border-radius: 4px; padding: 1px 5px; font-family: Consolas, monospace; font-size: 12.5px; }
+.msg.assistant .bubble pre { background: #2b313a; color: #e6e9ef; border-radius: 8px; padding: 12px; overflow-x: auto; margin: 8px 0; }
+.msg.assistant .bubble pre code { background: none; padding: 0; color: inherit; }
+.msg.assistant .bubble blockquote { border-left: 3px solid var(--primary); margin: 8px 0; padding: 2px 12px; color: var(--muted); }
+.msg.assistant .bubble hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 
-/* ---------- 输入 ---------- */
+/* ---------- ???? ---------- */
 .input-bar { display: flex; gap: 10px; }
 .input-bar textarea { flex: 1; resize: none; }
 .input-bar .send { width: 90px; background: var(--primary); color: #fff; border: none; }
@@ -52,7 +65,7 @@ main { flex: 1; overflow: hidden; }
 .interrupt-bar .free-form { display: flex; gap: 8px; flex: 1; min-width: 260px; }
 .interrupt-bar .free-form input { flex: 1; }
 
-/* ---------- 时间线 ---------- */
+/* ---------- ????? ---------- */
 .timeline-col { width: 300px; border-left: 1px solid var(--border); background: var(--card); padding: 14px; overflow-y: auto; }
 .timeline-col h3 { font-size: 14px; margin-bottom: 10px; }
 .timeline { display: flex; flex-direction: column; gap: 6px; }

@@ -1,7 +1,21 @@
 import React, { useEffect, useRef, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { api, sse } from './api.js'
 
-/* ---------------- µÇÂ¼Ò³ ---------------- */
+/* markdown ??????????????????/?Ð±?/????/????? */
+function Markdown({ children }) {
+  return (
+    <ReactMarkdown remarkPlugins={[remarkGfm]}
+                   components={{
+                     a: props => <a {...props} target="_blank" rel="noreferrer" />,
+                   }}>
+      {children}
+    </ReactMarkdown>
+  )
+}
+
+/* ---------------- ???? ---------------- */
 function AuthPage({ onLogin }) {
   const [mode, setMode] = useState('login')
   const [username, setUsername] = useState('')
@@ -29,13 +43,13 @@ function AuthPage({ onLogin }) {
   return (
     <div className="auth-wrap">
       <form className="auth-card" onSubmit={submit}>
-        <h1>ÂÛ½³</h1>
-        <p className="muted">LangGraph ¶àÖÇÄÜÌåÂÛÎÄÈ«Á÷³ÌÖúÊÖ</p>
-        <input placeholder="ÓÃ»§Ãû£¨3-32Î»£©" value={username} onChange={e => setUsername(e.target.value)} />
-        <input placeholder="ÃÜÂë£¨6Î»ÒÔÉÏ£©" type="password" value={password} onChange={e => setPassword(e.target.value)} />
-        <button disabled={busy || !username || !password}>{mode === 'login' ? 'µÇÂ¼' : '×¢²á²¢µÇÂ¼'}</button>
+        <h1>???</h1>
+        <p className="muted">LangGraph ?????????????????????</p>
+        <input placeholder="???????3-32Î»??" value={username} onChange={e => setUsername(e.target.value)} />
+        <input placeholder="????6Î»?????" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+        <button disabled={busy || !username || !password}>{mode === 'login' ? '???' : '??????'}</button>
         <a className="muted link" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
-          {mode === 'login' ? 'Ã»ÓÐÕËºÅ£¿È¥×¢²á' : 'ÒÑÓÐÕËºÅ£¿È¥µÇÂ¼'}
+          {mode === 'login' ? '???????????' : '????????????'}
         </a>
         {err && <div className="err">{err}</div>}
       </form>
@@ -43,8 +57,8 @@ function AuthPage({ onLogin }) {
   )
 }
 
-/* ---------------- ÊÂ¼þÊ±¼äÏß ---------------- */
-const NODE_TITLES = { supervisor: 'Ö÷¿ØAgent', topic_agent: 'Ñ¡ÌâAgent', literature_agent: 'ÎÄÏ×Agent', writer_agent: 'Ð´×÷Agent', format_agent: '¸ñÊ½Agent', plagiarism_agent: '²éÖØAgent', defense_agent: '´ð±çAgent' }
+/* ---------------- ???????? ---------------- */
+const NODE_TITLES = { supervisor: '????Agent', topic_agent: '???Agent', literature_agent: '????Agent', writer_agent: 'Ð´??Agent', format_agent: '???Agent', plagiarism_agent: '????Agent', defense_agent: '???Agent' }
 function Timeline({ events }) {
   if (!events.length) return null
   return (
@@ -52,11 +66,11 @@ function Timeline({ events }) {
       {events.map((ev, i) => (
         <div key={i} className={`tl-item tl-${ev.type}`}>
           {ev.type === 'node_start' && <span className="tl-tag start">? {NODE_TITLES[ev.payload?.agent] || ev.payload?.agent || 'Agent'}</span>}
-          {ev.type === 'intent' && <span className="tl-tag intent">ÒâÍ¼: {ev.payload?.label} ({ev.payload?.layer}, conf={ev.payload?.confidence})</span>}
-          {ev.type === 'route' && <span className="tl-tag route">¡ú Â·ÓÉÖÁ {ev.payload?.next}</span>}
+          {ev.type === 'intent' && <span className="tl-tag intent">???: {ev.payload?.label} ({ev.payload?.layer}, conf={ev.payload?.confidence})</span>}
+          {ev.type === 'route' && <span className="tl-tag route">?? Â·???? {ev.payload?.next}</span>}
           {ev.type === 'tool' && <span className="tl-tag tool">? {ev.payload?.name}</span>}
-          {ev.type === 'node_end' && <span className="tl-tag end">? {ev.payload?.agent || ev.node || ''} Íê³É{ev.payload?.stop_reason === 'max_hops' ? '£¨´ïµ½×î´óÌøÊý£©' : ''}</span>}
-          {ev.type === 'interrupt' && <span className="tl-tag interrupt">? ÐèÒªÈ·ÈÏ: {ev.payload?.question || JSON.stringify(ev.payload)}</span>}
+          {ev.type === 'node_end' && <span className="tl-tag end">? {ev.payload?.agent || ev.node || ''} ???{ev.payload?.stop_reason === 'max_hops' ? '?????????????' : ''}</span>}
+          {ev.type === 'interrupt' && <span className="tl-tag interrupt">? ??????: {ev.payload?.question || JSON.stringify(ev.payload)}</span>}
           {ev.type === 'error' && <span className="tl-tag err">? {ev.payload?.message}</span>}
         </div>
       ))}
@@ -64,7 +78,7 @@ function Timeline({ events }) {
   )
 }
 
-/* ---------------- Trace Ãæ°å ---------------- */
+/* ---------------- Trace ??? ---------------- */
 function TracePanel() {
   const [traces, setTraces] = useState([])
   const [detail, setDetail] = useState(null)
@@ -83,27 +97,27 @@ function TracePanel() {
     <div className="trace-panel">
       <div className="trace-list">
         <div className="panel-head">
-          <h3>Trace ÁÐ±í</h3>
-          <button onClick={load}>Ë¢ÐÂ</button>
+          <h3>Trace ?Ð±?</h3>
+          <button onClick={load}>???</button>
         </div>
         {err && <div className="err">{err}</div>}
         {traces.map(t => (
           <div key={t.trace_id} className={`trace-item ${detail?.trace_id === t.trace_id ? 'active' : ''}`} onClick={() => open(t.trace_id)}>
-            <div className="tid">{t.trace_id.slice(0, 12)}¡­</div>
-            <div className="meta">{t.spans} spans ¡¤ {t.total_latency_ms}ms ¡¤ ${t.total_cost_usd.toFixed(6)}</div>
+            <div className="tid">{t.trace_id.slice(0, 12)}??</div>
+            <div className="meta">{t.spans} spans ?? {t.total_latency_ms}ms ?? ${t.total_cost_usd.toFixed(6)}</div>
           </div>
         ))}
-        {!traces.length && <p className="muted">ÔÝÎÞ Trace</p>}
+        {!traces.length && <p className="muted">???? Trace</p>}
       </div>
       <div className="trace-detail">
         {detail ? (
           <>
             <div className="panel-head">
-              <h3>ÐÐÎª»Ø·Å ¡¤ {detail.trace_id.slice(0, 12)}¡­</h3>
-              <span className="muted">{detail.summary.span_count} spans ¡¤ {detail.summary.total_latency_ms}ms ¡¤ errors={detail.summary.error_count}</span>
+              <h3>?????? ?? {detail.trace_id.slice(0, 12)}??</h3>
+              <span className="muted">{detail.summary.span_count} spans ?? {detail.summary.total_latency_ms}ms ?? errors={detail.summary.error_count}</span>
             </div>
             {renderTree(detail.tree, 0)}
-            <h4>Ê±¼äÐòÁÐ</h4>
+            <h4>???????</h4>
             <div className="seq">
               {detail.spans.map((s, i) => (
                 <div key={i} className={`seq-row ${s.status !== 'ok' ? 'bad' : ''}`}>
@@ -115,7 +129,7 @@ function TracePanel() {
               ))}
             </div>
           </>
-        ) : <p className="muted">Ñ¡Ôñ×ó²à Trace ²é¿´»Ø·Å</p>}
+        ) : <p className="muted">?????? Trace ?????</p>}
       </div>
     </div>
   )
@@ -128,14 +142,14 @@ function renderTree(nodes, depth) {
         <span className={`tree-kind ${n.status !== 'ok' ? 'bad' : ''}`}>{n.kind}</span>
         {n.name}
         <span className="lat"> {n.latency_ms}ms</span>
-        {n.tokens_out > 0 && <span className="muted"> ¡¤ out={n.tokens_out}tok</span>}
+        {n.tokens_out > 0 && <span className="muted"> ?? out={n.tokens_out}tok</span>}
       </div>
       {n.children?.length ? renderTree(n.children, depth + 1) : null}
     </div>
   ))
 }
 
-/* ---------------- Ö÷Ó¦ÓÃ ---------------- */
+/* ---------------- ????? ---------------- */
 export default function App() {
   const [user, setUser] = useState(null)
   const [booting, setBooting] = useState(true)
@@ -144,7 +158,7 @@ export default function App() {
   const [projectId, setProjectId] = useState(null)
   const sessionIdRef = useRef(null)
 
-  // ¶Ô»°×´Ì¬
+  // ?????
   const [messages, setMessages] = useState([])       // {role:'user'|'assistant', content}
   const [timeline, setTimeline] = useState([])
   const [streaming, setStreaming] = useState(false)
@@ -164,7 +178,7 @@ export default function App() {
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, timeline])
 
-  if (booting) return <div className="center muted">¼ÓÔØÖÐ¡­</div>
+  if (booting) return <div className="center muted">?????Ð¡?</div>
   if (!user) return <AuthPage onLogin={setUser} />
 
   const newSession = () => {
@@ -180,7 +194,7 @@ export default function App() {
       setMessages(m => [...m, { role: 'user', content: text }])
       setInput('')
     } else {
-      setMessages(m => [...m, { role: 'user', content: `[È·ÈÏ·´À¡] ${resume}` }])
+      setMessages(m => [...m, { role: 'user', content: `[??????] ${resume}` }])
     }
     setInterrupt(null)
     let acc = ''
@@ -206,12 +220,12 @@ export default function App() {
         })
       if (finalText) patchLast(finalText)
     } catch (e) {
-      patchLast(`ÇëÇóÊ§°Ü£º${e.message || e}`)
+      patchLast(`????????${e.message || e}`)
     } finally { setStreaming(false) }
   }
 
   const addProject = async () => {
-    const title = prompt('ÂÛÎÄÌâÄ¿£º')
+    const title = prompt('?????????')
     if (!title) return
     const p = await api.createProject(title, '', '')
     setProjects(ps => [p, ...ps])
@@ -221,20 +235,20 @@ export default function App() {
   return (
     <div className="app">
       <header>
-        <h1>ÂÛ½³ <small>¶àÖÇÄÜÌåÂÛÎÄÖúÊÖ</small></h1>
+        <h1>??? <small>????????????????</small></h1>
         <div className="spacer" />
         <select value={projectId ?? ''} onChange={e => setProjectId(e.target.value ? Number(e.target.value) : null)}>
-          <option value="">£¨Î´¹ØÁªÏîÄ¿£©</option>
+          <option value="">??Î´?????????</option>
           {projects.map(p => <option key={p.id} value={p.id}>{`#${p.id} ${p.title}`}</option>)}
         </select>
-        <button onClick={addProject}>+ ÐÂ½¨ÏîÄ¿</button>
-        <button onClick={newSession} disabled={streaming}>ÐÂ»á»°</button>
+        <button onClick={addProject}>+ ??????</button>
+        <button onClick={newSession} disabled={streaming}>???</button>
         <nav>
-          <button className={tab === 'chat' ? 'on' : ''} onClick={() => setTab('chat')}>¶Ô»°</button>
-          <button className={tab === 'trace' ? 'on' : ''} onClick={() => setTab('trace')}>¿É¹Û²â</button>
+          <button className={tab === 'chat' ? 'on' : ''} onClick={() => setTab('chat')}>???</button>
+          <button className={tab === 'trace' ? 'on' : ''} onClick={() => setTab('trace')}>????</button>
         </nav>
         <span className="muted">{user.username}({user.role})</span>
-        <button onClick={() => { localStorage.removeItem('lj_token'); setUser(null) }}>ÍË³ö</button>
+        <button onClick={() => { localStorage.removeItem('lj_token'); setUser(null) }}>???</button>
       </header>
 
       {tab === 'chat' ? (
@@ -243,39 +257,41 @@ export default function App() {
             <div className="messages">
               {messages.map((m, i) => (
                 <div key={i} className={`msg ${m.role}`}>
-                  <div className="bubble">{m.content || (streaming && i === messages.length - 1 ? '¡­' : '')}</div>
+                  <div className="bubble">
+                    {m.role === 'assistant' ? <Markdown>{m.content || (streaming && i === messages.length - 1 ? '??' : '')}</Markdown> : m.content}
+                  </div>
                 </div>
               ))}
               <div ref={bottomRef} />
             </div>
             {interrupt && (
               <div className="interrupt-bar">
-                <span>? {interrupt.question || 'Agent ÐèÒªÄãµÄÈ·ÈÏ'}</span>
+                <span>? {interrupt.question || 'Agent ?????????'}</span>
                 {(interrupt.options || []).map(op => (
                   <button key={op} onClick={() => send(op, op)} disabled={streaming}>{op}</button>
                 ))}
                 <div className="free-form">
-                  <input placeholder="ÊäÈëÄãµÄ·´À¡¡­" value={input}
+                  <input placeholder="????????????" value={input}
                          onChange={e => setInput(e.target.value)}
                          onKeyDown={e => e.key === 'Enter' && input && send(input, input)} />
-                  <button onClick={() => input && send(input, input)} disabled={streaming || !input}>·¢ËÍ·´À¡</button>
+                  <button onClick={() => input && send(input, input)} disabled={streaming || !input}>???????</button>
                 </div>
               </div>
             )}
             <div className="input-bar">
-              <textarea rows={2} placeholder="ÊäÈëÂÛÎÄÏà¹ØÇëÇó£¬Èç£º°ïÎÒÕÒ¼¸Æª´óÄ£ÐÍÎÄÏ× / °ïÎÒÐ´ÕªÒª¡­" value={input}
+              <textarea rows={2} placeholder="????????????????ç£º????????????????? / ????Ð´????" value={input}
                         disabled={streaming || !!interrupt}
                         onChange={e => setInput(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && input.trim()) { e.preventDefault(); send(input.trim()) } }} />
               <button className="send" disabled={streaming || !input.trim() || interrupt} onClick={() => send(input.trim())}>
-                {streaming ? 'Éú³ÉÖÐ¡­' : '·¢ËÍ'}
+                {streaming ? '?????Ð¡?' : '????'}
               </button>
             </div>
           </section>
           <aside className="timeline-col">
-            <h3>Agent Ö´ÐÐÊ±¼äÏß</h3>
+            <h3>Agent ????????</h3>
             <Timeline events={timeline} />
-            {!timeline.length && <p className="muted">·¢Æð¶Ô»°ºó£¬ÕâÀïÕ¹Ê¾Ö÷¿Øµ÷¶È / ÒâÍ¼Ê¶±ð / Â·ÓÉÓë¹¤¾ßÊÂ¼þ</p>}
+            {!timeline.length && <p className="muted">????????????????????? / ?????? / Â·?????????</p>}
           </aside>
         </main>
       ) : (

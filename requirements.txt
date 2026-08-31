@@ -1,4 +1,4 @@
-# ===== Web 框架与网关基座 =====
+# ===== Web 框架与服务 =====
 fastapi>=0.115
 uvicorn[standard]>=0.32
 pydantic>=2.9
@@ -31,6 +31,9 @@ rank-bm25>=0.2.2
 jieba>=0.42.1
 sentence-transformers>=3.3
 numpy>=1.26
+
+# ===== 评测与图表 =====
+matplotlib>=3.8
 
 # ===== 工具 =====
 httpx>=0.28

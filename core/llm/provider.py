@@ -12,6 +12,16 @@ from openai import AsyncOpenAI
 
 from app.config import get_value
 
+# 客户端缓存：按 (provider名, base_url, api_key) 复用连接池，避免每次调用重建 TCP/TLS
+_client_cache: dict[tuple[str, str, str], AsyncOpenAI] = {}
+
+
+def _get_client(provider_name: str, cfg: dict) -> AsyncOpenAI:
+    key = (provider_name, cfg["base_url"], cfg.get("api_key") or "EMPTY")
+    if key not in _client_cache:
+        _client_cache[key] = AsyncOpenAI(base_url=cfg["base_url"], api_key=cfg.get("api_key") or "EMPTY")
+    return _client_cache[key]
+
 
 def _provider_cfg(name: str | None = None) -> tuple[str, dict]:
     cfg = get_value("llm", "providers")
@@ -29,7 +39,7 @@ class LLMProvider:
         self.chat_model: str = cfg["chat_model"]
         self.embedding_model: str = cfg.get("embedding_model") or ""
         self.temperature: float = cfg.get("temperature", 0.7)
-        self._client = AsyncOpenAI(base_url=cfg["base_url"], api_key=cfg.get("api_key") or "EMPTY")
+        self._client = _get_client(self.name, cfg)
 
     # ---------- 对话 ----------
     async def chat(
