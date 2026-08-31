@@ -9,7 +9,7 @@ if sys.platform == "win32":
 
 from sqlalchemy import text
 
-from app.db import get_session_factory  # noqa: E402
+from infrastructure.db import get_session_factory  # noqa: E402
 
 
 async def main() -> None:
