@@ -1,0 +1,10 @@
+{
+  "rag": {
+    "suite": "rag@5",
+    "cases": 8,
+    "recall": 1.0,
+    "avg_ms": 47747,
+    "use_rewrite": true,
+    "misses": []
+  }
+}

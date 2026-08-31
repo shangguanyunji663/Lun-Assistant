@@ -1,0 +1,172 @@
+{
+  "simple": {
+    "on": {
+      "recall": 1.0,
+      "avg_ms": 61007,
+      "mrr": 0,
+      "cases": 8,
+      "hits": 8,
+      "rewrite": true,
+      "rows": []
+    },
+    "off": {
+      "recall": 1.0,
+      "avg_ms": 2200,
+      "mrr": 0,
+      "cases": 8,
+      "hits": 8,
+      "rewrite": false,
+      "rows": []
+    }
+  },
+  "hard": {
+    "off": {
+      "rewrite": false,
+      "cases": 8,
+      "hits": 8,
+      "recall": 1.0,
+      "mrr": 0.744,
+      "avg_ms": 6522,
+      "rows": [
+        {
+          "query": "综述部分总被导师说像流水账一样罗列怎么破",
+          "expected": "literature_review.txt",
+          "rank": 2,
+          "hit": true,
+          "ms": 33928,
+          "rewritten": ""
+        },
+        {
+          "query": "开题答辩被老师质疑创新点站不住脚该怎么提前准备",
+          "expected": "proposal.txt",
+          "rank": 1,
+          "hit": true,
+          "ms": 1905,
+          "rewritten": ""
+        },
+        {
+          "query": "论文里那段话跟网上找到的太像了怕过不了",
+          "expected": "plagiarism.txt",
+          "rank": 5,
+          "hit": true,
+          "ms": 1891,
+          "rewritten": ""
+        },
+        {
+          "query": "快答辩了心里没底想提前演练一下老师会问什么",
+          "expected": "defense.txt",
+          "rank": 1,
+          "hit": true,
+          "ms": 1903,
+          "rewritten": ""
+        },
+        {
+          "query": "导师嫌我实验单薄让我补充实验增强说服力",
+          "expected": "research_method.txt",
+          "rank": 4,
+          "hit": true,
+          "ms": 6470,
+          "rewritten": ""
+        },
+        {
+          "query": "我的助手两路检索结果乱七八糟怎么合并排序",
+          "expected": "rag_survey.txt",
+          "rank": 1,
+          "hit": true,
+          "ms": 2013,
+          "rewritten": ""
+        },
+        {
+          "query": "聊天窗口关了再开它就忘了我说过的写作要求",
+          "expected": "llm_writing.txt",
+          "rank": 1,
+          "hit": true,
+          "ms": 2065,
+          "rewritten": ""
+        },
+        {
+          "query": "怎么让程序自动管住智能体别乱调外部接口",
+          "expected": "multi_agent.txt",
+          "rank": 1,
+          "hit": true,
+          "ms": 2001,
+          "rewritten": ""
+        }
+      ]
+    },
+    "on": {
+      "rewrite": true,
+      "cases": 8,
+      "hits": 8,
+      "recall": 1.0,
+      "mrr": 0.917,
+      "avg_ms": 40510,
+      "rows": [
+        {
+          "query": "综述部分总被导师说像流水账一样罗列怎么破",
+          "expected": "literature_review.txt",
+          "rank": 1,
+          "hit": true,
+          "ms": 44894,
+          "rewritten": "文献综述如何避免流水账式罗列：提升批判性综合分析的学术优化策略"
+        },
+        {
+          "query": "开题答辩被老师质疑创新点站不住脚该怎么提前准备",
+          "expected": "proposal.txt",
+          "rank": 1,
+          "hit": true,
+          "ms": 40154,
+          "rewritten": "Strategies for strengthening innovative aspects in research proposal defense to counter supervisor critiques on novelty credibility"
+        },
+        {
+          "query": "论文里那段话跟网上找到的太像了怕过不了",
+          "expected": "plagiarism.txt",
+          "rank": 1,
+          "hit": true,
+          "ms": 36790,
+          "rewritten": "如何有效降低学术论文段落与网络资源的相似度以通过查重检测系统？"
+        },
+        {
+          "query": "快答辩了心里没底想提前演练一下老师会问什么",
+          "expected": "defense.txt",
+          "rank": 1,
+          "hit": true,
+          "ms": 30140,
+          "rewritten": "What are typical questions professors ask during thesis defense oral examination for academic students?"
+        },
+        {
+          "query": "导师嫌我实验单薄让我补充实验增强说服力",
+          "expected": "research_method.txt",
+          "rank": 3,
+          "hit": true,
+          "ms": 55108,
+          "rewritten": "如何通过补充实验增强学术论文的实验说服力"
+        },
+        {
+          "query": "我的助手两路检索结果乱七八糟怎么合并排序",
+          "expected": "rag_survey.txt",
+          "rank": 1,
+          "hit": true,
+          "ms": 47058,
+          "rewritten": "如何有效合并和排序双路学术检索结果"
+        },
+        {
+          "query": "聊天窗口关了再开它就忘了我说过的写作要求",
+          "expected": "llm_writing.txt",
+          "rank": 1,
+          "hit": true,
+          "ms": 35291,
+          "rewritten": "深度学习在医学影像分析中的应用研究：A systematic review of recent literature"
+        },
+        {
+          "query": "怎么让程序自动管住智能体别乱调外部接口",
+          "expected": "multi_agent.txt",
+          "rank": 1,
+          "hit": true,
+          "ms": 34646,
+          "rewritten": "How to automatically enforce security constraints on AI agents to prevent unauthorized external API calls?"
+        }
+      ]
+    }
+  }
+}

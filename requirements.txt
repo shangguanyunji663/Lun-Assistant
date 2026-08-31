@@ -1,0 +1,41 @@
+# ===== Web 框架与网关基座 =====
+fastapi>=0.115
+uvicorn[standard]>=0.32
+pydantic>=2.9
+pydantic-settings>=2.6
+pyyaml>=6.0
+
+# ===== 数据库 =====
+sqlalchemy[asyncio]>=2.0.36
+asyncpg>=0.30
+psycopg[binary,pool]>=3.2
+pgvector>=0.3.6
+
+# ===== Redis =====
+redis>=5.2
+
+# ===== 认证与安全 =====
+pyjwt>=2.10
+bcrypt>=4.2
+
+# ===== LLM / Agent =====
+openai>=1.58
+langchain>=0.3.14
+langchain-openai>=0.2.14
+langchain-community>=0.3.14
+langgraph>=0.2.62
+langgraph-checkpoint-postgres>=2.0.9
+
+# ===== RAG =====
+rank-bm25>=0.2.2
+jieba>=0.42.1
+sentence-transformers>=3.3
+numpy>=1.26
+
+# ===== 工具 =====
+httpx>=0.28
+python-multipart>=0.0.18
+
+# ===== 测试 =====
+pytest>=8.3
+pytest-asyncio>=0.25

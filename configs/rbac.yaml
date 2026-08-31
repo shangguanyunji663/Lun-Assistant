@@ -1,0 +1,24 @@
+# ============================================================
+# RBAC 策略（YAML 驱动）
+# resource 命名: <域>:<动作>，支持 * 与 prefix:* 通配
+# ============================================================
+roles:
+  student:
+    allowed:
+      - "project:*"            # 论文项目 CRUD
+      - "agent:run"            # 发起 Agent 会话
+      - "agent:interrupt"      # 人机介入
+      - "tool:*"               # 学生可用全部论文工具（治理层另有限流/审计）
+    denied:
+      - "tool:admin_reindex"   # 管理端工具仅管理员
+
+  admin:
+    allowed:
+      - "*"
+    denied: []
+
+  anonymous:
+    allowed:
+      - "auth:login"
+      - "auth:register"
+    denied: []

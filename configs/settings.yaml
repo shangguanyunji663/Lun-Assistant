@@ -1,0 +1,120 @@
+# ============================================================
+# 论匠（LunJiang）统一配置
+# 所有模块从此处读取配置；${VAR} 表示从 .env / 环境变量插值
+# ============================================================
+
+app:
+  name: lunjiang
+  host: ${APP_HOST}
+  port: ${APP_PORT}
+  debug: ${APP_DEBUG}
+  secret_key: ${SECRET_KEY}
+
+# ------------------------------------------------------------
+# LLM 统一接入：切换 default_provider 即可一键换底座
+# 所有 provider 均走 OpenAI 兼容协议
+# ------------------------------------------------------------
+llm:
+  default_provider: ollama
+  providers:
+    ollama:
+      base_url: http://127.0.0.1:11434/v1
+      api_key: ollama
+      chat_model: qwen3:4b
+      embedding_model: bge-m3
+      embedding_dim: 1024
+      temperature: 0.7
+    deepseek:
+      base_url: https://api.deepseek.com/v1
+      api_key: ${DEEPSEEK_API_KEY}
+      chat_model: deepseek-chat
+      embedding_model: ""
+      embedding_dim: 0
+      temperature: 0.7
+    zhipu:
+      base_url: https://open.bigmodel.cn/api/paas/v4
+      api_key: ${ZHIPU_API_KEY}
+      chat_model: glm-4-flash
+      embedding_model: embedding-3
+      embedding_dim: 2048
+      temperature: 0.7
+    qwen:
+      base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
+      api_key: ${QWEN_API_KEY}
+      chat_model: qwen-plus
+      embedding_model: text-embedding-v3
+      embedding_dim: 1024
+      temperature: 0.7
+
+# 交叉编码器精排（本地 sentence-transformers 加载）
+rerank:
+  model: BAAI/bge-reranker-base
+  device: cpu
+  max_length: 512
+
+# ------------------------------------------------------------
+# 存储
+# ------------------------------------------------------------
+storage:
+  postgres:
+    async_dsn: postgresql+asyncpg://${PG_USER}:${PG_PASSWORD}@${PG_HOST}:${PG_PORT}/${PG_DB}
+    sync_dsn: postgresql://${PG_USER}:${PG_PASSWORD}@${PG_HOST}:${PG_PORT}/${PG_DB}
+  redis:
+    url: redis://${REDIS_HOST}:${REDIS_PORT}/${REDIS_DB}
+
+# ------------------------------------------------------------
+# Agent 编排
+# ------------------------------------------------------------
+agent:
+  max_hops: 3                       # 单轮会话最大调度跳数（防回环）
+
+# ------------------------------------------------------------
+# 记忆与压缩
+# ------------------------------------------------------------
+memory:
+  short_term_max_turns: 20          # 短期对话窗口保留轮数
+  compress_trigger_tokens: 3000     # 状态体积触发压缩阈值
+  target_compression_ratio: 0.3     # 四级压缩目标：压至原始30%以内
+  preference_top_k: 10              # 用户偏好召回条数
+
+# ------------------------------------------------------------
+# RAG 三阶段递进检索
+# ------------------------------------------------------------
+rag:
+  rewrite_enabled: true             # 阶段1：Query改写
+  recall_top_k: 20                  # 阶段2：双路混合召回（dense+bm25 各取）
+  final_top_k: 5                    # 阶段3：精排后保留
+  chunk_size: 512
+  chunk_overlap: 64
+  recall_target_at5: 0.9            # 验收指标 Recall@5 目标
+
+# ------------------------------------------------------------
+# 治理与风控
+# ------------------------------------------------------------
+governance:
+  rate_limit:
+    default_rpm: 30                 # Redis 滑动窗口默认每分钟请求数
+    burst: 10
+  retry:
+    max_attempts: 3                 # 指数退避重试
+    base_delay: 0.5
+    max_delay: 8.0
+  circuit_breaker:
+    failure_threshold: 5            # 连续失败阈值 → OPEN
+    recovery_timeout: 30            # OPEN→HALF_OPEN 等待秒数
+    half_open_successes: 2          # HALF_OPEN 恢复所需成功数
+  skill:
+    pattern_threshold: 3            # 同模式累计3次自动沉淀 Skill
+  lock:
+    ttl_seconds: 300                # 分布式锁默认TTL
+
+# ------------------------------------------------------------
+# 可观测与评测
+# ------------------------------------------------------------
+observability:
+  trace_enabled: true
+  slow_span_ms: 2000                # 慢调用阈值
+
+evals:
+  dataset_dir: evals/datasets
+  ab_prompts_dir: evals/prompts

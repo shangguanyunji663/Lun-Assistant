@@ -1,0 +1,55 @@
+"""认证路由：注册 / 登录 / 当前用户。"""
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from pydantic import BaseModel, Field
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.audit_service import write_audit
+from app.auth.security import create_access_token, get_current_user, hash_password, verify_password
+from app.db import get_db
+from app.models.user import User
+
+router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+
+class RegisterIn(BaseModel):
+    username: str = Field(min_length=3, max_length=32)
+    password: str = Field(min_length=6, max_length=64)
+
+
+class LoginIn(BaseModel):
+    username: str
+    password: str
+
+
+def _client_ip(request: Request) -> str:
+    return request.client.host if request.client else ""
+
+
+@router.post("/register")
+async def register(body: RegisterIn, request: Request, db: AsyncSession = Depends(get_db)):
+    exists = await db.scalar(select(User).where(User.username == body.username))
+    if exists:
+        raise HTTPException(status.HTTP_409_CONFLICT, "用户名已存在")
+    user = User(username=body.username, password_hash=hash_password(body.password))
+    db.add(user)
+    await db.commit()
+    await write_audit(db, user_id=user.id, action="auth", resource="register", ip=_client_ip(request))
+    return {"id": user.id, "username": user.username}
+
+
+@router.post("/login")
+async def login(body: LoginIn, request: Request, db: AsyncSession = Depends(get_db)):
+    user = await db.scalar(select(User).where(User.username == body.username))
+    if user is None or not verify_password(body.password, user.password_hash):
+        await write_audit(db, user_id=None, action="auth", resource="login_failed",
+                          detail={"username": body.username}, ip=_client_ip(request))
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "用户名或密码错误")
+    token = create_access_token(user.id, user.role)
+    await write_audit(db, user_id=user.id, action="auth", resource="login", ip=_client_ip(request))
+    return {"access_token": token, "token_type": "bearer", "user": {"id": user.id, "username": user.username, "role": user.role}}
+
+
+@router.get("/me")
+async def me(user: User = Depends(get_current_user)):
+    return {"id": user.id, "username": user.username, "role": user.role}

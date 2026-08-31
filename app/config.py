@@ -1,0 +1,62 @@
+"""统一配置加载：configs/settings.yaml + .env 环境变量插值。
+
+- `${VAR}` 形式的占位符从环境变量（含 .env 文件）取值，缺失即报错，避免静默错误配置。
+- 全局单例，业务代码统一通过 get_settings() 获取。
+"""
+import os
+import re
+from functools import lru_cache
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+_VAR_PATTERN = re.compile(r"\$\{([^}^{]+)\}")
+
+
+def _load_env_file(path: Path) -> None:
+    """极简 .env 解析：KEY=VALUE，不覆盖已存在的环境变量。"""
+    if not path.exists():
+        return
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        os.environ.setdefault(key.strip(), value.strip())
+
+
+def _interpolate(node: Any) -> Any:
+    if isinstance(node, dict):
+        return {k: _interpolate(v) for k, v in node.items()}
+    if isinstance(node, list):
+        return [_interpolate(v) for v in node]
+    if isinstance(node, str):
+        def _repl(m: re.Match) -> str:
+            key = m.group(1).strip()
+            val = os.environ.get(key)
+            if val is None:
+                raise RuntimeError(f"配置所需环境变量缺失: {key}（请在 .env 中配置）")
+            return val
+
+        return _VAR_PATTERN.sub(_repl, node)
+    return node
+
+
+@lru_cache
+def get_settings() -> dict:
+    _load_env_file(PROJECT_ROOT / ".env")
+    with open(PROJECT_ROOT / "configs" / "settings.yaml", encoding="utf-8") as f:
+        raw = yaml.safe_load(f)
+    return _interpolate(raw)
+
+
+def get_value(*keys: str, default: Any = None) -> Any:
+    """按路径取配置，如 get_value("llm", "default_provider")。"""
+    node: Any = get_settings()
+    for k in keys:
+        if not isinstance(node, dict) or k not in node:
+            return default
+        node = node[k]
+    return node

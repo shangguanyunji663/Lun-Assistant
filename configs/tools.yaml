@@ -1,0 +1,45 @@
+# ============================================================
+# 工具治理配置：限流阈值 / 互斥锁 / 降级默认参数 / 熔断分组
+# ============================================================
+tools:
+  search_literature:
+    rate_limit_rpm: 20
+    breaker: rag_pipeline
+    fallback_kwargs: {top_k: 5}
+
+  rewrite_query:
+    rate_limit_rpm: 60
+    breaker: llm_light
+
+  classify_intent:
+    rate_limit_rpm: 120
+    breaker: llm_light
+
+  generate_section:
+    rate_limit_rpm: 10
+    breaker: llm_main
+
+  check_format:
+    rate_limit_rpm: 15
+    breaker: llm_main
+    fallback_kwargs: {strict: false}
+
+  check_plagiarism:
+    rate_limit_rpm: 10
+    breaker: rag_pipeline
+    fallback_kwargs: {granularity: paragraph}
+
+  detect_ai_text:
+    rate_limit_rpm: 10
+    breaker: llm_main
+    fallback_kwargs: {mode: fast}
+
+  ingest_corpus:
+    rate_limit_rpm: 2
+    lock_key: task:ingest
+    breaker: rag_pipeline
+
+  admin_reindex:
+    rate_limit_rpm: 2
+    lock_key: task:reindex
+    breaker: rag_pipeline
