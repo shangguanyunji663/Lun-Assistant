@@ -1,0 +1,5 @@
+# 论匠本地推理适配镜像：限制 qwen3:4b 默认上下文，避免 16GB 内存机器 KV Cache OOM
+# 用法：ollama create qwen3:4b-ctx4096 -f configs/ollama/Modelfile.qwen3-ctx4096
+# （blob 与 qwen3:4b 共享，磁盘增量极小；创建后修改 configs/settings.yaml 的 chat_model 指向新标签）
+FROM qwen3:4b
+PARAMETER num_ctx 4096

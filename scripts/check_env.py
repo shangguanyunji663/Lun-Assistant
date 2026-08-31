@@ -18,7 +18,7 @@ import httpx  # noqa: E402
 import psycopg  # noqa: E402
 import redis  # noqa: E402
 
-from app.config import get_settings  # noqa: E402
+from infrastructure.config import get_settings  # noqa: E402
 
 RESULTS: list[tuple[str, bool, str]] = []
 
@@ -35,8 +35,8 @@ def check_ollama_chat(base_url: str, model: str) -> None:
     resp = httpx.post(
         f"{root}/api/generate",
         json={"model": model, "prompt": "只回复两个字母: OK", "think": False,
-              "stream": False, "options": {"num_predict": 16}},
-        timeout=120,
+              "stream": False, "options": {"num_predict": 64, "num_ctx": 4096}},
+        timeout=180,
     )
     resp.raise_for_status()
     text = resp.json().get("response", "").strip()

@@ -20,7 +20,7 @@ llm:
     ollama:
       base_url: http://127.0.0.1:11434/v1
       api_key: ollama
-      chat_model: qwen3:4b
+      chat_model: qwen3:4b-ctx4096   # 固定 num_ctx=4096 的镜像（ollama create，见 README/OLLAMA 适配）
       embedding_model: bge-m3
       embedding_dim: 1024
       temperature: 0.7
