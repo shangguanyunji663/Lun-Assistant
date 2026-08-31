@@ -83,3 +83,15 @@
   A/B 数据已支撑）、审计参数脱敏、tools.yaml 注册缓存
 - **P2**：会话持久化（刷新恢复）、pytest 测试骨架、refresh token、结果导出
 - **P3**（生产化前置，暂缓）：依赖方向重构、BM25 增量索引、EventHub 多实例扩展
+
+## 追记：编码问题收尾修复（commit 802acab）
+
+第 5 项编码根治落地后复查发现，部分在配置生效**之前**写盘的文件仍有遗留问题，分两类处理：
+
+| 遗留问题 | 文件 | 处理 |
+|---|---|---|
+| GBK 编码但内容完好 | `api.js`、`index.html`、`requirements.txt` | 无损转码为 UTF-8 |
+| 中文被替换为字面 `?`（数据丢失） | `App.jsx`（46 行）、`styles.css`（5 处注释） | 按原始版本重写恢复 |
+
+全项目扫描确认无残留乱码，`npm run build` 通过。历史教训已固化：`.editorconfig`（项目级）
++ IDE 全局 `files.encoding=utf8` 双层防护，`autoGuessEncoding` 保留以兼容其他项目的旧 GBK 文件。

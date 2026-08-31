@@ -14,7 +14,7 @@
 | 人机介入 | LangGraph interrupt 挂起 → 用户反馈 → Command(resume) 续跑 | `app/agent/router.py` `/chat` `/resume` |
 | 四层记忆 | 短期对话(Redis) / 项目结构化 / 长期向量(pgvector) / 用户偏好 | `memory/` |
 | 四级上下文压缩 | 分级留存 → 冗余去重 → 窗口截断 → LLM 摘要归档，实测压缩率 0.21（目标 ≤0.3） | `memory/compressor.py` |
-| 三阶段 RAG | Query 改写 → 稠密(pgvector)+稀疏(BM25/jieba) 双路召回 RRF 融合 → 交叉编码器精排 | `rag/` |
+| 三阶段 RAG | Query 改写 → 稠密(pgvector)+稀疏(BM25/jieba) 多路召回 RRF 融合 → 交叉编码器精排；含改写防漂移三件套（拒答回退 / 原查询稠密保底 / 双查询精排取 max） | `rag/` |
 | 工具治理 | YAML RBAC → Redis 滑动窗口限流(ZSET+Lua) → 三态熔断 → 三级容错(重试/参数降级/人机兜底) → 分布式锁 → 审计 | `governance/` |
 | Skill 沉淀 | 行为观测：同参数模式连续 3 次成功自动沉淀可复用 Skill，三维匹配召回 | `governance/skill.py` |
 | 全链路可观测 | Trace/Log/Memory/Action 统一 Span 落库，时间序列 + 树形行为回放 | `observability/trace.py` `app/observability/router.py` |
@@ -27,7 +27,7 @@
 - Python 3.11（推荐用 conda，项目自带环境目录 `envs/`）
 - Node 18+
 - Ollama：`ollama pull qwen3:4b && ollama pull bge-m3`
-- 交叉编码器首次运行自动从 HF 下载 `BAAI/bge-reranker-base`（可设 `HF_ENDPOINT=https://hf-mirror.com` 加速；离线环境设 `HF_HUB_OFFLINE=1`）
+- 交叉编码器首次运行自动从 HF 下载 `BAAI/bge-reranker-base`（可设 `HF_ENDPOINT=https://hf-mirror.com` 加速；检测到本地缓存后自动强制离线加载，不再探测网络）
 
 ### 1. 初始化环境
 
@@ -73,32 +73,34 @@ envs\lunjiang\python.exe scripts/smoke_governance.py   # 治理栈 9 项
 envs\lunjiang\python.exe scripts/smoke_trace.py        # Trace + 行为回放
 envs\lunjiang\python.exe scripts/smoke_api.py --topic  # 端到端（需 uvicorn 已启动）
 
-envs\lunjiang\python.exe evals/harness.py              # 三项指标评测
-envs\lunjiang\python.exe evals/ab.py                   # A/B 实验（Query 改写开关）
+envs\lunjiang\python.exe evals/harness.py              # 三项指标评测（intent/rag/compression）
+envs\lunjiang\python.exe evals/ab.py                   # A/B 实验（简单集+长尾困难集+图表报告）
+envs\lunjiang\python.exe evals/ab.py --report-only     # 仅从 ab_report.json 重生成图表与报告
 ```
 
 ## 架构总览
 
 ```
-frontend/  React 18 + Vite（SSE 流式对话 / Agent 时间线 / Trace 回放）
+frontend/  React 18 + Vite（SSE 流式对话 / Markdown 渲染 / Agent 时间线 / Trace 回放）
 app/       FastAPI 网关
-  ├─ auth/        注册/登录/JWT/RBAC
+  ├─ auth/        注册/登录/JWT/RBAC/登录限流（Redis 滑动窗口 5 次/分钟）
   ├─ gateway/     论文项目 CRUD
   ├─ agent/       /api/agent/chat|resume（SSE + interrupt）
-  ├─ observability/  /api/observability/traces（回放，admin）
-  ├─ middleware/  审计中间件
+  ├─ observability/  /observability/traces[/{id}]（回放，admin）
+  ├─ middleware/  审计中间件（fire-and-forget 异步落库）
   └─ models/      ORM（users/projects/memory_items/trace_spans/skills/audit_logs）
 core/
   ├─ graph/       LangGraph 主从图（supervisor + 6 专项 Agent + checkpointer）
   ├─ classifier/  三层意图预分类
   ├─ streaming/   EventHub 事件总线（token 微缓冲）
   ├─ checkpoint/  三级降级 Checkpointer（PG → Redis → 内存）
-  └─ llm/         OpenAI 兼容统一接入（可一键换底座）
+  └─ llm/         OpenAI 兼容统一接入（可一键换底座，客户端连接池复用）
 memory/    四层记忆 + 四级压缩
-rag/       Query 改写 / 混合召回(RRF) / 交叉编码器精排 / 语料入库
+rag/       Query 改写 / 混合召回(RRF) / 防漂移融合 / 交叉编码器精排 / 语料入库
 governance/ 工具注册中心 + RBAC/限流/熔断/容错/分布式锁/Skill
 observability/  全链路 Span 落库与回放查询
-evals/     评测数据集 + Harness + A/B
+evals/     评测数据集（简单集+长尾困难集）+ Harness + A/B
+docs/      改进记录（OPTIMIZATION_ROUND1.md）
 ```
 
 ## 关键设计决策
