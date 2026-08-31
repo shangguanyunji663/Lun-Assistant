@@ -14,7 +14,7 @@ input:focus, textarea:focus { border-color: var(--primary); }
 .err { color: #d64545; font-size: 13px; margin-top: 8px; }
 .link { cursor: pointer; text-decoration: underline; }
 
-/* ---------- ??? ---------- */
+/* ---------- 登录 ---------- */
 .auth-wrap { display: flex; align-items: center; justify-content: center; height: 100vh; }
 .auth-card { width: 340px; display: flex; flex-direction: column; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 32px; }
 .auth-card h1 { text-align: center; letter-spacing: 8px; }
@@ -22,7 +22,7 @@ input:focus, textarea:focus { border-color: var(--primary); }
 .auth-card button { background: var(--primary); color: #fff; border: none; padding: 10px; font-size: 15px; }
 .center { display: flex; height: 100vh; align-items: center; justify-content: center; }
 
-/* ---------- ???? ---------- */
+/* ---------- 布局 ---------- */
 .app { height: 100vh; display: flex; flex-direction: column; }
 header { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--card); border-bottom: 1px solid var(--border); }
 header h1 { font-size: 18px; letter-spacing: 4px; }
@@ -34,7 +34,7 @@ main { flex: 1; overflow: hidden; }
 .chat-layout { display: flex; height: 100%; }
 .chat-col { flex: 1; display: flex; flex-direction: column; padding: 16px; gap: 10px; min-width: 0; }
 
-/* ---------- ??? ---------- */
+/* ---------- 消息 ---------- */
 .messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 8px 4px; }
 .msg { display: flex; }
 .msg.user { justify-content: flex-end; }
@@ -55,7 +55,7 @@ main { flex: 1; overflow: hidden; }
 .msg.assistant .bubble blockquote { border-left: 3px solid var(--primary); margin: 8px 0; padding: 2px 12px; color: var(--muted); }
 .msg.assistant .bubble hr { border: none; border-top: 1px solid var(--border); margin: 10px 0; }
 
-/* ---------- ???? ---------- */
+/* ---------- 输入 ---------- */
 .input-bar { display: flex; gap: 10px; }
 .input-bar textarea { flex: 1; resize: none; }
 .input-bar .send { width: 90px; background: var(--primary); color: #fff; border: none; }
@@ -65,7 +65,7 @@ main { flex: 1; overflow: hidden; }
 .interrupt-bar .free-form { display: flex; gap: 8px; flex: 1; min-width: 260px; }
 .interrupt-bar .free-form input { flex: 1; }
 
-/* ---------- ????? ---------- */
+/* ---------- 时间线 ---------- */
 .timeline-col { width: 300px; border-left: 1px solid var(--border); background: var(--card); padding: 14px; overflow-y: auto; }
 .timeline-col h3 { font-size: 14px; margin-bottom: 10px; }
 .timeline { display: flex; flex-direction: column; gap: 6px; }

@@ -29,7 +29,7 @@ export const api = {
   trace: (id) => req(`/observability/traces/${id}`),
 }
 
-/** SSE Á÷Ê½ÇëÇó£ºonEvent(type, payload, node) »Øµ÷£»·µ»Ø final ÎÄ±¾¡£ */
+/** SSE æµå¼è¯·æ±‚ï¼šonEvent(type, payload, node) å›è°ƒï¼›è¿”å› final æ–‡æœ¬ã€‚ */
 export async function sse(path, body, onEvent) {
   const token = localStorage.getItem('lj_token')
   const res = await fetch(API + path, {
@@ -58,7 +58,7 @@ export async function sse(path, body, onEvent) {
         const ev = JSON.parse(raw.slice(5).trim())
         onEvent?.(ev.type, ev.payload, ev.node)
         if (ev.type === 'final') finalText = ev.payload?.output || ''
-      } catch { /* ºöÂÔ»µÖ¡ */ }
+      } catch { /* å¿½ç•¥åå¸§ */ }
     }
   }
   return finalText

@@ -1,11 +1,11 @@
-# ===== Web ¿ò¼ÜÓë·þÎñ =====
+# ===== Web æ¡†æž¶ä¸ŽæœåŠ¡ =====
 fastapi>=0.115
 uvicorn[standard]>=0.32
 pydantic>=2.9
 pydantic-settings>=2.6
 pyyaml>=6.0
 
-# ===== Êý¾Ý¿â =====
+# ===== æ•°æ®åº“ =====
 sqlalchemy[asyncio]>=2.0.36
 asyncpg>=0.30
 psycopg[binary,pool]>=3.2
@@ -14,7 +14,7 @@ pgvector>=0.3.6
 # ===== Redis =====
 redis>=5.2
 
-# ===== ÈÏÖ¤Óë°²È« =====
+# ===== è®¤è¯ä¸Žå®‰å…¨ =====
 pyjwt>=2.10
 bcrypt>=4.2
 
@@ -32,13 +32,13 @@ jieba>=0.42.1
 sentence-transformers>=3.3
 numpy>=1.26
 
-# ===== ÆÀ²âÓëÍ¼±í =====
+# ===== è¯„æµ‹ä¸Žå›¾è¡¨ =====
 matplotlib>=3.8
 
-# ===== ¹¤¾ß =====
+# ===== å·¥å…· =====
 httpx>=0.28
 python-multipart>=0.0.18
 
-# ===== ²âÊÔ =====
+# ===== æµ‹è¯• =====
 pytest>=8.3
 pytest-asyncio>=0.25
