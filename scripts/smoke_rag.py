@@ -16,7 +16,7 @@ if sys.platform == "win32":
 
 
 async def main() -> None:
-    from rag.pipeline import rag_pipeline
+    from services.rag.pipeline import rag_pipeline
 
     queries = [
         "如何写好文献综述",

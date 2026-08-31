@@ -15,7 +15,7 @@ if sys.platform == "win32":
 
 
 async def main() -> None:
-    from observability.trace import span, get_trace, list_traces
+    from services.observability.trace import span, get_trace, list_traces
 
     # ---------- 构造嵌套 Span：agent_node → tool_call → llm_call ----------
     with span("supervisor", "agent_node", input_data={"visited": []}, user_id=1) as sp:
@@ -54,7 +54,7 @@ async def main() -> None:
     print(f"[Trace列表] PASS - {len(await list_traces(limit=5))} 条聚合")
 
     # 树形回放（复用 API 层逻辑）
-    from app.observability.router import _build_tree
+    from api.observability.router import _build_tree
     tree = _build_tree(spans)
     assert len(tree) == 1 and tree[0]["name"] == "supervisor", "树根应为 supervisor"
     child_names = [c["name"] for c in tree[0]["children"]]

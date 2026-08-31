@@ -31,7 +31,7 @@ def _load(name: str) -> list[dict]:
 
 # ---------------- 意图分类 ----------------
 async def eval_intent() -> dict:
-    from core.classifier.intent import intent_classifier
+    from services.classifier.intent import intent_classifier
 
     cases = _load("intent.jsonl")
     correct, layers, per_layer_hit = 0, {"rule": 0, "vector": 0, "llm": 0}, {"rule": 0, "vector": 0, "llm": 0}
@@ -57,7 +57,7 @@ async def eval_intent() -> dict:
 
 # ---------------- RAG 检索 ----------------
 async def eval_rag(*, use_rewrite: bool = True, k: int = 5, verbose: bool = True) -> dict:
-    from rag.pipeline import rag_pipeline
+    from services.rag.pipeline import rag_pipeline
 
     cases = _load("retrieval.jsonl")
     hits, misses = 0, []
@@ -84,7 +84,7 @@ async def eval_rag(*, use_rewrite: bool = True, k: int = 5, verbose: bool = True
 
 # ---------------- 上下文压缩 ----------------
 async def eval_compression() -> dict:
-    from memory.compressor import context_compressor
+    from services.memory.compressor import context_compressor
 
     # 构造超阈值长对话（重复填充确保 > 3000 字）
     msgs = []
@@ -102,7 +102,7 @@ async def eval_compression() -> dict:
 
 # ---------------- 汇总 ----------------
 async def main(suites: list[str]) -> None:
-    from app.config import get_value
+    from infrastructure.config import get_value
     target_recall = float(get_value("rag", "recall_target_at5", default=0.9))
 
     results = {}

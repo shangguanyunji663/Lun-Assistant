@@ -17,13 +17,13 @@ async def main() -> None:
     force = "--force" in sys.argv
 
     # 建表（幂等）
-    from app.db import get_engine
-    from app.models import Base
+    from infrastructure.db import get_engine
+    from infrastructure.models import Base
     engine = get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    from rag.ingest.corpus_loader import ingest_corpus
+    from services.rag.ingest.corpus_loader import ingest_corpus
     result = await ingest_corpus(force=force)
     print("入库结果:", result)
 

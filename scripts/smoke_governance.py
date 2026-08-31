@@ -1,6 +1,6 @@
 """工具治理与风控冒烟：RBAC → 限流 → 三级容错 → 熔断 → 分布式锁 → 审计 → Skill沉淀。
 
-前置: Redis / 项目内 PostgreSQL 已运行；ollama 可用（Skill 语义匹配用）。
+前置: Redis / 独立 PostgreSQL 实例（D:\Develop\DB\PostgreSQL16）已运行；ollama 可用（Skill 语义匹配用）。
 用法：python scripts/smoke_governance.py
 """
 import asyncio
@@ -15,7 +15,7 @@ if sys.platform == "win32":
 
 
 async def main() -> None:
-    from governance.tool_registry import ToolSpec, tool_registry
+    from services.governance.tool_registry import ToolSpec, tool_registry
 
     # ---------- 注册冒烟专用工具 ----------
     async def ok_tool(query: str):
@@ -41,8 +41,8 @@ async def main() -> None:
         fallback_kwargs={"query": "SAFE_DEFAULT"}))
 
     # ---------- 1. RBAC：student 禁调 admin_reindex ----------
-    from governance.rate_limiter import RateLimitExceeded
-    from governance.retry import HumanInterventionRequired
+    from services.governance.rate_limiter import RateLimitExceeded
+    from services.governance.retry import HumanInterventionRequired
     tool_registry.register(ToolSpec(
         name="admin_reindex", description="冒烟-管理工具", handler=ok_tool,
         rate_limit_rpm=1000, breaker="smoke_brk4"))
@@ -80,7 +80,7 @@ async def main() -> None:
         print(f"[人机兜底] PASS - {e}")
 
     # ---------- 4. 熔断：手动打满失败阈值 → OPEN 快速失败 ----------
-    from governance.circuit_breaker import CircuitBreaker, CircuitOpenError
+    from services.governance.circuit_breaker import CircuitBreaker, CircuitOpenError
     brk = CircuitBreaker("smoke_brk2")
     for _ in range(5):
         await brk.on_failure()
@@ -95,7 +95,7 @@ async def main() -> None:
 
     # 恢复：回拨 opened_at 模拟等待超时 → HALF_OPEN 失败 → 再次 OPEN
     import time as _t
-    from app.redis_client import get_redis
+    from infrastructure.redis_client import get_redis
     rds = get_redis()
     await rds.hset("breaker:smoke_brk2", "opened_at", int((_t.time() - 999) * 1000))
     try:
@@ -106,7 +106,7 @@ async def main() -> None:
     print(f"[熔断恢复] {'PASS' if state2 == 'OPEN' else 'FAIL'} - HALF_OPEN 失败后 state={state2}")
 
     # ---------- 5. 分布式锁：互斥 ----------
-    from governance.dist_lock import DistributedLock, LockNotAcquired
+    from services.governance.dist_lock import DistributedLock, LockNotAcquired
     lock = DistributedLock("smoke:mutex")
     await lock.acquire()
     try:
@@ -120,8 +120,8 @@ async def main() -> None:
 
     # ---------- 6. 审计留痕 ----------
     from sqlalchemy import func, select
-    from app.db import get_session_factory
-    from app.models.audit import AuditLog
+    from infrastructure.db import get_session_factory
+    from infrastructure.models.audit import AuditLog
     async with get_session_factory()() as db:
         n = await db.scalar(select(func.count()).select_from(AuditLog)
                             .where(AuditLog.action == "tool_call",
@@ -129,7 +129,7 @@ async def main() -> None:
     print(f"[审计] {'PASS' if n and n >= 3 else 'FAIL'} - smoke_ok 审计记录 {n} 条")
 
     # ---------- 7. Skill 自动沉淀：同模式3次成功 ----------
-    from app.models.skill import Skill
+    from infrastructure.models.skill import Skill
     tracker = tool_registry._tracker
     for i in range(3):
         await tracker.observe(agent="smoke_agent", tool="smoke_ok",

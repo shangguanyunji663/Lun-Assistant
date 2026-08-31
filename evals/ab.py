@@ -27,7 +27,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-from rag.pipeline import rag_pipeline  # noqa: E402
+from services.rag.pipeline import rag_pipeline  # noqa: E402
 
 DATASET_DIR = PROJECT_ROOT / "evals" / "datasets"
 SIMPLE = DATASET_DIR / "retrieval.jsonl"
