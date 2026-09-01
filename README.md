@@ -15,6 +15,8 @@
 | [🛠 优化记录三](docs/OPTIMIZATION_ROUND3.md) | 第三轮优化（布尔陷阱/前端全按钮失效排查）             |
 | [🛠 优化记录四](docs/OPTIMIZATION_ROUND4.md) | 第四轮优化（RAG知识库/多引擎检索/Planner/结构化产物） |
 | [🛠 优化记录五](docs/OPTIMIZATION_ROUND5.md) | 第五轮优化（学术工具生态/并发压测/agnes对话底座）      |
+| [🛠 优化记录六](docs/OPTIMIZATION_ROUND6.md) | 第六轮优化（架构改进与工程化治理/P0修复/测试骨架）       |
+| [🛠 优化记录七](docs/OPTIMIZATION_ROUND7.md) | 第七轮修改（前端视觉重构：青绿长卷/会话卷册/山水浓度滑杆） |
 | [💡 常见问题](#常见问题)                        | 排障手册                              |
 
 ## 快速开始
@@ -74,6 +76,7 @@ envs\lunjiang\python.exe scripts/smoke_trace.py        # Trace 回放
 envs\lunjiang\python.exe scripts/smoke_api.py --topic  # 端到端（需 uvicorn 已启动）
 envs\lunjiang\python.exe evals/harness.py              # 三项指标评测
 envs\lunjiang\python.exe evals/regression.py           # 七大必测场景回归评测
+envs\lunjiang\python.exe -m pytest tests/ -q           # 离线单元测试（治理/模型/改写等 48 用例，无外部依赖）
 envs\lunjiang\python.exe scripts/load_test.py          # 知识库检索并发压测（需 uvicorn 已启动）
 ```
 
@@ -85,9 +88,9 @@ envs\lunjiang\python.exe scripts/load_test.py          # 知识库检索并发�
 | 意图预分类   | 规则 → 向量原型 → LLM 兜底三级，56ms / 100% 准确                                           | `services/classifier/intent.py`         |
 | 项目级知识库  | 多格式上传(PDF/DOCX/TXT/MD)→解析→分块→向量化入库，MD5去重/扫描件拒绝/跨项目隔离，`project`/`hybrid` 双模式检索 | `services/rag/ingest/`                  |
 | 三阶段 RAG | Query 改写(规则兜底+防漂移，返回策略标记) → 稠密+稀疏+**相邻窗口**多路 RRF 融合(项目保底) → 交叉精排+降噪对比         | `services/rag/`                         |
-| 结构化产物   | 综述初稿 / 开题报告 / 答辩大纲（模板骨架 + RAG 证据注入，治理工具 `generate_artifact`）                  | `services/agent/artifacts.py`           |
+| 结构化产物   | 综述初稿 / 开题报告 / 答辩大纲（模板骨架 + RAG 证据注入，治理工具 `generate_artifact`）                  | `services/governance/artifacts.py`   |
 | 学术工具生态  | 翻译 / 润色 / 方法推荐 / 参考文献格式化 / 摘要生成 / 术语解析                                        | `services/governance/academic_tools.py` |
-| 工具治理    | RBAC → 限流 → 熔断 → 重试 → 分布式锁 → 审计 → Skill（论文 8 类 + 学术 6 类共 14 个工具统一经治理栈）        | `services/governance/`                  |
+| 工具治理    | RBAC → 限流 → 熔断 → 三级容错（重试/降级/人机兜底）→ 分布式锁 → 审计 → 行为观测 → Skill（论文 8 类 + 学术 6 类共 14 个工具统一经治理栈，同步 handler 自动线程池化）        | `services/governance/`                  |
 | 四层记忆    | 短期(Redis)/结构化/长期(pgvector)/偏好 + 压缩                                            | `services/memory/`                      |
 | SSE 流式  | EventHub 事件总线 + token 微缓冲                                                     | `services/streaming/hub.py`             |
 | 人机介入    | LangGraph interrupt 挂起 → /resume 续跑                                           | `api/agent/router.py`                   |
@@ -97,24 +100,27 @@ envs\lunjiang\python.exe scripts/load_test.py          # 知识库检索并发�
 
 ```
 main.py              FastAPI 入口（启动命令 uvicorn main:app）
-api/                 接口层（FastAPI 路由 + 中间件）
-  ├─ auth/           注册/登录/JWT
-  ├─ projects/       论文项目 CRUD + 项目知识库管理（原 gateway，命名纠偏）
-  ├─ agent/          /chat (SSE) /resume 人机介入
+api/                 接口层（FastAPI 路由 + 共享依赖 + 响应模型）
+  ├─ auth/           注册/登录/JWT（/me 当前用户）
+  ├─ projects/       论文项目 CRUD（知识库已拆分至 knowledge/）
+  ├─ knowledge/      项目级私有知识库（上传/列表/删除/库内检索，独立聚合根）
+  ├─ agent/          /chat (SSE) /resume 人机介入（编排在 ConversationService）
   ├─ observability/  Trace 回放（admin）
+  ├─ deps.py         路由共享依赖（get_owned_project 项目归属校验）
   └─ middleware/     审计中间件（fire-and-forget）
 services/            业务服务层（不得 import api/，可独立测试）
-  ├─ agent/          LangGraph 主从图 + specialists/（6 个专项 Agent）+ planner/artifacts（规划与产物）
+  ├─ agent/          LangGraph 主从图 + specialists/（6 专项 Agent）+ planner + conversation_service（对话编排）
   ├─ rag/            RAG 流水线（改写/多路召回/精排） + ingest/（语料与知识库入库）
   ├─ memory/         四层记忆 + 压缩
-  ├─ governance/     工具治理与实现（限流/熔断/重试/锁/RBAC/Skill/学术工具）
+  ├─ governance/     工具治理与实现（限流/熔断/重试/锁/RBAC/Skill/学术工具 + artifacts 结构化产物）
   ├─ classifier/     三级意图分类
   ├─ streaming/      事件总线（SSE 微缓冲）
   ├─ checkpoint/     三级降级检查点
-  ├─ llm/            LLM 统一接入（多 provider）
+  ├─ llm/            LLM 统一接入（全项目统一 LLMProvider，无 langchain 适配层）
   └─ observability/  Trace Span
 infrastructure/      基础设施层（地基，谁都得经过它）
   ├─ config.py       settings.yaml + .env + 单例
+  ├─ paths.py        路径常量单一真源（PROJECT_ROOT/CONFIG_DIR/DATA_DIR/EVALS_DIR）
   ├─ db.py           SQLAlchemy 异步引擎
   ├─ redis_client.py asyncio Redis
   ├─ audit.py        审计写库（参数截断 + 指纹化）
@@ -122,8 +128,8 @@ infrastructure/      基础设施层（地基，谁都得经过它）
   └─ models/         ORM（users/projects/memory/trace/audit/skill/knowledge）
 configs/             settings.yaml / rbac.yaml / tools.yaml / ollama/Modelfile
 evals/               评测 Harness + A/B + 七大场景回归
-scripts/             初始化 + 冒烟 + 压测脚本（_archive/ 临时脚本）
-frontend/            React 18 + Vite（SSE 对话 / Markdown / 时间线）
+scripts/             初始化 + 冒烟 + 压测脚本
+frontend/            React 18 + Vite（SSE 对话 / Markdown / 时间线 / 项目知识库面板）
 docs/                文档（学习指南 / 优化记录）
 ```
 
@@ -133,7 +139,7 @@ docs/                文档（学习指南 / 优化记录）
 
 - **`.env`**：`SECRET_KEY`（生产必改）、`APP_*`、`PG_*`、`REDIS_*`、云厂商 `*_API_KEY`（切换 provider 时填）、`AGNES_BASE_URL` / `AGNES_API_KEY`（默认对话底座）
 
-- **`configs/settings.yaml`**：`llm.default_provider` 一键切换对话底座（ollama/deepseek/zhipu/qwen/**agnes**）；`llm.embedding_provider` 与对话解耦（推荐云端对话 + 本地 bge-m3 嵌入）
+- **`configs/settings.yaml`**：`llm.default_provider` 一键切换对话底座（ollama/deepseek/zhipu/qwen/**agnes**）；`llm.embedding_provider` 与对话解耦（推荐云端对话 + 本地 bge-m3 嵌入）；pgvector 向量列维度由 `llm.providers.<底座>.embedding_dim` **动态决定**（`infrastructure/config.get_embedding_dim()`，不再硬编码 1024），嵌入底座返回维度不符时运行时抛错，切换底座若维度变化需重建 `memory_items` 表或迁移数据（当前未引入 Alembic）
 
 - **RAG 检索键**：`rag.rewrite_enabled`（Query 改写开关，可按语料规模调）、`rag.sibling_window`（相邻窗口第三引擎半径，0=关闭）、`rag.max_upload_size_mb`（知识库单文件上限）、`rag.knowledge.upload_dir`（原始文件落盘目录，默认 `data/uploads/`，已 gitignore）、`rag.knowledge.min_text_chars`（低于该字数视为扫描件/空文档拒绝）
 
@@ -143,11 +149,11 @@ docs/                文档（学习指南 / 优化记录）
 
 | 分组       | 端点                                                                                    | 鉴权     |
 | -------- | ------------------------------------------------------------------------------------- | ------ |
-| Auth     | `POST /api/auth/register`、`POST /api/auth/login`                                      | 否      |
-| Projects | `GET/POST /api/projects`、`GET/PUT/DELETE /api/projects/{id}`                          | Bearer |
+| Auth     | `POST /api/auth/register`、`POST /api/auth/login`、`GET /api/auth/me`                  | 前两者免鉴权；`/me` 需 Bearer |
+| Projects | `POST/GET /api/projects`、`GET/PATCH/DELETE /api/projects/{id}`                        | Bearer |
 | 知识库      | `POST/GET/DELETE /api/projects/{id}/knowledge[/{doc_id}]`、`POST .../knowledge/search` | Bearer |
 | Agent    | `POST /api/agent/chat`（SSE）、`POST /api/agent/resume`                                  | Bearer |
-| Trace    | `GET /observability/traces[/{id}]`                                                    | admin  |
+| Trace    | `GET /api/observability/traces`、`GET /api/observability/traces/{trace_id}`            | admin  |
 
 ## 常见问题
 

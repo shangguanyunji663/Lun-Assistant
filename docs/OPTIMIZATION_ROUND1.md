@@ -48,7 +48,7 @@
 
 **问题**：`/api/auth/login` 与 `/register` 无频率限制，可被无限尝试爆破口令。
 
-**修复**：[app/auth/router.py](../app/auth/router.py) 接入治理层现成的 Redis 滑动窗口限流器
+**修复**：[api/auth/router.py](../api/auth/router.py) 接入治理层现成的 Redis 滑动窗口限流器
 （ZSET + Lua 原子执行），按 `用户名+IP` 维度限制 5 次/分钟，超限返回 429。
 设计为 fail-open：Redis 故障时放行请求，避免基础设施故障锁死全部用户。
 

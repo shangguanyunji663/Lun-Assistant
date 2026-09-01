@@ -201,7 +201,7 @@ def get_settings():         # ③ 全局单例，读 configs/settings.yaml + 插
 # 复制环境变量模板
 copy .env.example .env
 # 起服务
-envs\lunjiang\python.exe -m uvicorn app.main:app --port 8000
+envs\lunjiang\python.exe -m uvicorn main:app --port 8000
 # 浏览器/curl: http://127.0.0.1:8000/health  → {"status":"ok","app":"lunjiang"}
 ```
 
@@ -260,7 +260,7 @@ envs\lunjiang\python.exe scripts/check_env.py   # 应看到 PostgreSQL/pgvector 
 
 看 [api/auth/security.py](../api/auth/security.py)：`get_current_user()` 是一个 FastAPI 依赖——从请求头 `Authorization: Bearer <token>` 解码 → 查用户 → 返回 `User`。任何需要登录的接口只写 `user: User = Depends(get_current_user)` 即可，**不需要每个接口自己解析 token**。
 
-角色控制同理：`require_role("admin")` 是依赖工厂，`/services/observability/traces` 就只对 admin 开放（[api/services/observability/router.py](../api/services/observability/router.py)）。
+角色控制同理：`require_role("admin")` 是依赖工厂，`/api/observability/traces` 就只对 admin 开放（[api/observability/router.py](../api/observability/router.py)）。
 
 ### 5.3 动手
 
@@ -301,7 +301,7 @@ class LLMProvider:
 
 - **`_extra()`** **provider 特殊参数**：本地 Ollama 传 `think: False`（关掉 qwen3 的思考链，省时）和 `options.num_ctx=4096`（限制上下文防内存爆炸，第 2 轮优化加的）；
 
-- **对话/嵌入双底座解耦**（第 5 轮优化加）：`__init__()` 里按 `llm.embedding_provider` 单独解析嵌入 client 与模型（默认 ollama/bge-m3），chat 仍走 `default_provider`；pgvector 列维度（`models/memory.py` 按 `providers.ollama.embedding_dim` 声明，bge-m3=1024）须与嵌入底座一致；
+- **对话/嵌入双底座解耦**（第 5 轮优化加，第 6 轮升级）：`__init__()` 里按 `llm.embedding_provider` 单独解析嵌入 client 与模型（默认 ollama/bge-m3），chat 仍走 `default_provider`；pgvector 列维度不再硬编码，`models/memory.py` 用 `Vector(get_embedding_dim())` 按运行时底座读取 `providers.*.embedding_dim`（`infrastructure/config.py`），且 `embed()` 返回维度与配置不符时直接抛错——**换底座维度变化（如 zhipu 2048）也只在建表/迁移时处理，不再悄悄错**；
 
 - **`json_mode`** **容错解析**：`_extract_json()` 剥掉 markdown 代码块再取第一对 `{ }`，因为 LLM 的输出格式不稳。
 
@@ -507,7 +507,7 @@ LLM 会乱调工具（幻觉参数、重复调用、一次调几十次），外�
 
 ```
 services/governance/
-├── tool_registry.py     注册中心：从 configs/tools.yaml 读取工具清单并缓存（类别属性级缓存）
+├── tool_registry.py     注册中心：tools.yaml 治理配置进程内单次加载（lru_cache）+ register() 幂等（重复注册同 handler 直接跳过）；同步 handler 自动经线程池执行
 ├── rate_limiter.py      Redis ZSET 滑动窗口限流（1 分钟窗口）
 ├── circuit_breaker.py   三态熔断：CLOSED → OPEN(连续失败5次) → HALF_OPEN(30s后试探)
 ├── retry.py             指数退避重试（0.5s 起，最大 8s），三次后降级/抛人机兜底
@@ -559,14 +559,14 @@ envs\lunjiang\python.exe scripts/smoke_governance.py
 
 - 一个 `asyncio.Queue` 发放全链路事件；
 
-- 事件分两类：`token`（文本增量）和 `event`（节点开始/工具调用等元信息）；
+- 事件按类型分层：`token`（文本增量，微缓冲）与节点生命周期/路由事件（`node_start`/`node_end`/`intent`/`route`/`interrupt`/`final`/`done`/`error`；Planner 运行时另发 `plan`/`step_event`，见第 16 课）；
 
 - token 走**微缓冲**：攒一个小批次再推，避免"一段文字被切成几十个碎片"；
 
 - 前端用 EventSource 订阅，同一队列出流，天然有序。
 
 ```python
-hub.emit("event", {"node": "literature", "status": "running"})
+hub.emit("node_start", {"agent": "literature", "title": "文献检索Agent"})
 async for chunk in provider.chat_stream(...):
     await hub.emit_token(chunk)     # 微缓冲
 await hub.flush_tokens()
@@ -593,12 +593,12 @@ envs\lunjiang\python.exe scripts/smoke_trace.py
 | 文件               | 职责                                    |
 | ---------------- | ------------------------------------- |
 | `main.jsx`       | 入口                                    |
-| `App.jsx`        | 登录/注册、项目页、对话页 + 时间线；助手消息走 Markdown    |
-| `api.js`         | fetch 封装：自动带 token、解析 SSE 事件流         |
-| `styles.css`     | 全局样式（Markdown 排版）                     |
+| `App.jsx`        | 登录/注册、项目页、对话页 + 时间线；**项目知识库面板**（上传/清单/检索）；助手消息走 Markdown |
+| `api.js`         | fetch 封装：自动带 token、解析 SSE 事件流；项目/知识库 API（`knowledge*` 4 接口） |
+| `styles.css`     | 全局样式（青绿设色山水主题：月白底/山影剪影/竹青/印泥红）          |
 | `vite.config.js` | dev 代理 `/api → http://127.0.0.1:8000` |
 
-SSE 消费侧要点：`api.js` 里把 `POST /api/agent/chat` 的事件流按类型分发——`event` 更新"Agent 正在做什么"，`token` 追加文本，`final` 收尾。
+SSE 消费侧要点：`api.js` 里把 `POST /api/agent/chat` 的事件流按类型分发——`node_start/route/node_end` 更新 "Agent 正在做什么"，`token` 追加文本，`plan/step_event` 展示 Planner 的规划与步骤，`final` 收尾。
 
 ### 端到端自检
 
@@ -804,7 +804,7 @@ envs\lunjiang\python.exe evals/regression.py   # S1 入库/S2 隔离/S3 多路/S
 envs\lunjiang\python.exe scripts/load_test.py  # 知识库检索并发压测（先起 uvicorn）
 ```
 
-**读代码**：`services/rag/ingest/pipeline.py`（入库链路）→ `services/rag/pipeline.py`（多路+保底+降噪）→ `services/rag/query_rewrite.py`（规则兜底）→ `services/agent/planner.py`（规划器）→ `services/agent/artifacts.py`（产物模板）。
+**读代码**：`services/rag/ingest/pipeline.py`（入库链路）→ `services/rag/pipeline.py`（多路+保底+降噪）→ `services/rag/query_rewrite.py`（规则兜底）→ `services/agent/planner.py`（规划器）→ `services/governance/artifacts.py`（产物模板）。
 
 ***
 
@@ -813,7 +813,8 @@ envs\lunjiang\python.exe scripts/load_test.py  # 知识库检索并发压测（�
 ### 一次对话的调用链（对应文件）
 
 ```
-api/agent/router.py → AgentEngine.run()
+api/agent/router.py → conversation_service.stream_chat()/stream_resume()   # services/agent/conversation_service.py（编排：记忆双写/压缩/偏好/归档）
+    → AgentEngine.run()
     → services/memory/（四层组装）
     → services/agent/engine.py：绑定 EventHub → 跑 LangGraph 图
         → supervisor_node（意图分类：services/classifier/intent.py；复杂任务 → planner）
@@ -843,9 +844,10 @@ services/observability/trace.py 全程 span 记录；api/middleware/audit.py 后
 | 意图分类        | `services/classifier/intent.py` `IntentClassifier.classify()`                      |
 | 图构建         | `services/agent/builder.py` `build_graph()`                                        |
 | 主控节点        | `services/agent/supervisor.py` `supervisor_node()`                                 |
+| 对话编排        | `services/agent/conversation_service.py` `ConversationService.stream_chat()`（路由只做校验+SSE，编排下沉于此） |
 | 专项 Agent 定义 | `services/agent/specialists/specs.py` `SpecialistSpec` / `SPECIALISTS`             |
 | 规划器         | `services/agent/planner.py` `planner_node()` / `is_complex_task()`                 |
-| 结构化产物       | `services/agent/artifacts.py` `generate_artifact()`                                |
+| 结构化产物       | `services/governance/artifacts.py` `generate_artifact()`                            |
 | 工具治理入口      | `services/governance/tool_registry.py` `ToolRegistry.call()`                       |
 | 工具实现        | `services/governance/tools_impl.py` `register_all()` + `academic_tools.py`         |
 | 流式事件        | `services/streaming/hub.py` `EventHub`                                             |
