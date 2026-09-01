@@ -17,6 +17,7 @@
 | [🛠 优化记录五](docs/OPTIMIZATION_ROUND5.md) | 第五轮优化（学术工具生态/并发压测/agnes对话底座）      |
 | [🛠 优化记录六](docs/OPTIMIZATION_ROUND6.md) | 第六轮优化（架构改进与工程化治理/P0修复/测试骨架）       |
 | [🛠 优化记录七](docs/OPTIMIZATION_ROUND7.md) | 第七轮修改（前端视觉重构：青绿长卷/会话卷册/山水浓度滑杆） |
+| [📋 目录结构审查](docs/ARCHITECTURE_REVIEW.md) | 目录合理性评估（问题清单 + 优化建议）          |
 | [💡 常见问题](#常见问题)                        | 排障手册                              |
 
 ## 快速开始
