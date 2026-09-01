@@ -1,9 +1,9 @@
 """LLM 统一接入层。
 
 - 所有 provider 走 OpenAI 兼容协议，切换 configs/settings.yaml 的 llm.default_provider 即可换底座。
-- 提供两类入口：
-  1. LLMProvider: 轻量异步客户端（意图分类/Query改写/摘要等工具型调用）
-  2. get_chat_model: langchain-openai 的 ChatOpenAI（LangGraph 图内节点使用）
+- 全项目统一使用 LLMProvider（openai 官方异步 SDK 直连）：
+  轻量调用（意图分类/Query 改写/摘要）、流式对话、Function-Calling 循环、嵌入均走此类。
+  LangGraph 图内节点同样直接使用 LLMProvider，不经过 langchain 的 ChatModel 适配层。
 
 ⚠️ 超时保护：所有 API 调用均注入 timeout（读取 llm.timeout 配置），避免 Ollama 卡顿/模型忙时
 请求无限挂起，导致前端 SSE 连接"卡死"。
@@ -13,7 +13,7 @@ from typing import AsyncIterator, Iterable
 
 from openai import AsyncOpenAI
 
-from infrastructure.config import get_value
+from infrastructure.config import get_embedding_dim, get_value
 
 # 客户端缓存：按 (provider名, base_url, api_key) 复用连接池，避免每次调用重建 TCP/TLS
 _client_cache: dict[tuple[str, str, str], AsyncOpenAI] = {}
@@ -129,7 +129,17 @@ class LLMProvider:
                 f"未配置 embedding_model（见 settings.yaml llm.embedding_provider）")
         resp = await self._embed_client.embeddings.create(
             model=self.embedding_model, input=texts, timeout=_timeout("embedding"))
-        return [d.embedding for d in resp.data]
+        vectors = [d.embedding for d in resp.data]
+        if vectors:
+            expected = get_embedding_dim()
+            actual = len(vectors[0])
+            if actual != expected:
+                raise RuntimeError(
+                    f"嵌入维度不一致: 底座 {self.embedding_model} 返回 {actual} 维，"
+                    f"但配置/向量列期望 {expected} 维（get_embedding_dim）。"
+                    "请核对 settings.yaml llm.embedding_provider 与 providers.*.embedding_dim，"
+                    "维度变更需重建 memory_items 表或迁移数据")
+        return vectors
 
     # ---------- Function Calling 循环 ----------
     async def chat_tools(
@@ -198,26 +208,8 @@ class LLMProvider:
         return json.loads(text[start:end + 1])
 
 
-def get_chat_model(temperature: float | None = None, streaming: bool = False):
-    """LangGraph 节点用的 ChatOpenAI 实例。"""
-    from langchain_openai import ChatOpenAI
-
-    name, cfg = _provider_cfg()
-    kwargs = dict(
-        model=cfg["chat_model"],
-        base_url=cfg["base_url"],
-        api_key=cfg.get("api_key") or "EMPTY",
-        temperature=temperature if temperature is not None else cfg.get("temperature", 0.7),
-        streaming=streaming,
-        timeout=_timeout("chat_stream" if streaming else "chat"),
-    )
-    if name == "ollama":
-        kwargs["model_kwargs"] = {"think": False, "options": {"num_ctx": 4096}}
-    return ChatOpenAI(**kwargs)
-
-
 def _stringify(result) -> str:
-    import json
+    """工具调用结果序列化给 LLM（超长截断，避免撑爆上下文）。"""
     try:
         return json.dumps(result, ensure_ascii=False, default=str)[:3000]
     except Exception:

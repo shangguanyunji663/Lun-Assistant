@@ -10,19 +10,25 @@
 4. Replan：步骤失败 → 自动带"简化要求"重试一次 → 仍失败则记录错误继续，
    保证部分成功结果不丢失；
 5. 汇总：按步骤输出 Markdown 产物。
+
+工具注册时机：AgentEngine.get_graph()（单例锁内幂等注册），本节点不再重复注册。
 """
 import json
 import logging
 
+from services.governance.tool_registry import tool_registry
 from services.llm.provider import LLMProvider
 from services.observability.trace import span
+from services.streaming.hub import current_hub
 
 logger = logging.getLogger("lunjiang.graph")
 
 _MAX_STEPS = 5
 _ACTION_VERBS = ("分析", "检索", "搜索", "撰写", "写", "生成", "规划", "整理", "总结",
                  "设计", "查重", "降重", "校验", "检测", "翻译", "润色")
-_GOAL_WORDS = ("综述", "开题", "报告", "大纲", "方案", "计划", "路线", "完整流程")
+# 目标词：与 _ACTION_VERBS 中的动名词保持一致（如"规划"同时是动作与目标），
+# 避免同一词在动词表命中、在目标词表缺失导致的漏判
+_GOAL_WORDS = ("综述", "开题", "报告", "大纲", "方案", "计划", "规划", "路线", "完整流程")
 
 
 def is_complex_task(user_input: str, intent: str = "") -> bool:
@@ -113,12 +119,6 @@ async def _llm_plan(user_input: str, context: str, allowed: set[str]) -> dict | 
 
 async def planner_node(state: dict) -> dict:
     """LangGraph 节点：Plan-Execute-Replan，产出 final_output。"""
-    from services.governance.tools_impl import register_all
-    from services.streaming.hub import current_hub
-    from services.governance.tool_registry import tool_registry
-
-    # 保证工具已注册（治理配置从 tools.yaml 读取）
-    register_all()
     hub = current_hub()
     user_input = state.get("user_input", "")
     visited = list(state.get("visited_agents", []))
@@ -128,8 +128,7 @@ async def planner_node(state: dict) -> dict:
         await hub.emit("node_start", {"agent": "planner", "title": "任务规划Agent"},
                        node="planner")
 
-        allowed = {name for name, spec in tool_registry.tools.items()}
-        allowed |= {"answer"}
+        allowed = set(tool_registry.tools) | {"answer"}
         context = state.get("memory_brief", "") or ""
 
         # ---- 1. Plan ----
@@ -173,14 +172,11 @@ async def planner_node(state: dict) -> dict:
 async def _execute_step(state, action: str, params: dict, evidence: list[str],
                         hub, node_label: str, plan: dict) -> tuple[str, str]:
     """执行单步；失败带简化要求重试一次（Replan）；返回 (status, body)。"""
-    from services.governance.tool_registry import tool_registry
-
     for attempt in (1, 2):
         try:
             if action == "answer":
                 prompt = params.get("prompt", params.get("query", ""))
                 evidence_txt = "\n".join(f"- {e[:300]}" for e in evidence[-3:]) if evidence else "(无)"
-                from services.llm.provider import LLMProvider
                 body = await LLMProvider().chat([
                     {"role": "system",
                      "content": "你是论匠论文助手，基于已收集的证据回答问题，证据不足时明确说明。"},
@@ -204,7 +200,7 @@ async def _execute_step(state, action: str, params: dict, evidence: list[str],
 
 
 def _assemble(user_input: str, plan: dict, report: list[dict], evidence: list[str]) -> str:
-    lines = [f"# 任务执行报告", ""]
+    lines = ["# 任务执行报告", ""]
     lines.append(f"**目标**：{plan['goal'] or user_input}")
     lines.append(f"**执行状态**：" +
                  ("✅ 全部步骤成功" if all(r["status"] == "ok" for r in report) else "⚠️ 部分步骤未完成"))

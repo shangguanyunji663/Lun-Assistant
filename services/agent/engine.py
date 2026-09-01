@@ -12,8 +12,16 @@ import contextlib
 import logging
 from typing import Any, AsyncIterator
 
+from langgraph.types import Command
+
+from infrastructure.db import get_session_factory
+from services.agent.builder import build_graph
 from services.checkpoint.tiered import TieredCheckpointer
-from services.streaming.hub import EventHub, StreamEvent
+from services.memory.long_term import long_term_memory
+from services.memory.preference import preference_memory
+from services.memory.short_term import short_term_memory
+from services.memory.structured import structured_memory
+from services.streaming.hub import EventHub, StreamEvent, bind_hub
 
 logger = logging.getLogger("lunjiang.engine")
 
@@ -29,8 +37,11 @@ class AgentEngine:
         if cls._graph is None:
             async with cls._lock:
                 if cls._graph is None:
+                    # 工具注册幂等，这里兜底注册一次，覆盖脚本/评测等未走
+                    # FastAPI lifespan 的入口
+                    from services.governance.tools_impl import register_all
+                    register_all()
                     saver, tier = await TieredCheckpointer.create()
-                    from services.agent.builder import build_graph
                     cls._graph = build_graph(checkpointer=saver)
                     cls._tier = tier
                     logger.info("LangGraph 编译完成, checkpointer=%s", tier)
@@ -61,7 +72,6 @@ class AgentEngine:
         config = {"configurable": {"thread_id": session_id}}
 
         if resume is not None:
-            from langgraph.types import Command
             invoke_input: Any = Command(resume=resume)
         else:
             history_text, memory_brief = await cls._assemble_memory(
@@ -76,7 +86,6 @@ class AgentEngine:
             }
 
         async def produce() -> None:
-            from services.streaming.hub import bind_hub
             with bind_hub(hub):
                 try:
                     async for _ in graph.astream(invoke_input, config=config,
@@ -119,7 +128,6 @@ class AgentEngine:
 
         # L1 短期对话
         try:
-            from services.memory.short_term import short_term_memory
             msgs = await short_term_memory.history(project_id, session_id)
             history_text = "\n".join(
                 f"{'用户' if m.get('role') == 'user' else '助手'}: {m.get('content', '')}"
@@ -128,19 +136,16 @@ class AgentEngine:
             logger.warning("短期记忆不可用，跳过历史装配", exc_info=True)
 
         try:
-            from infrastructure.db import get_session_factory
             factory = get_session_factory()
             async with factory() as db:
                 # L2 项目结构化
                 if project_id is not None:
-                    from services.memory.structured import structured_memory
                     mem = await structured_memory.get(db, project_id)
                     brief = structured_memory.render_brief(mem)
                     if brief:
                         brief_parts.append(brief)
                 # L3 长期向量召回（摘要/事实/决策）
                 if user_input:
-                    from services.memory.long_term import long_term_memory
                     recalled = await long_term_memory.recall_text(
                         db, query=user_input, project_id=project_id,
                         user_id=user_id, kinds=["summary", "decision", "fact"],
@@ -149,7 +154,6 @@ class AgentEngine:
                         brief_parts.append(f"[相关历史记忆]\n{recalled}")
                 # L4 用户偏好
                 if user_id is not None:
-                    from services.memory.preference import preference_memory
                     prefs = await preference_memory.recall(db, user_id, top_k=5)
                     if prefs:
                         brief_parts.append("[用户偏好]\n" + "\n".join(f"- {p}" for p in prefs))

@@ -4,7 +4,12 @@
 - 二级 PostgreSQL: Redis 不可用时持久化降级
 - 三级 Memory: 都不可用时进程内兜底（单机开发模式）
 - 对图编译透明: 返回的 saver 实现同一 BaseCheckpointSaver 接口
+
+注：langgraph.checkpoint.{redis,postgres} 为可选依赖，保留函数内导入以支持
+"装了哪级就用哪级"的降级语义，属刻意设计而非延迟导入坏味道。
 """
+import asyncio
+import contextlib
 import logging
 
 from infrastructure.config import get_value
@@ -14,9 +19,6 @@ logger = logging.getLogger("lunjiang.checkpoint")
 
 def with_suppress_close(pool) -> None:
     """失败时尽力关闭连接池，避免残留 pending worker 任务。"""
-    import asyncio
-    import contextlib
-
     task = asyncio.ensure_future(pool.close())
     async def _wait():
         with contextlib.suppress(Exception):

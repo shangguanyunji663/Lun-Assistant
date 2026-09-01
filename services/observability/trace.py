@@ -4,6 +4,8 @@
 - Span 结束后异步落库（fire-and-forget），不阻塞主流程。
 - 行为回放 = 按 trace_id 拉取全部 Span 按时间还原执行序列。
 """
+import asyncio
+import json
 import logging
 import time
 import uuid
@@ -11,7 +13,7 @@ from contextvars import ContextVar
 from contextlib import contextmanager
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from infrastructure.config import get_value
 from infrastructure.db import get_session_factory
@@ -112,7 +114,6 @@ def _persist(sp: _SpanCtx) -> None:
         except Exception:
             logger.exception("Trace 落库失败 span=%s", sp.name)
 
-    import asyncio
     try:
         loop = asyncio.get_running_loop()
         loop.create_task(_write())
@@ -124,7 +125,6 @@ def _safe(v: Any) -> dict | None:
     if v is None:
         return None
     try:
-        import json
         return json.loads(json.dumps(v, ensure_ascii=False, default=str))
     except Exception:
         return {"repr": repr(v)}
@@ -150,13 +150,12 @@ async def get_trace(trace_id: str) -> list[dict]:
 
 
 async def list_traces(limit: int = 50) -> list[dict]:
-    from sqlalchemy import func as f
     async with get_session_factory()() as db:
         rows = (await db.execute(
-            select(TraceSpan.trace_id, f.count().label("spans"),
-                   f.sum(TraceSpan.latency_ms).label("latency"),
-                   f.sum(TraceSpan.cost_usd).label("cost"))
-            .group_by(TraceSpan.trace_id).order_by(f.max(TraceSpan.id).desc()).limit(limit)
+            select(TraceSpan.trace_id, func.count().label("spans"),
+                   func.sum(TraceSpan.latency_ms).label("latency"),
+                   func.sum(TraceSpan.cost_usd).label("cost"))
+            .group_by(TraceSpan.trace_id).order_by(func.max(TraceSpan.id).desc()).limit(limit)
         )).all()
     return [
         {"trace_id": r.trace_id, "spans": r.spans, "total_latency_ms": int(r.latency or 0),

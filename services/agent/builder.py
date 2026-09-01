@@ -8,16 +8,16 @@ import logging
 
 from langgraph.graph import END, START, StateGraph
 
+from services.agent.planner import planner_node
+from services.agent.specialists import SPECIALISTS, make_specialist_node
+from services.agent.state import AgentState
+from services.agent.supervisor import supervisor_node
+
 logger = logging.getLogger("lunjiang.graph")
 
 
 def build_graph(checkpointer=None):
     """编译主从图。checkpointer 传入三级降级 saver 以支持断点恢复与 interrupt/resume。"""
-    from services.agent.specialists import SPECIALISTS, make_specialist_node
-    from services.agent.state import AgentState
-    from services.agent.supervisor import supervisor_node
-    from services.agent.planner import planner_node
-
     builder = StateGraph(AgentState)
     builder.add_node("supervisor", supervisor_node)
     for name, spec in SPECIALISTS.items():

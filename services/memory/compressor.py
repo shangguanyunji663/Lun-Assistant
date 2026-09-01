@@ -7,7 +7,10 @@ import re
 from dataclasses import dataclass, field
 
 from infrastructure.config import get_value
+from infrastructure.db import get_session_factory
 from services.llm.provider import LLMProvider
+from services.memory.long_term import long_term_memory
+from services.memory.short_term import short_term_memory
 
 logger = logging.getLogger("lunjiang.memory")
 
@@ -128,9 +131,6 @@ async def compress_window_if_needed(project_id: int, session_id: str):
     体积超阈值 → 截断旧消息 → LLM 摘要 → 摘要归档长期向量记忆。
     返回 CompressResult（未触发时为 None）。
     """
-    from services.memory.long_term import long_term_memory
-    from services.memory.short_term import short_term_memory
-
     trigger = int(get_value("memory", "compress_trigger_tokens", default=3000))
     if await short_term_memory.total_chars(project_id, session_id) <= trigger:
         return None
@@ -146,7 +146,6 @@ async def compress_window_if_needed(project_id: int, session_id: str):
     result = await context_compressor.compress(evicted, keep_recent=0, force=True)
     if result.summary:
         try:
-            from infrastructure.db import get_session_factory
             async with get_session_factory()() as db:
                 await long_term_memory.remember(
                     db, content=result.summary, kind="summary",

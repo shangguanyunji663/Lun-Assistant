@@ -10,7 +10,10 @@ from langgraph.types import interrupt
 
 from services.agent.specialists.schemas import build_tool_schemas
 from services.agent.specialists.specs import SpecialistSpec
+from services.governance.tool_registry import tool_registry
+from services.llm.provider import LLMProvider
 from services.observability.trace import span
+from services.streaming.hub import current_hub
 
 logger = logging.getLogger("lunjiang.graph")
 
@@ -19,9 +22,6 @@ def make_specialist_node(spec: SpecialistSpec) -> Callable:
     """生成 LangGraph 节点函数。"""
 
     async def node(state: dict) -> dict:
-        from services.governance.tool_registry import tool_registry
-        from services.streaming.hub import current_hub
-
         hub = current_hub()
         user_input = state.get("user_input", "")
         visited = list(state.get("visited_agents", []))
@@ -53,7 +53,7 @@ def make_specialist_node(spec: SpecialistSpec) -> Callable:
                     name, user_id=state.get("user_id"), user_role=state.get("user_role", "student"),
                     call_context={"agent": spec.name}, **args)
 
-            provider = _provider()
+            provider = LLMProvider()
             result = await provider.chat_tools(
                 messages, build_tool_schemas(spec.tools), executor, max_rounds=3)
 
@@ -89,8 +89,3 @@ def make_specialist_node(spec: SpecialistSpec) -> Callable:
                 "final_output": output, "next_agent": "supervisor"}
 
     return node
-
-
-def _provider():
-    from services.llm.provider import LLMProvider
-    return LLMProvider()

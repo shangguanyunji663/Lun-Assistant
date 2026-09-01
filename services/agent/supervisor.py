@@ -8,8 +8,13 @@
 """
 import logging
 
-from services.classifier.intent import intent_classifier
+from infrastructure.config import get_value
+from services.agent.planner import is_complex_task
+from services.agent.specialists import INTENT_TO_AGENT
+from services.classifier.intent import INTENT_LABEL, intent_classifier
+from services.llm.provider import LLMProvider
 from services.observability.trace import span
+from services.streaming.hub import current_hub
 
 logger = logging.getLogger("lunjiang.graph")
 
@@ -17,13 +22,10 @@ DEFAULT_MAX_HOPS = 3
 
 
 def _max_hops() -> int:
-    from infrastructure.config import get_value
     return int(get_value("agent", "max_hops", default=DEFAULT_MAX_HOPS))
 
 
 async def supervisor_node(state: dict) -> dict:
-    from services.streaming.hub import current_hub
-
     hub = current_hub()
     visited = list(state.get("visited_agents", []))
 
@@ -35,8 +37,6 @@ async def supervisor_node(state: dict) -> dict:
 
         if not visited:
             # ---- 首次进入：意图预分类 + 路由 ----
-            from services.classifier.intent import INTENT_LABEL
-
             ir = await intent_classifier.classify(state.get("user_input", ""))
             sp.set_io(output={"intent": ir.intent, "confidence": ir.confidence,
                               "layer": ir.layer})
@@ -54,8 +54,6 @@ async def supervisor_node(state: dict) -> dict:
                         "next_agent": "__end__", "final_output": output,
                         "stop_reason": "done"}
 
-            from services.agent.planner import is_complex_task
-            from services.agent.specialists import INTENT_TO_AGENT
             if is_complex_task(state.get("user_input", ""), ir.intent):
                 # 复合任务（多动作/目标词）：进入 Plan-Execute-Replan 规划器
                 next_agent = "planner"
@@ -80,8 +78,6 @@ async def supervisor_node(state: dict) -> dict:
 
 async def _chitchat_reply(state: dict, hub) -> str:
     """闲聊直接作答：流式输出经 hub 下发，失败降级为非流式。"""
-    from services.llm.provider import LLMProvider
-
     history_text = state.get("history_text", "")
     system = ("你是毕业论文助手「论匠」。用户未提出论文相关请求时友好回应，"
               "简要介绍你可以帮助选题分析、文献检索、论文写作、格式校验、查重降重、AI检测。")
