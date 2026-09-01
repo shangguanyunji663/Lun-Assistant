@@ -31,6 +31,9 @@ frontend/.vite/
 .idea/
 .vscode/
 
+# 工具数据（WorkBuddy 会话记忆等，不入库）
+.workbuddy/
+
 # OS
 Thumbs.db
 .DS_Store
