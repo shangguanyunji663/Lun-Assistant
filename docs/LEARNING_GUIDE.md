@@ -21,7 +21,7 @@
 
 - [第 5 课 认证：JWT + bcrypt + 登录限流](#第-5-课-认证jwt--bcrypt--登录限流)
 
-- [第 6 课 LLM 接入层：一个接口换四个底座](#第-6-课-llm-接入层一个接口换四个底座)
+- [第 6 课 LLM 接入层：统一入口，多底座切换](#第-6-课-llm-接入层统一入口多底座切换)
 
 - [第 7 课 记忆体系：四层记忆 + 自动压缩](#第-7-课-记忆体系四层记忆--自动压缩)
 
@@ -79,17 +79,17 @@
 
 **这就是本项目目录的由来**——每一个顶层包都对应上述一个能力：
 
-| 能力      | 顶层包                         |
-| ------- | --------------------------- |
-| ① 意图分类  | `services/classifier/`          |
-| ② 记忆    | `services/memory/`                   |
-| ③ 检索    | `services/rag/`                      |
-| ④ 工具    | `services/governance/tools_impl.py`  |
-| ⑤ 治理    | `services/governance/`               |
-| ⑥ 可观测   | `services/observability/`            |
-| ⑦ 人机介入  | `services/agent/`（interrupt 机制） |
-| ⑧ 流式    | `services/streaming/`           |
-| 编排所有智能体 | `services/agent/`               |
+| 能力      | 顶层包                                 |
+| ------- | ----------------------------------- |
+| ① 意图分类  | `services/classifier/`              |
+| ② 记忆    | `services/memory/`                  |
+| ③ 检索    | `services/rag/`                     |
+| ④ 工具    | `services/governance/tools_impl.py` |
+| ⑤ 治理    | `services/governance/`              |
+| ⑥ 可观测   | `services/observability/`           |
+| ⑦ 人机介入  | `services/agent/`（interrupt 机制）     |
+| ⑧ 流式    | `services/streaming/`               |
+| 编排所有智能体 | `services/agent/`                   |
 
 > 💡 学习心得：**好的项目结构是先有需求地图，再有代码目录**。你不需要背目录，只要记住这张能力表。
 
@@ -125,7 +125,7 @@
 ④ Supervisor 意图分类     （services/agent/supervisor.py → services/classifier/intent.py）
    │  判定：literature（文献检索类）
    ▼
-⑤ Specialist 文献 Agent    （services/agent/agents/specialists.py）
+⑤ Specialist 文献 Agent    （services/agent/specialists/）
    │  需要调用"文献检索"工具
    ▼
 ⑥ 工具治理栈 ToolRegistry.call()  （services/governance/tool_registry.py）
@@ -275,11 +275,11 @@ $r = Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/auth/login" -Method Post 
 
 ***
 
-## 第 6 课 LLM 接入层：一个接口换四个底座
+## 第 6 课 LLM 接入层：统一入口，多底座切换
 
 ### 6.1 现成的仓库问题
 
-项目要支持 Ollama / DeepSeek / 智谱 / 通义 四种模型，但它们都兼容 **OpenAI 协议**。所以正确做法是：**统一封装一层，内部切换 base\_url**。
+项目要支持 Ollama / DeepSeek / 智谱 / 通义 / agnes 等多种模型，但它们都兼容 **OpenAI 协议**。所以正确做法是：**统一封装一层，内部切换 base\_url**；同时**对话与嵌入可分离底座**（如默认对话走云端 agnes-2.5-flash、嵌入走本地 bge-m3）。
 
 ### 6.2 LLMProvider 类（[services/llm/provider.py](../services/llm/provider.py)）
 
@@ -299,6 +299,8 @@ class LLMProvider:
 
 - **`_extra()`** **provider 特殊参数**：本地 Ollama 传 `think: False`（关掉 qwen3 的思考链，省时）和 `options.num_ctx=4096`（限制上下文防内存爆炸，第 2 轮优化加的）；
 
+- **对话/嵌入双底座解耦**（第 5 轮优化加）：`__init__()` 里按 `llm.embedding_provider` 单独解析嵌入 client 与模型（默认 ollama/bge-m3），chat 仍走 `default_provider`；pgvector 列维度（`models/memory.py` 按 `providers.ollama.embedding_dim` 声明，bge-m3=1024）须与嵌入底座一致；
+
 - **`json_mode`** **容错解析**：`_extract_json()` 剥掉 markdown 代码块再取第一对 `{ }`，因为 LLM 的输出格式不稳。
 
 ### 6.3 切换底座
@@ -307,7 +309,8 @@ class LLMProvider:
 
 ```yaml
 llm:
-  default_provider: ollama   # ← 改成 deepseek / zhipu / qwen 即在云端跑
+  default_provider: agnes          # 对话底座 ← 可选 ollama / deepseek / zhipu / qwen
+  embedding_provider: ollama       # 嵌入底座与对话解耦（本地 bge-m3）
 ```
 
 代码零改动。
@@ -329,7 +332,7 @@ llm:
 用户偏好   services/memory/preference.py   用户长期习惯（"我偏好综述式回答"）
 ```
 
-### 7.2 短期记忆怎么实现（[services/memory/short\_term.py](../services/services/memory/short_term.py)）
+### 7.2 短期记忆怎么实现（[services/memory/short\_term.py](../services/memory/short_term.py)）
 
 Redis 里一个 key 存一个会话的多条消息（`lunjiang:chat:{project}:{session}`），方法签名一览：
 
@@ -340,7 +343,7 @@ async def total_chars(project_id, session_id) -> int
 async def evict_compressed(project_id, session_id, keep_last) -> list[dict]
 ```
 
-### 7.3 上下文压缩（[services/memory/compressor.py](../services/services/memory/compressor.py)）
+### 7.3 上下文压缩（[services/memory/compressor.py](../services/memory/compressor.py)）
 
 问题：聊久了上下文太大，塞不进 LLM 窗口、费 token。方案是**四级压缩流水线**：
 
@@ -372,20 +375,22 @@ envs\lunjiang\python.exe scripts/smoke_memory.py   # 四层 + 压缩全部自检
 
 直接拿用户原话去搜有三大痛点，每一阶段解一个：
 
-| 阶段         | 痛点                             | 解决                                              |
-| ---------- | ------------------------------ | ----------------------------------------------- |
-| ① Query 改写 | 用户话太口语（"那篇讲可解释性的"），直接搜匹配差      | 先让 LLM 改写成检索友好的查询（含防漂移三件套）                      |
-| ② 混合召回     | 单路向量漏关键词，单路 BM25 漏同义改写         | 稠密(pgvector) + 稀疏(BM25/jieba) 双路召回，**RRF 分数融合** |
-| ③ 交叉精排     | 召回 20 条里有 15 条噪音，直接进 LLM 浪费上下文 | bge-reranker-base 交叉编码器逐条打分，只留 Top5             |
+| 阶段         | 痛点                             | 解决                                                                         |
+| ---------- | ------------------------------ | -------------------------------------------------------------------------- |
+| ① Query 改写 | 用户话太口语（"那篇讲可解释性的"），直接搜匹配差      | 先改写成检索友好的查询：LLM 改写 + 规则字典兜底 + 拒答/漂移回退（防漂移，见 8.3）                           |
+| ② 混合召回     | 单路向量漏关键词，单路 BM25 漏同义改写         | 稠密(pgvector) + 稀疏(BM25/jieba) + **相邻窗口**多路召回，**RRF 分数融合**（项目知识库场景另有项目路与保底） |
+| ③ 交叉精排     | 召回 20 条里有 15 条噪音，直接进 LLM 浪费上下文 | bge-reranker-base 交叉编码器逐条打分，只留 Top5（含降噪对比）                                 |
 
 ### 8.2 各文件职责
 
 ```
 services/rag/ingest/corpus_loader.py   语料 *.txt → 分块(512字符, 64重叠) → bge-m3 向量 → 入 pgvector + 重建 BM25
-services/rag/retriever.py              HybridRetriever：dense_search / sparse_search / rrf_fuse
+services/rag/ingest/parsers.py         项目知识库文档解析器工厂（PDF/DOCX/TXT/MD，扫描件拒绝）
+services/rag/ingest/pipeline.py        知识库文档 上传→解析→分块→向量化入库（MD5去重/批量embedding）
+services/rag/retriever.py              HybridRetriever：dense_search / sparse_search / project_dense_search / sibling_search / rrf_fuse
 services/rag/reranker.py               Reranker：bge-reranker-base（CPU 多线程 + 本地缓存检测）
-services/rag/query_rewrite.py          rewrite_query()：LLM 改写
-services/rag/pipeline.py               RagPipeline.search()：把上面串成流水线
+services/rag/query_rewrite.py          rewrite_query()：LLM 改写，失败/拒答/漂移回退规则字典改写
+services/rag/pipeline.py               RagPipeline.search()：把上面串成流水线（多路融合 + 项目保底 + 降噪）
 ```
 
 ### 8.3 防漂移三件套（第 1 轮 A/B 实验的重要产出）
@@ -396,12 +401,12 @@ LLM 改写并不总是变好，两种典型翻车：
 
 - **越域拒答**：改写模型说"这不归我管"返回空。
 
-修复（[services/rag/pipeline.py](../services/services/rag/pipeline.py)）：
+修复（[services/rag/pipeline.py](../services/rag/pipeline.py) + [query\_rewrite.py](../services/rag/query_rewrite.py)）：
 
 ```
-if 改写结果被判定为拒答(越域拒绝) → 回退用原查询
-if 改写后召回结果太差 → 与原查询的稠密检索结果合并兜底
-精排阶段 → 改写查询与原查询两份结果各订一遍，取打分更高的
+改写器拒答/输出过短/语义漂移（字符重合度<0.15） → 回退规则字典改写（第4轮升级，不再直接回退原查询）
+改写生效时 → 原查询独立一路稠密召回参与 RRF 融合（语义锚点兜底）
+精排阶段 → 改写查询与原查询两份分数取更高的
 ```
 
 A/B 数据支撑：Recall\@5 100% 恢复，MRR 0.917（比基准 +0.17）。**这就是"用评测说话"的范例**（见第 14 课）。
@@ -413,7 +418,7 @@ envs\lunjiang\python.exe scripts/ingest_corpus.py     # 先把语料入库
 envs\lunjiang\python.exe scripts/smoke_rag.py         # 三阶段检索自检
 ```
 
-**读代码**：[services/rag/retriever.py](../services/services/rag/retriever.py)（重点 `rrf_fuse`，理解 RRF 公式）、[services/rag/pipeline.py](../services/services/rag/pipeline.py)。
+**读代码**：[services/rag/retriever.py](../services/rag/retriever.py)（重点 `rrf_fuse`，理解 RRF 公式）、[services/rag/ingest/pipeline.py](../services/rag/ingest/pipeline.py)、[services/rag/pipeline.py](../services/rag/pipeline.py)。
 
 ***
 
@@ -449,15 +454,15 @@ envs\lunjiang\python.exe evals/harness.py     # 会跑 intent 准确率
 
 ### 10.1 "主从"是什么
 
-一个 **Supervisor（主控）** 只负责"看意图 → 派活给哪个 Specialist（专项 Agent）→ 检查回环"；6 个 **Specialist** 各管一摊业务。就像主编不亲自写稿，只分配和审稿。
+一个 **Supervisor（主控）** 只负责"看意图 → 派活给哪个 Specialist（专项 Agent）→ 检查回环"；6 个 **Specialist** 各管一摊业务，另有 1 个 **Planner** 处理"先检索、再撰写、最后出大纲"这类复合任务（第 4 轮加入）。就像主编不亲自写稿，只分配和审稿。
 
 ### 10.2 图结构（[services/agent/builder.py](../services/agent/builder.py) + [state.py](../services/agent/state.py)）
 
 ```
 START → supervisor（意图分类 + 路由）
-              │ 路由 edge（根据意图条件跳转）
+              │ 路由 edge（简单任务 → specialist；复合任务 → planner）
               ▼
-        literature │ writing │ review │ ...（6 个 specialist 节点）
+        literature │ writing │ review │ ...（6 个 specialist 节点）│ planner
               ▼
         supervisor 再评估：任务完成？→ END；还要继续？→ 再路由（≤3 跳防回环）
 ```
@@ -466,7 +471,7 @@ START → supervisor（意图分类 + 路由）
 
 ### 10.3 人机介入到底怎么实现（面试点）
 
-[services/agent/agents/specialists.py](../services/agent/agents/specialists.py) 里用 LangGraph 的 `interrupt()`：
+[services/agent/specialists/node\_factory.py](../services/agent/specialists/node_factory.py) 里用 LangGraph 的 `interrupt()`：
 
 - 专项 Agent 判断"这一步需要用户确认"（比如"确定用这个选题吗？"）→ 调用 `interrupt(payload)`；
 
@@ -475,7 +480,7 @@ START → supervisor（意图分类 + 路由）
 - 用户在前端看到问题并反馈 → 前端调 `/api/agent/resume` → LangGraph `Command(resume=feedback)` 从挂起点接着跑。
 
 ```python
-# specialists.py 中伪代码示意
+# specialists/node_factory.py 中伪代码示意
 need_confirm = await _need_confirmation(state)
 if need_confirm:
     feedback = interrupt({"question": "按这个大纲继续吗?"})
@@ -488,7 +493,7 @@ if need_confirm:
 envs\lunjiang\python.exe scripts/smoke_graph.py    # 路由 + 中断恢复自检
 ```
 
-**读代码**：顺序读 `services/agent/state.py` → `builder.py` → `supervisor.py` → `agents/specialists.py`（第 4 个文件较长，先读 `SpecialistSpec` 类）。
+**读代码**：顺序读 `services/agent/state.py` → `builder.py` → `supervisor.py` → `specialists/specs.py`（先读 `SpecialistSpec` 定义）→ `specialists/node_factory.py`，复合任务再看 `services/agent/planner.py`（`is_complex_task` / `planner_node`）。
 
 ***
 
@@ -506,10 +511,11 @@ services/governance/
 ├── retry.py             指数退避重试（0.5s 起，最大 8s），三次后降级/抛人机兜底
 ├── dist_lock.py         分布式锁（SETNX + TTL + 续期），防并发重复执行
 ├── skill.py             行为观测：同模式成功 3 次 → 自动沉淀成 Skill
-└── tools_impl.py        具体工具实现（search_literature / generate_section / check_format...）
+├── tools_impl.py        论文工具实现（search_literature / generate_section / check_format...）
+└── academic_tools.py    学术工具生态（翻译 / 润色 / 方法推荐 / 参考文献格式化 / 摘要 / 术语解析，第 5 轮加入）
 ```
 
-### 11.2 一次工具调用完整的旅程（[services/governance/tool\_registry.py](../services/services/governance/tool_registry.py) 的 `ToolRegistry.call()`）
+### 11.2 一次工具调用完整的旅程（[services/governance/tool\_registry.py](../services/governance/tool_registry.py) 的 `ToolRegistry.call()`）
 
 ```
 ① RBAC 校验角色是否允许用这个工具（configs/rbac.yaml）
@@ -564,7 +570,7 @@ async for chunk in provider.chat_stream(...):
 await hub.flush_tokens()
 ```
 
-### 12.2 全链路可观测：Trace Span（[services/observability/trace.py](../services/services/observability/trace.py)）
+### 12.2 全链路可观测：Trace Span（[services/observability/trace.py](../services/observability/trace.py)）
 
 `span(name)` 是上下文管理器，自动记录开始/结束/耗时/参数摘要，生成**树形嵌套**（父 span 包子 span）。全程落 PG `trace_spans` 表；后台 admin 接口可回放一棵"行为树"。
 
@@ -574,7 +580,7 @@ await hub.flush_tokens()
 envs\lunjiang\python.exe scripts/smoke_trace.py
 ```
 
-**读代码**：[services/streaming/hub.py](../services/streaming/hub.py)（关注 `emit_token` 的微缓冲阈值）、[services/observability/trace.py](../services/services/observability/trace.py)。
+**读代码**：[services/streaming/hub.py](../services/streaming/hub.py)（关注 `emit_token` 的微缓冲阈值）、[services/observability/trace.py](../services/observability/trace.py)。
 
 ***
 
@@ -611,13 +617,16 @@ datasets/
 ├── intent.jsonl           意图分类测试集（200 条？看文件即知，格式 {"text":..., "label":...}）
 ├── retrieval.jsonl        RAG 常规检索测试集
 ├── retrieval_hard.jsonl   RAG 长尾困难集（绕口令式改写查询）
+├── retrieval_paper_hard.jsonl  论文辅助语料口语化长尾集（第 4 轮前新增，Recall@5 96.2%）
 harness.py                 三项指标评测入口
 ab.py                      A/B 实验：同一数据集，不同配置/策略对比，输出图表+报告
+regression.py              七大必测场景回归（知识库入库/项目隔离/多路召回/改写/Planner/产物/治理）
 ```
 
 ```powershell
 envs\lunjiang\python.exe evals/harness.py     # 三项指标
 envs\lunjiang\python.exe evals/ab.py          # A/B：简单集 vs 长尾困难集
+envs\lunjiang\python.exe evals/regression.py  # 七大必测场景回归（第 4 轮加入）
 ```
 
 ### 14.2 用 A/B 学会"拿证据说话"
@@ -630,7 +639,7 @@ envs\lunjiang\python.exe evals/ab.py          # A/B：简单集 vs 长尾困难�
 | A₀ | 改写开（未修复）     | 漂移导致更低                |
 | A₁ | 改写开 + 防漂移三件套 | **100% 恢复，MRR +0.17** |
 
-结论：**"改写对简单查询是负优化，对长尾复杂查询是强优化"**——于是 README 与 settings.yaml 里写"小语料库建议关闭改写"。这就是"文档结论必须由数据支撑"的样本。
+结论：**"改写对简单查询是负优化，对长尾复杂查询是强优化"**——于是 README 配置要点里提示 `rag.rewrite_enabled` 可按语料规模开关。这就是"文档结论必须由数据支撑"的范例。
 
 ***
 
@@ -645,7 +654,7 @@ envs\lunjiang\python.exe evals/ab.py          # A/B：简单集 vs 长尾困难�
 | 3  | 注册/登录 JWT + bcrypt（课 5）                     | 1h   | 认证闭环   |
 | 4  | LLMProvider 封装 + 一个对话接口（课 6）                | 1h   | 能聊天    |
 | 5  | 短期记忆（Redis）+ 压缩雏形（课 7）                      | 1h   | 有上下文   |
-| 6  | 语料入库 + 双路召回 + RRF（课 8，可以先不做改写/精排）           | 2h   | 会检索    |
+| 6  | 语料/知识库入库 + 多路召回 + RRF（课 8，可以先不做改写/精排/相邻窗口）  | 2h   | 会检索    |
 | 7  | 意图分类（先做规则层）（课 9）                            | 1h   | 会分流    |
 | 8  | LangGraph supervisor + 1 个 specialist（课 10） | 2h   | 多智能体雏形 |
 | 9  | 工具治理：限流 + 重试 两件（课 11）                       | 1.5h | 可靠     |
@@ -653,7 +662,7 @@ envs\lunjiang\python.exe evals/ab.py          # A/B：简单集 vs 长尾困难�
 | 11 | 简单 React 页面（课 13）                           | 2h   | 能演示    |
 | 12 | 评测集 + harness（课 14）                         | 1.5h | 有数据    |
 
-自己重建时**先砍需求再迭代**：只保留 4 个 specialist、双路召回不做精排、治理只要限流+重试——先跑通再补全，最后逐项对齐本项目（本项目就是你的"参考答案"）。
+自己重建时**先砍需求再迭代**：只保留 4 个 specialist、多路召回先不做相邻窗口与项目保底、治理只要限流+重试——先跑通再补全，最后逐项对齐本项目（本项目就是你的"参考答案"）。
 
 ***
 
@@ -665,39 +674,43 @@ envs\lunjiang\python.exe evals/ab.py          # A/B：简单集 vs 长尾困难�
 api/agent/router.py → AgentEngine.run()
     → services/memory/（四层组装）
     → services/agent/engine.py：绑定 EventHub → 跑 LangGraph 图
-        → supervisor_node（意图分类：services/classifier/intent.py）
-        → specialists/xx 节点
+        → supervisor_node（意图分类：services/classifier/intent.py；复杂任务 → planner）
+        → specialists/xx 节点  │  planner_node（services/agent/planner.py）
             → services/governance/tool_registry.py: ToolRegistry.call()
                 → rate_limiter / circuit_breaker / retry / dist_lock
-                → tools_impl.search_literature()
+                → tools_impl.search_literature()  │  academic_tools.*  │  tools_impl.generate_artifact()
                     → services/rag/pipeline.py: RagPipeline.search()
-                        → query_rewrite → retriever(dense+sparse, RRF) → reranker
+                        → query_rewrite → retriever(dense+sparse+相邻窗口, RRF) → reranker
+                          （项目知识库路/保底/降噪，知识库入库见 services/rag/ingest/pipeline.py）
     → EventHub → SSE
 services/observability/trace.py 全程 span 记录；api/middleware/audit.py 后台审计
 ```
 
 ### 类/函数速查表
 
-| 你想找……       | 去哪里                                                                 |
-| ----------- | ------------------------------------------------------------------- |
-| 全局配置        | `infrastructure/config.py` `get_settings()`                                    |
-| LLM 调用      | `services/llm/provider.py` `LLMProvider`                                |
-| 向量化         | `LLMProvider.embed()`（bge-m3，1024 维）                                |
-| 短期记忆        | `services/memory/short_term.py` `ShortTermMemory`                            |
-| 记忆压缩        | `services/memory/compressor.py` `compress_window_if_needed()`                |
-| RAG 入口      | `services/rag/pipeline.py` `RagPipeline.search()`                            |
-| 双路召回 + RRF  | `services/rag/retriever.py` `HybridRetriever.rrf_fuse()`                     |
-| 意图分类        | `services/classifier/intent.py` `IntentClassifier.classify()`           |
-| 图构建         | `services/agent/builder.py` `build_graph()`                             |
-| 主控节点        | `services/agent/supervisor.py` `supervisor_node()`                      |
-| 专项 Agent 定义 | `services/agent/agents/specialists.py` `SpecialistSpec` / `SPECIALISTS` |
-| 工具治理入口      | `services/governance/tool_registry.py` `ToolRegistry.call()`                 |
-| 工具实现        | `services/governance/tools_impl.py` `register_all()`                         |
-| 流式事件        | `services/streaming/hub.py` `EventHub`                                  |
-| 检查点（中断恢复）   | `services/checkpoint/tiered.py` `TieredCheckpointer`                    |
-| Trace       | `services/observability/trace.py` `span()`                                   |
-| 语料入库        | `services/rag/ingest/corpus_loader.py` `ingest_corpus()`                     |
-| 评测          | `evals/harness.py` / `evals/ab.py`                                  |
+| 你想找……       | 去哪里                                                                                |
+| ----------- | ---------------------------------------------------------------------------------- |
+| 全局配置        | `infrastructure/config.py` `get_settings()`                                        |
+| LLM 调用      | `services/llm/provider.py` `LLMProvider`                                           |
+| 向量化         | `LLMProvider.embed()`（bge-m3，1024 维；底座由 `llm.embedding_provider` 指定）               |
+| 短期记忆        | `services/memory/short_term.py` `ShortTermMemory`                                  |
+| 记忆压缩        | `services/memory/compressor.py` `compress_window_if_needed()`                      |
+| RAG 入口      | `services/rag/pipeline.py` `RagPipeline.search()`                                  |
+| 多路召回 + RRF  | `services/rag/retriever.py` `HybridRetriever.rrf_fuse()` / `sibling_search()`      |
+| 知识库入库       | `services/rag/ingest/pipeline.py` `ingest_document()` / `parsers.parse_document()` |
+| 意图分类        | `services/classifier/intent.py` `IntentClassifier.classify()`                      |
+| 图构建         | `services/agent/builder.py` `build_graph()`                                        |
+| 主控节点        | `services/agent/supervisor.py` `supervisor_node()`                                 |
+| 专项 Agent 定义 | `services/agent/specialists/specs.py` `SpecialistSpec` / `SPECIALISTS`             |
+| 规划器         | `services/agent/planner.py` `planner_node()` / `is_complex_task()`                 |
+| 结构化产物       | `services/agent/artifacts.py` `generate_artifact()`                                |
+| 工具治理入口      | `services/governance/tool_registry.py` `ToolRegistry.call()`                       |
+| 工具实现        | `services/governance/tools_impl.py` `register_all()` + `academic_tools.py`         |
+| 流式事件        | `services/streaming/hub.py` `EventHub`                                             |
+| 检查点（中断恢复）   | `services/checkpoint/tiered.py` `TieredCheckpointer`                               |
+| Trace       | `services/observability/trace.py` `span()`                                         |
+| 语料入库        | `services/rag/ingest/corpus_loader.py` `ingest_corpus()`                           |
+| 评测          | `evals/harness.py` / `evals/ab.py` / `evals/regression.py`                         |
 
 ### 环境检查 5 项对应关系
 

@@ -200,7 +200,7 @@ const addProject = async () => {
 
 `window.prompt` 在以下场景一律静默返回 null：
 
-- 浏览器弹窗策略禁止（企业安全浏览器 / 某些 Chromium 扩展）；
+- 浏览器弹窗策略禁止（受管安全浏览器 / 某些 Chromium 扩展）；
 
 - 用户点"取消"；
 
@@ -533,7 +533,7 @@ Ollama 侧 `embeddings` 实际都返回 200 OK，**检索链路本身完全正�
    全隐藏成"点了没反应"，用户不会去开 F12，第一判断就是"软件坏了"。工程规范：
    **catch 必须至少做一件事**——UI banner / toast / console.warn 三选一。
 
-3. **禁止在产品里用** **`window.prompt() / confirm() / alert()`**：在安全浏览器、企业环境、
+3. **禁止在产品里用** **`window.prompt() / confirm() / alert()`**：在安全浏览器、受管环境中，
    扩展策略下都可能被拦截；移动端体验更差。一律用内联模态或轻量 UI 组件库替代。
 
 4. **API 前缀一致性要用"脚本化对比"把关**：手动审查 4 个 router 都能漏了 observability，
