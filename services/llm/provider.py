@@ -4,6 +4,9 @@
 - 提供两类入口：
   1. LLMProvider: 轻量异步客户端（意图分类/Query改写/摘要等工具型调用）
   2. get_chat_model: langchain-openai 的 ChatOpenAI（LangGraph 图内节点使用）
+
+⚠️ 超时保护：所有 API 调用均注入 timeout（读取 llm.timeout 配置），避免 Ollama 卡顿/模型忙时
+请求无限挂起，导致前端 SSE 连接"卡死"。
 """
 import json
 from typing import AsyncIterator, Iterable
@@ -29,6 +32,12 @@ def _provider_cfg(name: str | None = None) -> tuple[str, dict]:
     if name not in cfg:
         raise ValueError(f"未知 LLM provider: {name}，可选: {list(cfg)}")
     return name, cfg[name]
+
+
+def _timeout(kind: str) -> float:
+    """读取 LLM 超时配置（秒）。kind: chat / chat_stream / embedding"""
+    default_map = {"chat": 60, "chat_stream": 90, "embedding": 45}
+    return float(get_value("llm", "timeout", kind, default=default_map.get(kind, 30)))
 
 
 class LLMProvider:
@@ -59,6 +68,7 @@ class LLMProvider:
             "model": self.chat_model,
             "messages": list(messages),
             "temperature": temperature if temperature is not None else self.temperature,
+            "timeout": _timeout("chat"),
         }
         if max_tokens is not None:
             create_kw["max_tokens"] = max_tokens
@@ -89,6 +99,7 @@ class LLMProvider:
             messages=list(messages),
             temperature=temperature if temperature is not None else self.temperature,
             stream=True,
+            timeout=_timeout("chat_stream"),
             **kwargs,
         )
         async for chunk in stream:
@@ -100,7 +111,8 @@ class LLMProvider:
     async def embed(self, texts: list[str]) -> list[list[float]]:
         if not self.embedding_model:
             raise ValueError(f"provider {self.name} 未配置 embedding_model")
-        resp = await self._client.embeddings.create(model=self.embedding_model, input=texts)
+        resp = await self._client.embeddings.create(
+            model=self.embedding_model, input=texts, timeout=_timeout("embedding"))
         return [d.embedding for d in resp.data]
 
     # ---------- Function Calling 循环 ----------
@@ -125,6 +137,7 @@ class LLMProvider:
             resp = await self._client.chat.completions.create(
                 model=self.chat_model, messages=msgs, tools=tools,
                 temperature=temperature if temperature is not None else self.temperature,
+                timeout=_timeout("chat"),
                 **kwargs,
             )
             msg = resp.choices[0].message
@@ -180,6 +193,7 @@ def get_chat_model(temperature: float | None = None, streaming: bool = False):
         api_key=cfg.get("api_key") or "EMPTY",
         temperature=temperature if temperature is not None else cfg.get("temperature", 0.7),
         streaming=streaming,
+        timeout=_timeout("chat_stream" if streaming else "chat"),
     )
     if name == "ollama":
         kwargs["model_kwargs"] = {"think": False, "options": {"num_ctx": 4096}}

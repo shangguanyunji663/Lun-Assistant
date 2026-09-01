@@ -39,9 +39,9 @@ class RagPipeline:
 
         # 阶段2: 双路混合召回（RRF 融合）
         dense = await hybrid_retriever.dense_search(rewritten, top_k=recall_k)
-        sparse = hybrid_retriever.sparse_search(rewritten, top_k=recall_k)
+        sparse = await hybrid_retriever.sparse_search(rewritten, top_k=recall_k)
         # 关键词路: 用首个关键词再补一路 BM25，提升术语覆盖
-        extra = hybrid_retriever.sparse_search(keywords[0], top_k=recall_k // 2) if keywords else []
+        extra = (await hybrid_retriever.sparse_search(keywords[0], top_k=recall_k // 2)) if keywords else []
         if use_rewrite and rewritten != query:
             dense_orig = await hybrid_retriever.dense_search(query, top_k=recall_k)
             fused = hybrid_retriever.rrf_fuse(dense, dense_orig, sparse, extra, top_k=recall_k)
@@ -51,7 +51,7 @@ class RagPipeline:
         # 阶段3: 交叉编码器精排 —— 主查询用原始 query（忠实用户意图），改写查询作为备选打分
         if use_rerank and fused:
             alt = rewritten if use_rewrite and rewritten != query else None
-            results = reranker.rerank(query, fused, top_k=top_k, alt_query=alt)
+            results = await reranker.rerank(query, fused, top_k=top_k, alt_query=alt)
         else:
             results = fused[:top_k]
 

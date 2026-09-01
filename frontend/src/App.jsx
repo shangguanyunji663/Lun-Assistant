@@ -155,7 +155,10 @@ export default function App() {
   const [booting, setBooting] = useState(true)
   const [tab, setTab] = useState('chat')
   const [projects, setProjects] = useState([])
+  const [projectsErr, setProjectsErr] = useState('')   // 项目加载失败提示
   const [projectId, setProjectId] = useState(null)
+  const [projectModalOpen, setProjectModalOpen] = useState(false)   // 新建项目弹窗（替代 prompt）
+  const [projectTitle, setProjectTitle] = useState('')
   const sessionIdRef = useRef(null)
 
   // 对话状态
@@ -169,11 +172,21 @@ export default function App() {
   useEffect(() => {
     const t = localStorage.getItem('lj_token')
     if (!t) { setBooting(false); return }
-    api.me().then(u => setUser(u)).catch(() => localStorage.removeItem('lj_token')).finally(() => setBooting(false))
+    api.me().then(u => setUser(u)).catch(e => {
+      console.warn('[me] 自动登录失败:', e)
+      localStorage.removeItem('lj_token')
+    }).finally(() => setBooting(false))
   }, [])
 
   useEffect(() => {
-    if (user) api.projects().then(ps => setProjects(ps)).catch(() => {})
+    if (user) {
+      api.projects().then(ps => { setProjects(ps); setProjectsErr('') })
+        .catch(e => {
+          const msg = String(e.message || e)
+          setProjectsErr(msg)
+          console.warn('[projects] 加载失败:', msg)
+        })
+    }
   }, [user])
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, timeline])
@@ -220,16 +233,28 @@ export default function App() {
         })
       if (finalText) patchLast(finalText)
     } catch (e) {
-      patchLast(`请求失败：${e.message || e}`)
+      const msg = `请求失败：${e.message || e}`
+      patchLast(msg)
+      console.warn('[chat]', msg, e)
     } finally { setStreaming(false) }
   }
 
-  const addProject = async () => {
-    const title = prompt('论文题目：')
+  // 打开新建项目弹窗
+  const openAddProject = () => { setProjectTitle(''); setProjectModalOpen(true) }
+  const confirmAddProject = async () => {
+    const title = projectTitle.trim()
     if (!title) return
-    const p = await api.createProject(title, '', '')
-    setProjects(ps => [p, ...ps])
-    setProjectId(p.id)
+    try {
+      const p = await api.createProject(title, '', '')
+      setProjects(ps => [p, ...ps])
+      setProjectId(p.id)
+      setProjectModalOpen(false)
+      setProjectsErr('')
+    } catch (e) {
+      const msg = String(e.message || e)
+      setProjectsErr(`新建项目失败：${msg}`)
+      console.warn('[createProject]', msg)
+    }
   }
 
   return (
@@ -241,15 +266,38 @@ export default function App() {
           <option value="">（未关联项目）</option>
           {projects.map(p => <option key={p.id} value={p.id}>{`#${p.id} ${p.title}`}</option>)}
         </select>
-        <button onClick={addProject}>+ 新建项目</button>
+        <button onClick={openAddProject}>+ 新建项目</button>
         <button onClick={newSession} disabled={streaming}>新会话</button>
         <nav>
           <button className={tab === 'chat' ? 'on' : ''} onClick={() => setTab('chat')}>对话</button>
-          <button className={tab === 'trace' ? 'on' : ''} onClick={() => setTab('trace')}>可观测</button>
+          <button className={tab === 'trace' ? 'on' : ''} onClick={() => setTab('trace')} title={user.role !== 'admin' ? '仅 admin 可见 Trace 数据' : ''}>可观测</button>
         </nav>
         <span className="muted">{user.username}({user.role})</span>
         <button onClick={() => { localStorage.removeItem('lj_token'); setUser(null) }}>退出</button>
       </header>
+
+      {projectsErr && <div className="top-banner err">{projectsErr} <span className="link" onClick={() => setProjectsErr('')}>×</span></div>}
+      {user.role !== 'admin' && tab === 'trace' && (
+        <div className="top-banner warn">⚠ 当前账号是 {user.role}，Trace 列表需要 admin 权限；此页面将无法加载数据。</div>
+      )}
+
+      {/* 新建项目弹窗（替代原生 prompt，避免被拦截） */}
+      {projectModalOpen && (
+        <div className="modal-mask" onClick={e => { if (e.target === e.currentTarget) setProjectModalOpen(false) }}>
+          <div className="modal-card" onClick={e => e.stopPropagation()}>
+            <h3>新建论文项目</h3>
+            <p className="muted">先给你的论文起一个题目，后续可以随时修改。</p>
+            <input autoFocus placeholder="例如：基于 LangGraph 的多智能体论文助手" value={projectTitle}
+                   style={{ width: '100%' }}
+                   onChange={e => setProjectTitle(e.target.value)}
+                   onKeyDown={e => { if (e.key === 'Enter' && projectTitle.trim()) confirmAddProject() }} />
+            <div className="modal-actions">
+              <button onClick={() => setProjectModalOpen(false)}>取消</button>
+              <button className="primary" onClick={confirmAddProject} disabled={!projectTitle.trim()}>确定</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {tab === 'chat' ? (
         <main className="chat-layout">

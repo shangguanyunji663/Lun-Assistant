@@ -17,6 +17,28 @@ if sys.platform == "win32":
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 
+logger = logging.getLogger("lunjiang.app")
+
+
+async def _warmup_bm25() -> None:
+    """后台预热：重建 BM25 稀疏索引，避免首次 sparse_search 触发慢查询。"""
+    try:
+        from services.rag.retriever import hybrid_retriever
+        n = await hybrid_retriever.rebuild_bm25()
+        logger.info("预热完成：BM25 索引 %d 篇文档", n)
+    except Exception:
+        logger.warning("BM25 预热失败，将在首次检索时懒重建", exc_info=True)
+
+
+async def _warmup_reranker() -> None:
+    """后台预热：加载交叉编码器模型（CPU 首载 10~60s，线程池内执行，不阻塞启动）。"""
+    try:
+        from services.rag.reranker import reranker
+        await reranker.preload()
+        logger.info("预热完成：交叉编码器已加载")
+    except Exception:
+        logger.warning("交叉编码器预热失败，将在首次精排时懒加载", exc_info=True)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -27,6 +49,11 @@ async def lifespan(app: FastAPI):
     # 注册全部治理工具（RBAC/限流/熔断/容错/审计流水线入口）
     from services.governance.tools_impl import register_all
     register_all()
+
+    # 后台预热（不阻塞 HTTP 就绪；首用户请求到来时大概率已完成）
+    asyncio.create_task(_warmup_bm25())
+    asyncio.create_task(_warmup_reranker())
+
     yield
     await dispose_engine()
 
@@ -40,7 +67,16 @@ def create_app() -> FastAPI:
     )
     app.add_middleware(AuditMiddleware)
 
-    # ---- 健康检查 ----
+    # ---- 健康检查 + 根路径 ----
+    @app.get("/", tags=["system"])
+    async def root():
+        return {
+            "app": get_value("app", "name"),
+            "version": app.version,
+            "docs": "/docs",
+            "health": "/health",
+        }
+
     @app.get("/health", tags=["system"])
     async def health():
         return {"status": "ok", "app": get_value("app", "name")}

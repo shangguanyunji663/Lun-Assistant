@@ -16,6 +16,10 @@ app:
 # ------------------------------------------------------------
 llm:
   default_provider: ollama
+  timeout:
+    chat: 60           # 非流式对话超时（秒）
+    chat_stream: 90    # 流式对话超时（秒）
+    embedding: 45      # 嵌入调用超时（秒）
   providers:
     ollama:
       base_url: http://127.0.0.1:11434/v1
@@ -99,6 +103,7 @@ governance:
     max_attempts: 3                 # 指数退避重试
     base_delay: 0.5
     max_delay: 8.0
+    per_call_timeout_s: 120         # 单次工具调用总超时天花板（秒，含 LLM+检索+精排）
   circuit_breaker:
     failure_threshold: 5            # 连续失败阈值 → OPEN
     recovery_timeout: 30            # OPEN→HALF_OPEN 等待秒数

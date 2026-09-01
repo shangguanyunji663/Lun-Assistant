@@ -6,13 +6,14 @@
 
 ## 文档导航
 
-| 文档                                      | 用途                   |
-| --------------------------------------- | -------------------- |
-| [📖 学习指南](docs/LEARNING_GUIDE.md)       | 从零理解并重建本项目（推荐先读）     |
-| [📐 架构总览](#目录结构)                        | 分层结构与模块职责            |
-| [🛠 优化记录一](docs/OPTIMIZATION_ROUND1.md) | 第一轮优化（性能/安全/体验）      |
-| [🛠 优化记录二](docs/OPTIMIZATION_ROUND2.md) | 第二轮优化（OOM 修复/结构重构方案） |
-| [💡 常见问题](#常见问题)                        | 排障手册                 |
+| 文档                                      | 用途                    |
+| --------------------------------------- | --------------------- |
+| [📖 学习指南](docs/LEARNING_GUIDE.md)       | 从零理解并重建本项目（推荐先读）      |
+| [📐 架构总览](#目录结构)                        | 分层结构与模块职责             |
+| [🛠 优化记录一](docs/OPTIMIZATION_ROUND1.md) | 第一轮优化（性能/安全/体验）       |
+| [🛠 优化记录二](docs/OPTIMIZATION_ROUND2.md) | 第二轮优化（OOM 修复/结构重构方案）  |
+| [🛠 优化记录三](docs/OPTIMIZATION_ROUND3.md) | 第三轮优化（布尔陷阱/前端全按钮失效排查） |
+| [💡 常见问题](#常见问题)                        | 排障手册                  |
 
 ## 快速开始
 
@@ -50,8 +51,11 @@ envs\lunjiang\python.exe scripts/ingest_corpus.py      # data/corpus/*.txt 入�
 ### 3. 启动
 
 ```powershell
+# 后端（窗口1）
 envs\lunjiang\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
-cd frontend && npm install && npm run dev              # 前端 5173，/api 代理到 8000
+
+# 前端（窗口2，PowerShell 用 ; 分隔，不要用 &&）
+cd frontend; npm install; npm run dev                   # 前端 5173，/api 代理到 8000
 ```
 
 浏览器打开 <http://localhost:5173>：注册 → 登录 → 新建项目 → 发起对话。
@@ -69,16 +73,16 @@ envs\lunjiang\python.exe evals/harness.py              # 三项指标评测
 
 ## 核心特性
 
-| 模块      | 说明                                       | 关键实现                        |
-| ------- | ---------------------------------------- | --------------------------- |
+| 模块      | 说明                                       | 关键实现                            |
+| ------- | ---------------------------------------- | ------------------------------- |
 | 多智能体编排  | 1 主控 Supervisor 调度 6 类专项 Agent，最大 3 跳防回环 | `services/agent/`               |
 | 意图预分类   | 规则 → 向量原型 → LLM 兜底三级，56ms / 100% 准确      | `services/classifier/intent.py` |
-| 三阶段 RAG | Query 改写 → 稠密+稀疏 RRF 融合 → 交叉精排，含防漂移      | `services/rag/`                      |
-| 工具治理    | RBAC → 限流 → 熔断 → 重试 → 分布式锁 → 审计 → Skill  | `services/governance/`               |
-| 四层记忆    | 短期(Redis)/结构化/长期(pgvector)/偏好 + 压缩       | `services/memory/`                   |
+| 三阶段 RAG | Query 改写 → 稠密+稀疏 RRF 融合 → 交叉精排，含防漂移      | `services/rag/`                 |
+| 工具治理    | RBAC → 限流 → 熔断 → 重试 → 分布式锁 → 审计 → Skill  | `services/governance/`          |
+| 四层记忆    | 短期(Redis)/结构化/长期(pgvector)/偏好 + 压缩       | `services/memory/`              |
 | SSE 流式  | EventHub 事件总线 + token 微缓冲                | `services/streaming/hub.py`     |
-| 人机介入    | LangGraph interrupt 挂起 → /resume 续跑      | `api/agent/router.py`       |
-| 全链路可观测  | Trace/Log/Memory/Action 统一 Span，树形回放     | `services/observability/`            |
+| 人机介入    | LangGraph interrupt 挂起 → /resume 续跑      | `api/agent/router.py`           |
+| 全链路可观测  | Trace/Log/Memory/Action 统一 Span，树形回放     | `services/observability/`       |
 
 ## 目录结构
 

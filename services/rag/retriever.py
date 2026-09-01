@@ -1,4 +1,9 @@
-"""RAG 阶段二：双路混合召回 —— 稠密向量(pgvector) + 稀疏 BM25(jieba分词)，RRF 融合。"""
+"""RAG 阶段二：双路混合召回 —— 稠密向量(pgvector) + 稀疏 BM25(jieba分词)，RRF 融合。
+
+⚠️ BM25 索引管理：服务重启后 `_bm25` 为 None，必须重建。采用"启动期预加载 + 首查询懒重建"
+双保险策略，避免 sparse_search 永远返回空列表造成召回率骤降。
+"""
+import asyncio
 import jieba
 from rank_bm25 import BM25Okapi
 from sqlalchemy import select
@@ -14,6 +19,7 @@ class HybridRetriever:
         self._bm25: BM25Okapi | None = None
         self._corpus_ids: list[int] = []
         self._corpus_meta: dict[int, dict] = {}
+        self._rebuild_lock = asyncio.Lock()  # 防止并发重复重建
 
     # ---------- 稠密路 ----------
     async def dense_search(self, query: str, top_k: int = 20,
@@ -49,7 +55,20 @@ class HybridRetriever:
             self._bm25 = None
         return len(self._corpus_ids)
 
-    def sparse_search(self, query: str, top_k: int = 20) -> list[dict]:
+    async def _ensure_bm25(self) -> None:
+        """懒重建：sparse_search 首次调用或索引丢失时自动从 DB 恢复 BM25 索引。"""
+        if self._bm25 is not None:
+            return
+        async with self._rebuild_lock:
+            if self._bm25 is not None:  # double-check
+                return
+            count = await self.rebuild_bm25()
+            logger = __import__("logging").getLogger("lunjiang.rag")
+            logger.info("BM25 索引懒重建完成，文档数: %d", count)
+
+    async def sparse_search(self, query: str, top_k: int = 20) -> list[dict]:
+        """（异步化）稀疏 BM25 检索，首调用自动懒加载索引。"""
+        await self._ensure_bm25()
         if self._bm25 is None:
             return []
         scores = self._bm25.get_scores(self._tokenize(query))

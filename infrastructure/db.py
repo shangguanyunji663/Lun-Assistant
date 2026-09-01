@@ -15,7 +15,8 @@ def get_engine():
             pool_pre_ping=True,
             pool_size=10,
             max_overflow=20,
-            echo=bool(get_value("app", "debug", default=False)),
+            echo=get_value("app", "debug", default=False, cast_bool=True),
+            echo_pool=False,
         )
     return _engine
 

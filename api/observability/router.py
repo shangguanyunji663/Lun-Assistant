@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from api.auth.security import require_role
 from services.observability.trace import get_trace, list_traces
 
-router = APIRouter(prefix="/observability", tags=["observability"])
+router = APIRouter(prefix="/api/observability", tags=["observability"])
 
 
 def _build_tree(spans: list[dict]) -> list[dict]:

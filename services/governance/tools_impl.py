@@ -83,7 +83,7 @@ async def check_plagiarism(text: str, granularity: str = "paragraph"):
     total_sim, matched = 0.0, []
     for para in paragraphs:
         dense = await hybrid_retriever.dense_search(para, top_k=3)
-        sparse = hybrid_retriever.sparse_search(para, top_k=3)
+        sparse = await hybrid_retriever.sparse_search(para, top_k=3)
         best = 0.0
         for cand in dense + sparse:
             sim = _char_sim(para, cand["content"])

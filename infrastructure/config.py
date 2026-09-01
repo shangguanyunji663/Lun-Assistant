@@ -52,11 +52,26 @@ def get_settings() -> dict:
     return _interpolate(raw)
 
 
-def get_value(*keys: str, default: Any = None) -> Any:
-    """按路径取配置，如 get_value("llm", "default_provider")。"""
+def _as_bool(value: Any) -> Any:
+    """把字符串形式的布尔（'true'/'false'/'yes'/'no'/'0'/'1'）转成真正的 bool。"""
+    if not isinstance(value, str):
+        return value
+    v = value.strip().lower()
+    if v in ("true", "yes", "1", "on"):
+        return True
+    if v in ("false", "no", "0", "off", ""):
+        return False
+    return value
+
+
+def get_value(*keys: str, default: Any = None, cast_bool: bool = False) -> Any:
+    """按路径取配置，如 get_value("llm", "default_provider")。
+
+    cast_bool=True 时，字符串布尔会转成真正的 bool（避免 bool("false")==True 的坑）。
+    """
     node: Any = get_settings()
     for k in keys:
         if not isinstance(node, dict) or k not in node:
-            return default
+            return _as_bool(default) if cast_bool else default
         node = node[k]
-    return node
+    return _as_bool(node) if cast_bool else node

@@ -54,7 +54,7 @@ async def supervisor_node(state: dict) -> dict:
                         "next_agent": "__end__", "final_output": output,
                         "stop_reason": "done"}
 
-            from services.agent.specialists.specialists import INTENT_TO_AGENT
+            from services.agent.specialists import INTENT_TO_AGENT
             next_agent = INTENT_TO_AGENT[ir.intent]
             await hub.emit("route", {"next": next_agent}, node="supervisor")
             await hub.emit("node_end", {"agent": "supervisor", "route": next_agent},
