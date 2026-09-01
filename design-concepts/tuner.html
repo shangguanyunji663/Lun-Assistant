@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>论匠 · A 方向 透明度调参台</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: #E9E6DF; color: #1C1C1A;
+    font: 300 14px/1.9 "PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans SC",system-ui,sans-serif;
+    display: flex; flex-direction: column;
+  }
+  header { padding: 22px 28px 14px; flex-shrink: 0; }
+  h1 { font-size: 19px; font-weight: 500; letter-spacing: .05em; }
+  header p { color: #6E6B65; font-size: 12.5px; margin-top: 4px; }
+
+  main { flex: 1; display: flex; gap: 20px; padding: 0 28px 24px; min-height: 0; }
+  @media (max-width: 1100px) { main { flex-direction: column; } }
+
+  /* ---------- 预览台 ---------- */
+  .stage {
+    flex: 1; position: relative; min-height: 0; overflow: hidden;
+    border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,.18), 0 0 0 .5px rgba(0,0,0,.08);
+    background: #131C24; color: #E4E1D6;
+    display: flex; flex-direction: column;
+  }
+  .ink-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  .ink-photo {
+    position: absolute; inset: 0;
+    background: url('shanshui-mist.jpg') center 34% / cover no-repeat;
+    opacity: var(--p-op, .16); filter: saturate(.9);
+  }
+  .ink-veil {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg,
+      rgba(19,28,36,var(--v-top,.28)) 0%,
+      rgba(19,28,36,.62) 26%,
+      rgba(19,28,36,var(--v-mid,.88)) 50%,
+      rgba(19,28,36,.96) 72%,
+      #131C24 100%);
+  }
+  .ink-blob { position: absolute; border-radius: 50%; filter: blur(80px); }
+  .ink-blob-1 { width: 44vw; height: 44vw; left: -8vw; top: -8vw;
+    background: radial-gradient(circle at 35% 35%, rgba(92,138,153,.13), transparent 70%);
+    opacity: var(--wash,1); }
+  .ink-blob-2 { width: 38vw; height: 38vw; right: -6vw; top: 14vh;
+    background: radial-gradient(circle at 60% 40%, rgba(110,146,118,.10), transparent 72%);
+    opacity: var(--wash,1); }
+  .paper-grain { position: absolute; inset: 0; opacity: var(--grain,.045); mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23g)'/%3E%3C/svg%3E"); }
+  .wood-roll { position: absolute; left: 0; right: 0; height: 9px; z-index: 40;
+    background: linear-gradient(180deg,#CBAE80 0%,#A8895C 46%,#8E7147 54%,#CBAE80 100%);
+    box-shadow: 0 2px 10px rgba(0,0,0,.35); }
+  .wood-roll.top { top: 0; } .wood-roll.bot { bottom: 0; transform: scaleY(-1); }
+
+  /* 真实 UI 结构 */
+  .app { position: relative; z-index: 1; flex: 1; display: flex; flex-direction: column;
+    overflow: hidden; padding: 9px clamp(12px,2.4vw,36px); min-height: 0; }
+  .topbar { flex-shrink: 0; position: relative; display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px 12px; }
+  .topbar::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+    background: linear-gradient(90deg,transparent,rgba(184,154,107,.32) 20%,rgba(184,154,107,.32) 80%,transparent); opacity: .5; }
+  .brand { font-family: "STXingkai","华文行楷","STKaiti","KaiTi","楷体",serif;
+    font-size: 21px; font-weight: 400; letter-spacing: .24em; color: #E4E1D6; }
+  .brand small { font-size: 11.5px; color: #8A959B; letter-spacing: .08em; margin-left: 10px; font-family: inherit; }
+  .spacer { flex: 1; }
+  .btn { padding: 8px 18px; border-radius: 999px; border: 1px solid rgba(228,225,214,.16);
+    background: rgba(228,225,214,.04); color: #B4BCC0; font-size: 13px; font-weight: 300; }
+  .btn.gold { background: linear-gradient(135deg,#B89A6B,#A8895C); color: #17222B; border-color: transparent; font-weight: 400; }
+  nav { display: flex; gap: 2px; padding: 2px; border-radius: 999px; background: rgba(0,0,0,.18); }
+  nav button { padding: 6px 18px; border-radius: 999px; border: none; background: transparent;
+    color: #8A959B; font-size: 13px; font-weight: 300; letter-spacing: .08em; }
+  nav button.on { background: rgba(184,154,107,.14); color: #CBAE80; }
+
+  .chat-layout { flex: 1; display: flex; gap: 12px; padding: 12px 0 16px; overflow: hidden; min-height: 0; }
+  .col { background: rgba(24,35,44,.55); backdrop-filter: blur(16px);
+    border: 1px solid rgba(228,225,214,.10); border-radius: 15px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.20); }
+  .sessions { width: 176px; flex-shrink: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .sess-head { padding: 16px 16px 12px; border-bottom: 1px solid rgba(228,225,214,.10);
+    font-family: "STKaiti","KaiTi",serif; font-size: 12.5px; color: #8A959B; letter-spacing: .24em; }
+  .sess-item { position: relative; padding: 9px 12px 9px 14px; margin: 2px 8px; border-radius: 11px;
+    border-left: 2px solid transparent; }
+  .sess-item.on { background: rgba(184,154,107,.10); border-left-color: #B89A6B; }
+  .sess-title { font-size: 12.5px; color: #B4BCC0; line-height: 1.6; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .sess-item.on .sess-title { color: #E4E1D6; }
+  .sess-meta { font-size: 10.5px; color: #8A959B; margin-top: 1px; }
+
+  .chat-col { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+  .messages { flex: 1; overflow-y: auto; }
+  .msgs-inner { max-width: 760px; margin: 0 auto; padding: 32px 32px 8px; }
+  .msg { display: flex; gap: 12px; margin-bottom: 26px; }
+  .msg.user { flex-direction: row-reverse; }
+  .msg-mark { flex-shrink: 0; width: 26px; height: 26px; margin-top: 4px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: "STKaiti","KaiTi",serif; font-size: 13px; border: 1px solid; }
+  .msg.user .msg-mark { color: #B89A6B; border-color: rgba(184,154,107,.32); background: rgba(184,154,107,.08); }
+  .msg:not(.user) .msg-mark { color: #5C8A99; border-color: rgba(92,138,153,.34); background: rgba(92,138,153,.08); }
+  .bubble { max-width: 78%; padding: 14px 20px; border-radius: 15px; font-size: 14px; line-height: 2.0; }
+  .msg.user .bubble { background: rgba(184,154,107,.09); border: 1px solid rgba(184,154,107,.32);
+    color: #E4E1D6; border-top-right-radius: 7px; }
+  .msg:not(.user) .bubble { background: rgba(92,138,153,.07); border: 1px solid rgba(92,138,153,.34);
+    color: #E4E1D6; border-top-left-radius: 7px; }
+
+  .input-bar { flex-shrink: 0; padding: 16px 32px 12px; border-top: 1px solid rgba(228,225,214,.10);
+    background: linear-gradient(0deg,rgba(19,28,36,.55),transparent); }
+  .composer { display: flex; gap: 12px; align-items: flex-end; }
+  .composer textarea { flex: 1; resize: none; padding: 13px 22px; height: 50px;
+    border-radius: 22px; border: 1px solid rgba(228,225,214,.16);
+    background: rgba(228,225,214,.05); color: #E4E1D6; font: inherit; outline: none; }
+  .composer textarea::placeholder { color: #8A959B; }
+  .composer .send { padding: 0 28px; height: 50px; border-radius: 999px; }
+  .input-hint { margin-top: 8px; font-size: 11px; color: #8A959B; text-align: right; }
+
+  /* ---------- 控制面板 ---------- */
+  .panel { width: 340px; flex-shrink: 0; overflow-y: auto; }
+  @media (max-width: 1100px) { .panel { width: 100%; } }
+  .card { background: #fff; border: .5px solid rgba(0,0,0,.10); border-radius: 14px;
+    padding: 20px; margin-bottom: 14px; }
+  .card h2 { font-size: 13px; font-weight: 500; margin-bottom: 16px; letter-spacing: .06em; }
+  .ctrl { margin-bottom: 18px; }
+  .ctrl:last-child { margin-bottom: 0; }
+  .ctrl label { display: flex; justify-content: space-between; font-size: 12px; color: #4A4843; margin-bottom: 6px; }
+  .ctrl label b { font-weight: 500; color: #1C1C1A; font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: #B89A6B; cursor: pointer; }
+  .hint { font-size: 11px; color: #8A857C; margin-top: 4px; line-height: 1.7; }
+
+  .presets { display: flex; gap: 8px; margin-bottom: 18px; }
+  .presets button { flex: 1; padding: 7px 4px; font-size: 12px; border-radius: 8px; cursor: pointer;
+    border: .5px solid rgba(0,0,0,.14); background: #F6F4EF; color: #4A4843; }
+  .presets button:hover { background: #EDEAE3; }
+  .presets button.on { background: #1C1C1A; color: #E4E1D6; border-color: #1C1C1A; }
+
+  .readout { border-top: .5px solid rgba(0,0,0,.10); padding-top: 14px; margin-top: 4px; }
+  .row { display: flex; justify-content: space-between; font-size: 12px; padding: 5px 0; }
+  .row span { color: #6E6B65; }
+  .row b { font-weight: 500; font-variant-numeric: tabular-nums; }
+  .verdict { margin-top: 12px; padding: 10px 12px; border-radius: 8px; font-size: 12px; line-height: 1.8; }
+  .verdict.ok   { background: #E8F2EA; color: #2F6B41; }
+  .verdict.warn { background: #FAF0DC; color: #8A6417; }
+  .verdict.bad  { background: #FBE9E7; color: #A3382B; }
+
+  pre { background: #1C1C1A; color: #D8D4C8; padding: 14px; border-radius: 8px;
+    font: 11.5px/1.8 "Cascadia Code",Consolas,monospace; white-space: pre-wrap; word-break: break-all; }
+  .copied { font-size: 11px; color: #2F6B41; margin-top: 8px; height: 14px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>A 方向 · AI 底图透明度调参台</h1>
+  <p>左侧为真实界面 1:1 预览。拖动右侧滑杆实时预览，下方实时计算内容区有效不透明度与正文对比度。</p>
+</header>
+
+<main>
+  <!-- 预览 -->
+  <div class="stage">
+    <div class="ink-bg">
+      <div class="ink-photo"></div>
+      <div class="ink-veil"></div>
+      <div class="ink-wash">
+        <div class="ink-blob ink-blob-1"></div>
+        <div class="ink-blob ink-blob-2"></div>
+      </div>
+      <div class="paper-grain"></div>
+    </div>
+    <div class="wood-roll top"></div>
+    <div class="wood-roll bot"></div>
+
+    <div class="app">
+      <div class="topbar">
+        <div class="brand">论匠<small>多智能体论文全流程助手</small></div>
+        <div class="spacer"></div>
+        <div class="btn">项目设置</div>
+        <div class="btn">＋ 新建</div>
+        <nav><button class="on">对话</button><button>可观测</button></nav>
+      </div>
+
+      <div class="chat-layout">
+        <aside class="col sessions">
+          <div class="sess-head">会 话 卷 册</div>
+          <div class="sess-item on">
+            <div class="sess-title">选题方向探索</div>
+            <div class="sess-meta">刚刚 · 4 条</div>
+          </div>
+          <div class="sess-item">
+            <div class="sess-title">文献检索</div>
+            <div class="sess-meta">昨天 14:20</div>
+          </div>
+          <div class="sess-item">
+            <div class="sess-title">摘要初稿</div>
+            <div class="sess-meta">昨天 11:05</div>
+          </div>
+        </aside>
+
+        <section class="col chat-col">
+          <div class="messages">
+            <div class="msgs-inner">
+              <div class="msg user">
+                <div class="msg-mark">言</div>
+                <div class="bubble">帮我确定一个可行的论文选题，数据科学方向，大模型相关。</div>
+              </div>
+              <div class="msg">
+                <div class="msg-mark">匠</div>
+                <div class="bubble">好的。先确认两点：① 你的专业是数据科学与大数据技术？② 希望偏理论（可解释性／对齐）还是偏应用（检索增强／Agent）？</div>
+              </div>
+              <div class="msg user">
+                <div class="msg-mark">言</div>
+                <div class="bubble">偏应用，想做 RAG 方向。</div>
+              </div>
+              <div class="msg">
+                <div class="msg-mark">匠</div>
+                <div class="bubble">建议从「RAG 评测的鲁棒性」切入：对抗查询、检索失败、引用幻觉三类扰动下的指标波动。已为你调度文献 Agent，先拉近三年 50 篇核心论文。</div>
+              </div>
+            </div>
+          </div>
+          <div class="input-bar">
+            <div class="composer">
+              <textarea placeholder="输入论文相关请求…"></textarea>
+              <div class="btn gold send">发送</div>
+            </div>
+            <div class="input-hint">Enter 发送 · Shift + Enter 换行 · 已关联项目 #1</div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <!-- 控制面板 -->
+  <div class="panel">
+    <div class="card">
+      <h2>预设</h2>
+      <div class="presets">
+        <button data-op="0.08">极简</button>
+        <button data-op="0.16" class="on">标准</button>
+        <button data-op="0.26">氛围</button>
+        <button data-op="0.40">浓郁</button>
+      </div>
+
+      <div class="ctrl">
+        <label>AI 底图不透明度 <b id="v-op">0.16</b></label>
+        <input type="range" id="s-op" min="0" max="0.5" step="0.01" value="0.16">
+        <div class="hint">硬上限建议 ≤ 0.30。超过 0.35 后山形开始与文字争注意力。</div>
+      </div>
+      <div class="ctrl">
+        <label>顶部遮罩（图的可见度）<b id="v-top">0.28</b></label>
+        <input type="range" id="s-top" min="0" max="0.7" step="0.02" value="0.28">
+        <div class="hint">越小顶部山水越清晰。顶栏文字会落在这段上。</div>
+      </div>
+      <div class="ctrl">
+        <label>内容区遮罩（正文底）<b id="v-mid">0.88</b></label>
+        <input type="range" id="s-mid" min="0.4" max="1" step="0.02" value="0.88">
+        <div class="hint">决定消息气泡下方的实际底噪。越高越安静。</div>
+      </div>
+      <div class="ctrl">
+        <label>墨滴晕染强度 <b id="v-wash">1.00</b></label>
+        <input type="range" id="s-wash" min="0" max="1" step="0.05" value="1">
+      </div>
+      <div class="ctrl">
+        <label>宣纸纹理 <b id="v-grain">0.045</b></label>
+        <input type="range" id="s-grain" min="0" max="0.15" step="0.005" value="0.045">
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>实时测算</h2>
+      <div class="readout">
+        <div class="row"><span>顶部有效不透明度</span><b id="m-top">—</b></div>
+        <div class="row"><span>内容区有效不透明度</span><b id="m-eff">—</b></div>
+        <div class="row"><span>内容区合成底色</span><b id="m-bg">—</b></div>
+        <div class="row"><span>正文对比度</span><b id="m-cr">—</b></div>
+        <div class="row"><span>WCAG 评级</span><b id="m-lv">—</b></div>
+        <div class="verdict" id="m-ver">—</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>对应代码（点击复制）</h2>
+      <pre id="code">—</pre>
+      <div class="copied" id="copied"></div>
+    </div>
+  </div>
+</main>
+
+<script>
+const BG   = [19, 28, 36];      // --bg-deep #131C24
+const IMG  = [183, 197, 211];   // 底图平均色（实测）
+const TEXT = [228, 225, 214];   // --ink-hi  #E4E1D6
+
+const stage = document.querySelector('.stage');
+const S = ['op','top','mid','wash','grain'].reduce((o,k)=>(o[k]=document.getElementById('s-'+k),o),{});
+
+const lin = c => { c /= 255; return c <= 0.03928 ? c/12.92 : Math.pow((c+0.055)/1.055, 2.4); };
+const lum = ([r,g,b]) => 0.2126*lin(r) + 0.7152*lin(g) + 0.0722*lin(b);
+const contrast = (a,b) => { const x=lum(a), y=lum(b); return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); };
+const over = a => BG.map((c,i) => c*(1-a) + IMG[i]*a);
+const hex = ([r,g,b]) => '#' + [r,g,b].map(v=>Math.round(v).toString(16).padStart(2,'0')).join('');
+
+function apply() {
+  const op = +S.op.value, top = +S.top.value, mid = +S.mid.value;
+  stage.style.setProperty('--p-op', op);
+  stage.style.setProperty('--v-top', top);
+  stage.style.setProperty('--v-mid', mid);
+  stage.style.setProperty('--wash', S.wash.value);
+  stage.style.setProperty('--grain', S.grain.value);
+
+  document.getElementById('v-op').textContent    = op.toFixed(2);
+  document.getElementById('v-top').textContent   = top.toFixed(2);
+  document.getElementById('v-mid').textContent   = mid.toFixed(2);
+  document.getElementById('v-wash').textContent  = (+S.wash.value).toFixed(2);
+  document.getElementById('v-grain').textContent = (+S.grain.value).toFixed(3);
+
+  const effTop = op * (1 - top);
+  const eff    = op * (1 - mid);
+  const bg     = over(eff);
+  const cr     = contrast(TEXT, bg);
+
+  document.getElementById('m-top').textContent = effTop.toFixed(3);
+  document.getElementById('m-eff').textContent = eff.toFixed(3);
+  document.getElementById('m-bg').textContent  = hex(bg);
+  document.getElementById('m-cr').textContent  = cr.toFixed(2) + ' : 1';
+
+  let lv, cls, ver;
+  if (cr >= 7)       { lv='AAA';     cls='ok';   ver='正文远超 AAA 门槛（7:1）。背景安静，长时间阅读无压力。'; }
+  else if (cr >= 4.5){ lv='AA';      cls='ok';   ver='达到 AA（4.5:1），正文安全。小字号辅助文字建议再降一点。'; }
+  else if (cr >= 3)  { lv='AA 大字'; cls='warn'; ver='仅满足大字号 AA。正文建议调低不透明度或提高内容区遮罩。'; }
+  else               { lv='不合格';   cls='bad';  ver='低于 3:1，正文可读性受损。必须调低不透明度或提高遮罩。'; }
+  document.getElementById('m-lv').textContent = lv;
+  const v = document.getElementById('m-ver');
+  v.className = 'verdict ' + cls;
+  v.textContent = ver;
+
+  document.getElementById('code').textContent =
+`.ink-photo {
+  opacity: ${op.toFixed(2)};
+  filter: saturate(0.9);
+}
+.ink-veil {
+  background: linear-gradient(180deg,
+    rgba(19, 28, 36, ${top.toFixed(2)}) 0%,
+    rgba(19, 28, 36, 0.62) 26%,
+    rgba(19, 28, 36, ${mid.toFixed(2)}) 50%,
+    rgba(19, 28, 36, 0.96) 72%,
+    var(--bg-deep) 100%);
+}
+
+/* 顶部有效 ${effTop.toFixed(3)} · 内容区有效 ${eff.toFixed(3)}
+   内容区底色 ${hex(bg)} · 正文对比度 ${cr.toFixed(2)}:1 (${lv}) */`;
+
+  document.querySelectorAll('.presets button').forEach(b =>
+    b.classList.toggle('on', Math.abs(+b.dataset.op - op) < 0.005));
+}
+
+Object.values(S).forEach(s => s.addEventListener('input', apply));
+document.querySelectorAll('.presets button').forEach(b =>
+  b.addEventListener('click', () => { S.op.value = b.dataset.op; apply(); }));
+document.getElementById('code').addEventListener('click', () => {
+  navigator.clipboard?.writeText(document.getElementById('code').textContent);
+  const c = document.getElementById('copied');
+  c.textContent = '已复制到剪贴板';
+  setTimeout(() => c.textContent = '', 1800);
+});
+apply();
+</script>
+</body>
+</html>

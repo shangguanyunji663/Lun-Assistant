@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<title>论匠前端 · 三方向视觉重构预览</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+/* =========================================================
+   页面骨架（中性灰底，仅为承载 3 个主题的画布）
+   ========================================================= */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: #EFEDE8; color: #1C1C1A;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif; }
+body { padding: 32px 24px 64px; }
+h1 { font-size: 22px; font-weight: 500; letter-spacing: 0.04em; }
+.subtitle { color: #6E6B65; font-size: 13px; margin-top: 6px; font-weight: 300; }
+.legend { display: flex; gap: 16px; margin: 24px 0 8px; flex-wrap: wrap; font-size: 12px; color: #4A4843; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend .sw { width: 14px; height: 14px; border-radius: 3px; border: 0.5px solid rgba(0,0,0,0.15); }
+
+/* 三个主题预览栅格 */
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 16px; }
+@media (max-width: 1280px) { .grid { grid-template-columns: 1fr; max-width: 480px; margin: 16px auto 0; } }
+
+/* 模拟框（手机/桌面小屏） */
+.mockup { position: relative; height: 680px; border-radius: 18px; overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.18), 0 0 0 0.5px rgba(0,0,0,0.08);
+  display: flex; flex-direction: column; }
+.mockup .ink-bg { position: absolute; inset: 0; pointer-events: none; }
+.mockup .ink-bg img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.mockup .ink-bg::after { content: ""; position: absolute; inset: 0; }
+.mockup .label { position: absolute; top: 12px; right: 12px; z-index: 5;
+  font-size: 11px; padding: 4px 10px; border-radius: 999px;
+  background: rgba(0,0,0,0.45); color: #fff; letter-spacing: 0.1em; backdrop-filter: blur(6px); }
+
+/* 通用 UI 单元（在主题中重写颜色） */
+.topbar { position: relative; z-index: 3; display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; font-size: 12px; }
+.brand { font-weight: 500; letter-spacing: 0.15em; font-size: 14px; }
+.brand small { font-weight: 300; font-size: 10px; margin-left: 4px; letter-spacing: 0.08em; opacity: 0.7; }
+.topbar .grow { flex: 1; }
+.topbar select { font-size: 11px; padding: 3px 6px; border-radius: 4px; }
+.btn { font-size: 11px; padding: 5px 10px; border-radius: 4px; border: 0.5px solid;
+  background: transparent; cursor: pointer; line-height: 1.2; }
+.btn-x { font-size: 10px; padding: 2px 6px; }
+.body { position: relative; z-index: 2; flex: 1; display: flex; min-height: 0; }
+.sidebar { width: 96px; padding: 10px 8px; overflow: hidden; font-size: 10px; line-height: 1.7; }
+.sb-item { padding: 4px 6px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-item.on { font-weight: 500; }
+.chat { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.chat-scroll { flex: 1; padding: 12px 12px 8px; overflow: hidden; }
+.bubble { font-size: 11px; line-height: 1.7; padding: 8px 10px; margin-bottom: 8px;
+  max-width: 80%; border-radius: 8px; letter-spacing: 0.02em; }
+.bubble.user { margin-left: auto; }
+.bubble.assistant { margin-right: auto; }
+.bubble .role { font-size: 9px; opacity: 0.6; margin-bottom: 2px; letter-spacing: 0.1em; }
+.input-bar { padding: 8px; display: flex; gap: 6px; align-items: flex-end; }
+.input-bar textarea { flex: 1; resize: none; height: 38px; padding: 6px 8px;
+  font-size: 11px; line-height: 1.5; border-radius: 6px; border: 0.5px solid;
+  background: transparent; font-family: inherit; }
+.input-bar .send { padding: 0 12px; height: 38px; font-size: 11px; }
+
+/* =========================================================
+   主题 A · 青绿长卷
+   ========================================================= */
+.mockup-a { background: #14202B; color: #E8E4D9; }
+.mockup-a .ink-bg img { object-position: center 30%; opacity: 0.55; }
+.mockup-a .ink-bg::after { background:
+  linear-gradient(180deg, rgba(20,32,43,0.30) 0%, rgba(20,32,43,0.10) 28%, rgba(20,32,43,0.55) 60%, rgba(20,32,43,0.92) 100%),
+  radial-gradient(ellipse at center, transparent 50%, rgba(20,32,43,0.55) 100%); }
+.mockup-a .wood { position: absolute; left: 0; right: 0; height: 10px; background:
+  linear-gradient(180deg, #C8A15A 0%, #A8843E 50%, #C8A15A 100%);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4); z-index: 4; }
+.mockup-a .wood.top { top: 0; }
+.mockup-a .wood.bot { bottom: 0; transform: scaleY(-1); }
+.mockup-a .topbar { background: rgba(20,32,43,0.72); backdrop-filter: blur(10px);
+  border-bottom: 0.5px solid rgba(200,161,90,0.25); margin-top: 10px; }
+.mockup-a .sidebar { background: rgba(20,32,43,0.55); border-right: 0.5px solid rgba(200,161,90,0.18); color: #B6C0C5; }
+.mockup-a .sb-item { border-left: 2px solid transparent; }
+.mockup-a .sb-item.on { background: rgba(200,161,90,0.10); border-left-color: #C8A15A; color: #E8E4D9; }
+.mockup-a .bubble.user { border: 1px solid #C8A15A; color: #F1ECDD; background: rgba(200,161,90,0.06); }
+.mockup-a .bubble.assistant { border: 1px solid rgba(180,194,201,0.45); color: #DCE3E6; background: rgba(46,107,126,0.08); }
+.mockup-a .input-bar { background: rgba(20,32,43,0.72); border-top: 0.5px solid rgba(200,161,90,0.18); }
+.mockup-a .input-bar textarea { border-color: rgba(200,161,90,0.35); color: #E8E4D9; }
+.mockup-a .input-bar textarea::placeholder { color: rgba(232,228,217,0.4); }
+.mockup-a .btn { color: #B6C0C5; border-color: rgba(200,161,90,0.30); }
+.mockup-a .btn.primary { background: #C8A15A; color: #14202B; border-color: #C8A15A; font-weight: 500; }
+.mockup-a select { background: rgba(46,107,126,0.18); color: #E8E4D9; border-color: rgba(200,161,90,0.30); }
+
+/* =========================================================
+   主题 B · 水墨留白
+   ========================================================= */
+.mockup-b { background: #ECEAE3; color: #1C1C1A; }
+.mockup-b .ink-bg img { object-position: right bottom; width: 60%; height: 60%;
+  left: auto; right: 0; top: auto; bottom: 0; opacity: 0.16; filter: contrast(0.95) saturate(0.4); }
+.mockup-b .ink-bg::after { background: radial-gradient(ellipse at top left, transparent 40%, rgba(236,234,227,0.6) 100%); }
+.mockup-b .topbar { background: rgba(236,234,227,0.85); backdrop-filter: blur(8px);
+  border-bottom: 0.5px solid rgba(28,28,26,0.08); }
+.mockup-b .brand { font-family: "STKaiti", "KaiTi", "楷体", serif; letter-spacing: 0.3em; }
+.mockup-b .brand-rule { height: 0.5px; background: linear-gradient(90deg, transparent, rgba(28,28,26,0.4), transparent);
+  margin: 2px 0 0; width: 80px; }
+.mockup-b .sidebar { background: rgba(196,197,189,0.20); border-right: 0.5px solid rgba(28,28,26,0.08); color: #4A4843; }
+.mockup-b .sb-item.on { background: rgba(60,110,143,0.08); color: #3C6E8F; border-left: 2px solid #3C6E8F; padding-left: 4px; }
+.mockup-b .bubble.user { border: 0.5px solid #3C6E8F; color: #1C1C1A; background: transparent; }
+.mockup-b .bubble.assistant { border: 0.5px solid rgba(28,28,26,0.18); color: #1C1C1A; background: rgba(255,255,255,0.35); }
+.mockup-b .input-bar { background: rgba(236,234,227,0.85); border-top: 0.5px solid rgba(28,28,26,0.08); }
+.mockup-b .input-bar textarea { border-color: rgba(28,28,26,0.18); color: #1C1C1A; background: rgba(255,255,255,0.5); }
+.mockup-b .input-bar textarea::placeholder { color: rgba(28,28,26,0.35); }
+.mockup-b .btn { color: #4A4843; border-color: rgba(28,28,26,0.20); }
+.mockup-b .btn.primary { background: #1C1C1A; color: #ECEAE3; border-color: #1C1C1A; }
+.mockup-b select { background: rgba(255,255,255,0.6); color: #1C1C1A; border-color: rgba(28,28,26,0.18); }
+
+/* =========================================================
+   主题 C · 暗墨金线
+   ========================================================= */
+.mockup-c { background: #0E1012; color: #E8E4D9; }
+.mockup-c .ink-bg img { object-position: center 70%; opacity: 0.65; }
+.mockup-c .ink-bg::after { background:
+  linear-gradient(180deg, #0E1012 0%, rgba(14,16,18,0.55) 28%, rgba(14,16,18,0.85) 60%, #0E1012 100%); }
+.mockup-c .topbar { background: rgba(14,16,18,0.78); backdrop-filter: blur(14px);
+  border-bottom: 0.5px solid rgba(201,162,39,0.30); position: relative; }
+.mockup-c .topbar::after { content: ""; position: absolute; left: 16px; right: 16px; bottom: -1px;
+  height: 0.5px; background: linear-gradient(90deg, transparent, #C9A227 30%, #C9A227 70%, transparent); }
+.mockup-c .brand .seal { color: #B04A3A; }
+.mockup-c .sidebar { background: rgba(22,25,28,0.65); border-right: 0.5px solid rgba(201,162,39,0.18); color: #9A958B; }
+.mockup-c .sb-item { border-left: 2px solid transparent; }
+.mockup-c .sb-item.on { background: rgba(201,162,39,0.08); border-left-color: #C9A227; color: #E8E4D9; }
+.mockup-c .bubble { background: rgba(22,25,28,0.72); backdrop-filter: blur(10px); border: 0.5px solid rgba(232,228,217,0.10); }
+.mockup-c .bubble.user { color: #E8E4D9; border-color: rgba(47,71,86,0.55); }
+.mockup-c .bubble.assistant { color: #E8E4D9; border-color: rgba(201,162,39,0.20); }
+.mockup-c .input-bar { background: rgba(14,16,18,0.78); backdrop-filter: blur(14px); border-top: 0.5px solid rgba(201,162,39,0.18); }
+.mockup-c .input-bar textarea { background: rgba(22,25,28,0.65); border-color: rgba(201,162,39,0.20); color: #E8E4D9; }
+.mockup-c .input-bar textarea::placeholder { color: rgba(232,228,217,0.35); }
+.mockup-c .btn { color: #9A958B; border-color: rgba(201,162,39,0.25); }
+.mockup-c .btn.primary { background: #B04A3A; color: #E8E4D9; border-color: #B04A3A; font-weight: 500; }
+.mockup-c select { background: rgba(22,25,28,0.65); color: #E8E4D9; border-color: rgba(201,162,39,0.20); }
+
+/* =========================================================
+   底部对比：按钮 4 态
+   ========================================================= */
+.compare { margin-top: 48px; }
+.compare h2 { font-size: 14px; font-weight: 500; margin-bottom: 12px; color: #1C1C1A; letter-spacing: 0.06em; }
+.compare-row { display: grid; grid-template-columns: 100px repeat(4, 1fr); gap: 12px; align-items: center;
+  padding: 12px 0; border-top: 0.5px solid rgba(0,0,0,0.08); font-size: 11px; }
+.compare-row .col-name { color: #6E6B65; letter-spacing: 0.05em; }
+.compare-cell { padding: 10px 12px; border-radius: 8px; }
+.compare-cell.mockup-a { background: #14202B; color: #E8E4D9; }
+.compare-cell.mockup-b { background: #ECEAE3; color: #1C1C1A; }
+.compare-cell.mockup-c { background: #0E1012; color: #E8E4D9; }
+.compare-cell .btn { margin-right: 4px; }
+
+footer { margin-top: 40px; font-size: 11px; color: #6E6B65; text-align: center; letter-spacing: 0.05em; }
+</style>
+</head>
+<body>
+
+<h1>论匠前端 · 三方向视觉重构预览</h1>
+<p class="subtitle">打开本页后,三个主题并排展示,均可滚动/交互。等你看完定方向,我会按选定方向出设计规范与完整代码。</p>
+
+<div class="legend">
+  <span><span class="sw" style="background:#14202B"></span>A 主色 · 靛青底</span>
+  <span><span class="sw" style="background:#C8A15A"></span>A 强调 · 赭石金</span>
+  <span><span class="sw" style="background:#ECEAE3;border-color:#999"></span>B 主色 · 冷宣白</span>
+  <span><span class="sw" style="background:#3C6E8F"></span>B 强调 · 石青</span>
+  <span><span class="sw" style="background:#0E1012"></span>C 主色 · 焦墨</span>
+  <span><span class="sw" style="background:#C9A227"></span>C 强调 · 赭金</span>
+</div>
+
+<div class="grid">
+
+  <!-- ============ A · 青绿长卷 ============ -->
+  <div class="mockup mockup-a">
+    <div class="wood top"></div><div class="wood bot"></div>
+    <div class="ink-bg"><img src="Traditional_Chinese_blue_green_2026-09-01T13-40-09.png" alt="青绿长卷"></div>
+    <div class="label">A · 青绿长卷</div>
+    <div class="topbar">
+      <div class="brand">论匠 <small>·  v9</small></div>
+      <div class="grow"></div>
+      <select><option>#1 选题方向探索</option></select>
+      <button class="btn">+ 新建</button>
+      <button class="btn">项目设置</button>
+    </div>
+    <div class="body">
+      <div class="sidebar">
+        <div style="font-size:9px;opacity:0.6;letter-spacing:0.15em;padding:0 6px 4px;">会 话 卷 册</div>
+        <div class="sb-item">◇ 新会话</div>
+        <div class="sb-item on">昨 14:20 · 选题方向</div>
+        <div class="sb-item">昨 11:05 · 文献检索</div>
+        <div class="sb-item">昨 09:12 · 摘要初稿</div>
+        <div class="sb-item">更早 →</div>
+      </div>
+      <div class="chat">
+        <div class="chat-scroll">
+          <div class="bubble user">
+            <div class="role">USER</div>
+            帮我确定一个可行的论文选题,数据科学方向,大模型相关。
+          </div>
+          <div class="bubble assistant">
+            <div class="role">论匠 · 主控</div>
+            好的。先确认两点:① 你的专业是数据科学与大数据技术? ② 希望偏理论(可解释性/对齐)还是偏应用(检索增强/Agent)?
+          </div>
+          <div class="bubble user">
+            <div class="role">USER</div>
+            偏应用,想做 RAG 方向。
+          </div>
+          <div class="bubble assistant">
+            <div class="role">论匠 · 主控</div>
+            建议从"RAG 评测的鲁棒性"切入:对抗查询、检索失败、引用幻觉三类扰动下的指标波动。已为你调度文献 Agent,先拉近三年 50 篇核心论文。
+          </div>
+        </div>
+        <div class="input-bar">
+          <textarea placeholder="输入论文相关请求…"></textarea>
+          <button class="btn primary send">发送</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ B · 水墨留白 ============ -->
+  <div class="mockup mockup-b">
+    <div class="ink-bg"><img src="Traditional_Chinese_ink_wash_l_2026-09-01T13-40-46.png" alt="水墨留白"></div>
+    <div class="label">B · 水墨留白</div>
+    <div class="topbar">
+      <div>
+        <div class="brand">论 匠</div>
+        <div class="brand-rule"></div>
+      </div>
+      <div class="grow"></div>
+      <select><option>#1 选题方向探索</option></select>
+      <button class="btn">+ 新建</button>
+      <button class="btn">项目设置</button>
+    </div>
+    <div class="body">
+      <div class="sidebar">
+        <div style="font-size:9px;opacity:0.55;letter-spacing:0.15em;padding:0 6px 4px;">会 话</div>
+        <div class="sb-item">新会话</div>
+        <div class="sb-item on">昨 14:20 · 选题方向</div>
+        <div class="sb-item">昨 11:05 · 文献检索</div>
+        <div class="sb-item">昨 09:12 · 摘要初稿</div>
+        <div class="sb-item">更早 →</div>
+      </div>
+      <div class="chat">
+        <div class="chat-scroll">
+          <div class="bubble user">
+            <div class="role">USER</div>
+            帮我确定一个可行的论文选题,数据科学方向,大模型相关。
+          </div>
+          <div class="bubble assistant">
+            <div class="role">论 匠 · 主控</div>
+            好的。先确认两点:① 你的专业是数据科学与大数据技术? ② 希望偏理论(可解释性/对齐)还是偏应用(检索增强/Agent)?
+          </div>
+          <div class="bubble user">
+            <div class="role">USER</div>
+            偏应用,想做 RAG 方向。
+          </div>
+          <div class="bubble assistant">
+            <div class="role">论 匠 · 主控</div>
+            建议从"RAG 评测的鲁棒性"切入:对抗查询、检索失败、引用幻觉三类扰动下的指标波动。已为你调度文献 Agent,先拉近三年 50 篇核心论文。
+          </div>
+        </div>
+        <div class="input-bar">
+          <textarea placeholder="输入论文相关请求…"></textarea>
+          <button class="btn primary send">发送</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ C · 暗墨金线 ============ -->
+  <div class="mockup mockup-c">
+    <div class="ink-bg"><img src="Chinese_ink_painting_of_toweri_2026-09-01T13-41-26.png" alt="夜山金碧"></div>
+    <div class="label">C · 暗墨金线</div>
+    <div class="topbar">
+      <div class="brand"><span class="seal">◈</span> 论匠 <small>· v9</small></div>
+      <div class="grow"></div>
+      <select><option>#1 选题方向探索</option></select>
+      <button class="btn">+ 新建</button>
+      <button class="btn">项目设置</button>
+    </div>
+    <div class="body">
+      <div class="sidebar">
+        <div style="font-size:9px;opacity:0.5;letter-spacing:0.15em;padding:0 6px 4px;color:#C9A227;">会 话 册</div>
+        <div class="sb-item">◇ 新会话</div>
+        <div class="sb-item on">昨 14:20 · 选题方向</div>
+        <div class="sb-item">昨 11:05 · 文献检索</div>
+        <div class="sb-item">昨 09:12 · 摘要初稿</div>
+        <div class="sb-item">更早 →</div>
+      </div>
+      <div class="chat">
+        <div class="chat-scroll">
+          <div class="bubble user">
+            <div class="role">USER</div>
+            帮我确定一个可行的论文选题,数据科学方向,大模型相关。
+          </div>
+          <div class="bubble assistant">
+            <div class="role">论匠 · 主控</div>
+            好的。先确认两点:① 你的专业是数据科学与大数据技术? ② 希望偏理论(可解释性/对齐)还是偏应用(检索增强/Agent)?
+          </div>
+          <div class="bubble user">
+            <div class="role">USER</div>
+            偏应用,想做 RAG 方向。
+          </div>
+          <div class="bubble assistant">
+            <div class="role">论匠 · 主控</div>
+            建议从"RAG 评测的鲁棒性"切入:对抗查询、检索失败、引用幻觉三类扰动下的指标波动。已为你调度文献 Agent,先拉近三年 50 篇核心论文。
+          </div>
+        </div>
+        <div class="input-bar">
+          <textarea placeholder="输入论文相关请求…"></textarea>
+          <button class="btn primary send">发送</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 按钮 4 态对比 -->
+<div class="compare">
+  <h2>按钮 4 态对比(从上到下:default / hover / active / disabled)</h2>
+
+  <div class="compare-row" style="border-top:0;">
+    <div class="col-name">A · 青绿</div>
+    <div class="compare-cell mockup-a">
+      <button class="btn">次要</button>
+      <button class="btn primary">主要</button>
+      <button class="btn primary">已选</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+    </div>
+    <div class="compare-cell mockup-a" style="background:#1B2A3A;">
+      <button class="btn">次要</button>
+      <button class="btn primary">主要</button>
+      <button class="btn primary">已选</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+    </div>
+    <div class="compare-cell mockup-a" style="background:#173040;">
+      <button class="btn">次要</button>
+      <button class="btn primary">主要</button>
+      <button class="btn primary">已选</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+    </div>
+    <div class="compare-cell mockup-a">
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+    </div>
+  </div>
+
+  <div class="compare-row">
+    <div class="col-name">B · 水墨</div>
+    <div class="compare-cell mockup-b">
+      <button class="btn">次要</button>
+      <button class="btn primary">主要</button>
+      <button class="btn primary">已选</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+    </div>
+    <div class="compare-cell mockup-b" style="background:#F2F0E9;">
+      <button class="btn">次要</button>
+      <button class="btn primary">主要</button>
+      <button class="btn primary">已选</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+    </div>
+    <div class="compare-cell mockup-b" style="background:#E5E3DB;">
+      <button class="btn">次要</button>
+      <button class="btn primary">主要</button>
+      <button class="btn primary">已选</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+    </div>
+    <div class="compare-cell mockup-b">
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+    </div>
+  </div>
+
+  <div class="compare-row">
+    <div class="col-name">C · 暗墨</div>
+    <div class="compare-cell mockup-c">
+      <button class="btn">次要</button>
+      <button class="btn primary">主要</button>
+      <button class="btn primary">已选</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+    </div>
+    <div class="compare-cell mockup-c" style="background:#1A1D20;">
+      <button class="btn">次要</button>
+      <button class="btn primary">主要</button>
+      <button class="btn primary">已选</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+    </div>
+    <div class="compare-cell mockup-c" style="background:#252A2E;">
+      <button class="btn">次要</button>
+      <button class="btn primary">主要</button>
+      <button class="btn primary">已选</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+    </div>
+    <div class="compare-cell mockup-c">
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+    </div>
+  </div>
+</div>
+
+<footer>提示:本预览是 380×680 的缩比示意,选定方向后我会出全尺寸设计规范与前端实现代码(以选定方向为准)。</footer>
+
+</body>
+</html>
