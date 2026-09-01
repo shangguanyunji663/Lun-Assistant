@@ -11,8 +11,9 @@
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from infrastructure.paths import PROJECT_ROOT  # noqa: E402 —— 路径唯一真源
 
 import httpx  # noqa: E402
 import psycopg  # noqa: E402

@@ -5,8 +5,9 @@
 """
 import asyncio
 import sys
+from pathlib import Path
 
-sys.path.insert(0, ".")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 if sys.platform == "win32":
     # psycopg 异步连接池需要 Selector 事件循环（Windows 默认 Proactor 不支持）

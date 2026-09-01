@@ -17,7 +17,7 @@ from pathlib import Path
 import httpx
 
 logging.basicConfig(level=logging.WARNING)
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+from infrastructure.paths import PROJECT_ROOT  # noqa: E402 —— 路径唯一真源
 BASE = "http://127.0.0.1:8000"
 SAMPLE = ("# 压测文档\n\n混合检索与交叉编码器精排技术：密集检索通过向量相似度召回候选，"
           "稀疏检索利用 BM25 词频建模，二者经倒数排名融合后由交叉编码器精排。"

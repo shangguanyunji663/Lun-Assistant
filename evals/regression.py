@@ -23,8 +23,9 @@ from pathlib import Path
 logging.basicConfig(level=logging.WARNING)
 logging.getLogger("lunjiang").setLevel(logging.INFO)
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from infrastructure.paths import PROJECT_ROOT  # noqa: E402 —— 路径唯一真源
 
 _results: list[dict] = []
 
@@ -196,11 +197,11 @@ async def s5_complex_task() -> None:
 
 async def s6_artifact() -> None:
     # 仅校验模板覆盖与参数校验（真实 LLM 生成在冒烟中验证）
-    from services.agent.artifacts import KINDS, _ARTIFACT_TEMPLATES
+    from services.governance.artifacts import KINDS, _ARTIFACT_TEMPLATES
     ok = set(KINDS) == {"review_draft", "proposal_report", "defense_outline"}
     _record("S6", "产物模板覆盖", ok, f"KINDS={KINDS}")
     try:
-        await __import__("services.agent.artifacts", fromlist=["generate_artifact"]).generate_artifact(
+        await __import__("services.governance.artifacts", fromlist=["generate_artifact"]).generate_artifact(
             kind="xx", topic="t")
         _record("S6", "参数校验", False, "非法 kind 未抛错")
     except ValueError:

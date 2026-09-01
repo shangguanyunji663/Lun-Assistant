@@ -15,10 +15,6 @@ tools:
     rate_limit_rpm: 60
     breaker: llm_light
 
-  classify_intent:
-    rate_limit_rpm: 120
-    breaker: llm_light
-
   generate_section:
     rate_limit_rpm: 10
     breaker: llm_main
@@ -69,14 +65,4 @@ tools:
 
   term_explain:
     rate_limit_rpm: 20
-    breaker: rag_pipeline
-
-  ingest_corpus:
-    rate_limit_rpm: 2
-    lock_key: task:ingest
-    breaker: rag_pipeline
-
-  admin_reindex:
-    rate_limit_rpm: 2
-    lock_key: task:reindex
     breaker: rag_pipeline

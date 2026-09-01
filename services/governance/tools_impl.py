@@ -1,13 +1,17 @@
 """业务工具实现：6 类论文工具（经 ToolRegistry 治理后供 Agent 调用）。"""
 import re
 
-from services.llm.provider import LLMProvider
+from services.governance.artifacts import generate_artifact
+from services.governance import academic_tools as at
 from services.governance.tool_registry import ToolSpec, tool_registry
+from services.llm.provider import LLMProvider
+from services.rag.pipeline import rag_pipeline
+from services.rag.query_rewrite import rewrite_query as _rewrite_query
+from services.rag.retriever import hybrid_retriever
 
 
 # ---------------- 文献检索 ----------------
 async def search_literature(query: str, top_k: int = 5):
-    from services.rag.pipeline import rag_pipeline
     try:
         top_k = int(top_k or 5)
     except (TypeError, ValueError):
@@ -81,7 +85,6 @@ async def check_format(text: str, strict: bool = True):
 # ---------------- 查重降重 ----------------
 async def check_plagiarism(text: str, granularity: str = "paragraph"):
     """与本地语料库比对估算重复率（dense+bm25 双路相似度）。"""
-    from services.rag.retriever import hybrid_retriever
     paragraphs = [p.strip() for p in re.split(r"[\n。]", text) if len(p.strip()) > 30]
     if not paragraphs:
         return {"estimated_rate": 0.0, "matched": []}
@@ -143,41 +146,12 @@ async def detect_ai_text(text: str, mode: str = "standard"):
 
 # ---------------- Query 改写 ----------------
 async def rewrite_query(query: str):
-    from services.rag.query_rewrite import rewrite_query as _rw
-    return await _rw(query)
-
-
-# ---------------- 结构化产物生成 ----------------
-async def generate_artifact(kind: str, topic: str, requirement: str = "",
-                            references: str = "", project_id: int | None = None):
-    """综述初稿 / 开题报告 / 答辩大纲（证据检索 + 模板生成，见 services/agent/artifacts.py）。"""
-    from services.agent.artifacts import generate_artifact as _gen
-    return await _gen(kind=kind, topic=topic, requirement=requirement,
-                      references=references, project_id=project_id)
-
-
-# ---------------- P2 学术工具生态（6类）----------------
-def _register_academic() -> None:
-    """学术翻译/润色/方法推荐/参考文献格式化/摘要生成/术语解析。"""
-    from services.governance import academic_tools as at
-
-    tool_registry.register(ToolSpec(
-        name="translate_academic", description="学术翻译(中英互译)", handler=at.translate_academic))
-    tool_registry.register(ToolSpec(
-        name="polish_academic", description="学术润色", handler=at.polish_academic))
-    tool_registry.register(ToolSpec(
-        name="recommend_method", description="研究方法推荐", handler=at.recommend_method))
-    tool_registry.register(ToolSpec(
-        name="format_reference", description="参考文献格式化(GB/T 7714/APA)",
-        handler=at.format_reference))
-    tool_registry.register(ToolSpec(
-        name="generate_abstract", description="论文摘要生成", handler=at.generate_abstract))
-    tool_registry.register(ToolSpec(
-        name="term_explain", description="学术术语解析", handler=at.term_explain))
+    return await _rewrite_query(query)
 
 
 # ---------------- 注册 ----------------
 def register_all() -> None:
+    """注册全部治理工具（幂等，可安全多次调用）。"""
     tool_registry.register(ToolSpec(
         name="search_literature", description="三阶段RAG文献检索",
         handler=search_literature))
@@ -197,3 +171,21 @@ def register_all() -> None:
         name="generate_artifact", description="结构化产物生成(综述初稿/开题报告/答辩大纲)",
         handler=generate_artifact))
     _register_academic()
+
+
+# ---------------- P2 学术工具生态（6类）----------------
+def _register_academic() -> None:
+    """学术翻译/润色/方法推荐/参考文献格式化/摘要生成/术语解析。"""
+    tool_registry.register(ToolSpec(
+        name="translate_academic", description="学术翻译(中英互译)", handler=at.translate_academic))
+    tool_registry.register(ToolSpec(
+        name="polish_academic", description="学术润色", handler=at.polish_academic))
+    tool_registry.register(ToolSpec(
+        name="recommend_method", description="研究方法推荐", handler=at.recommend_method))
+    tool_registry.register(ToolSpec(
+        name="format_reference", description="参考文献格式化(GB/T 7714/APA)",
+        handler=at.format_reference))
+    tool_registry.register(ToolSpec(
+        name="generate_abstract", description="论文摘要生成", handler=at.generate_abstract))
+    tool_registry.register(ToolSpec(
+        name="term_explain", description="学术术语解析", handler=at.term_explain))

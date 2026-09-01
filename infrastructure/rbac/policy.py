@@ -4,16 +4,15 @@
 - 工具级权限：governance 工具注册中心在调度前调用 check_tool_permission。
 """
 from functools import lru_cache
-from pathlib import Path
 
 import yaml
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+from infrastructure.paths import CONFIG_DIR
 
 
 @lru_cache
 def load_policy() -> dict:
-    with open(PROJECT_ROOT / "configs" / "rbac.yaml", encoding="utf-8") as f:
+    with open(CONFIG_DIR / "rbac.yaml", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 

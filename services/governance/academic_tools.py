@@ -3,7 +3,7 @@
 1.  translate_academic  学术翻译（中↔英，术语保持）
 2.  polish_academic     学术润色（正式/简洁风格）
 3.  recommend_method    研究方法推荐（RAG 证据 + LLM 决策）
-4.  format_reference    参考文献格式化（GB/T 7714 / APA 规则引擎）
+4.  format_reference    参考文献格式化（GB/T 7714 / APA 规则引擎，同步工具）
 5.  generate_abstract   摘要生成（结构化：目的/方法/结果/结论）
 6.  term_explain        术语解析（RAG 检索 + LLM 人话解释）
 
@@ -12,13 +12,47 @@
 - 规则工具（format_reference）零外部依赖，离线可用；
 - 所有工具有默认参数，满足 tools.yaml 降级路径。
 """
+from services.llm.provider import LLMProvider
+from services.rag.pipeline import rag_pipeline
+
+# ---------------- 参考文献格式模板（规则引擎，离线可用） ----------------
+_GB7714 = "{authors}.{title}[J].{journal},{year},{volume}({issue}):{pages}."
+_APA = "{authors} ({year}). {title}. {journal}, {volume}({issue}), {pages}."
+_STYLE_TMPL = {"gb7714": _GB7714, "apa": _APA}
+
+# 各风格缺失字段的占位值
+_PLACEHOLDER = {
+    "gb7714": {"authors": "佚名", "title": "(未命名文献)", "journal": "佚刊",
+               "year": "无年份", "volume": "—", "issue": "—", "pages": "—"},
+    "apa": {"authors": "Anonymous", "title": "Untitled", "journal": "Unknown Journal",
+            "year": "n.d.", "volume": "—", "issue": "—", "pages": "—"},
+}
+
+
+def format_reference(authors: str = "", title: str = "", journal: str = "",
+                     year: str = "", volume: str = "", issue: str = "",
+                     pages: str = "", style: str = "gb7714"):
+    """规则化参考文献格式化（GB/T 7714 / APA），缺失字段用占位值。"""
+    style = (style or "").lower().strip()
+    if style not in _STYLE_TMPL:
+        return f"不支持的格式: {style}，可选 {list(_STYLE_TMPL)}"
+    values = {"authors": authors, "title": title, "journal": journal,
+              "year": year, "volume": volume, "issue": issue, "pages": pages}
+    if style == "gb7714":
+        values["authors"] = values["authors"].replace("；", ",")
+    else:
+        values["authors"] = values["authors"].replace("，", " & ")
+    ph = _PLACEHOLDER[style]
+    out = _STYLE_TMPL[style]
+    for key, raw in values.items():
+        out = out.replace("{" + key + "}", raw.strip() or ph[key])
+    return out
+
 
 # ---------------- 1. 学术翻译 ----------------
 async def translate_academic(text: str = "", target: str = "en"):
     if not text:
         return "缺少待翻译文本"
-    from services.llm.provider import LLMProvider
-
     direction = "中译英" if target.lower() == "en" else "英译中"
     prompt = (f"请对以下学术文本进行{direction}，要求：\n"
               "1. 术语使用学界规范译法，人名/机构保留原文；\n"
@@ -31,8 +65,6 @@ async def translate_academic(text: str = "", target: str = "en"):
 async def polish_academic(text: str = "", style: str = "formal"):
     if not text:
         return "缺少待润色文本"
-    from services.llm.provider import LLMProvider
-
     style_hint = {"formal": "正式学术风格", "concise": "简洁凝练风格",
                   "plain": "平实易懂风格"}.get(style, "正式学术风格")
     prompt = (f"请对以下段落进行学术润色（{style_hint}），要求：\n"
@@ -47,9 +79,6 @@ async def polish_academic(text: str = "", style: str = "formal"):
 async def recommend_method(question: str = ""):
     if not question:
         return "请描述你的研究问题（如变量/数据形态/验证目标）"
-    from services.rag.pipeline import rag_pipeline
-    from services.llm.provider import LLMProvider
-
     out = await rag_pipeline.search(question, top_k=4)
     evidence = "\n".join(
         f"[{i}] {(r.get('meta') or {}).get('title', '')}"
@@ -63,40 +92,11 @@ async def recommend_method(question: str = ""):
     return await LLMProvider().chat([{"role": "user", "content": prompt}], max_tokens=1200)
 
 
-# ---------------- 4. 参考文献格式化（规则引擎，离线可用） ----------------
-_GB7714 = "{authors}.{title}[J].{journal},{year},{volume}({issue}):{pages}."
-_APA = "{authors} ({year}). {title}. {journal}, {volume}({issue}), {pages}."
-_STYLE_TMPL = {"gb7714": _GB7714, "apa": _APA}
-
-
-def format_reference(authors: str = "", title: str = "", journal: str = "",
-                     year: str = "", volume: str = "", issue: str = "",
-                     pages: str = "", style: str = "gb7714"):
-    """规则化参考文献格式化（GB/T 7714 / APA），缺失字段用占位。"""
-    style = style.lower().strip()
-    if style not in _STYLE_TMPL:
-        return f"不支持的格式: {style}，可选 {list(_STYLE_TMPL)}"
-    if style == "gb7714":
-        authors = (authors or "佚名").replace("；", ",")
-        year = (year or "无年份").strip()
-        cand = f"{authors}.{title or '(未命名文献)'}"
-        rest = f".{journal or '佚刊'}, {year}, {volume or '—'} ({issue or '—'}): {pages or '—'}"
-        return cand + rest
-    # APA: 作者(年). 标题. 期刊, 卷(期), 页码.
-    apa_authors = (authors or "Anonymous").replace("，", " & ")
-    yr = (year or "n.d.")
-    return f"{apa_authors} ({yr}). {title or 'Untitled'}. {journal or 'Unknown Journal'}, " \
-           f"{volume or '—'} ({issue or '—'}), {pages or '—'}."
-
-
 # ---------------- 5. 摘要生成 ----------------
 async def generate_abstract(topic: str = "", keywords: str = "",
                             length: int = 200, focus: str = ""):
     if not topic:
         return "请提供论文主题"
-    from services.rag.pipeline import rag_pipeline
-    from services.llm.provider import LLMProvider
-
     out = await rag_pipeline.search(topic, top_k=4)
     evidence = "\n".join(
         f"[{i}] {(r.get('meta') or {}).get('title', '')}：{r['content'][:150]}"
@@ -116,9 +116,6 @@ async def generate_abstract(topic: str = "", keywords: str = "",
 async def term_explain(term: str = ""):
     if not term:
         return "请提供要解释的术语"
-    from services.rag.pipeline import rag_pipeline
-    from services.llm.provider import LLMProvider
-
     out = await rag_pipeline.search(f"{term} 概念 原理 应用", top_k=3)
     evidence = "\n".join(
         f"[{i}] {(r.get('meta') or {}).get('title', '')}：{r['content'][:200]}"

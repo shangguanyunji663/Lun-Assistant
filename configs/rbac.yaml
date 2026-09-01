@@ -9,16 +9,12 @@ roles:
       - "agent:run"            # 发起 Agent 会话
       - "agent:interrupt"      # 人机介入
       - "tool:*"               # 学生可用全部论文工具（治理层另有限流/审计）
-    denied:
-      - "tool:admin_reindex"   # 管理端工具仅管理员
 
   admin:
     allowed:
       - "*"
-    denied: []
 
   anonymous:
     allowed:
       - "auth:login"
       - "auth:register"
-    denied: []

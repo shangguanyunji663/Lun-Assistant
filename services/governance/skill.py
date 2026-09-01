@@ -8,6 +8,7 @@
 import hashlib
 import json
 import logging
+import math
 from typing import Any
 
 from sqlalchemy import select
@@ -16,6 +17,7 @@ from infrastructure.config import get_value
 from infrastructure.db import get_session_factory
 from infrastructure.models.skill import Skill
 from infrastructure.redis_client import get_redis
+from services.llm.provider import LLMProvider
 
 logger = logging.getLogger("lunjiang.skill")
 
@@ -92,7 +94,6 @@ class BehaviorTracker:
     def _score(skill: Skill) -> float:
         success_rate = skill.success_count / skill.usage_count if skill.usage_count else 0.5
         # 维度1 成功率(0~1) + 维度2 使用频度对数(0~1) + 维度3 新鲜度由查询时算
-        import math
         freq = min(1.0, math.log1p(skill.usage_count) / math.log(50))
         return 0.6 * success_rate + 0.4 * freq
 
@@ -107,7 +108,6 @@ class BehaviorTracker:
             return []
         # 维度1：意图语义相似度（embedding 余弦），Skill 少时批量编码成本低
         try:
-            from services.llm.provider import LLMProvider
             provider = LLMProvider()
             texts = [f"{s.description} {s.pattern.get('tool', '')}" for s in skills]
             vecs = await provider.embed([query] + texts)

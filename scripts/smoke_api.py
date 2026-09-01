@@ -8,10 +8,11 @@
 import asyncio
 import json
 import sys
+from pathlib import Path
 
 import httpx
 
-sys.path.insert(0, ".")
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())

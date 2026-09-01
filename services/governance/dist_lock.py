@@ -1,4 +1,5 @@
 """Redis 分布式锁：SET NX PX + Lua 校验持有者释放，保障多实例任务互斥。"""
+import asyncio
 import uuid
 
 from infrastructure.config import get_value
@@ -48,7 +49,6 @@ class DistributedLock:
                 return
             if deadline <= 0:
                 raise LockNotAcquired(f"分布式锁 {self.name} 获取失败")
-            import asyncio
             await asyncio.sleep(0.1)
             deadline -= 0.1
 
