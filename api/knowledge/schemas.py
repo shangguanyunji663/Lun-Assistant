@@ -5,8 +5,11 @@ from pydantic import BaseModel, Field
 class KnowledgeSearchIn(BaseModel):
     query: str = Field(min_length=1, max_length=500)
     top_k: int = Field(default=5, ge=1, le=20)
-    # mode: hybrid 公共语料+项目知识库 / project 仅项目知识库
-    mode: str = Field(default="hybrid", pattern="^(hybrid|project)$")
+    # mode:
+    #   - hybrid  公共语料 + 项目知识库融合
+    #   - project 仅项目知识库（空库自动回退内置）
+    #   - builtin 仅公共语料（强制不看项目库）
+    mode: str = Field(default="hybrid", pattern="^(hybrid|project|builtin)$")
 
 
 class KnowledgeIngestResult(BaseModel):

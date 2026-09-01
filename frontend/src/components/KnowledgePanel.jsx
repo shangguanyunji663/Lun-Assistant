@@ -98,9 +98,10 @@ export default function KnowledgePanel({ projectId }) {
           <input placeholder="库内检索：如 RRF 倒数排名融合…" value={q}
                  onChange={e => setQ(e.target.value)}
                  onKeyDown={e => { if (e.key === 'Enter') search() }} />
-          <select value={mode} onChange={e => setMode(e.target.value)} title="检索范围">
+          <select value={mode} onChange={e => setMode(e.target.value)} title="检索范围（v10 三态：仅内置 / 仅库内 / 混合）">
             <option value="hybrid">混合</option>
-            <option value="project">库内</option>
+            <option value="builtin">仅内置</option>
+            <option value="project">仅库内</option>
           </select>
           <button className="btn btn-ink" onClick={search} disabled={searching || !q.trim()}>{searching ? '…' : '检索'}</button>
         </div>
