@@ -24,6 +24,10 @@ export const api = {
   me: () => req('/auth/me'),
   projects: () => req('/projects'),
   createProject: (title, major, requirement) => req('/projects', { method: 'POST', body: JSON.stringify({ title, major, requirement }) }),
+  // 项目详情（含 structured_memory 结构化记忆）
+  getProject: (id) => req(`/projects/${id}`),
+  // 局部更新：title / major / requirement / status 四选一或组合
+  patchProject: (id, patch) => req(`/projects/${id}`, { method: 'PATCH', body: JSON.stringify(patch) }),
   deleteProject: (id) => req(`/projects/${id}`, { method: 'DELETE' }),
 
   // ---- 项目级知识库（第 4 轮上线）----

@@ -1,340 +1,72 @@
 import React, { useEffect, useRef, useState } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import { api, sse } from './api.js'
+import InkBackground from './InkBackground.jsx'
+import { Seal, Markdown, WoodRoll } from './components/decor.jsx'
+import AuthPage from './components/AuthPage.jsx'
+import Timeline from './components/Timeline.jsx'
+import TracePanel from './components/TracePanel.jsx'
+import KnowledgePanel from './components/KnowledgePanel.jsx'
+import ProjectArchive from './components/ProjectArchive.jsx'
+import ProjectDialog from './components/ProjectDialog.jsx'
 
-/* markdown 渲染：助手消息支持标题/列表/表格/代码块 */
-function Markdown({ children }) {
-  return (
-    <ReactMarkdown remarkPlugins={[remarkGfm]}
-                   components={{
-                     a: props => <a {...props} target="_blank" rel="noreferrer" />,
-                   }}>
-      {children}
-    </ReactMarkdown>
-  )
+/* ============================================================
+   主应用：卷轴木轴 + 会话卷册 + 对话主区 + 右栏三 tab
+   ============================================================ */
+
+const LS_KEY = 'lj_sessions_v1'
+const MAX_SESSIONS = 30
+
+const makeId = () => `web-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+
+/** 会话标题：取首条用户消息前 18 字 */
+const titleOf = (text) => {
+  const t = String(text || '').replace(/\s+/g, ' ').trim()
+  return t ? (t.length > 18 ? t.slice(0, 18) + '…' : t) : '新会话'
 }
 
-/* ---------------- 登录页 ---------------- */
-function AuthPage({ onLogin }) {
-  const [mode, setMode] = useState('login')
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [err, setErr] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  const submit = async (e) => {
-    e.preventDefault()
-    setBusy(true); setErr('')
-    try {
-      if (mode === 'login') {
-        const data = await api.login(username, password)
-        localStorage.setItem('lj_token', data.access_token)
-        onLogin(data.user)
-      } else {
-        await api.register(username, password)
-        const data = await api.login(username, password)
-        localStorage.setItem('lj_token', data.access_token)
-        onLogin(data.user)
-      }
-    } catch (e2) { setErr(String(e2.message || e2)) } finally { setBusy(false) }
-  }
-
-  return (
-    <div className="auth-wrap">
-      <form className="auth-card" onSubmit={submit}>
-        <h1>论匠</h1>
-        <p className="muted">LangGraph 多智能体论文全流程助手</p>
-        <input placeholder="用户名（3-32位）" value={username} onChange={e => setUsername(e.target.value)} />
-        <input placeholder="密码（6位以上）" type="password" value={password} onChange={e => setPassword(e.target.value)} />
-        <button disabled={busy || !username || !password}>{mode === 'login' ? '登录' : '注册并登录'}</button>
-        <a className="muted link" onClick={() => setMode(mode === 'login' ? 'register' : 'login')}>
-          {mode === 'login' ? '没有账号？去注册' : '已有账号？去登录'}
-        </a>
-        {err && <div className="err">{err}</div>}
-      </form>
-    </div>
-  )
+const loadSessions = () => {
+  try {
+    const raw = localStorage.getItem(LS_KEY)
+    if (!raw) return []
+    const list = JSON.parse(raw)
+    return Array.isArray(list) ? list.filter(s => s && s.id) : []
+  } catch { return [] }
 }
 
-/* ---------------- 事件时间线 ---------------- */
-const NODE_TITLES = {
-  supervisor: '主控Agent', topic_agent: '选题Agent', literature_agent: '文献Agent',
-  writing_agent: '写作Agent', format_agent: '格式Agent', plagiarism_agent: '查重Agent',
-  ai_detect_agent: 'AI检测Agent', planner: '任务规划Agent',
-}
-function Timeline({ events }) {
-  if (!events.length) return null
-  return (
-    <div className="timeline">
-      {events.map((ev, i) => (
-        <div key={i} className={`tl-item tl-${ev.type}`}>
-          {ev.type === 'node_start' && <span className="tl-tag start">▶ {NODE_TITLES[ev.payload?.agent] || ev.payload?.agent || 'Agent'}</span>}
-          {ev.type === 'intent' && <span className="tl-tag intent">意图: {ev.payload?.label} ({ev.payload?.layer}, conf={ev.payload?.confidence})</span>}
-          {ev.type === 'route' && <span className="tl-tag route">→ 路由至 {ev.payload?.next}</span>}
-          {ev.type === 'tool' && <span className="tl-tag tool">🔧 {ev.payload?.name}</span>}
-          {ev.type === 'plan' && <span className="tl-tag plan">📋 规划 {ev.payload?.goal?.slice(0, 40) || ''} · {ev.payload?.steps?.length || 0} 步</span>}
-          {ev.type === 'step_event' && <span className="tl-tag step">• 步骤 {ev.payload?.step}/{ev.payload?.total} {ev.payload?.action}{ev.payload?.status === 'ok' ? ' ✓' : ' ⚠'}</span>}
-          {ev.type === 'node_end' && <span className="tl-tag end">✔ {NODE_TITLES[ev.payload?.agent] || ev.payload?.agent || ev.node || ''} 完成{ev.payload?.stop_reason === 'max_hops' ? '（达到最大跳数）' : ''}</span>}
-          {ev.type === 'interrupt' && <span className="tl-tag interrupt">⏸ 需要确认: {ev.payload?.question || JSON.stringify(ev.payload)}</span>}
-          {ev.type === 'error' && <span className="tl-tag err">✖ {ev.payload?.message}</span>}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-/* ---------------- Trace 面板 ---------------- */
-function TracePanel() {
-  const [traces, setTraces] = useState([])
-  const [detail, setDetail] = useState(null)
-  const [err, setErr] = useState('')
-
-  const load = async () => {
-    try { setTraces((await api.traces(30)).items) } catch (e) { setErr(String(e.message || e)) }
-  }
-  useEffect(() => { load() }, [])
-
-  const open = async (id) => {
-    try { setDetail(await api.trace(id)) } catch (e) { setErr(String(e.message || e)) }
-  }
-
-  return (
-    <div className="trace-panel">
-      <div className="trace-list">
-        <div className="panel-head">
-          <h3>Trace 列表</h3>
-          <button onClick={load}>刷新</button>
-        </div>
-        {err && <div className="err">{err}</div>}
-        {traces.map(t => (
-          <div key={t.trace_id} className={`trace-item ${detail?.trace_id === t.trace_id ? 'active' : ''}`} onClick={() => open(t.trace_id)}>
-            <div className="tid">{t.trace_id.slice(0, 12)}…</div>
-            <div className="meta">{t.spans} spans · {t.total_latency_ms}ms · ${t.total_cost_usd.toFixed(6)}</div>
-          </div>
-        ))}
-        {!traces.length && <p className="muted">暂无 Trace</p>}
-      </div>
-      <div className="trace-detail">
-        {detail ? (
-          <>
-            <div className="panel-head">
-              <h3>行为回放 · {detail.trace_id.slice(0, 12)}…</h3>
-              <span className="muted">{detail.summary.span_count} spans · {detail.summary.total_latency_ms}ms · errors={detail.summary.error_count}</span>
-            </div>
-            {renderTree(detail.tree, 0)}
-            <h4>时间序列</h4>
-            <div className="seq">
-              {detail.spans.map((s, i) => (
-                <div key={i} className={`seq-row ${s.status !== 'ok' ? 'bad' : ''}`}>
-                  <span className="kind">{s.kind}</span>
-                  <span className="name">{s.name}</span>
-                  <span className="lat">{s.latency_ms}ms</span>
-                  {s.error && <span className="err-inline">{s.error}</span>}
-                </div>
-              ))}
-            </div>
-          </>
-        ) : <p className="muted">选择左侧 Trace 查看回放</p>}
-      </div>
-    </div>
-  )
-}
-
-function renderTree(nodes, depth) {
-  return nodes.map((n, i) => (
-    <div key={i}>
-      <div className="tree-row" style={{ paddingLeft: depth * 18 }}>
-        <span className={`tree-kind ${n.status !== 'ok' ? 'bad' : ''}`}>{n.kind}</span>
-        {n.name}
-        <span className="lat"> {n.latency_ms}ms</span>
-        {n.tokens_out > 0 && <span className="muted"> · out={n.tokens_out}tok</span>}
-      </div>
-      {n.children?.length ? renderTree(n.children, depth + 1) : null}
-    </div>
-  ))
-}
-
-/* ---------------- 项目知识库面板 ---------------- */
-const FMT_ICON = { pdf: '📕', docx: '📘', txt: '📄', md: '📝' }
-function StatusBadge({ status }) {
-  return <span className={`kb-status kb-status-${status}`}>{status}</span>
-}
-function KnowledgePanel({ projectId, onNotice }) {
-  const [docs, setDocs] = useState([])
-  const [err, setErr] = useState('')
-  const [uploading, setUploading] = useState(false)
-  const [uploadMsg, setUploadMsg] = useState('')
-  const [summary, setSummary] = useState(null)          // 上传汇总 {uploaded, ready, 逐文件}
-  const [q, setQ] = useState('')
-  const [mode, setMode] = useState('hybrid')
-  const [hits, setHits] = useState(null)
-  const [fallback, setFallback] = useState(false)   // 库内未命中已回退公共语料
-  const [searching, setSearching] = useState(false)
-  const fileRef = useRef(null)
-
-  const load = async (pid = projectId) => {
-    if (!pid) { setDocs([]); return }
-    try { setDocs((await api.listKnowledge(pid)).documents); setErr('') }
-    catch (e) { setErr(String(e.message || e)) }
-  }
-  useEffect(() => { load(); setHits(null); setUploadMsg('') }, [projectId])
-
-  const upload = async (files) => {
-    const arr = Array.from(files || [])
-    if (!arr.length || uploading) return
-    setUploading(true); setUploadMsg(''); setErr('')
-    try {
-      const r = await api.uploadKnowledge(projectId, arr)
-      setSummary(r)
-      setUploadMsg(r.ready > 0
-        ? `已入库 ${r.ready}/${arr.length} 份` : `本次 ${arr.length} 份均未入库`)
-      onNotice?.(r)
-    } catch (e) { setErr(String(e.message || e)) }
-    finally { setUploading(false); setHits(null); load() }
-    fileRef.current && (fileRef.current.value = '')
-  }
-
-  const remove = async (docId, filename) => {
-    if (!window.confirm(`确定从知识库删除「${filename}」？对应向量分块与原始文件将一并清除。`)) return
-    try { await api.deleteKnowledge(projectId, docId); setErr(''); load(); setHits(null) }
-    catch (e) { setErr(String(e.message || e)) }
-  }
-
-  const search = async () => {
-    const query = q.trim()
-    if (!query || searching) return
-    setSearching(true); setErr(''); setFallback(false)
-    try {
-      let results = (await api.searchKnowledge(projectId, query, 5, mode)).results
-      // 库内(mode=project)未命中 → 自动回退公共语料（hybrid）兜底，并提示来源
-      if (mode === 'project' && !results.length) {
-        results = (await api.searchKnowledge(projectId, query, 5, 'hybrid')).results
-        setFallback(true)
-      }
-      setHits(results)
-    } catch (e) { setErr(String(e.message || e)) }
-    finally { setSearching(false) }
-  }
-
-  return (
-    <div className="kb-panel">
-      <div className="panel-head">
-        <h3>项目知识库</h3>
-        <button onClick={() => load()} disabled={uploading || !projectId}>刷新</button>
-      </div>
-
-      {!projectId && <p className="muted">请先在顶部选择或新建论文项目，再上传你的参考资料。</p>}
-
-      {projectId && (<>
-        <div className="kb-drop"
-             onClick={() => fileRef.current?.click()}
-             onDragOver={e => e.preventDefault()}
-             onDrop={e => { e.preventDefault(); upload(e.dataTransfer.files) }}
-             onKeyDown={e => e.key === 'Enter' && fileRef.current?.click()}
-             role="button" tabIndex={0}>
-          <input ref={fileRef} type="file" multiple hidden
-                 accept=".pdf,.docx,.txt,.md,.markdown"
-                 onChange={e => upload(e.target.files)} />
-          <div className="kb-drop-icon">{uploading ? '存' : '＋'}</div>
-          <div>{uploading ? '解析入库中…（分块 + 向量化）' : '点击或拖拽上传资料'}</div>
-          <div className="muted">格式：PDF / DOCX / TXT / MD ｜ 单文件 ≤20MB ｜ 同内容自动去重</div>
-        </div>
-
-        {uploadMsg && (
-          <div className="kb-upload-msg">
-            <span>{uploadMsg}</span>
-            {summary?.results?.map((r, i) => (
-              <span key={i} className={`kb-mini kb-mini-${r.status}`}>
-                {r.status === 'ready' ? '✓' : r.status === 'skipped' ? '＝' : '✕'} {r.filename}
-              </span>
-            ))}
-          </div>
-        )}
-        {err && <div className="err">{err}</div>}
-
-        <div className="kb-search">
-          <input placeholder="库内检索：如 RRF 倒数排名融合…" value={q}
-                 onChange={e => setQ(e.target.value)}
-                 onKeyDown={e => { if (e.key === 'Enter') search() }} />
-          <select value={mode} onChange={e => setMode(e.target.value)} title="检索范围">
-            <option value="hybrid">hybrid</option>
-            <option value="project">库内</option>
-          </select>
-          <button onClick={search} disabled={searching || !q.trim()}>{searching ? '…' : '检索'}</button>
-        </div>
-
-        {hits !== null && (
-          <div className="kb-hits">
-            <div className="panel-head"><h3>{hits.length ? '检索命中' : '未命中'}</h3>
-              <span className="muted link" onClick={() => setHits(null)}>收起</span></div>
-            {fallback && !hits.length &&
-              <p className="muted">库内无命中，已自动检索公共语料（把“检索”右侧模式切回 hybrid 即可默认合并检索）。</p>}
-            {fallback && hits.length > 0 &&
-              <div className="kb-fallback-tip">库内未命中，已为你检索公共语料（hybrid 模式）</div>}
-            {hits.map((h, i) => (
-              <div key={i} className="kb-hit">
-                <div className="kb-hit-head">
-                  <span className="kh-src">{h.doc_id ? '📄 知识库' : '📚 公共语料'}</span>
-                  <span className="kh-score">{h.score}</span>
-                  {h.noise_flag !== 'ok' && <span className={`kb-mini kb-mini-${h.noise_flag === 'sparse_only' ? 'failed' : 'weak'}`}>{h.noise_flag}</span>}
-                </div>
-                <div className="kh-name">{h.filename || h.source || '(文档)'}</div>
-                <div className="kh-content">{h.content}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="kb-docs">
-          <div className="panel-head"><h3>资料清单 {docs.length ? `（${docs.length}）` : ''}</h3></div>
-          {!docs.length && <p className="muted">还没有上传资料：把论文相关的 PDF、笔记、课件丢进来，对话检索会优先引用它们。</p>}
-          {docs.map(d => (
-            <div key={d.id} className={`kb-doc ${d.status !== 'ready' ? 'kb-doc-bad' : ''}`}>
-              <div className="kd-icon">{FMT_ICON[d.file_type] || '📄'}</div>
-              <div className="kd-body">
-                <div className="kd-name" title={d.filename}>{d.filename}</div>
-                <div className="kd-meta">
-                  <StatusBadge status={d.status} />
-                  {d.chunk_count > 0 && <span>{d.chunk_count} 分块</span>}
-                  {d.word_count > 0 && <span>{d.word_count.toLocaleString()} 字</span>}
-                  <span>{d.file_type}</span>
-                </div>
-                {d.error && <div className="kd-err">{d.error}</div>}
-              </div>
-              {d.status === 'ready' && (
-                <button className="kd-del" title="删除"
-                        onClick={() => remove(d.id, d.filename)}>✕</button>
-              )}
-            </div>
-          ))}
-        </div>
-      </>)}
-    </div>
-  )
-}
-
-/* ---------------- 主应用 ---------------- */
 export default function App() {
   const [user, setUser] = useState(null)
   const [booting, setBooting] = useState(true)
   const [tab, setTab] = useState('chat')
   const [projects, setProjects] = useState([])
-  const [projectsErr, setProjectsErr] = useState('')   // 项目加载失败提示
+  const [projectsErr, setProjectsErr] = useState('')
   const [projectId, setProjectId] = useState(null)
-  const [projectModalOpen, setProjectModalOpen] = useState(false)   // 新建项目弹窗（替代 prompt）
-  const [projectTitle, setProjectTitle] = useState('')
-  const sessionIdRef = useRef(null)
+  const [archiveKey, setArchiveKey] = useState(0)
+  const [dialog, setDialog] = useState(null)          // {mode:'create'|'edit', project?}
 
-  // 对话状态
-  const [messages, setMessages] = useState([])       // {role:'user'|'assistant', content}
-  const [timeline, setTimeline] = useState([])
+  // 会话卷册（原单会话全局 state 改为多会话）
+  const [sessions, setSessions] = useState(loadSessions)
+  const [activeId, setActiveId] = useState(null)
   const [streaming, setStreaming] = useState(false)
-  const [interrupt, setInterrupt] = useState(null)   // {question, options?}
+  const [interrupt, setInterrupt] = useState(null)
   const [input, setInput] = useState('')
-  const [sideTab, setSideTab] = useState('timeline')   // 右栏：timeline | knowledge
+  const [sideTab, setSideTab] = useState('timeline')
   const bottomRef = useRef(null)
 
+  /* 山水浓度：AI 底图不透明度，用户可实时调节并持久化 */
+  const [inkOp, setInkOp] = useState(() => {
+    const v = Number(localStorage.getItem('lj_ink_op'))
+    return Number.isFinite(v) && v >= 0 && v <= 0.4 ? v : 0.16
+  })
+  useEffect(() => {
+    document.documentElement.style.setProperty('--ink-photo-op', String(inkOp))
+    try { localStorage.setItem('lj_ink_op', String(inkOp)) } catch { /* 隐私模式忽略 */ }
+  }, [inkOp])
+
+  const active = sessions.find(s => s.id === activeId) || sessions[0] || null
+  const messages = active?.msgs ?? []
+  const timeline = active?.timeline ?? []
+
+  /* ---- 自动登录 ---- */
   useEffect(() => {
     const t = localStorage.getItem('lj_token')
     if (!t) { setBooting(false); return }
@@ -344,6 +76,7 @@ export default function App() {
     }).finally(() => setBooting(false))
   }, [])
 
+  /* ---- 项目列表 ---- */
   useEffect(() => {
     if (user) {
       api.projects().then(ps => { setProjects(ps); setProjectsErr('') })
@@ -355,169 +88,282 @@ export default function App() {
     }
   }, [user])
 
+  /* ---- 确保至少有一个会话 ---- */
+  useEffect(() => {
+    if (!sessions.length) {
+      const s = { id: makeId(), title: '新会话', msgs: [], timeline: [], updatedAt: Date.now() }
+      setSessions([s]); setActiveId(s.id)
+    } else if (!sessions.some(s => s.id === activeId)) {
+      setActiveId(sessions[0].id)
+    }
+  }, [sessions, activeId])
+
+  /* ---- 持久化 ---- */
+  useEffect(() => {
+    try { localStorage.setItem(LS_KEY, JSON.stringify(sessions.slice(0, MAX_SESSIONS))) } catch {}
+  }, [sessions])
+
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, timeline])
 
   if (booting) return <div className="center muted">加载中…</div>
   if (!user) return <AuthPage onLogin={setUser} />
 
+  const patchSession = (id, fn) =>
+    setSessions(list => list.map(s => (s.id === id ? { ...fn(s), updatedAt: Date.now() } : s)))
+
   const newSession = () => {
-    sessionIdRef.current = `web-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
-    setMessages([]); setTimeline([]); setInterrupt(null)
+    if (streaming) return
+    const s = { id: makeId(), title: '新会话', msgs: [], timeline: [], updatedAt: Date.now() }
+    setSessions(list => [s, ...list].slice(0, MAX_SESSIONS))
+    setActiveId(s.id)
+    setInterrupt(null)
+    setInput('')
   }
-  if (!sessionIdRef.current) newSession()
+
+  const removeSession = (id) => {
+    if (streaming) return
+    setSessions(list => {
+      const rest = list.filter(s => s.id !== id)
+      if (rest.length) { if (id === activeId) setActiveId(rest[0].id); return rest }
+      const s = { id: makeId(), title: '新会话', msgs: [], timeline: [], updatedAt: Date.now() }
+      setActiveId(s.id)
+      return [s]
+    })
+  }
 
   const send = async (text, resume = null) => {
-    if (streaming) return
+    if (streaming || !active) return
+    const sid = active.id
+    const body = resume ? `[确认反馈] ${resume}` : text
+
     setStreaming(true)
-    if (!resume) {
-      setMessages(m => [...m, { role: 'user', content: text }])
-      setInput('')
-    } else {
-      setMessages(m => [...m, { role: 'user', content: `[确认反馈] ${resume}` }])
-    }
     setInterrupt(null)
+    if (!resume) setInput('')
+
+    // 追加用户消息；若为本会话首条，用它作标题
+    patchSession(sid, s => ({
+      ...s,
+      title: s.msgs.length ? s.title : titleOf(text),
+      msgs: [...s.msgs, { role: 'user', content: body }],
+    }))
+    // 占位助手消息
+    patchSession(sid, s => ({ ...s, msgs: [...s.msgs, { role: 'assistant', content: '' }] }))
+
     let acc = ''
-    setMessages(m => [...m, { role: 'assistant', content: '' }])
-    const patchLast = (content) => setMessages(m => { const c = [...m]; c[c.length - 1] = { role: 'assistant', content }; return c })
+    const patchLast = (content) =>
+      patchSession(sid, s => {
+        if (!s.msgs.length) return s
+        const c = [...s.msgs]
+        c[c.length - 1] = { role: 'assistant', content }
+        return { ...s, msgs: c }
+      })
 
     try {
       const finalText = await sse(resume ? '/agent/resume' : '/agent/chat',
         resume
-          ? { session_id: sessionIdRef.current, feedback: resume, project_id: projectId }
-          : { session_id: sessionIdRef.current, message: text, project_id: projectId },
+          ? { session_id: sid, feedback: resume, project_id: projectId }
+          : { session_id: sid, message: text, project_id: projectId },
         (type, payload, node) => {
           if (type === 'token') { acc += payload || ''; patchLast(acc) }
           else if (type === 'final') { if (payload?.output) patchLast(payload.output) }
           else if (type === 'interrupt') {
             setInterrupt(payload)
-            setTimeline(t => [...t, { type: 'interrupt', payload, node }])
+            patchSession(sid, s => ({ ...s, timeline: [...s.timeline, { type: 'interrupt', payload, node }] }))
           } else if (type === 'error') {
-            setTimeline(t => [...t, { type: 'error', payload, node }])
-          } else if (['node_start', 'node_end', 'intent', 'route', 'tool', 'plan', 'step_event'].includes(type)) {
-            setTimeline(t => [...t, { type, payload, node }])
+            patchSession(sid, s => ({ ...s, timeline: [...s.timeline, { type: 'error', payload, node }] }))
+          } else if (['node_start', 'node_end', 'intent', 'route', 'plan', 'step_event'].includes(type)) {
+            patchSession(sid, s => ({ ...s, timeline: [...s.timeline, { type, payload, node }] }))
           }
         })
       if (finalText) patchLast(finalText)
+      if (projectId) setArchiveKey(k => k + 1)
     } catch (e) {
-      const msg = `请求失败：${e.message || e}`
-      patchLast(msg)
-      console.warn('[chat]', msg, e)
+      patchLast(`请求失败：${e.message || e}`)
+      console.warn('[chat]', e)
     } finally { setStreaming(false) }
   }
 
-  // 打开新建项目弹窗
-  const openAddProject = () => { setProjectTitle(''); setProjectModalOpen(true) }
-  const confirmAddProject = async () => {
-    const title = projectTitle.trim()
-    if (!title) return
-    try {
-      const p = await api.createProject(title, '', '')
-      setProjects(ps => [p, ...ps])
-      setProjectId(p.id)
-      setProjectModalOpen(false)
-      setProjectsErr('')
-    } catch (e) {
-      const msg = String(e.message || e)
-      setProjectsErr(`新建项目失败：${msg}`)
-      console.warn('[createProject]', msg)
-    }
+  /* ---- 项目 CRUD ---- */
+  const createProject = async (title, major, requirement) => {
+    const p = await api.createProject(title, major, requirement)
+    setProjects(ps => [p, ...ps]); setProjectId(p.id); setProjectsErr('')
+  }
+  const patchProject = async (patch) => {
+    await api.patchProject(projectId, patch)
+    setProjects(ps => ps.map(p => p.id === projectId ? { ...p, ...patch } : p))
+    setArchiveKey(k => k + 1)
+  }
+  const deleteProject = async () => {
+    await api.deleteProject(projectId)
+    setProjects(ps => ps.filter(p => p.id !== projectId))
+    setProjectId(null); setDialog(null)
+  }
+
+  const currentProject = projects.find(p => p.id === projectId) || null
+  const fmtTime = (ts) => {
+    const d = new Date(ts), now = new Date()
+    const sameDay = d.toDateString() === now.toDateString()
+    return sameDay
+      ? `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+      : `${d.getMonth() + 1}月${d.getDate()}日`
   }
 
   return (
     <div className="app">
+      <InkBackground />
+      <WoodRoll />
+
       <header className="topbar">
-        <h1 className="brand">论匠<small>多智能体论文全流程助手</small></h1>
+        <h1 className="brand"><Seal size={26} />论匠<small>多智能体论文全流程助手</small></h1>
         <div className="spacer" />
-        <select value={projectId ?? ''} onChange={e => setProjectId(e.target.value ? Number(e.target.value) : null)}>
-          <option value="">（未关联项目）</option>
-          {projects.map(p => <option key={p.id} value={p.id}>{`#${p.id} ${p.title}`}</option>)}
-        </select>
-        <button onClick={openAddProject}>+ 新建项目</button>
-        <button onClick={newSession} disabled={streaming}>新会话</button>
+
+        <div className="proj-picker">
+          <select value={projectId ?? ''} onChange={e => setProjectId(e.target.value ? Number(e.target.value) : null)}>
+            <option value="">（未关联项目）</option>
+            {projects.map(p => <option key={p.id} value={p.id}>{`#${p.id} ${p.title}`}</option>)}
+          </select>
+          <button className="btn btn-ghost btn-sm" disabled={!projectId}
+                  onClick={() => setDialog({ mode: 'edit', project: currentProject })}
+                  title={projectId ? '编辑 / 删除当前项目' : '请先选择项目'}>项目设置</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setDialog({ mode: 'create' })}>＋ 新建</button>
+        </div>
+
+        {/* 山水浓度：实时调 AI 底图不透明度 */}
+        <div className="ink-tuner" title="调节山水底图浓度。0 = 纯色底；超过 0.30 山形开始与文字争注意力">
+          <span className="lab">山水</span>
+          <input type="range" min="0" max="0.4" step="0.01" value={inkOp}
+                 onChange={e => setInkOp(Number(e.target.value))}
+                 aria-label="山水底图浓度" />
+          <span className="val">{inkOp.toFixed(2)}</span>
+        </div>
+
         <nav>
           <button className={tab === 'chat' ? 'on' : ''} onClick={() => setTab('chat')}>对话</button>
-          <button className={tab === 'trace' ? 'on' : ''} onClick={() => setTab('trace')} title={user.role !== 'admin' ? '仅 admin 可见 Trace 数据' : ''}>可观测</button>
+          <button className={tab === 'trace' ? 'on' : ''} onClick={() => setTab('trace')}
+                  title={user.role !== 'admin' ? '仅 admin 可见 Trace 数据' : ''}>可观测</button>
         </nav>
-        <span className="muted">{user.username}({user.role})</span>
-        <button onClick={() => { localStorage.removeItem('lj_token'); setUser(null) }}>退出</button>
+
+        <span className="who">{user.username}<em>{user.role}</em></span>
+        <button className="btn btn-ghost" onClick={() => { localStorage.removeItem('lj_token'); setUser(null) }}>退出</button>
       </header>
 
       {projectsErr && <div className="top-banner err">{projectsErr} <span className="link" onClick={() => setProjectsErr('')}>×</span></div>}
       {user.role !== 'admin' && tab === 'trace' && (
-        <div className="top-banner warn">⚠ 当前账号是 {user.role}，Trace 列表需要 admin 权限；此页面将无法加载数据。</div>
+        <div className="top-banner warn">当前账号为 {user.role}，Trace 列表需要 admin 权限，此页面将无法加载数据。</div>
       )}
 
-      {/* 新建项目弹窗（替代原生 prompt，避免被拦截） */}
-      {projectModalOpen && (
-        <div className="modal-mask" onClick={e => { if (e.target === e.currentTarget) setProjectModalOpen(false) }}>
-          <div className="modal-card" onClick={e => e.stopPropagation()}>
-            <h3>新建论文项目</h3>
-            <p className="muted">先给你的论文起一个题目，后续可以随时修改。</p>
-            <input autoFocus placeholder="例如：基于 LangGraph 的多智能体论文助手" value={projectTitle}
-                   style={{ width: '100%' }}
-                   onChange={e => setProjectTitle(e.target.value)}
-                   onKeyDown={e => { if (e.key === 'Enter' && projectTitle.trim()) confirmAddProject() }} />
-            <div className="modal-actions">
-              <button onClick={() => setProjectModalOpen(false)}>取消</button>
-              <button className="primary" onClick={confirmAddProject} disabled={!projectTitle.trim()}>确定</button>
-            </div>
-          </div>
-        </div>
+      {dialog && (
+        <ProjectDialog mode={dialog.mode} initial={dialog.project}
+          onClose={() => setDialog(null)}
+          onCreate={createProject} onPatch={patchProject} onDelete={deleteProject} />
       )}
 
       {tab === 'chat' ? (
         <main className="chat-layout">
-          <section className="chat-col">
-            <div className="messages">
-              {messages.map((m, i) => (
-                <div key={i} className={`msg ${m.role}`}>
-                  <div className="bubble">
-                    {m.role === 'assistant' ? <Markdown>{m.content || (streaming && i === messages.length - 1 ? '…' : '')}</Markdown> : m.content}
-                  </div>
+          {/* 会话卷册 */}
+          <aside className="sessions">
+            <div className="sess-head">
+              <span className="t">会话卷册</span>
+              <button className="btn btn-ghost btn-sm" onClick={newSession}
+                      disabled={streaming} title="新建会话">＋</button>
+            </div>
+            <div className="sess-list">
+              {sessions.length === 0 && <div className="sess-empty">尚无会话</div>}
+              {sessions.map(s => (
+                <div key={s.id}
+                     className={`sess-item${s.id === active?.id ? ' on' : ''}`}
+                     onClick={() => { if (!streaming) { setActiveId(s.id); setInterrupt(null) } }}
+                     title={streaming ? '生成中，暂不可切换' : s.title}>
+                  <div className="sess-title">{s.title}</div>
+                  <div className="sess-meta">{fmtTime(s.updatedAt)} · {s.msgs.length} 条</div>
+                  <button className="sess-del" disabled={streaming}
+                          onClick={e => { e.stopPropagation(); removeSession(s.id) }}
+                          title="删除会话">×</button>
                 </div>
               ))}
-              <div ref={bottomRef} />
             </div>
+          </aside>
+
+          <section className="chat-col">
+            <div className="messages">
+              <div className="msgs-inner">
+                {messages.length === 0 && (
+                  <div className="empty-state">
+                    <Seal size={44} />
+                    <h2>落笔之前</h2>
+                    <p>描述你的论文需求，主控 Agent 会调度选题、文献、写作、格式、查重与答辩六类专项 Agent 协同完成。</p>
+                    <div className="prompts">
+                      {['帮我确定一个可行的论文选题', '检索近三年大模型相关文献', '为第三章写一段方法论初稿']
+                        .map(p => <button key={p} className="btn btn-ghost btn-sm" onClick={() => send(p)}>{p}</button>)}
+                    </div>
+                  </div>
+                )}
+                {messages.map((m, i) => (
+                  <div key={i} className={`msg ${m.role}`}>
+                    <div className="msg-mark">{m.role === 'user' ? '言' : '匠'}</div>
+                    <div className="bubble">
+                      {m.role === 'assistant'
+                        ? <Markdown>{m.content || (streaming && i === messages.length - 1 ? '…' : '')}</Markdown>
+                        : m.content}
+                    </div>
+                  </div>
+                ))}
+                <div ref={bottomRef} />
+              </div>
+            </div>
+
             {interrupt && (
               <div className="interrupt-bar">
-                <span>⏸ {interrupt.question || 'Agent 需要你的确认'}</span>
-                {(interrupt.options || []).map(op => (
-                  <button key={op} onClick={() => send(op, op)} disabled={streaming}>{op}</button>
-                ))}
+                <span className="ib-q">⏸ {interrupt.question || 'Agent 需要你的确认'}</span>
+                <div className="ib-opts">
+                  {(interrupt.options || []).map(op => (
+                    <button key={op} className="btn btn-ghost btn-sm" onClick={() => send(op, op)} disabled={streaming}>{op}</button>
+                  ))}
+                </div>
                 <div className="free-form">
                   <input placeholder="输入你的反馈…" value={input}
                          onChange={e => setInput(e.target.value)}
                          onKeyDown={e => e.key === 'Enter' && input && send(input, input)} />
-                  <button onClick={() => input && send(input, input)} disabled={streaming || !input}>发送反馈</button>
+                  <button className="btn btn-ink btn-sm" onClick={() => input && send(input, input)} disabled={streaming || !input}>发送反馈</button>
                 </div>
               </div>
             )}
+
             <div className="input-bar">
-              <textarea rows={2} placeholder="输入论文相关请求，如：帮我找几篇大模型文献 / 帮我写摘要…" value={input}
-                        disabled={streaming || !!interrupt}
-                        onChange={e => setInput(e.target.value)}
-                        onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && input.trim()) { e.preventDefault(); send(input.trim()) } }} />
-              <button className="send" disabled={streaming || !input.trim() || interrupt} onClick={() => send(input.trim())}>
-                {streaming ? '生成中…' : '发送'}
-              </button>
+              <div className="composer">
+                <textarea rows={2} placeholder="输入论文相关请求，如：帮我找几篇大模型文献 / 帮我写摘要…" value={input}
+                          disabled={streaming || !!interrupt}
+                          onChange={e => setInput(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && input.trim()) { e.preventDefault(); send(input.trim()) } }} />
+                <button className="btn btn-ink send" disabled={streaming || !input.trim() || !!interrupt}
+                        onClick={() => send(input.trim())}>
+                  {streaming ? '生成中…' : '发送'}
+                </button>
+              </div>
+              <div className="input-hint">Enter 发送 · Shift + Enter 换行{projectId ? ` · 已关联项目 #${projectId}` : ' · 未关联项目（对话不使用项目知识库）'}</div>
             </div>
           </section>
+
           <aside className="side-col">
             <div className="side-tabs">
               <button className={sideTab === 'timeline' ? 'on' : ''} onClick={() => setSideTab('timeline')}>执行时间线</button>
               <button className={sideTab === 'knowledge' ? 'on' : ''} onClick={() => setSideTab('knowledge')}>项目知识库</button>
+              <button className={sideTab === 'archive' ? 'on' : ''} onClick={() => setSideTab('archive')}>项目档案</button>
             </div>
-            {sideTab === 'timeline' ? (
-              <div className="side-scroll">
-                <Timeline events={timeline} />
-                {!timeline.length &&
-                  <p className="muted">发起对话后，这里展示主控调度 / 意图识别 / 路由 / 工具调用（含 Planner 规划与步骤）</p>}
-              </div>
-            ) : (
-              <div className="side-scroll">
+            <div className="side-scroll">
+              {sideTab === 'timeline' ? (
+                <>
+                  <Timeline events={timeline} />
+                  {!timeline.length &&
+                    <p className="muted empty-tip">发起对话后，这里展示主控调度 / 意图识别 / 路由 / 工具调用（含 Planner 规划与步骤）。</p>}
+                </>
+              ) : sideTab === 'knowledge' ? (
                 <KnowledgePanel projectId={projectId} />
-              </div>
-            )}
+              ) : (
+                <ProjectArchive projectId={projectId} refreshKey={archiveKey}
+                                onEdit={() => setDialog({ mode: 'edit', project: currentProject })} />
+              )}
+            </div>
           </aside>
         </main>
       ) : (
