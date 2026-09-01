@@ -15,7 +15,7 @@ import asyncio
 import logging
 from pathlib import Path
 
-from sqlalchemy import delete, select
+from sqlalchemy import and_, delete, func, select
 
 from infrastructure.config import get_value
 from infrastructure.db import get_session_factory
@@ -32,7 +32,7 @@ from services.rag.ingest.parsers import (
 
 logger = logging.getLogger("lunjiang.ingest")
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+from infrastructure.paths import PROJECT_ROOT
 _BATCH = 32  # 每批向量化条数
 
 
@@ -174,7 +174,6 @@ async def list_documents(db, project_id: int) -> list[dict]:
 async def delete_document(db, doc: KnowledgeDocument) -> None:
     """删除文档：向量分块（按 doc_key 定位）+ 文件元数据 + 原始文件。"""
     doc_key = f"udoc:{doc.id}"
-    from sqlalchemy import and_, func
 
     await db.execute(delete(MemoryItem).where(and_(
         MemoryItem.kind == "user_doc",
@@ -191,8 +190,6 @@ async def delete_document(db, doc: KnowledgeDocument) -> None:
 
 
 async def count_documents(db, project_id: int) -> int:
-    from sqlalchemy import func
-
     return int(await db.scalar(
         select(func.count()).select_from(KnowledgeDocument)
         .where(KnowledgeDocument.project_id == project_id)) or 0)

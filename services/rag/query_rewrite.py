@@ -12,7 +12,11 @@
 import json
 import logging
 
+import jieba
+import jieba.posseg as pseg
+
 from infrastructure.config import get_value
+from services.llm.provider import LLMProvider
 
 logger = logging.getLogger("lunjiang.rag")
 
@@ -54,15 +58,20 @@ _SYNONYM_POOL = {
 
 
 def _rule_rewrite(query: str) -> dict:
-    """规则级改写：场景前缀扩写 + 术语同义扩充 + jieba 关键词。"""
+    """规则级改写：场景前缀扩写 + 术语同义扩充 + jieba 关键词。
+
+    判重口径：以「整段扩展是否已出现」为准，而非「扩展串首词是否已出现」。
+    旧实现用首词判重，而首词通常就是被匹配的触发词本身（如术语"大模型"的
+    扩展首词即"大模型"），导致守卫恒真、同义词池整体失效（死逻辑）。
+    """
     rewritten = query
     for trigger, prefix in _SCENE_PREFIX.items():
-        if trigger in query and prefix.split()[0] not in query:
-            rewritten = f"{prefix} {query}"
+        if trigger in query and prefix not in rewritten:
+            rewritten = f"{prefix} {rewritten}"
             break
     for term, expand in _SYNONYM_POOL.items():
-        if term.lower() in query.lower() and expand.split()[0].lower() not in query.lower():
-            rewritten = f"{query} {expand}"
+        if term.lower() in query.lower() and expand.lower() not in rewritten.lower():
+            rewritten = f"{rewritten} {expand}"
             break  # 一次扩写即可，避免无限拼接
     keywords = _rule_keywords(query)
     return {"rewritten": rewritten, "keywords": keywords,
@@ -71,9 +80,6 @@ def _rule_rewrite(query: str) -> dict:
 
 def _rule_keywords(query: str) -> list[str]:
     """jieba 词性过滤提取检索关键词（不依赖 LLM）。"""
-    import jieba
-    import jieba.posseg as pseg
-
     stop = {"我们", "你们", "一些", "这个", "那个", "什么", "怎么", "如何", "可以",
             "需要", "请问", "想要", "关于", "以及", "自己", "现在", "一下"}
     seen, keywords = set(), []
@@ -114,8 +120,6 @@ def _clean_keywords(keywords: list, query: str) -> list[str]:
 
 async def rewrite_query(query: str, provider=None) -> dict:
     """LLM 改写优先，失败/拒答/漂移时回退规则改写。"""
-    from services.llm.provider import LLMProvider
-
     rule_fb = _rule_rewrite(query)
     if not get_value("rag", "rewrite_enabled", default=True):
         return {"rewritten": query, "keywords": rule_fb["keywords"], "strategy": "idle"}

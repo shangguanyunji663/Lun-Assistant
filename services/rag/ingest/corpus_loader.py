@@ -12,7 +12,7 @@ from services.rag.retriever import hybrid_retriever
 
 logger = logging.getLogger("lunjiang.ingest")
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+from infrastructure.paths import PROJECT_ROOT
 CORPUS_DIR = PROJECT_ROOT / "data" / "corpus"
 
 

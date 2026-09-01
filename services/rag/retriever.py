@@ -2,15 +2,23 @@
 
 ⚠️ BM25 索引管理：服务重启后 `_bm25` 为 None，必须重建。采用"启动期预加载 + 首查询懒重建"
 双保险策略，避免 sparse_search 永远返回空列表造成召回率骤降。
+
+存储说明：稠密路依赖 pgvector、相邻窗口路依赖 PostgreSQL 的
+json_extract_path_text（JSON 列文本提取）——检索层与 PostgreSQL 强绑定。
 """
 import asyncio
+import logging
+from collections import defaultdict
+
 import jieba
 from rank_bm25 import BM25Okapi
-from sqlalchemy import select
+from sqlalchemy import select, and_, or_, func
 
 from infrastructure.db import get_session_factory
 from infrastructure.models.memory import MemoryItem
 from services.llm.provider import LLMProvider
+
+logger = logging.getLogger("lunjiang.rag")
 
 
 class HybridRetriever:
@@ -22,11 +30,10 @@ class HybridRetriever:
         self._rebuild_lock = asyncio.Lock()  # 防止并发重复重建
 
     # ---------- 稠密路 ----------
-    async def dense_search(self, query: str, top_k: int = 20,
-                           project_id: int | None = None) -> list[dict]:
+    async def dense_search(self, query: str, top_k: int = 20) -> list[dict]:
         """公共语料域稠密检索（document/fact/summary；BM25 索引同域，保证融合口径一致）。
 
-        project_id 参数保留兼容（项目私有文档走 project_dense_search）。
+        项目私有文档走 project_dense_search（kind="user_doc" + project_id 隔离）。
         """
         qvec = (await self._provider.embed([query]))[0]
         async with get_session_factory()() as db:
@@ -82,7 +89,6 @@ class HybridRetriever:
             if self._bm25 is not None:  # double-check
                 return
             count = await self.rebuild_bm25()
-            logger = __import__("logging").getLogger("lunjiang.rag")
             logger.info("BM25 索引懒重建完成，文档数: %d", count)
 
     async def sparse_search(self, query: str, top_k: int = 20) -> list[dict]:
@@ -109,10 +115,6 @@ class HybridRetriever:
         定位方式：语料用 meta["file"]、项目文档用 meta["doc_key"]，chunk 序号在 meta["chunk"]。
         价值：命中段落在分块边缘时补齐上下文，避免截断信息；作为 RRF 第三路参与融合。
         """
-        from collections import defaultdict
-
-        from sqlalchemy import and_, or_
-
         if not hits or window <= 0:
             return []
         # 汇总 (来源键, {目标chunk序号})
@@ -131,8 +133,6 @@ class HybridRetriever:
 
         # 语料: (kind=document AND meta->>'file'==src)；项目文档: (kind=user_doc AND meta->>'doc_key'==src)
         # memory_items.meta 为 JSON 列（非 JSONB），用 json_extract_path_text 提取文本值
-        from sqlalchemy import func
-
         conds = []
         for src, idxs in wanted.items():
             src_cond = or_(

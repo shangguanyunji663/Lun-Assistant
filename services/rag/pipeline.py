@@ -15,6 +15,7 @@
 """
 import logging
 
+from infrastructure.config import get_value
 from services.rag.query_rewrite import rewrite_query
 from services.rag.reranker import reranker
 from services.rag.retriever import hybrid_retriever
@@ -70,7 +71,6 @@ class RagPipeline:
         - no_project_only: 仅检索项目知识库（知识库管理页"库内检索"用），跳过公共语料。
         返回 {"rewritten", "keywords", "results": [{content, meta, scores...}]}
         """
-        from infrastructure.config import get_value
         top_k = top_k or int(get_value("rag", "final_top_k", default=5))
         recall_k = int(get_value("rag", "recall_top_k", default=20))
         window = int(get_value("rag", "sibling_window", default=1))
