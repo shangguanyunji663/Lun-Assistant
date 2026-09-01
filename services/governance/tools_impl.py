@@ -8,6 +8,11 @@ from services.governance.tool_registry import ToolSpec, tool_registry
 # ---------------- 文献检索 ----------------
 async def search_literature(query: str, top_k: int = 5):
     from services.rag.pipeline import rag_pipeline
+    try:
+        top_k = int(top_k or 5)
+    except (TypeError, ValueError):
+        top_k = 5
+    top_k = max(1, min(top_k, 20))  # 收敛到合法窗口，防字符串/越界
     out = await rag_pipeline.search(query, top_k=top_k)
     return {
         "query": out["rewritten"],
@@ -142,6 +147,35 @@ async def rewrite_query(query: str):
     return await _rw(query)
 
 
+# ---------------- 结构化产物生成 ----------------
+async def generate_artifact(kind: str, topic: str, requirement: str = "",
+                            references: str = "", project_id: int | None = None):
+    """综述初稿 / 开题报告 / 答辩大纲（证据检索 + 模板生成，见 services/agent/artifacts.py）。"""
+    from services.agent.artifacts import generate_artifact as _gen
+    return await _gen(kind=kind, topic=topic, requirement=requirement,
+                      references=references, project_id=project_id)
+
+
+# ---------------- P2 学术工具生态（6类）----------------
+def _register_academic() -> None:
+    """学术翻译/润色/方法推荐/参考文献格式化/摘要生成/术语解析。"""
+    from services.governance import academic_tools as at
+
+    tool_registry.register(ToolSpec(
+        name="translate_academic", description="学术翻译(中英互译)", handler=at.translate_academic))
+    tool_registry.register(ToolSpec(
+        name="polish_academic", description="学术润色", handler=at.polish_academic))
+    tool_registry.register(ToolSpec(
+        name="recommend_method", description="研究方法推荐", handler=at.recommend_method))
+    tool_registry.register(ToolSpec(
+        name="format_reference", description="参考文献格式化(GB/T 7714/APA)",
+        handler=at.format_reference))
+    tool_registry.register(ToolSpec(
+        name="generate_abstract", description="论文摘要生成", handler=at.generate_abstract))
+    tool_registry.register(ToolSpec(
+        name="term_explain", description="学术术语解析", handler=at.term_explain))
+
+
 # ---------------- 注册 ----------------
 def register_all() -> None:
     tool_registry.register(ToolSpec(
@@ -159,3 +193,7 @@ def register_all() -> None:
         name="check_plagiarism", description="查重估算", handler=check_plagiarism))
     tool_registry.register(ToolSpec(
         name="detect_ai_text", description="AI痕迹检测", handler=detect_ai_text))
+    tool_registry.register(ToolSpec(
+        name="generate_artifact", description="结构化产物生成(综述初稿/开题报告/答辩大纲)",
+        handler=generate_artifact))
+    _register_academic()

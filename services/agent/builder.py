@@ -16,21 +16,26 @@ def build_graph(checkpointer=None):
     from services.agent.specialists import SPECIALISTS, make_specialist_node
     from services.agent.state import AgentState
     from services.agent.supervisor import supervisor_node
+    from services.agent.planner import planner_node
 
     builder = StateGraph(AgentState)
     builder.add_node("supervisor", supervisor_node)
     for name, spec in SPECIALISTS.items():
         builder.add_node(name, make_specialist_node(spec))
+    builder.add_node("planner", planner_node)
 
     builder.add_edge(START, "supervisor")
 
     def route(state: dict) -> str:
         nxt = state.get("next_agent") or "__end__"
-        return nxt if nxt in SPECIALISTS or nxt == "supervisor" else END
+        if nxt in SPECIALISTS or nxt in ("supervisor", "planner"):
+            return nxt
+        return END
 
     builder.add_conditional_edges("supervisor", route,
-                                  ["supervisor", *SPECIALISTS, END])
+                                  ["supervisor", "planner", *SPECIALISTS, END])
     for name in SPECIALISTS:
         builder.add_edge(name, "supervisor")
+    builder.add_edge("planner", "supervisor")
 
     return builder.compile(checkpointer=checkpointer)

@@ -54,8 +54,13 @@ async def supervisor_node(state: dict) -> dict:
                         "next_agent": "__end__", "final_output": output,
                         "stop_reason": "done"}
 
+            from services.agent.planner import is_complex_task
             from services.agent.specialists import INTENT_TO_AGENT
-            next_agent = INTENT_TO_AGENT[ir.intent]
+            if is_complex_task(state.get("user_input", ""), ir.intent):
+                # 复合任务（多动作/目标词）：进入 Plan-Execute-Replan 规划器
+                next_agent = "planner"
+            else:
+                next_agent = INTENT_TO_AGENT[ir.intent]
             await hub.emit("route", {"next": next_agent}, node="supervisor")
             await hub.emit("node_end", {"agent": "supervisor", "route": next_agent},
                            node="supervisor")

@@ -2,6 +2,10 @@
 # 工具治理配置：限流阈值 / 互斥锁 / 降级默认参数 / 熔断分组
 # ============================================================
 tools:
+  topic_analysis:
+    rate_limit_rpm: 10
+    breaker: llm_main
+
   search_literature:
     rate_limit_rpm: 20
     breaker: rag_pipeline
@@ -33,6 +37,39 @@ tools:
     rate_limit_rpm: 10
     breaker: llm_main
     fallback_kwargs: {mode: fast}
+
+  generate_artifact:
+    rate_limit_rpm: 6
+    breaker: llm_main
+    fallback_kwargs: {kind: review_draft}
+
+  # ---- P2 学术工具生态 ----
+  translate_academic:
+    rate_limit_rpm: 15
+    breaker: llm_main
+
+  polish_academic:
+    rate_limit_rpm: 15
+    breaker: llm_main
+
+  recommend_method:
+    rate_limit_rpm: 15
+    breaker: rag_pipeline
+    fallback_kwargs: {question: 如何选择研究方法}
+
+  format_reference:
+    rate_limit_rpm: 60
+    breaker: default
+    fallback_kwargs: {style: gb7714}
+
+  generate_abstract:
+    rate_limit_rpm: 10
+    breaker: llm_main
+    fallback_kwargs: {length: 200}
+
+  term_explain:
+    rate_limit_rpm: 20
+    breaker: rag_pipeline
 
   ingest_corpus:
     rate_limit_rpm: 2
