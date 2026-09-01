@@ -58,7 +58,11 @@ function AuthPage({ onLogin }) {
 }
 
 /* ---------------- 事件时间线 ---------------- */
-const NODE_TITLES = { supervisor: '主控Agent', topic_agent: '选题Agent', literature_agent: '文献Agent', writer_agent: '写作Agent', format_agent: '格式Agent', plagiarism_agent: '查重Agent', defense_agent: '答辩Agent' }
+const NODE_TITLES = {
+  supervisor: '主控Agent', topic_agent: '选题Agent', literature_agent: '文献Agent',
+  writing_agent: '写作Agent', format_agent: '格式Agent', plagiarism_agent: '查重Agent',
+  ai_detect_agent: 'AI检测Agent', planner: '任务规划Agent',
+}
 function Timeline({ events }) {
   if (!events.length) return null
   return (
@@ -69,7 +73,9 @@ function Timeline({ events }) {
           {ev.type === 'intent' && <span className="tl-tag intent">意图: {ev.payload?.label} ({ev.payload?.layer}, conf={ev.payload?.confidence})</span>}
           {ev.type === 'route' && <span className="tl-tag route">→ 路由至 {ev.payload?.next}</span>}
           {ev.type === 'tool' && <span className="tl-tag tool">🔧 {ev.payload?.name}</span>}
-          {ev.type === 'node_end' && <span className="tl-tag end">✔ {ev.payload?.agent || ev.node || ''} 完成{ev.payload?.stop_reason === 'max_hops' ? '（达到最大跳数）' : ''}</span>}
+          {ev.type === 'plan' && <span className="tl-tag plan">📋 规划 {ev.payload?.goal?.slice(0, 40) || ''} · {ev.payload?.steps?.length || 0} 步</span>}
+          {ev.type === 'step_event' && <span className="tl-tag step">• 步骤 {ev.payload?.step}/{ev.payload?.total} {ev.payload?.action}{ev.payload?.status === 'ok' ? ' ✓' : ' ⚠'}</span>}
+          {ev.type === 'node_end' && <span className="tl-tag end">✔ {NODE_TITLES[ev.payload?.agent] || ev.payload?.agent || ev.node || ''} 完成{ev.payload?.stop_reason === 'max_hops' ? '（达到最大跳数）' : ''}</span>}
           {ev.type === 'interrupt' && <span className="tl-tag interrupt">⏸ 需要确认: {ev.payload?.question || JSON.stringify(ev.payload)}</span>}
           {ev.type === 'error' && <span className="tl-tag err">✖ {ev.payload?.message}</span>}
         </div>
@@ -149,6 +155,165 @@ function renderTree(nodes, depth) {
   ))
 }
 
+/* ---------------- 项目知识库面板 ---------------- */
+const FMT_ICON = { pdf: '📕', docx: '📘', txt: '📄', md: '📝' }
+function StatusBadge({ status }) {
+  return <span className={`kb-status kb-status-${status}`}>{status}</span>
+}
+function KnowledgePanel({ projectId, onNotice }) {
+  const [docs, setDocs] = useState([])
+  const [err, setErr] = useState('')
+  const [uploading, setUploading] = useState(false)
+  const [uploadMsg, setUploadMsg] = useState('')
+  const [summary, setSummary] = useState(null)          // 上传汇总 {uploaded, ready, 逐文件}
+  const [q, setQ] = useState('')
+  const [mode, setMode] = useState('hybrid')
+  const [hits, setHits] = useState(null)
+  const [fallback, setFallback] = useState(false)   // 库内未命中已回退公共语料
+  const [searching, setSearching] = useState(false)
+  const fileRef = useRef(null)
+
+  const load = async (pid = projectId) => {
+    if (!pid) { setDocs([]); return }
+    try { setDocs((await api.listKnowledge(pid)).documents); setErr('') }
+    catch (e) { setErr(String(e.message || e)) }
+  }
+  useEffect(() => { load(); setHits(null); setUploadMsg('') }, [projectId])
+
+  const upload = async (files) => {
+    const arr = Array.from(files || [])
+    if (!arr.length || uploading) return
+    setUploading(true); setUploadMsg(''); setErr('')
+    try {
+      const r = await api.uploadKnowledge(projectId, arr)
+      setSummary(r)
+      setUploadMsg(r.ready > 0
+        ? `已入库 ${r.ready}/${arr.length} 份` : `本次 ${arr.length} 份均未入库`)
+      onNotice?.(r)
+    } catch (e) { setErr(String(e.message || e)) }
+    finally { setUploading(false); setHits(null); load() }
+    fileRef.current && (fileRef.current.value = '')
+  }
+
+  const remove = async (docId, filename) => {
+    if (!window.confirm(`确定从知识库删除「${filename}」？对应向量分块与原始文件将一并清除。`)) return
+    try { await api.deleteKnowledge(projectId, docId); setErr(''); load(); setHits(null) }
+    catch (e) { setErr(String(e.message || e)) }
+  }
+
+  const search = async () => {
+    const query = q.trim()
+    if (!query || searching) return
+    setSearching(true); setErr(''); setFallback(false)
+    try {
+      let results = (await api.searchKnowledge(projectId, query, 5, mode)).results
+      // 库内(mode=project)未命中 → 自动回退公共语料（hybrid）兜底，并提示来源
+      if (mode === 'project' && !results.length) {
+        results = (await api.searchKnowledge(projectId, query, 5, 'hybrid')).results
+        setFallback(true)
+      }
+      setHits(results)
+    } catch (e) { setErr(String(e.message || e)) }
+    finally { setSearching(false) }
+  }
+
+  return (
+    <div className="kb-panel">
+      <div className="panel-head">
+        <h3>项目知识库</h3>
+        <button onClick={() => load()} disabled={uploading || !projectId}>刷新</button>
+      </div>
+
+      {!projectId && <p className="muted">请先在顶部选择或新建论文项目，再上传你的参考资料。</p>}
+
+      {projectId && (<>
+        <div className="kb-drop"
+             onClick={() => fileRef.current?.click()}
+             onDragOver={e => e.preventDefault()}
+             onDrop={e => { e.preventDefault(); upload(e.dataTransfer.files) }}
+             onKeyDown={e => e.key === 'Enter' && fileRef.current?.click()}
+             role="button" tabIndex={0}>
+          <input ref={fileRef} type="file" multiple hidden
+                 accept=".pdf,.docx,.txt,.md,.markdown"
+                 onChange={e => upload(e.target.files)} />
+          <div className="kb-drop-icon">{uploading ? '存' : '＋'}</div>
+          <div>{uploading ? '解析入库中…（分块 + 向量化）' : '点击或拖拽上传资料'}</div>
+          <div className="muted">格式：PDF / DOCX / TXT / MD ｜ 单文件 ≤20MB ｜ 同内容自动去重</div>
+        </div>
+
+        {uploadMsg && (
+          <div className="kb-upload-msg">
+            <span>{uploadMsg}</span>
+            {summary?.results?.map((r, i) => (
+              <span key={i} className={`kb-mini kb-mini-${r.status}`}>
+                {r.status === 'ready' ? '✓' : r.status === 'skipped' ? '＝' : '✕'} {r.filename}
+              </span>
+            ))}
+          </div>
+        )}
+        {err && <div className="err">{err}</div>}
+
+        <div className="kb-search">
+          <input placeholder="库内检索：如 RRF 倒数排名融合…" value={q}
+                 onChange={e => setQ(e.target.value)}
+                 onKeyDown={e => { if (e.key === 'Enter') search() }} />
+          <select value={mode} onChange={e => setMode(e.target.value)} title="检索范围">
+            <option value="hybrid">hybrid</option>
+            <option value="project">库内</option>
+          </select>
+          <button onClick={search} disabled={searching || !q.trim()}>{searching ? '…' : '检索'}</button>
+        </div>
+
+        {hits !== null && (
+          <div className="kb-hits">
+            <div className="panel-head"><h3>{hits.length ? '检索命中' : '未命中'}</h3>
+              <span className="muted link" onClick={() => setHits(null)}>收起</span></div>
+            {fallback && !hits.length &&
+              <p className="muted">库内无命中，已自动检索公共语料（把“检索”右侧模式切回 hybrid 即可默认合并检索）。</p>}
+            {fallback && hits.length > 0 &&
+              <div className="kb-fallback-tip">库内未命中，已为你检索公共语料（hybrid 模式）</div>}
+            {hits.map((h, i) => (
+              <div key={i} className="kb-hit">
+                <div className="kb-hit-head">
+                  <span className="kh-src">{h.doc_id ? '📄 知识库' : '📚 公共语料'}</span>
+                  <span className="kh-score">{h.score}</span>
+                  {h.noise_flag !== 'ok' && <span className={`kb-mini kb-mini-${h.noise_flag === 'sparse_only' ? 'failed' : 'weak'}`}>{h.noise_flag}</span>}
+                </div>
+                <div className="kh-name">{h.filename || h.source || '(文档)'}</div>
+                <div className="kh-content">{h.content}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="kb-docs">
+          <div className="panel-head"><h3>资料清单 {docs.length ? `（${docs.length}）` : ''}</h3></div>
+          {!docs.length && <p className="muted">还没有上传资料：把论文相关的 PDF、笔记、课件丢进来，对话检索会优先引用它们。</p>}
+          {docs.map(d => (
+            <div key={d.id} className={`kb-doc ${d.status !== 'ready' ? 'kb-doc-bad' : ''}`}>
+              <div className="kd-icon">{FMT_ICON[d.file_type] || '📄'}</div>
+              <div className="kd-body">
+                <div className="kd-name" title={d.filename}>{d.filename}</div>
+                <div className="kd-meta">
+                  <StatusBadge status={d.status} />
+                  {d.chunk_count > 0 && <span>{d.chunk_count} 分块</span>}
+                  {d.word_count > 0 && <span>{d.word_count.toLocaleString()} 字</span>}
+                  <span>{d.file_type}</span>
+                </div>
+                {d.error && <div className="kd-err">{d.error}</div>}
+              </div>
+              {d.status === 'ready' && (
+                <button className="kd-del" title="删除"
+                        onClick={() => remove(d.id, d.filename)}>✕</button>
+              )}
+            </div>
+          ))}
+        </div>
+      </>)}
+    </div>
+  )
+}
+
 /* ---------------- 主应用 ---------------- */
 export default function App() {
   const [user, setUser] = useState(null)
@@ -167,6 +332,7 @@ export default function App() {
   const [streaming, setStreaming] = useState(false)
   const [interrupt, setInterrupt] = useState(null)   // {question, options?}
   const [input, setInput] = useState('')
+  const [sideTab, setSideTab] = useState('timeline')   // 右栏：timeline | knowledge
   const bottomRef = useRef(null)
 
   useEffect(() => {
@@ -227,7 +393,7 @@ export default function App() {
             setTimeline(t => [...t, { type: 'interrupt', payload, node }])
           } else if (type === 'error') {
             setTimeline(t => [...t, { type: 'error', payload, node }])
-          } else if (['node_start', 'node_end', 'intent', 'route', 'tool'].includes(type)) {
+          } else if (['node_start', 'node_end', 'intent', 'route', 'tool', 'plan', 'step_event'].includes(type)) {
             setTimeline(t => [...t, { type, payload, node }])
           }
         })
@@ -259,8 +425,8 @@ export default function App() {
 
   return (
     <div className="app">
-      <header>
-        <h1>论匠 <small>多智能体论文助手</small></h1>
+      <header className="topbar">
+        <h1 className="brand">论匠<small>多智能体论文全流程助手</small></h1>
         <div className="spacer" />
         <select value={projectId ?? ''} onChange={e => setProjectId(e.target.value ? Number(e.target.value) : null)}>
           <option value="">（未关联项目）</option>
@@ -336,10 +502,22 @@ export default function App() {
               </button>
             </div>
           </section>
-          <aside className="timeline-col">
-            <h3>Agent 执行时间线</h3>
-            <Timeline events={timeline} />
-            {!timeline.length && <p className="muted">发起对话后，这里展示主控调度 / 意图识别 / 路由与工具事件</p>}
+          <aside className="side-col">
+            <div className="side-tabs">
+              <button className={sideTab === 'timeline' ? 'on' : ''} onClick={() => setSideTab('timeline')}>执行时间线</button>
+              <button className={sideTab === 'knowledge' ? 'on' : ''} onClick={() => setSideTab('knowledge')}>项目知识库</button>
+            </div>
+            {sideTab === 'timeline' ? (
+              <div className="side-scroll">
+                <Timeline events={timeline} />
+                {!timeline.length &&
+                  <p className="muted">发起对话后，这里展示主控调度 / 意图识别 / 路由 / 工具调用（含 Planner 规划与步骤）</p>}
+              </div>
+            ) : (
+              <div className="side-scroll">
+                <KnowledgePanel projectId={projectId} />
+              </div>
+            )}
           </aside>
         </main>
       ) : (

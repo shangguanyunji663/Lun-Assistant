@@ -25,6 +25,28 @@ export const api = {
   projects: () => req('/projects'),
   createProject: (title, major, requirement) => req('/projects', { method: 'POST', body: JSON.stringify({ title, major, requirement }) }),
   deleteProject: (id) => req(`/projects/${id}`, { method: 'DELETE' }),
+
+  // ---- 项目级知识库（第 4 轮上线）----
+  uploadKnowledge: async (projectId, files) => {
+    const fd = new FormData()
+    files.forEach(f => fd.append('files', f, f.name))
+    const res = await fetch(`${API}/projects/${projectId}/knowledge`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${localStorage.getItem('lj_token')}` }, // 不设 Content-Type，由浏览器生成 boundary
+      body: fd,
+    })
+    if (res.status === 401) { localStorage.removeItem('lj_token'); window.location.reload() }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}))
+      throw new Error(body.detail || `${res.status}`)
+    }
+    return res.json()
+  },
+  listKnowledge: (projectId) => req(`/projects/${projectId}/knowledge`),
+  deleteKnowledge: (projectId, docId) => req(`/projects/${projectId}/knowledge/${docId}`, { method: 'DELETE' }),
+  searchKnowledge: (projectId, query, top_k = 5, mode = 'hybrid') =>
+    req(`/projects/${projectId}/knowledge/search`, { method: 'POST', body: JSON.stringify({ query, top_k, mode }) }),
+
   traces: (limit = 30) => req(`/observability/traces?limit=${limit}`),
   trace: (id) => req(`/observability/traces/${id}`),
 }
