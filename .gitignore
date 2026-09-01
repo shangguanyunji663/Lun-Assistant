@@ -26,6 +26,8 @@ evals/regression_latest.json
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+# WebP 转换保留的 PNG 回退资产（见 docs/OPTIMIZATION_ROUND10.md）
+frontend/public/bg/_backup/
 
 # IDE
 .idea/
