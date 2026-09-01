@@ -10,6 +10,7 @@
 | --------------------------------------- | --------------------------------- |
 | [📖 学习指南](docs/LEARNING_GUIDE.md)       | 从零理解并重建本项目（推荐先读）                  |
 | [📐 架构总览](#目录结构)                        | 分层结构与模块职责                         |
+| [📋 目录结构审查](docs/ARCHITECTURE_REVIEW.md) | 目录合理性评估（问题清单 + 优化建议）          |
 | [🛠 优化记录一](docs/OPTIMIZATION_ROUND1.md) | 第一轮优化（性能/安全/体验）                   |
 | [🛠 优化记录二](docs/OPTIMIZATION_ROUND2.md) | 第二轮优化（OOM 修复/结构重构方案）              |
 | [🛠 优化记录三](docs/OPTIMIZATION_ROUND3.md) | 第三轮优化（布尔陷阱/前端全按钮失效排查）             |
@@ -17,17 +18,70 @@
 | [🛠 优化记录五](docs/OPTIMIZATION_ROUND5.md) | 第五轮优化（学术工具生态/并发压测/agnes对话底座）      |
 | [🛠 优化记录六](docs/OPTIMIZATION_ROUND6.md) | 第六轮优化（架构改进与工程化治理/P0修复/测试骨架）       |
 | [🛠 优化记录七](docs/OPTIMIZATION_ROUND7.md) | 第七轮修改（前端视觉重构：青绿长卷/会话卷册/山水浓度滑杆） |
-| [📋 目录结构审查](docs/ARCHITECTURE_REVIEW.md) | 目录合理性评估（问题清单 + 优化建议）          |
+| [🛠 优化记录八](docs/OPTIMIZATION_ROUND8.md) | 第八轮修改（前端功能同步 + 三主题切换；含 v10 三主题切到 React 主应用生产代码） |
+| [🛠 优化记录九](docs/OPTIMIZATION_ROUND9.md) | 第九轮修改（v10 三主题系统全部遗留项落地：仅内置模式 / B-C 装饰 / 音效 / 移动端 / 双浏览器截图） |
+| [🛠 优化记录十](docs/OPTIMIZATION_ROUND10.md) | 第十轮修改（主题图 PNG→WebP 压缩，5.32 MB → 0.26 MB，节省 95.1%；含 R-4/R-5 GitHub Pages 自动部署） |
+| [🚀 部署指南](docs/DEPLOY.md)               | GitHub Pages 自动部署到 `https://shangguanyunji663.github.io/Lun-Assistant/` |
 | [💡 常见问题](#常见问题)                        | 排障手册                              |
+
+## 项目简介
+
+论匠是一套面向**毕业论文/学术论文写作全流程**的多智能体辅助平台。系统以 LangGraph 构建"主从式"多智能体编排：一个主控 Supervisor 统一调度六类专项 Agent，配合 Plan-Execute-Replan 规划器处理复合任务，覆盖从选题、检索、写作到答辩准备的完整链路。
+
+项目采用前后端分离架构，后端为 FastAPI 异步服务，前端为 React 18 + Vite 单页应用。工程上具备以下设计特征：
+
+- **主从多智能体编排**：单主控 + 多专项 Agent，最大 3 跳防回环，支持人工中断续跑；
+- **检索增强生成（RAG）**：三阶段递进检索（Query 改写 → 多路混合召回 → 交叉精排），并支持项目级私有知识库；
+- **分层存储**：PostgreSQL(pgvector) 持久化 + Redis 短期记忆/缓存，四层记忆架构覆盖会话全程；
+- **治理与风控**：所有 Agent 工具统一经过 RBAC → 限流 → 熔断 → 容错 → 审计流水线；
+- **可观测**：Trace/Log/Memory/Action 统一 Span，支持树形回放。
+
+> 详细的模块实现原理、Agent 编排细节与分步重建教程见 [学习指南](docs/LEARNING_GUIDE.md)。
+
+## 核心特性
+
+| 模块      | 说明                                                                            | 关键实现                                    |
+| ------- | ----------------------------------------------------------------------------- | --------------------------------------- |
+| 多智能体编排  | 1 主控 Supervisor 调度 6 类专项 Agent + **Plan-Execute-Replan 规划器**（复合任务），最大 3 跳防回环  | `services/agent/`                       |
+| 意图预分类   | 规则 → 向量原型 → LLM 兜底三级，56ms / 100% 准确                                           | `services/classifier/intent.py`         |
+| 项目级知识库  | 多格式上传(PDF/DOCX/TXT/MD)→解析→分块→向量化入库，MD5去重/扫描件拒绝/跨项目隔离，`project`/`hybrid` 双模式检索 | `services/rag/ingest/`                  |
+| 三阶段 RAG | Query 改写(规则兜底+防漂移，返回策略标记) → 稠密+稀疏+**相邻窗口**多路 RRF 融合(项目保底) → 交叉精排+降噪对比         | `services/rag/`                         |
+| 结构化产物   | 综述初稿 / 开题报告 / 答辩大纲（模板骨架 + RAG 证据注入，治理工具 `generate_artifact`）                  | `services/governance/artifacts.py`   |
+| 学术工具生态  | 翻译 / 润色 / 方法推荐 / 参考文献格式化 / 摘要生成 / 术语解析                                        | `services/governance/academic_tools.py` |
+| 工具治理    | RBAC → 限流 → 熔断 → 三级容错（重试/降级/人机兜底）→ 分布式锁 → 审计 → 行为观测 → Skill（论文 8 类 + 学术 6 类共 14 个工具统一经治理栈，同步 handler 自动线程池化）        | `services/governance/`                  |
+| 四层记忆    | 短期(Redis)/结构化/长期(pgvector)/偏好 + 压缩                                            | `services/memory/`                      |
+| SSE 流式  | EventHub 事件总线 + token 微缓冲                                                     | `services/streaming/hub.py`             |
+| 人机介入    | LangGraph interrupt 挂起 → /resume 续跑                                           | `api/agent/router.py`                   |
+| 全链路可观测  | Trace/Log/Memory/Action 统一 Span，树形回放                                          | `services/observability/`               |
 
 ## 快速开始
 
 ### 0. 环境准备
 
-依赖：Python 3.11（conda）、Node 18+、PostgreSQL 15+（pgvector）、Redis 6+、Ollama（嵌入 bge-m3 必需）。
+**依赖清单**
+
+| 依赖 | 版本要求 | 用途 | 连接地址（默认） |
+| --- | --- | --- | --- |
+| Python | 3.11（conda 环境 `envs/lunjiang`） | 后端运行时 | — |
+| Node.js | 18+ | 前端构建（Vite 5） | — |
+| PostgreSQL | 15+（含 pgvector 扩展） | 主存储：业务表 + 向量记忆 + 知识库 | `127.0.0.1:5433` |
+| Redis | 6+ | 短期记忆 / 限流窗口 / 分布式锁 | `127.0.0.1:6379` |
+| Ollama | 最新版 | 本地嵌入模型 bge-m3 | `127.0.0.1:11434` |
+
+> ⚠️ **端口约定**：项目 PostgreSQL 固定使用 **5433** 端口（独立实例），与系统默认的 5432 互不干扰；Redis 使用 6379，Ollama 使用 11434。
+
+**第一步：启动基础设施（顺序：PG → Redis → Ollama）**
+
+应用启动时会立即连接 PostgreSQL 建表（`main.py` lifespan），因此**必须先启动数据库**，否则后端会直接启动失败（`ConnectionRefusedError: [WinError 1225]`）。
 
 ```powershell
-# Ollama：新开窗口常驻启动，拉取嵌入模型（对话走默认云端 agnes，见第 5 轮优化记录）
+# 1) PostgreSQL（独立实例，端口 5433）
+D:\Develop\DB\PostgreSQL16\Library\bin\pg_ctl -D D:\Develop\DB\PostgreSQL16\data start
+
+# 2) Redis（端口 6379；若注册为 Windows 服务则直接 net start Redis）
+redis-server
+
+# 3) Ollama：新开窗口常驻启动，拉取嵌入模型（对话走默认云端 agnes，见第 5 轮优化记录）
 ollama serve
 ollama pull bge-m3
 
@@ -36,7 +90,15 @@ ollama pull qwen3:4b
 ollama create qwen3:4b-ctx4096 -f configs\ollama\Modelfile.qwen3-ctx4096   # 固定 num_ctx=4096，防 KV Cache OOM
 ```
 
-> 💡 **对话/嵌入双底座**：默认 `llm.default_provider=agnes`（云端 agnes-2.5-flash，Key 在 `.env` 的 `AGNES_API_KEY`，`copy .env.example .env` 即含占位）；`llm.embedding_provider=ollama`（本地 bge-m3，离线可用）。16GB 内存机器如需全本地：Ollama 的 `/v1` 兼容端点不认请求级 `options`，用 Modelfile 给 `qwen3:4b` 建 `qwen3:4b-ctx4096` 镜像副本（blob 复用，几乎不占额外磁盘）并切换 provider。
+**停止 PostgreSQL**：`D:\Develop\DB\PostgreSQL16\Library\bin\pg_ctl -D D:\Develop\DB\PostgreSQL16\data stop`
+
+**连通性自检**（可选，快速确认三个依赖是否就绪）：
+
+```powershell
+netstat -ano | findstr ":5433 :6379 :11434"   # 看到 LISTENING 即正常
+```
+
+> 💡 **对话/嵌入双底座**：默认 `llm.default_provider=agnes`（云端 agnes-2.5-flash，Key 在 `.env` 的 `AGNES_API_KEY`）；`llm.embedding_provider=ollama`（本地 bge-m3，离线可用）。16GB 内存机器如需全本地：Ollama 的 `/v1` 兼容端点不认请求级 `options`，用 Modelfile 给 `qwen3:4b` 建 `qwen3:4b-ctx4096` 镜像副本（blob 复用，几乎不占额外磁盘）并切换 provider。
 
 ### 1. 初始化环境
 
@@ -46,8 +108,6 @@ conda run -p envs\lunjiang pip install -r requirements.txt -i https://pypi.tuna.
 copy .env.example .env     # 修改 PG / Redis 连接信息
 ```
 
-独立 PostgreSQL（端口 5433）：`D:\Develop\DB\PostgreSQL16\Library\bin\pg_ctl -D D:\Develop\DB\PostgreSQL16\data start|stop`
-
 ### 2. 初始化数据
 
 ```powershell
@@ -55,7 +115,7 @@ envs\lunjiang\python.exe scripts/check_env.py          # 连通性检查（Ollam
 envs\lunjiang\python.exe scripts/ingest_corpus.py      # data/corpus/*.txt 入库（--force 重建）
 ```
 
-### 3. 启动
+### 3. 启动应用
 
 ```powershell
 # 后端（窗口1）
@@ -74,28 +134,13 @@ envs\lunjiang\python.exe scripts/smoke_memory.py       # 四层记忆 + 压缩
 envs\lunjiang\python.exe scripts/smoke_rag.py          # 三阶段检索
 envs\lunjiang\python.exe scripts/smoke_governance.py   # 治理栈 9 项
 envs\lunjiang\python.exe scripts/smoke_trace.py        # Trace 回放
+envs\lunjiang\python.exe scripts/smoke_graph.py        # Agent 图编译检查
 envs\lunjiang\python.exe scripts/smoke_api.py --topic  # 端到端（需 uvicorn 已启动）
 envs\lunjiang\python.exe evals/harness.py              # 三项指标评测
 envs\lunjiang\python.exe evals/regression.py           # 七大必测场景回归评测
 envs\lunjiang\python.exe -m pytest tests/ -q           # 离线单元测试（治理/模型/改写等 48 用例，无外部依赖）
 envs\lunjiang\python.exe scripts/load_test.py          # 知识库检索并发压测（需 uvicorn 已启动）
 ```
-
-## 核心特性
-
-| 模块      | 说明                                                                            | 关键实现                                    |
-| ------- | ----------------------------------------------------------------------------- | --------------------------------------- |
-| 多智能体编排  | 1 主控 Supervisor 调度 6 类专项 Agent + **Plan-Execute-Replan 规划器**（复合任务），最大 3 跳防回环  | `services/agent/`                       |
-| 意图预分类   | 规则 → 向量原型 → LLM 兜底三级，56ms / 100% 准确                                           | `services/classifier/intent.py`         |
-| 项目级知识库  | 多格式上传(PDF/DOCX/TXT/MD)→解析→分块→向量化入库，MD5去重/扫描件拒绝/跨项目隔离，`project`/`hybrid` 双模式检索 | `services/rag/ingest/`                  |
-| 三阶段 RAG | Query 改写(规则兜底+防漂移，返回策略标记) → 稠密+稀疏+**相邻窗口**多路 RRF 融合(项目保底) → 交叉精排+降噪对比         | `services/rag/`                         |
-| 结构化产物   | 综述初稿 / 开题报告 / 答辩大纲（模板骨架 + RAG 证据注入，治理工具 `generate_artifact`）                  | `services/governance/artifacts.py`   |
-| 学术工具生态  | 翻译 / 润色 / 方法推荐 / 参考文献格式化 / 摘要生成 / 术语解析                                        | `services/governance/academic_tools.py` |
-| 工具治理    | RBAC → 限流 → 熔断 → 三级容错（重试/降级/人机兜底）→ 分布式锁 → 审计 → 行为观测 → Skill（论文 8 类 + 学术 6 类共 14 个工具统一经治理栈，同步 handler 自动线程池化）        | `services/governance/`                  |
-| 四层记忆    | 短期(Redis)/结构化/长期(pgvector)/偏好 + 压缩                                            | `services/memory/`                      |
-| SSE 流式  | EventHub 事件总线 + token 微缓冲                                                     | `services/streaming/hub.py`             |
-| 人机介入    | LangGraph interrupt 挂起 → /resume 续跑                                           | `api/agent/router.py`                   |
-| 全链路可观测  | Trace/Log/Memory/Action 统一 Span，树形回放                                          | `services/observability/`               |
 
 ## 目录结构
 
@@ -128,23 +173,50 @@ infrastructure/      基础设施层（地基，谁都得经过它）
   ├─ rbac/           角色策略
   └─ models/         ORM（users/projects/memory/trace/audit/skill/knowledge）
 configs/             settings.yaml / rbac.yaml / tools.yaml / ollama/Modelfile
-evals/               评测 Harness + A/B + 七大场景回归
+data/                corpus/（公共语料 txt） + uploads/（知识库原始文件落盘，已 gitignore）
+evals/               评测 Harness + A/B + 七大场景回归 + 报告图表
 scripts/             初始化 + 冒烟 + 压测脚本
 frontend/            React 18 + Vite（SSE 对话 / Markdown / 时间线 / 项目知识库面板）
 docs/                文档（学习指南 / 优化记录）
+tests/               离线单元测试
 ```
 
 依赖方向：`api → services → infrastructure → configs`，禁止反向。
 
-## 配置要点
+## 配置方法
 
-- **`.env`**：`SECRET_KEY`（生产必改）、`APP_*`、`PG_*`、`REDIS_*`、云厂商 `*_API_KEY`（切换 provider 时填）、`AGNES_BASE_URL` / `AGNES_API_KEY`（默认对话底座）
+### `.env`（本地环境变量，不入库）
 
-- **`configs/settings.yaml`**：`llm.default_provider` 一键切换对话底座（ollama/deepseek/zhipu/qwen/**agnes**）；`llm.embedding_provider` 与对话解耦（推荐云端对话 + 本地 bge-m3 嵌入）；pgvector 向量列维度由 `llm.providers.<底座>.embedding_dim` **动态决定**（`infrastructure/config.get_embedding_dim()`，不再硬编码 1024），嵌入底座返回维度不符时运行时抛错，切换底座若维度变化需重建 `memory_items` 表或迁移数据（当前未引入 Alembic）
+| 变量 | 说明 |
+| --- | --- |
+| `SECRET_KEY` | JWT 签名密钥，**生产环境必须修改** |
+| `APP_HOST` / `APP_PORT` / `APP_DEBUG` | 应用监听地址、端口与调试开关 |
+| `PG_HOST` / `PG_PORT` / `PG_USER` / `PG_PASSWORD` / `PG_DB` | PostgreSQL 连接信息（本项目端口为 **5433**） |
+| `REDIS_HOST` / `REDIS_PORT` / `REDIS_DB` | Redis 连接信息（默认 6379/0） |
+| `DEEPSEEK_API_KEY` / `ZHIPU_API_KEY` / `QWEN_API_KEY` / `OPENAI_API_KEY` | 各云底座密钥（切换 provider 时填写） |
+| `AGNES_BASE_URL` / `AGNES_API_KEY` | 默认对话底座 agnes-2.5-flash（OpenAI 兼容） |
 
-- **RAG 检索键**：`rag.rewrite_enabled`（Query 改写开关，可按语料规模调）、`rag.sibling_window`（相邻窗口第三引擎半径，0=关闭）、`rag.max_upload_size_mb`（知识库单文件上限）、`rag.knowledge.upload_dir`（原始文件落盘目录，默认 `data/uploads/`，已 gitignore）、`rag.knowledge.min_text_chars`（低于该字数视为扫描件/空文档拒绝）
+### `configs/settings.yaml`（主配置）
 
-- **知识库使用**：`POST /api/projects/{id}/knowledge` 上传（PDF/DOCX/TXT/MD，可多文件）→ 自动解析分块向量化入库；`.../knowledge/search` 支持 `mode=project`（仅库内）与 `mode=hybrid`（公共语料+库内融合）；详细的调用示例见 [学习指南第 16 课](docs/LEARNING_GUIDE.md#第-16-课-项目知识库与复合任务规划第-45-轮扩展)
+- **对话底座切换**：`llm.default_provider` 一键切换（`ollama` / `deepseek` / `zhipu` / `qwen` / `agnes`）；`llm.embedding_provider` 与对话解耦（推荐云端对话 + 本地 bge-m3 嵌入）
+- **向量维度动态化**：pgvector 向量列维度由 `llm.providers.<底座>.embedding_dim` 动态决定（`infrastructure/config.get_embedding_dim()`，不再硬编码 1024）；嵌入底座返回维度不符时运行时抛错，切换底座若维度变化需重建 `memory_items` 表或迁移数据（当前未引入 Alembic）
+- **RAG 参数**：`rag.rewrite_enabled`（Query 改写开关）、`rag.sibling_window`（相邻窗口第三引擎半径，0=关闭）、`rag.max_upload_size_mb`（知识库单文件上限）、`rag.knowledge.upload_dir`（原始文件落盘目录，默认 `data/uploads/`，已 gitignore）、`rag.knowledge.min_text_chars`（低于该字数视为扫描件/空文档拒绝）
+
+### `configs/tools.yaml`（工具治理参数）
+
+14 个治理工具（论文 8 类 + 学术 6 类）各自的限流阈值（`rate_limit_rpm`）、熔断分组（`breaker`）与降级默认参数（`fallback_kwargs`），例如 `topic_analysis` 限流 10 rpm、`search_literature` 熔断分组 `rag_pipeline` 并降级 `top_k=5`。
+
+### `configs/rbac.yaml`（角色策略）
+
+YAML 驱动的 RBAC，`resource` 命名 `<域>:<动作>`，支持 `*` 与 `prefix:*` 通配：
+
+- `student`：项目 CRUD、发起/介入 Agent 会话、全部论文工具（治理层另有限流/审计）
+- `admin`：全量权限（含 Trace 回放）
+- `anonymous`：仅注册与登录
+
+### 知识库使用
+
+`POST /api/projects/{id}/knowledge` 上传（PDF/DOCX/TXT/MD，可多文件）→ 自动解析分块向量化入库；`.../knowledge/search` 支持 `mode=project`（仅库内）与 `mode=hybrid`（公共语料+库内融合）。详细的调用示例见 [学习指南第 16 课](docs/LEARNING_GUIDE.md#第-16-课-项目知识库与复合任务规划第-45-轮扩展)。
 
 ## API 速览
 
@@ -158,13 +230,25 @@ docs/                文档（学习指南 / 优化记录）
 
 ## 常见问题
 
-- **Ollama 返回 500（KV Cache OOM）**：参考 [优化记录二](docs/OPTIMIZATION_ROUND2.md)（`num_ctx=4096` 已由 Modelfile 镜像固化）；当前对话默认走云端 agnes，此问题主要影响本地回退场景
+- **后端启动报 `ConnectionRefusedError: [WinError 1225]`**：应用启动时会立即连接 PostgreSQL 建表，该错误说明 **PostgreSQL（或 Redis）未启动**。执行 `netstat -ano | findstr ":5433 :6379"` 确认监听，并按[第 0 节](#0-环境准备)依次启动依赖服务后重启。
 
-- **端口冲突**：项目 PG 固定 5433，独立于系统 5432
+- **`pg_ctl start` 提示 another server might be running 并卡住**：多为异常退出残留 `postmaster.pid`（确认 5433 无监听、无 postgres 进程后）删除 `D:\Develop\DB\PostgreSQL16\data\postmaster.pid` 再启动。
 
-- **中文乱码**：全部文件保持 UTF-8（已配 `.editorconfig` + IDE settings）
+- **Ollama 返回 500（KV Cache OOM）**：参考 [优化记录二](docs/OPTIMIZATION_ROUND2.md)（`num_ctx=4096` 已由 Modelfile 镜像固化）；当前对话默认走云端 agnes，此问题主要影响本地回退场景。
 
-- **知识库上传返回 failed（扫描件）**：扫描版 PDF 无可提取文本，本期不支持 OCR，接口返回 `status=failed` + 错误说明；请上传含文本层的 PDF 或 DOCX/TXT/MD
+- **端口冲突**：项目 PG 固定 5433，独立于系统 5432；若本机 5433/6379 被占用，先释放端口或调整 `.env` 与 `postgresql.conf` 保持一致。
+
+- **`check_env.py` 报错**：该脚本按 Ollama `/api/generate` 格式探测 LLM 底座，若 `default_provider` 为 OpenAI 兼容云端（如 agnes）会 404；以 `scripts/` 其余冒烟脚本与 `netstat` 端口检查为准。
+
+- **中文乱码**：全部文件保持 UTF-8（已配 `.editorconfig` + IDE settings）。
+
+- **知识库上传返回 failed（扫描件）**：扫描版 PDF 无可提取文本，本期不支持 OCR，接口返回 `status=failed` + 错误说明；请上传含文本层的 PDF 或 DOCX/TXT/MD。
+
+## 学习与演进
+
+- 想从零理解并重建本项目（架构演进、关键实现逐课讲解）→ [学习指南](docs/LEARNING_GUIDE.md)
+- 想了解目录设计的问题清单与优化建议 → [目录结构审查](docs/ARCHITECTURE_REVIEW.md)
+- 想按轮次追溯功能迭代与工程治理 → [优化记录一至七](#文档导航)
 
 ***
 
