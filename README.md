@@ -6,16 +6,16 @@
 
 ## 文档导航
 
-| 文档                                      | 用途                    |
-| --------------------------------------- | --------------------- |
-| [📖 学习指南](docs/LEARNING_GUIDE.md)       | 从零理解并重建本项目（推荐先读）      |
-| [📐 架构总览](#目录结构)                        | 分层结构与模块职责             |
-| [🛠 优化记录一](docs/OPTIMIZATION_ROUND1.md) | 第一轮优化（性能/安全/体验）       |
-| [🛠 优化记录二](docs/OPTIMIZATION_ROUND2.md) | 第二轮优化（OOM 修复/结构重构方案）  |
-| [🛠 优化记录三](docs/OPTIMIZATION_ROUND3.md) | 第三轮优化（布尔陷阱/前端全按钮失效排查） |
+| 文档                                      | 用途                                |
+| --------------------------------------- | --------------------------------- |
+| [📖 学习指南](docs/LEARNING_GUIDE.md)       | 从零理解并重建本项目（推荐先读）                  |
+| [📐 架构总览](#目录结构)                        | 分层结构与模块职责                         |
+| [🛠 优化记录一](docs/OPTIMIZATION_ROUND1.md) | 第一轮优化（性能/安全/体验）                   |
+| [🛠 优化记录二](docs/OPTIMIZATION_ROUND2.md) | 第二轮优化（OOM 修复/结构重构方案）              |
+| [🛠 优化记录三](docs/OPTIMIZATION_ROUND3.md) | 第三轮优化（布尔陷阱/前端全按钮失效排查）             |
 | [🛠 优化记录四](docs/OPTIMIZATION_ROUND4.md) | 第四轮优化（RAG知识库/多引擎检索/Planner/结构化产物） |
-| [🛠 优化记录五](docs/OPTIMIZATION_ROUND5.md) | 第五轮优化（学术工具生态/并发压测/agnes对话底座） |
-| [💡 常见问题](#常见问题)                        | 排障手册                  |
+| [🛠 优化记录五](docs/OPTIMIZATION_ROUND5.md) | 第五轮优化（学术工具生态/并发压测/agnes对话底座）      |
+| [💡 常见问题](#常见问题)                        | 排障手册                              |
 
 ## 快速开始
 
@@ -79,17 +79,19 @@ envs\lunjiang\python.exe scripts/load_test.py          # 知识库检索并发�
 
 ## 核心特性
 
-| 模块      | 说明                                       | 关键实现                            |
-| ------- | ---------------------------------------- | ------------------------------- |
-| 多智能体编排  | 1 主控 Supervisor 调度 6 类专项 Agent + **Plan-Execute-Replan 规划器**，最大 3 跳防回环 | `services/agent/`               |
-| 意图预分类   | 规则 → 向量原型 → LLM 兜底三级，56ms / 100% 准确      | `services/classifier/intent.py` |
-| 项目级知识库  | 多格式上传(PDF/DOCX/TXT/MD)→解析→分块→向量化入库，MD5去重/扫描件拒绝/跨项目隔离 | `services/rag/ingest/`          |
-| 三阶段 RAG | Query 改写(规则兜底+防漂移) → 稠密+稀疏+**相邻窗口**多路 RRF 融合 → 交叉精排+降噪对比 | `services/rag/`                 |
-| 工具治理    | RBAC → 限流 → 熔断 → 重试 → 分布式锁 → 审计 → Skill  | `services/governance/`          |
-| 四层记忆    | 短期(Redis)/结构化/长期(pgvector)/偏好 + 压缩       | `services/memory/`              |
-| SSE 流式  | EventHub 事件总线 + token 微缓冲                | `services/streaming/hub.py`     |
-| 人机介入    | LangGraph interrupt 挂起 → /resume 续跑      | `api/agent/router.py`           |
-| 全链路可观测  | Trace/Log/Memory/Action 统一 Span，树形回放     | `services/observability/`       |
+| 模块      | 说明                                                                            | 关键实现                                    |
+| ------- | ----------------------------------------------------------------------------- | --------------------------------------- |
+| 多智能体编排  | 1 主控 Supervisor 调度 6 类专项 Agent + **Plan-Execute-Replan 规划器**（复合任务），最大 3 跳防回环  | `services/agent/`                       |
+| 意图预分类   | 规则 → 向量原型 → LLM 兜底三级，56ms / 100% 准确                                           | `services/classifier/intent.py`         |
+| 项目级知识库  | 多格式上传(PDF/DOCX/TXT/MD)→解析→分块→向量化入库，MD5去重/扫描件拒绝/跨项目隔离，`project`/`hybrid` 双模式检索 | `services/rag/ingest/`                  |
+| 三阶段 RAG | Query 改写(规则兜底+防漂移，返回策略标记) → 稠密+稀疏+**相邻窗口**多路 RRF 融合(项目保底) → 交叉精排+降噪对比         | `services/rag/`                         |
+| 结构化产物   | 综述初稿 / 开题报告 / 答辩大纲（模板骨架 + RAG 证据注入，治理工具 `generate_artifact`）                  | `services/agent/artifacts.py`           |
+| 学术工具生态  | 翻译 / 润色 / 方法推荐 / 参考文献格式化 / 摘要生成 / 术语解析                                        | `services/governance/academic_tools.py` |
+| 工具治理    | RBAC → 限流 → 熔断 → 重试 → 分布式锁 → 审计 → Skill（论文 8 类 + 学术 6 类共 14 个工具统一经治理栈）        | `services/governance/`                  |
+| 四层记忆    | 短期(Redis)/结构化/长期(pgvector)/偏好 + 压缩                                            | `services/memory/`                      |
+| SSE 流式  | EventHub 事件总线 + token 微缓冲                                                     | `services/streaming/hub.py`             |
+| 人机介入    | LangGraph interrupt 挂起 → /resume 续跑                                           | `api/agent/router.py`                   |
+| 全链路可观测  | Trace/Log/Memory/Action 统一 Span，树形回放                                          | `services/observability/`               |
 
 ## 目录结构
 
@@ -97,7 +99,7 @@ envs\lunjiang\python.exe scripts/load_test.py          # 知识库检索并发�
 main.py              FastAPI 入口（启动命令 uvicorn main:app）
 api/                 接口层（FastAPI 路由 + 中间件）
   ├─ auth/           注册/登录/JWT
-  ├─ projects/       论文项目 CRUD（原 gateway，命名纠偏）
+  ├─ projects/       论文项目 CRUD + 项目知识库管理（原 gateway，命名纠偏）
   ├─ agent/          /chat (SSE) /resume 人机介入
   ├─ observability/  Trace 回放（admin）
   └─ middleware/     审计中间件（fire-and-forget）
@@ -131,19 +133,21 @@ docs/                文档（学习指南 / 优化记录）
 
 - **`.env`**：`SECRET_KEY`（生产必改）、`APP_*`、`PG_*`、`REDIS_*`、云厂商 `*_API_KEY`（切换 provider 时填）、`AGNES_BASE_URL` / `AGNES_API_KEY`（默认对话底座）
 
-- **`configs/settings.yaml`**：`llm.default_provider` 一键切换对话底座（ollama/deepseek/zhipu/qwen/**agnes**）；`llm.embedding_provider` 与对话解耦（推荐云端对话 + 本地 bge-m3 嵌入）；`rag.rewrite_enabled` 可按语料规模开关
+- **`configs/settings.yaml`**：`llm.default_provider` 一键切换对话底座（ollama/deepseek/zhipu/qwen/**agnes**）；`llm.embedding_provider` 与对话解耦（推荐云端对话 + 本地 bge-m3 嵌入）
 
-- **知识库**：`POST /api/projects/{id}/knowledge` 上传（PDF/DOCX/TXT/MD）自动入库存档；`.../knowledge/search` 支持 `mode=project`（仅库内）与 `mode=hybrid`（公共语料+库内融合）
+- **RAG 检索键**：`rag.rewrite_enabled`（Query 改写开关，可按语料规模调）、`rag.sibling_window`（相邻窗口第三引擎半径，0=关闭）、`rag.max_upload_size_mb`（知识库单文件上限）、`rag.knowledge.upload_dir`（原始文件落盘目录，默认 `data/uploads/`，已 gitignore）、`rag.knowledge.min_text_chars`（低于该字数视为扫描件/空文档拒绝）
+
+- **知识库使用**：`POST /api/projects/{id}/knowledge` 上传（PDF/DOCX/TXT/MD，可多文件）→ 自动解析分块向量化入库；`.../knowledge/search` 支持 `mode=project`（仅库内）与 `mode=hybrid`（公共语料+库内融合）；详细的调用示例见 [学习指南第 16 课](docs/LEARNING_GUIDE.md#第-16-课-项目知识库与复合任务规划第-45-轮扩展)
 
 ## API 速览
 
-| 分组       | 端点                                                           | 鉴权     |
-| -------- | ------------------------------------------------------------ | ------ |
-| Auth     | `POST /api/auth/register`、`POST /api/auth/login`             | 否      |
-| Projects | `GET/POST /api/projects`、`GET/PUT/DELETE /api/projects/{id}` | Bearer |
-| 知识库    | `POST/GET/DELETE /api/projects/{id}/knowledge[/{doc_id}]`、`POST .../knowledge/search` | Bearer |
-| Agent    | `POST /api/agent/chat`（SSE）、`POST /api/agent/resume`         | Bearer |
-| Trace    | `GET /observability/traces[/{id}]`                           | admin  |
+| 分组       | 端点                                                                                    | 鉴权     |
+| -------- | ------------------------------------------------------------------------------------- | ------ |
+| Auth     | `POST /api/auth/register`、`POST /api/auth/login`                                      | 否      |
+| Projects | `GET/POST /api/projects`、`GET/PUT/DELETE /api/projects/{id}`                          | Bearer |
+| 知识库      | `POST/GET/DELETE /api/projects/{id}/knowledge[/{doc_id}]`、`POST .../knowledge/search` | Bearer |
+| Agent    | `POST /api/agent/chat`（SSE）、`POST /api/agent/resume`                                  | Bearer |
+| Trace    | `GET /observability/traces[/{id}]`                                                    | admin  |
 
 ## 常见问题
 

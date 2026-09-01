@@ -41,6 +41,8 @@
 
 - [第 15 课 独立重建的最小路线图](#第-15-课-独立重建的最小路线图)
 
+- [第 16 课 项目知识库与复合任务规划（第 4/5 轮扩展）](#第-16-课-项目知识库与复合任务规划第-45-轮扩展)
+
 - [附录 关键类与调用链速查](#附录-关键类与调用链速查)
 
 ***
@@ -663,6 +665,146 @@ envs\lunjiang\python.exe evals/regression.py  # 七大必测场景回归（第 4
 | 12 | 评测集 + harness（课 14）                         | 1.5h | 有数据    |
 
 自己重建时**先砍需求再迭代**：只保留 4 个 specialist、多路召回先不做相邻窗口与项目保底、治理只要限流+重试——先跑通再补全，最后逐项对齐本项目（本项目就是你的"参考答案"）。
+
+***
+
+## 第 16 课 项目知识库与复合任务规划（第 4/5 轮扩展）
+
+> 前 15 课覆盖平台骨架；本节补充两个升级项的完整用法：**项目级知识库**（每篇论文项目自己的私有资料库）与**复合任务规划器（Planner）**，以及配套的新配置项。签名以当前代码为准。
+
+### 16.1 两个知识域：公共语料 vs 项目知识库
+
+| 知识域 | 来源 | 存储 | 可见范围 |
+| --- | --- | --- | --- |
+| 公共语料库 | `data/corpus/*.txt`（内置 81 篇 / 1376 块） | `MemoryItem(kind="document")`，BM25 索引同域 | 所有用户共享 |
+| 项目知识库 | 用户上传 PDF/DOCX/TXT/MD | 分块 `MemoryItem(kind="user_doc")` + 元数据 `KnowledgeDocument` | 仅该项目（跨项目隔离） |
+
+- 文件级元数据（文件名/格式/MD5/状态）落 `knowledge_documents` 表；向量分块**复用 `MemoryItem`**，直接并入同一套稠密/稀疏/精排链路（方案 A：避免双轨检索代码）；
+- 原始文件落盘 `data/uploads/{project_id}/`（已 gitignore）。
+
+### 16.2 知识库数据流与 API 示例
+
+链路：`上传 → infer_type(魔数/扩展名) → 大小上限 20MB → MD5 同项目去重 → 解析(线程池) → 分块(512/64) → 批量向量化(32/批) → status=ready`。
+
+```python
+import httpx
+
+BASE = "http://127.0.0.1:8000"
+c = httpx.AsyncClient()
+
+token = (await c.post(f"{BASE}/api/auth/login",
+                      json={"username": "u", "password": "p"})).json()["access_token"]
+h = {"Authorization": f"Bearer {token}"}
+
+# 1) 上传（可多文件；返回逐文件结果）
+up = await c.post(f"{BASE}/api/projects/{pid}/knowledge", headers=h, files=[
+    ("files", ("笔记.md", "# 检索系统笔记\n…".encode("utf-8"), "text/markdown")),
+])
+# → {"project_id","uploaded","ready","results":[{"status":"ready"|"skipped"|"failed","chunks","word_count",...}]}
+#   skipped=同项目已存在相同内容（MD5 去重）；failed=解析失败（如扫描件无可提取文本）
+
+# 2) 文档列表
+docs = (await c.get(f"{BASE}/api/projects/{pid}/knowledge", headers=h)).json()["documents"]
+# → [{id, filename, file_type, size_bytes, status, error, chunk_count, word_count, created_at}]
+
+# 3) 库内检索
+r = await c.post(f"{BASE}/api/projects/{pid}/knowledge/search", headers=h,
+                 json={"query": "交叉编码器精排怎么做", "top_k": 5, "mode": "hybrid"})
+# mode=project 仅库内；mode=hybrid 公共语料+库内融合（默认）
+# → {"query","rewritten","keywords","results":[{doc_id, filename, source, content, score, noise_flag}]}
+
+# 4) 删除（连同向量分块与原始文件一并清理）
+await c.delete(f"{BASE}/api/projects/{pid}/knowledge/{doc_id}", headers=h)
+```
+
+### 16.3 多路召回与精排降噪
+
+`RagPipeline.search(query, *, top_k=None, use_rewrite=True, use_rerank=True, project_id=None, no_project_only=False)` 阶段 2 的召回路：
+
+```
+dense(改写)  稀疏BM25(改写)  关键词BM25(首词)  [原查询dense,改写生效时]  [项目知识库dense,传project_id]
+        └─────────────────── RRF 融合 ───────────────────┘
+相邻窗口 sibling_search（命中块 ±window，第三引擎补跨块上下文）
+        └── 项目保底：项目路 Top-2 在窗口融合之后注入精排候选（排序仍由精排裁决）
+```
+
+- **精排降噪对比**（结果带 `noise_flag`）：稠密命中且排名靠前=`ok`；仅稀疏命中=`sparse_only`（0.982 软惩罚，关键词重叠噪声）；稠密命中但排名靠后=`weak`（0.995）；
+- `project_id=None` → 仅公共语料；`no_project_only=True` → 仅项目知识库（库内检索用）。
+
+### 16.4 Query 改写返回策略标记
+
+`rewrite_query()` 现在返回 `{"rewritten", "keywords", "strategy"}`，可观测走了哪条路：
+
+| strategy | 含义 |
+| --- | --- |
+| `llm` | LLM 改写成功且通过漂移检查（与原查询字符重合度 ≥0.15） |
+| `rule_fallback` | LLM 拒答/输出过短/漂移/异常 → 回退规则字典改写 |
+| `idle` | `rag.rewrite_enabled=false`，直接原查询（规则关键词仍可用于召回路） |
+
+### 16.5 复合任务规划：事件流示例
+
+`is_complex_task(user_input, intent)`（动作词≥3 / 命中"综述·开题·大纲"等目标词 / 长输入+写作意图）→ supervisor 路由 `planner` 节点。SSE 事件序列（连通实测）：
+
+```
+node_start(intent判定) → intent → route → node_end
+  → node_start(planner) → plan {goal, steps:[{action, params, note}]}
+  → step_event {step,total,action,status} ×N → node_end
+  → node_start(supervisor 收尾) → node_end → final{output} → done
+```
+
+- 步骤经 `ToolRegistry.call()` 执行（自动获得 RBAC / 限流 / 熔断 / 审计）；
+- **Replan**：步骤失败 → 带"简化要求"重试一次 → 仍失败记录并继续，部分成功不丢失；
+- 前序步骤产物累积为 evidence，注入后续 LLM 步骤；
+- 数值参数（`top_k`/`length` 等）在 `planner._coerce_params()` 归一化为 int（修复 LLM 输出 `"5"` 导致的切片 TypeError）。
+
+### 16.6 结构化产物工具
+
+```python
+# 治理工具 generate_artifact：可直接调用，也可作为 Planner 步骤 action=generate_artifact
+from services.governance.tools_impl import generate_artifact
+
+out = await generate_artifact(
+    kind="review_draft",        # review_draft 综述初稿 / proposal_report 开题报告 / defense_outline 答辩大纲
+    topic="图神经网络的推荐系统应用",
+    requirement="本科毕业论文",
+    project_id=123,             # 可选：把该项目知识库一并作为证据源
+)
+# → {"kind","artifact_name","topic","content"(Markdown),"evidence_count","sources":[{title,source}]}
+```
+
+产物骨架固定（综述 5 节 / 开题 6 节 / 答辩 6 节+QA≥8 条），生成前自动 RAG 检索证据并注入提示词，正文按 [编号] 标注来源。
+
+### 16.7 新增配置项速查
+
+| 配置键 | 默认 | 说明 |
+| --- | --- | --- |
+| `llm.default_provider` | `agnes` | 对话底座（agnes-2.5-flash，KEY 在 .env） |
+| `llm.embedding_provider` | `ollama` | 嵌入底座与对话解耦（本地 bge-m3） |
+| `rag.rewrite_enabled` | `true` | Query 改写开关（小语料可关） |
+| `rag.sibling_window` | `1` | 相邻窗口半径（0=关闭第三引擎） |
+| `rag.max_upload_size_mb` | `20` | 知识库单文件大小上限 |
+| `rag.knowledge.upload_dir` | `data/uploads` | 原始文件落盘目录（gitignore） |
+| `rag.knowledge.min_text_chars` | `30` | 低于该字数视为扫描件/空文档（拒绝+failed） |
+
+```yaml
+# configs/settings.yaml 片段
+rag:
+  rewrite_enabled: true
+  sibling_window: 1
+  max_upload_size_mb: 20
+  knowledge:
+    upload_dir: data/uploads
+    min_text_chars: 30
+```
+
+### 16.8 动手
+
+```powershell
+envs\lunjiang\python.exe evals/regression.py   # S1 入库/S2 隔离/S3 多路/S4 改写/S5 Planner…
+envs\lunjiang\python.exe scripts/load_test.py  # 知识库检索并发压测（先起 uvicorn）
+```
+
+**读代码**：`services/rag/ingest/pipeline.py`（入库链路）→ `services/rag/pipeline.py`（多路+保底+降噪）→ `services/rag/query_rewrite.py`（规则兜底）→ `services/agent/planner.py`（规划器）→ `services/agent/artifacts.py`（产物模板）。
 
 ***
 
