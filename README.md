@@ -19,8 +19,8 @@
 | [🛠 优化记录六](docs/OPTIMIZATION_ROUND6.md) | 第六轮优化（架构改进与工程化治理/P0修复/测试骨架）       |
 | [🛠 优化记录七](docs/OPTIMIZATION_ROUND7.md) | 第七轮修改（前端视觉重构：青绿长卷/会话卷册/山水浓度滑杆） |
 | [🛠 优化记录八](docs/OPTIMIZATION_ROUND8.md) | 第八轮修改（前端功能同步 + 三主题切换；含 v10 三主题切到 React 主应用生产代码） |
-| [🛠 优化记录九](docs/OPTIMIZATION_ROUND9.md) | 第九轮修改（v10 三主题系统全部遗留项落地：仅内置模式 / B-C 装饰 / 音效 / 移动端 / 双浏览器截图） |
-| [🛠 优化记录十](docs/OPTIMIZATION_ROUND10.md) | 第十轮修改（主题图 PNG→WebP 压缩，5.32 MB → 0.26 MB，节省 95.1%；含 R-4/R-5 GitHub Pages 自动部署） |
+| [🛠 优化记录九](docs/OPTIMIZATION_ROUND9.md) | 第九轮修改（v10 主题图 WebP 压缩 5.32→0.26MB + R-4/R-5 GitHub Pages 自动部署） |
+| [🛠 优化记录十](docs/OPTIMIZATION_ROUND10.md) | 第十轮修改（v10 三主题系统全部遗留项落地：仅内置模式 / B-C 装饰 / 音效 / 移动端 / 双浏览器截图） |
 | [🚀 部署指南](docs/DEPLOY.md)               | GitHub Pages 自动部署到 `https://shangguanyunji663.github.io/Lun-Assistant/` |
 | [💡 常见问题](#常见问题)                        | 排障手册                              |
 

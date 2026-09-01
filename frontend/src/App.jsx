@@ -62,6 +62,21 @@ export default function App() {
     try { localStorage.setItem('lj_ink_op', String(inkOp)) } catch { /* 隐私模式忽略 */ }
   }, [inkOp])
 
+  /* 调参台联动：监听 storage 事件（跨 tab）。
+     用户在 console/tuner.html 改 lj_theme / lj_ink_op 后，主应用实时生效。 */
+  useEffect(() => {
+    const onStorage = (e) => {
+      if (e.key === 'lj_theme' && (e.newValue === 'a' || e.newValue === 'b' || e.newValue === 'c')) {
+        setTheme(e.newValue)
+      } else if (e.key === 'lj_ink_op') {
+        const v = Number(e.newValue)
+        if (Number.isFinite(v) && v >= 0 && v <= 0.4) setInkOp(v)
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
+  }, [])
+
   /* v10 · 三主题切换（A 柔雾青蓝 / B 水墨留白 / C 暗墨柔化）。
      持久化到 localStorage.lj_theme；初始化时若 localStorage 没值则读 :root 默认的 data-theme，
      否则从 localStorage 取。                                                       */
@@ -277,6 +292,11 @@ export default function App() {
                  aria-label="山水底图浓度" />
           <span className="val">{inkOp.toFixed(2)}</span>
         </div>
+
+        {/* 调参台入口：跳转生产版控制台（frontend/public/console/tuner.html）。
+            调参台改的主题 / 山水浓度会经 localStorage + storage 事件实时同步回主应用。 */}
+        <a className="btn btn-ghost btn-sm console-entry" href="console/tuner.html" target="_blank" rel="noreferrer"
+           title="打开透明度调参台（多维度调节 + WCAG 实时测算，改动实时同步回本页）">🎛 控制台</a>
 
         {/* v10 · 三主题切换（A 柔雾青蓝 / B 水墨留白 / C 暗墨柔化）。
             单击切换整套配色 + 背景图 + 卷轴语言；持久化到 localStorage.lj_theme。 */}

@@ -563,7 +563,7 @@ storage keys: lj_tuner_theme, lj_kb_mode
 
 ## 十八、补充章节：v10 三主题切换系统落档到 React 主应用生产代码
 
-> 本章是 ROUND8 主题系统工作的**生产落地延续**，与 ROUND8 设计稿互补：ROUND8 在 `design-concepts/` 下交付了 v10 三主题切换的设计验证台；本章节负责把这套系统下沉到 React 主应用 `frontend/src/`，让用户在生产中可主动选择与保留主题。后端零改动。
+> 本章是 ROUND8 主题系统工作的**生产落地延续**，与 ROUND8 设计稿互补：ROUND8 在 `design-concepts/` 下交付了 v10 三主题切换的设计验证台；本章节负责把这套系统下沉到 React 主应用 `frontend/src/`，让用户在生产中可主动选择与保留主题。后端零改动。（本文档序列上属第 8 轮收尾，不单独计为独立轮次。）
 
 ### 18.1 决策（4 个核心）
 

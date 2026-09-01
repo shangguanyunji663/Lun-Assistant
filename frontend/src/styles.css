@@ -571,6 +571,17 @@ body[data-theme="b"] .paper-grain { mix-blend-mode: multiply; }
   font-variant-numeric: tabular-nums; letter-spacing: 0.02em;
 }
 
+/* 调参台入口（🎛 控制台）：金色虚线点缀，与普通 ghost 按钮区分 */
+.console-entry {
+  border: 1px dashed var(--line-gold);
+  color: var(--gold-hi);
+}
+.console-entry:hover:not(:disabled) {
+  background: rgba(184, 154, 107, 0.12);
+  border-color: var(--gold);
+  color: var(--ink-hi);
+}
+
 /* v10 · 三主题切换 tab（A 柔雾青蓝 / B 水墨留白 / C 暗墨柔化）
    chip 色块随主题变；选中态的背景 / 边框颜色各主题独立。 */
 .theme-tabs {
