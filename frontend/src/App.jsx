@@ -62,6 +62,47 @@ export default function App() {
     try { localStorage.setItem('lj_ink_op', String(inkOp)) } catch { /* 隐私模式忽略 */ }
   }, [inkOp])
 
+  /* v10 · 三主题切换（A 柔雾青蓝 / B 水墨留白 / C 暗墨柔化）。
+     持久化到 localStorage.lj_theme；初始化时若 localStorage 没值则读 :root 默认的 data-theme，
+     否则从 localStorage 取。                                                       */
+  const [theme, setTheme] = useState(() => {
+    const t = localStorage.getItem('lj_theme')
+    return t === 'a' || t === 'b' || t === 'c' ? t : 'a'
+  })
+  useEffect(() => {
+    document.body.dataset.theme = theme
+    try { localStorage.setItem('lj_theme', theme) } catch { /* 隐私模式忽略 */ }
+    // 主题切换音效：Web Audio API 程序化生成短"卷轴松开"咔哒声；零外部资产
+    // 仅在用户已与页面交互后（autoplay 策略），故 try/catch 包裹隐私模式 / iOS 静音
+    if (themeTickRef.current) {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext
+        if (AC) {
+          const ac = new AC()
+          const osc = ac.createOscillator(), gain = ac.createGain()
+          osc.type = 'triangle'
+          osc.frequency.setValueAtTime(880, ac.currentTime)
+          osc.frequency.exponentialRampToValueAtTime(220, ac.currentTime + 0.15)
+          gain.gain.setValueAtTime(0.06, ac.currentTime)
+          gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.18)
+          osc.connect(gain).connect(ac.destination)
+          osc.start(ac.currentTime); osc.stop(ac.currentTime + 0.20)
+          setTimeout(() => ac.close(), 250)
+        }
+      } catch { /* autoplay blocked or audio disabled */ }
+    }
+    themeTickRef.current = true
+  }, [theme])
+
+  /* ref: 首次 mount 时不响（避免 reload 主题后立刻播放） */
+  const themeTickRef = useRef(false)
+
+  const THEMES = [
+    { id: 'a', label: '柔雾青蓝', chip: '#1B2A36' },
+    { id: 'b', label: '水墨留白', chip: '#ECEAE3' },
+    { id: 'c', label: '暗墨柔化', chip: '#161A20' },
+  ]
+
   const active = sessions.find(s => s.id === activeId) || sessions[0] || null
   const messages = active?.msgs ?? []
   const timeline = active?.timeline ?? []
@@ -235,6 +276,22 @@ export default function App() {
                  onChange={e => setInkOp(Number(e.target.value))}
                  aria-label="山水底图浓度" />
           <span className="val">{inkOp.toFixed(2)}</span>
+        </div>
+
+        {/* v10 · 三主题切换（A 柔雾青蓝 / B 水墨留白 / C 暗墨柔化）。
+            单击切换整套配色 + 背景图 + 卷轴语言；持久化到 localStorage.lj_theme。 */}
+        <div className="theme-tabs" role="tablist" aria-label="主题切换">
+          {THEMES.map(t => (
+            <button key={t.id}
+                    role="tab"
+                    aria-selected={theme === t.id}
+                    className={theme === t.id ? 'on' : ''}
+                    title={`${t.label}${theme === t.id ? '（当前）' : ''}`}
+                    onClick={() => setTheme(t.id)}>
+              <span className="chip" style={{background: t.chip}} />
+              {t.label}
+            </button>
+          ))}
         </div>
 
         <nav>

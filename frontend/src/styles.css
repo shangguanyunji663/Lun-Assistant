@@ -70,6 +70,128 @@
   --t-fast: 160ms;
   --t-base: 240ms;
   --t-slow: 420ms;
+
+  /* v10 · 三主题驱动 token（默认 A 柔雾青蓝；B / C 由 body[data-theme="b" | "c"] 覆盖）。
+   * 所有 token 单一真源，改动一处即可。                          */
+  /* ROUND10：PNG → WebP；体积 5.32 MB → 0.26 MB（节省 95.1%） */
+  --ink-bg-url:  url('/bg/bg-a-soft.webp');       /* 主题背景图 */
+  --ink-bg-pos:  34%;
+  --bg-rgb:        27, 42, 54;                  /* 与 --bg-deep 同步，供 .ink-veil 用 rgba(var(--bg-rgb), ...) */
+  --bg-panel-rgb:  31, 45, 58;                  /* 与 --bg-panel 同步 */
+  --bg-raise-rgb:  36, 52, 66;                  /* 与 --bg-raise 同步 */
+  --wood-top:    #CBAE80;                       /* 木轴渐变顶端 */
+  --wood-mid:    #A8895C;
+  --wood-bot:    #8E7147;
+  --ink-veil-top: 0.28;                         /* 顶遮罩 */
+  --ink-veil-mid: 0.62;                         /* 内容遮罩 */
+  --ink-veil-bot: 0.88;                         /* 底遮罩 */
+
+  /* 主题切换过渡时间（继承 --t-slow） */
+  --theme-tx: var(--t-slow);
+}
+
+/* ========== v10 · 三主题覆盖（A 柔雾青蓝 / B 水墨留白 / C 暗墨柔化） ========== *
+ * 按 body[data-theme="b|c"] 子选择器覆盖 :root 的对应 token；
+ * 改动一处即可让全栈（背景、遮罩、按钮、消息气泡、调档、墨滴、卷轴）跟随。
+ * 设计取舍：                                                                     *
+ *   - A 不写独立 block，使用 :root 默认值                                              *
+ *   - B 主色 #ECEAE3（冷宣白） / 强调 #3C6E8F（石青），与 v7/v8 路线相同           *
+ *   - C 主色 #161A20（v9 #0E1012 纯黑 → 提亮为暗墨） / 强调 #C9A227（赭金）  *
+ */
+body[data-theme="b"] {
+  /* 主色：冷宣白 */
+  --bg-deep:       #ECEAE3;
+  --bg-panel:      #F2F0EA;
+  --bg-raise:      #F6F4ED;
+
+  /* 文字：深墨 */
+  --ink-hi:        #1C1C1A;
+  --ink-mid:       #4A4843;
+  --ink-low:       #6E6B65;
+
+  /* 强调：石青 */
+  --jade:          #3C6E8F;
+  --jade-deep:     #2C5070;
+  --pine:          #4A7860;
+
+  /* 灰金改为深墨（保持卷轴木轴感但不刺眼） */
+  --gold:          #1C1C1A;
+  --gold-hi:       #2A2826;
+
+  /* 朱砂 → 深枣红 */
+  --seal:          #A3382B;
+
+  /* B 主题 RGB（供 rgba 半透明用） */
+  --bg-rgb:        236, 234, 227;
+  --bg-panel-rgb:  242, 240, 234;
+  --bg-raise-rgb:  246, 244, 237;
+
+  /* 背景图 */
+  --ink-bg-url:    url('/bg/bg-b-inkwash.webp');
+  --ink-bg-pos:    right bottom;
+
+  /* 卷轴木轴：B 主题不用，换成宣纸纹理色 */
+  --wood-top:      rgba(28, 28, 26, 0.12);
+  --wood-mid:      rgba(28, 28, 26, 0.22);
+  --wood-bot:      rgba(28, 28, 26, 0.30);
+
+  /* 遮罩更淡（B 主题的"水墨留白"留白主导） */
+  --ink-veil-top: 0.20;
+  --ink-veil-mid: 0.55;
+  --ink-veil-bot: 0.86;
+}
+
+body[data-theme="c"] {
+  /* 主色：暗墨（v9 #0E1012 提亮到 #161A20，去除"纯黑"压迫） */
+  --bg-deep:       #161A20;
+  --bg-panel:      #1C2128;
+  --bg-raise:      #22292F;
+
+  /* 文字：月白（保持） */
+  --ink-hi:        #E4E1D6;
+  --ink-mid:       #B4BCC0;
+  --ink-low:       #8A959B;
+
+  /* 强调：赭金（替代原来的赭石米 #B89A6B，更显夜墨金碧） */
+  --jade:          #C9A227;
+  --jade-deep:     #8E7317;
+  --pine:          #6E9276;
+
+  /* 灰金 → 赭金 */
+  --gold:          #C9A227;
+  --gold-hi:       #E2BC44;
+
+  /* 朱砂（钤印保持） */
+  --seal:          #C0695A;
+
+  /* C 主题 RGB */
+  --bg-rgb:        22, 26, 32;
+  --bg-panel-rgb:  28, 33, 40;
+  --bg-raise-rgb:  34, 41, 47;
+
+  /* 背景图 */
+  --ink-bg-url:    url('/bg/bg-c-nightgold.webp');
+  --ink-bg-pos:    70%;
+
+  /* 卷轴木轴：C 主题用金线替代 */
+  --wood-top:      #C9A227;
+  --wood-mid:      #8E7317;
+  --wood-bot:      #6E5810;
+
+  /* 遮罩 */
+  --ink-veil-top: 0.20;
+  --ink-veil-mid: 0.55;
+  --ink-veil-bot: 0.85;
+}
+
+/* 全局过渡：所有继承 token 的属性自动平滑 */
+body, body * {
+  transition:
+    background-color var(--theme-tx) var(--ease),
+    background var(--theme-tx) var(--ease),
+    border-color var(--theme-tx) var(--ease),
+    color var(--theme-tx) var(--ease),
+    box-shadow var(--theme-tx) var(--ease);
 }
 
 /* ---------- 2. 全局基础 ---------- */
@@ -110,27 +232,52 @@ a:hover { color: var(--gold-hi); }
   pointer-events: none; overflow: hidden;
 }
 
-/* 3.1 AI 底图 —— 透明度硬上限 0.16 */
+/* 3.1 AI 底图 —— 主题图由 --ink-bg-url 决定（A 默认柔雾青蓝；B/C 主题切换） */
 .ink-photo {
   position: absolute; inset: 0;
-  background: url('/bg/shanshui-mist.jpg') center 34% / cover no-repeat;
+  background: var(--ink-bg-url) center var(--ink-bg-pos) / cover no-repeat;
   opacity: var(--ink-photo-op, 0.16);   /* 用户可调，默认 0.16 */
   filter: saturate(0.9);
-  transition: opacity var(--t-slow) var(--ease);
+  transition: opacity var(--t-slow) var(--ease), filter var(--t-slow) var(--ease);
 }
+
+/* 3.1.1 B 主题 · 中缝（在画面左侧 1px 灰色宣纸分隔线，A/C 隐藏） */
+.ink-divider {
+  position: absolute; left: 50%; top: 32px; bottom: 32px; width: .5px;
+  background: linear-gradient(180deg, transparent, rgba(28, 28, 26, 0.30) 30%, rgba(28, 28, 26, 0.30) 70%, transparent);
+  z-index: 5; opacity: 0;
+  pointer-events: none;
+}
+body[data-theme="b"] .ink-divider { opacity: 1; }
+
+/* 3.1.2 C 主题 · 钤印（在右下角 38×38 红边框"匠"字章，A/B 隐藏） */
+.ink-stamp {
+  position: absolute; right: 26px; bottom: 28px; z-index: 10;
+  width: 38px; height: 38px; border-radius: 5px;
+  border: 1.5px solid #B04A3A;
+  display: flex; align-items: center; justify-content: center;
+  font-family: "STKaiti", "KaiTi", "楷体", serif;
+  font-size: 18px; color: #B04A3A;
+  background: rgba(176, 74, 58, 0.08);
+  box-shadow: 0 2px 8px rgba(176, 74, 58, 0.18);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--theme-tx) var(--ease);
+}
+body[data-theme="c"] .ink-stamp { opacity: 1; }
 /* 登录页内容少，可略提（约 ×1.38），但仍远低于"抢眼"阈值 */
 .ink-photo.dense { opacity: calc(var(--ink-photo-op, 0.16) * 1.38); }
 
-/* 3.2 二次压制：上淡下浓，保证文字区背景明度稳定 */
+/* 3.2 二次压制：上淡下浓，保证文字区背景明度稳定；颜色跟主题切换 */
 .ink-veil {
   position: absolute; inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(19, 28, 36, 0.28) 0%,   /* 顶部：图最清楚处，有效 ≈0.115 */
-    rgba(19, 28, 36, 0.62) 26%,
-    rgba(19, 28, 36, 0.88) 50%,
-    rgba(19, 28, 36, 0.96) 72%,
-    var(--bg-deep) 100%          /* 底部：有效 ≈0.006，等同纯色 */
+    rgba(var(--bg-rgb), var(--ink-veil-top)) 0%,
+    rgba(var(--bg-rgb), calc(var(--ink-veil-mid) + 0.0)) 26%,
+    rgba(var(--bg-rgb), var(--ink-veil-bot)) 50%,
+    rgba(var(--bg-rgb), 0.96) 72%,
+    var(--bg-deep) 100%
   );
 }
 
@@ -160,15 +307,20 @@ a:hover { color: var(--gold-hi); }
   to   { transform: translate3d(-1vw,1vh,0) scale(1); }
 }
 
-/* 3.4 宣纸纤维纹理 —— 极轻，仅为破除"数码平" */
-.paper-grain { position: absolute; inset: 0; opacity: 0.045; mix-blend-mode: overlay; }
+/* 3.4 宣纸纤维纹理 —— 极轻，仅为破除"数码平"（B 主题用 multiply，更柔和） */
+.paper-grain {
+  position: absolute; inset: 0; opacity: 0.045; mix-blend-mode: overlay;
+  transition: mix-blend-mode var(--theme-tx) var(--ease);
+}
+body[data-theme="b"] .paper-grain { mix-blend-mode: multiply; }
 
-/* 3.5 卷轴木轴：上下两道赭石金 */
+/* 3.5 卷轴木轴：上下两道赭石金（B 主题改为宣纸灰线；C 主题改为赭金线） */
 .wood-roll {
   position: fixed; left: 0; right: 0; height: 9px; z-index: 60;
-  background: linear-gradient(180deg, #CBAE80 0%, #A8895C 46%, #8E7147 54%, #CBAE80 100%);
+  background: linear-gradient(180deg, var(--wood-top) 0%, var(--wood-mid) 46%, var(--wood-bot) 54%, var(--wood-top) 100%);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
   pointer-events: none;
+  transition: opacity var(--theme-tx) var(--ease);
 }
 .wood-roll.top { top: 0; }
 .wood-roll.bot { bottom: 0; transform: scaleY(-1); }
@@ -271,7 +423,7 @@ a:hover { color: var(--gold-hi); }
   position: relative; z-index: 10; justify-self: start;
   width: 372px; max-width: calc(100vw - 40px);
   padding: var(--sp-10) var(--sp-8) var(--sp-8);
-  background: rgba(24, 35, 44, 0.72);
+  background: rgba(var(--bg-panel-rgb), 0.72);
   backdrop-filter: blur(22px) saturate(115%);
   border: 1px solid var(--line-mid);
   border-radius: var(--r-xl);
@@ -419,6 +571,42 @@ a:hover { color: var(--gold-hi); }
   font-variant-numeric: tabular-nums; letter-spacing: 0.02em;
 }
 
+/* v10 · 三主题切换 tab（A 柔雾青蓝 / B 水墨留白 / C 暗墨柔化）
+   chip 色块随主题变；选中态的背景 / 边框颜色各主题独立。 */
+.theme-tabs {
+  display: inline-flex; gap: 2px; padding: 2px;
+  border-radius: var(--r-pill);
+  background: rgba(0, 0, 0, 0.18);
+  border: 1px solid var(--line);
+}
+.theme-tabs button {
+  padding: 6px 14px; border-radius: var(--r-pill); border: none;
+  background: transparent; color: var(--ink-low);
+  font-size: 12px; font-weight: 300; letter-spacing: 0.04em;
+  cursor: pointer; font-family: inherit;
+  display: inline-flex; align-items: center; gap: 6px;
+  transition: color var(--t-base), background var(--t-base), transform var(--t-fast);
+}
+.theme-tabs button:hover { color: var(--ink-hi); }
+.theme-tabs button.on {
+  background: rgba(184, 154, 107, 0.18); color: var(--gold-hi);
+  box-shadow: inset 0 0 0 1px rgba(184, 154, 107, 0.26);
+}
+.theme-tabs button .chip {
+  width: 12px; height: 12px; border-radius: 3px;
+  border: 0.5px solid rgba(0, 0, 0, 0.20);
+  transition: border-color var(--t-base);
+}
+.theme-tabs button.on .chip { border-color: rgba(255, 255, 255, 0.30); }
+body[data-theme="b"] .theme-tabs button.on {
+  background: rgba(60, 110, 143, 0.18); color: var(--jade);
+  box-shadow: inset 0 0 0 1px rgba(60, 110, 143, 0.40);
+}
+body[data-theme="c"] .theme-tabs button.on {
+  background: rgba(201, 162, 39, 0.18); color: var(--gold);
+  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.40);
+}
+
 .top-banner {
   padding: 9px var(--sp-6); font-size: 12px; font-weight: 300;
   display: flex; align-items: center; gap: var(--sp-2);
@@ -432,7 +620,7 @@ a:hover { color: var(--gold-hi); }
 .sessions {
   width: 216px; flex-shrink: 0;
   display: flex; flex-direction: column; overflow: hidden;
-  background: rgba(24, 35, 44, 0.55);
+  background: rgba(var(--bg-panel-rgb), 0.55);
   backdrop-filter: blur(16px);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
@@ -485,7 +673,7 @@ a:hover { color: var(--gold-hi); }
   overflow: hidden;
 }
 .chat-col, .side-col, .trace-panel {
-  background: rgba(24, 35, 44, 0.55);
+  background: rgba(var(--bg-panel-rgb), 0.55);
   backdrop-filter: blur(16px);
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
@@ -611,7 +799,7 @@ a:hover { color: var(--gold-hi); }
   flex-shrink: 0;
   padding: var(--sp-4) var(--sp-8) var(--sp-3);
   border-top: 1px solid var(--line);
-  background: linear-gradient(0deg, rgba(19,28,36,0.55), transparent);
+  background: linear-gradient(0deg, rgba(var(--bg-rgb),0.55), transparent);
 }
 .composer { display: flex; gap: var(--sp-3); align-items: flex-end; }
 .composer textarea {
@@ -925,6 +1113,9 @@ a:hover { color: var(--gold-hi); }
   .topbar .brand small { display: none; }
   .proj-picker { order: 3; width: 100%; }
   .topbar select { flex: 1; max-width: none; }
+  /* 主题切换 tab 在中等屏下隐藏文字标签，只留 chip（节省横向空间） */
+  .theme-tabs button { padding: 6px 9px; font-size: 0; }
+  .theme-tabs button .chip { width: 14px; height: 14px; }
   .chat-layout { flex-direction: column; gap: var(--sp-4); overflow: visible; padding: var(--sp-4) 0 var(--sp-6); }
   .chat-col { height: 68vh; min-height: 420px; }
   .side-col { width: 100%; height: auto; max-height: none; }

@@ -39,6 +39,12 @@ export default function InkBackground({ dense = false }) {
         </filter>
         <rect width="100%" height="100%" filter="url(#lj-grain)" />
       </svg>
+
+      {/* 5 · B 主题装饰 · 册页中缝（左中 1px 灰色宣纸分隔线；A/C 主题隐藏） */}
+      <div className="ink-divider" />
+
+      {/* 6 · C 主题装饰 · 钤印（右下角 38×38 红边框"匠"字章；A/B 主题隐藏） */}
+      <div className="ink-stamp">匠</div>
     </div>
   )
 }

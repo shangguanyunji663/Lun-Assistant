@@ -2,47 +2,81 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8" />
-<title>论匠前端 · 三方向视觉重构预览</title>
+<title>论匠前端 · v10 三主题切换预览</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <style>
 /* =========================================================
-   页面骨架（中性灰底，仅为承载 3 个主题的画布）
+   页面骨架（中性灰底）
    ========================================================= */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { background: #EFEDE8; color: #1C1C1A;
   font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif; }
-body { padding: 32px 24px 64px; }
+body { padding: 28px 24px 64px; min-height: 100vh; transition: background .35s ease; }
 h1 { font-size: 22px; font-weight: 500; letter-spacing: 0.04em; }
 .subtitle { color: #6E6B65; font-size: 13px; margin-top: 6px; font-weight: 300; }
-.legend { display: flex; gap: 16px; margin: 24px 0 8px; flex-wrap: wrap; font-size: 12px; color: #4A4843; }
+
+/* 主题切换 tab（v10 核心：上排 tab，单击切换整套配色 + 布局） */
+.theme-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: 12px;
+  background: #F6F4EE; border: .5px solid rgba(0,0,0,.10); margin-top: 18px; transition: all .35s ease; }
+body[data-mode="compare"] .theme-tabs { background: #1B2A36; border-color: rgba(184,154,107,.35); }
+.theme-tabs button { padding: 8px 18px; border-radius: 8px; border: 0; background: transparent;
+  font: 500 12.5px/1 inherit; color: #4A4843; cursor: pointer; letter-spacing: .06em;
+  font-family: inherit; transition: all .25s ease; display: inline-flex; align-items: center; gap: 6px; }
+.theme-tabs button .chip { width: 14px; height: 14px; border-radius: 3px; border: .5px solid rgba(0,0,0,.18); }
+.theme-tabs button:hover { background: rgba(0,0,0,.04); }
+.theme-tabs button.on { background: #1C1C1A; color: #E4E1D6; }
+.theme-tabs button.on .chip { border-color: rgba(255,255,255,.20); }
+body[data-mode="compare"] .theme-tabs button { color: #B4BCC0; }
+body[data-mode="compare"] .theme-tabs button.on { background: rgba(184,154,107,.22); color: #CBAE80; }
+.theme-tabs .compare-btn { margin-left: 6px; padding-left: 16px; border-left: .5px solid rgba(0,0,0,.12); border-radius: 0; }
+body[data-mode="compare"] .theme-tabs .compare-btn { border-left-color: rgba(228,225,214,.18); }
+body[data-mode="compare"] .theme-tabs .compare-btn.on { background: rgba(176,74,58,.22); color: #E4E1D6; }
+
+.legend { display: flex; gap: 16px; margin: 18px 0 14px; flex-wrap: wrap; font-size: 12px; color: #4A4843; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
 .legend .sw { width: 14px; height: 14px; border-radius: 3px; border: 0.5px solid rgba(0,0,0,0.15); }
+.sync-callouts { padding: 10px 14px; border-radius: 8px;
+  background: #F6F4EE; border: 0.5px solid rgba(0,0,0,0.08); font-size: 12px;
+  color: #4A4843; line-height: 1.7; transition: all .35s ease; }
+body[data-mode="compare"] .sync-callouts { background: #1B2A36; border-color: rgba(184,154,107,.30); color: #B4BCC0; }
+.sync-callouts b { color: #1C1C1A; }
+body[data-mode="compare"] .sync-callouts b { color: #E4E1D6; }
 
-/* 三个主题预览栅格 */
+/* =========================================================
+   单主题模式：单 mockup 占满中央
+   ========================================================= */
+.single-stage { display: none; justify-content: center; margin-top: 18px; }
+body[data-mode="single"] .single-stage { display: flex; }
+body[data-mode="compare"] .single-stage { display: none; }
+.single-stage .mockup { width: min(680px, 100%); height: 760px; }
+
+/* 并排模式 */
+.compare-stage { display: none; margin-top: 18px; }
+body[data-mode="compare"] .compare-stage { display: grid; }
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 16px; }
 @media (max-width: 1280px) { .grid { grid-template-columns: 1fr; max-width: 480px; margin: 16px auto 0; } }
 
 /* 模拟框（手机/桌面小屏） */
-.mockup { position: relative; height: 680px; border-radius: 18px; overflow: hidden;
-  box-shadow: 0 12px 40px rgba(0,0,0,0.18), 0 0 0 0.5px rgba(0,0,0,0.08);
-  display: flex; flex-direction: column; }
+.mockup { position: relative; height: 720px; border-radius: 18px; overflow: hidden;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.12), 0 0 0 0.5px rgba(0,0,0,0.06);
+  display: flex; flex-direction: column; transition: all .4s cubic-bezier(.4,0,.2,1); }
 .mockup .ink-bg { position: absolute; inset: 0; pointer-events: none; }
-.mockup .ink-bg img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.mockup .ink-bg::after { content: ""; position: absolute; inset: 0; }
+.mockup .ink-bg img { width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: opacity .35s ease; }
+.mockup .ink-bg::after { content: ""; position: absolute; inset: 0;
+  transition: background .35s ease; }
 .mockup .label { position: absolute; top: 12px; right: 12px; z-index: 5;
   font-size: 11px; padding: 4px 10px; border-radius: 999px;
   background: rgba(0,0,0,0.45); color: #fff; letter-spacing: 0.1em; backdrop-filter: blur(6px); }
 
-/* 通用 UI 单元（在主题中重写颜色） */
-.topbar { position: relative; z-index: 3; display: flex; align-items: center; gap: 8px;
-  padding: 10px 12px; font-size: 12px; }
-.brand { font-weight: 500; letter-spacing: 0.15em; font-size: 14px; }
-.brand small { font-weight: 300; font-size: 10px; margin-left: 4px; letter-spacing: 0.08em; opacity: 0.7; }
+/* 通用 UI 单元 */
+.topbar { position: relative; z-index: 3; display: flex; align-items: center; gap: 6px;
+  padding: 10px 10px; font-size: 12px; }
+.brand { font-weight: 500; letter-spacing: 0.15em; font-size: 13px; }
+.brand small { font-weight: 300; font-size: 9px; margin-left: 4px; letter-spacing: 0.08em; opacity: 0.7; }
 .topbar .grow { flex: 1; }
-.topbar select { font-size: 11px; padding: 3px 6px; border-radius: 4px; }
-.btn { font-size: 11px; padding: 5px 10px; border-radius: 4px; border: 0.5px solid;
+.btn { font-size: 10px; padding: 4px 8px; border-radius: 4px; border: 0.5px solid;
   background: transparent; cursor: pointer; line-height: 1.2; }
-.btn-x { font-size: 10px; padding: 2px 6px; }
 .body { position: relative; z-index: 2; flex: 1; display: flex; min-height: 0; }
 .sidebar { width: 96px; padding: 10px 8px; overflow: hidden; font-size: 10px; line-height: 1.7; }
 .sb-item { padding: 4px 6px; border-radius: 3px; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -55,37 +89,73 @@ h1 { font-size: 22px; font-weight: 500; letter-spacing: 0.04em; }
 .bubble.assistant { margin-right: auto; }
 .bubble .role { font-size: 9px; opacity: 0.6; margin-bottom: 2px; letter-spacing: 0.1em; }
 .input-bar { padding: 8px; display: flex; gap: 6px; align-items: flex-end; }
-.input-bar textarea { flex: 1; resize: none; height: 38px; padding: 6px 8px;
+.input-bar textarea { flex: 1; resize: none; height: 36px; padding: 6px 8px;
   font-size: 11px; line-height: 1.5; border-radius: 6px; border: 0.5px solid;
   background: transparent; font-family: inherit; }
-.input-bar .send { padding: 0 12px; height: 38px; font-size: 11px; }
+.input-bar .send { padding: 0 10px; height: 36px; font-size: 10px; }
+
+/* v10 同步：知识库切换 + 当前库徽章 + 上传入口 + 控制台入口（统一样式） */
+.kb-switcher { display: inline-flex; gap: 2px; padding: 2px; border-radius: 999px;
+  font-size: 9px; letter-spacing: 0.05em; }
+.kb-switcher button { padding: 2px 7px; border-radius: 999px; border: none;
+  background: transparent; cursor: pointer; font-size: 9px; font-family: inherit; }
+.kb-pill { display: inline-flex; align-items: center; gap: 3px; font-size: 9px;
+  padding: 2px 7px; border-radius: 999px; border: 0.5px solid; }
+.kb-pill .dot { width: 5px; height: 5px; border-radius: 50%; }
+.upload-btn { position: relative; display: inline-flex; align-items: center; gap: 3px;
+  font-size: 9px; padding: 3px 7px; border-radius: 6px; border: 0.5px dashed;
+  background: transparent; cursor: pointer; font-family: inherit; line-height: 1.2; }
+.upload-btn input { display: none; }
+.console-link { font-size: 9px; padding: 3px 7px; border-radius: 6px; cursor: pointer;
+  text-decoration: none; display: inline-flex; align-items: center; gap: 3px;
+  border: 0.5px solid; }
+.assets-pane { position: absolute; right: 8px; top: 110px; bottom: 60px; width: 78px;
+  padding: 6px 6px; border-radius: 10px; font-size: 8px; line-height: 1.5;
+  overflow: hidden; z-index: 3; }
+.assets-pane .ap-head { font-weight: 500; letter-spacing: 0.1em; padding-bottom: 4px; margin-bottom: 4px;
+  border-bottom: 0.5px solid rgba(255,255,255,0.10); }
+.assets-pane .ap-row { display: flex; align-items: center; gap: 3px; margin-bottom: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.assets-pane .ap-row .ap-tag { width: 16px; flex-shrink: 0; padding: 1px 0; text-align: center;
+  border-radius: 2px; font-size: 7px; letter-spacing: 0; }
+.assets-pane .ap-empty { font-size: 8px; opacity: 0.6; letter-spacing: 0.05em; }
 
 /* =========================================================
-   主题 A · 青绿长卷
+   主题 A · 柔雾青蓝
    ========================================================= */
-.mockup-a { background: #14202B; color: #E8E4D9; }
-.mockup-a .ink-bg img { object-position: center 30%; opacity: 0.55; }
+.mockup-a { background: #1B2A36; color: #E4E1D6; }
+.mockup-a .ink-bg img { object-position: center 30%; opacity: 0.42; filter: saturate(0.85); }
 .mockup-a .ink-bg::after { background:
-  linear-gradient(180deg, rgba(20,32,43,0.30) 0%, rgba(20,32,43,0.10) 28%, rgba(20,32,43,0.55) 60%, rgba(20,32,43,0.92) 100%),
-  radial-gradient(ellipse at center, transparent 50%, rgba(20,32,43,0.55) 100%); }
-.mockup-a .wood { position: absolute; left: 0; right: 0; height: 10px; background:
-  linear-gradient(180deg, #C8A15A 0%, #A8843E 50%, #C8A15A 100%);
-  box-shadow: 0 2px 6px rgba(0,0,0,0.4); z-index: 4; }
+  linear-gradient(180deg, rgba(27,42,54,0.18) 0%, rgba(27,42,54,0.06) 30%, rgba(27,42,54,0.40) 60%, rgba(27,42,54,0.78) 100%),
+  radial-gradient(ellipse at center, transparent 50%, rgba(27,42,54,0.42) 100%); }
+.mockup-a .wood { position: absolute; left: 0; right: 0; height: 8px; background:
+  linear-gradient(180deg, #C8A887 0%, #A88855 50%, #C8A887 100%);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.30); z-index: 4; }
 .mockup-a .wood.top { top: 0; }
 .mockup-a .wood.bot { bottom: 0; transform: scaleY(-1); }
-.mockup-a .topbar { background: rgba(20,32,43,0.72); backdrop-filter: blur(10px);
-  border-bottom: 0.5px solid rgba(200,161,90,0.25); margin-top: 10px; }
-.mockup-a .sidebar { background: rgba(20,32,43,0.55); border-right: 0.5px solid rgba(200,161,90,0.18); color: #B6C0C5; }
+.mockup-a .topbar { background: rgba(27,42,54,0.62); backdrop-filter: blur(10px);
+  border-bottom: 0.5px solid rgba(200,168,135,0.22); margin-top: 8px; }
+.mockup-a .sidebar { background: rgba(27,42,54,0.45); border-right: 0.5px solid rgba(200,168,135,0.15); color: #B0BCC2; }
 .mockup-a .sb-item { border-left: 2px solid transparent; }
-.mockup-a .sb-item.on { background: rgba(200,161,90,0.10); border-left-color: #C8A15A; color: #E8E4D9; }
-.mockup-a .bubble.user { border: 1px solid #C8A15A; color: #F1ECDD; background: rgba(200,161,90,0.06); }
-.mockup-a .bubble.assistant { border: 1px solid rgba(180,194,201,0.45); color: #DCE3E6; background: rgba(46,107,126,0.08); }
-.mockup-a .input-bar { background: rgba(20,32,43,0.72); border-top: 0.5px solid rgba(200,161,90,0.18); }
-.mockup-a .input-bar textarea { border-color: rgba(200,161,90,0.35); color: #E8E4D9; }
-.mockup-a .input-bar textarea::placeholder { color: rgba(232,228,217,0.4); }
-.mockup-a .btn { color: #B6C0C5; border-color: rgba(200,161,90,0.30); }
-.mockup-a .btn.primary { background: #C8A15A; color: #14202B; border-color: #C8A15A; font-weight: 500; }
-.mockup-a select { background: rgba(46,107,126,0.18); color: #E8E4D9; border-color: rgba(200,161,90,0.30); }
+.mockup-a .sb-item.on { background: rgba(200,168,135,0.10); border-left-color: #C8A887; color: #E4E1D6; }
+.mockup-a .bubble.user { border: 1px solid rgba(200,168,135,0.55); color: #F1ECDD; background: rgba(200,168,135,0.05); }
+.mockup-a .bubble.assistant { border: 1px solid rgba(176,188,194,0.40); color: #DCE3E6; background: rgba(255,255,255,0.04); }
+.mockup-a .input-bar { background: rgba(27,42,54,0.62); border-top: 0.5px solid rgba(200,168,135,0.15); }
+.mockup-a .input-bar textarea { border-color: rgba(200,168,135,0.30); color: #E4E1D6; }
+.mockup-a .input-bar textarea::placeholder { color: rgba(228,225,214,0.40); }
+.mockup-a .btn { color: #B0BCC2; border-color: rgba(200,168,135,0.28); }
+.mockup-a .btn.primary { background: rgba(200,168,135,0.85); color: #1B2A36; border-color: rgba(200,168,135,0.85); font-weight: 500; }
+.mockup-a select { background: rgba(255,255,255,0.06); color: #E4E1D6; border-color: rgba(200,168,135,0.28); font-size: 10px; padding: 3px 5px; border-radius: 4px; }
+.mockup-a .kb-switcher { background: rgba(0,0,0,0.18); }
+.mockup-a .kb-switcher button { color: #B0BCC2; }
+.mockup-a .kb-switcher button.on { background: rgba(200,168,135,0.18); color: #E4E1D6; }
+.mockup-a .kb-pill { color: #B0BCC2; border-color: rgba(200,168,135,0.28); background: rgba(0,0,0,0.15); }
+.mockup-a .kb-pill .dot { background: #92B0B5; }
+.mockup-a .upload-btn { color: #B0BCC2; border-color: rgba(200,168,135,0.35); }
+.mockup-a .console-link { color: #C8A887; border-color: rgba(200,168,135,0.35); background: rgba(200,168,135,0.05); }
+.mockup-a .assets-pane { background: rgba(27,42,54,0.55); border: 0.5px solid rgba(200,168,135,0.18); color: #B0BCC2; }
+.mockup-a .assets-pane .ap-head { color: #C8A887; border-bottom-color: rgba(200,168,135,0.20); }
+.mockup-a .assets-pane .ap-row .ap-tag { background: rgba(200,168,135,0.15); color: #E4E1D6; }
 
 /* =========================================================
    主题 B · 水墨留白
@@ -108,35 +178,55 @@ h1 { font-size: 22px; font-weight: 500; letter-spacing: 0.04em; }
 .mockup-b .input-bar textarea::placeholder { color: rgba(28,28,26,0.35); }
 .mockup-b .btn { color: #4A4843; border-color: rgba(28,28,26,0.20); }
 .mockup-b .btn.primary { background: #1C1C1A; color: #ECEAE3; border-color: #1C1C1A; }
-.mockup-b select { background: rgba(255,255,255,0.6); color: #1C1C1A; border-color: rgba(28,28,26,0.18); }
+.mockup-b select { background: rgba(255,255,255,0.6); color: #1C1C1A; border-color: rgba(28,28,26,0.18); font-size: 10px; padding: 3px 5px; border-radius: 4px; }
+.mockup-b .kb-switcher { background: rgba(28,28,26,0.06); }
+.mockup-b .kb-switcher button { color: #4A4843; }
+.mockup-b .kb-switcher button.on { background: #1C1C1A; color: #ECEAE3; }
+.mockup-b .kb-pill { color: #4A4843; border-color: rgba(28,28,26,0.25); background: rgba(255,255,255,0.5); }
+.mockup-b .kb-pill .dot { background: #3C6E8F; }
+.mockup-b .upload-btn { color: #4A4843; border-color: rgba(28,28,26,0.30); }
+.mockup-b .console-link { color: #3C6E8F; border-color: rgba(60,110,143,0.35); background: rgba(60,110,143,0.04); }
+.mockup-b .assets-pane { background: rgba(255,255,255,0.45); border: 0.5px solid rgba(28,28,26,0.10); color: #4A4843; }
+.mockup-b .assets-pane .ap-head { color: #3C6E8F; border-bottom-color: rgba(28,28,26,0.12); }
+.mockup-b .assets-pane .ap-row .ap-tag { background: rgba(60,110,143,0.12); color: #1C1C1A; }
 
 /* =========================================================
-   主题 C · 暗墨金线
+   主题 C · 暗墨柔化
    ========================================================= */
-.mockup-c { background: #0E1012; color: #E8E4D9; }
-.mockup-c .ink-bg img { object-position: center 70%; opacity: 0.65; }
+.mockup-c { background: #161A20; color: #E4E1D6; }
+.mockup-c .ink-bg img { object-position: center 70%; opacity: 0.50; filter: saturate(0.92); }
 .mockup-c .ink-bg::after { background:
-  linear-gradient(180deg, #0E1012 0%, rgba(14,16,18,0.55) 28%, rgba(14,16,18,0.85) 60%, #0E1012 100%); }
-.mockup-c .topbar { background: rgba(14,16,18,0.78); backdrop-filter: blur(14px);
-  border-bottom: 0.5px solid rgba(201,162,39,0.30); position: relative; }
+  linear-gradient(180deg, rgba(22,26,32,0.10) 0%, rgba(22,26,32,0.30) 28%, rgba(22,26,32,0.62) 60%, rgba(22,26,32,0.85) 100%); }
+.mockup-c .topbar { background: rgba(22,26,32,0.72); backdrop-filter: blur(14px);
+  border-bottom: 0.5px solid rgba(201,162,39,0.26); position: relative; }
 .mockup-c .topbar::after { content: ""; position: absolute; left: 16px; right: 16px; bottom: -1px;
-  height: 0.5px; background: linear-gradient(90deg, transparent, #C9A227 30%, #C9A227 70%, transparent); }
+  height: 0.5px; background: linear-gradient(90deg, transparent, #C9A227 30%, #C9A227 70%, transparent); opacity: 0.7; }
 .mockup-c .brand .seal { color: #B04A3A; }
-.mockup-c .sidebar { background: rgba(22,25,28,0.65); border-right: 0.5px solid rgba(201,162,39,0.18); color: #9A958B; }
+.mockup-c .sidebar { background: rgba(22,26,32,0.58); border-right: 0.5px solid rgba(201,162,39,0.18); color: #9A958B; }
 .mockup-c .sb-item { border-left: 2px solid transparent; }
-.mockup-c .sb-item.on { background: rgba(201,162,39,0.08); border-left-color: #C9A227; color: #E8E4D9; }
-.mockup-c .bubble { background: rgba(22,25,28,0.72); backdrop-filter: blur(10px); border: 0.5px solid rgba(232,228,217,0.10); }
-.mockup-c .bubble.user { color: #E8E4D9; border-color: rgba(47,71,86,0.55); }
-.mockup-c .bubble.assistant { color: #E8E4D9; border-color: rgba(201,162,39,0.20); }
-.mockup-c .input-bar { background: rgba(14,16,18,0.78); backdrop-filter: blur(14px); border-top: 0.5px solid rgba(201,162,39,0.18); }
-.mockup-c .input-bar textarea { background: rgba(22,25,28,0.65); border-color: rgba(201,162,39,0.20); color: #E8E4D9; }
-.mockup-c .input-bar textarea::placeholder { color: rgba(232,228,217,0.35); }
+.mockup-c .sb-item.on { background: rgba(201,162,39,0.08); border-left-color: #C9A227; color: #E4E1D6; }
+.mockup-c .bubble { background: rgba(22,26,32,0.62); backdrop-filter: blur(10px); border: 0.5px solid rgba(228,225,214,0.10); }
+.mockup-c .bubble.user { color: #E4E1D6; border-color: rgba(176,74,58,0.50); }
+.mockup-c .bubble.assistant { color: #E4E1D6; border-color: rgba(201,162,39,0.22); }
+.mockup-c .input-bar { background: rgba(22,26,32,0.72); backdrop-filter: blur(14px); border-top: 0.5px solid rgba(201,162,39,0.18); }
+.mockup-c .input-bar textarea { background: rgba(22,26,32,0.62); border-color: rgba(201,162,39,0.22); color: #E4E1D6; }
+.mockup-c .input-bar textarea::placeholder { color: rgba(228,225,214,0.35); }
 .mockup-c .btn { color: #9A958B; border-color: rgba(201,162,39,0.25); }
-.mockup-c .btn.primary { background: #B04A3A; color: #E8E4D9; border-color: #B04A3A; font-weight: 500; }
-.mockup-c select { background: rgba(22,25,28,0.65); color: #E8E4D9; border-color: rgba(201,162,39,0.20); }
+.mockup-c .btn.primary { background: rgba(176,74,58,0.85); color: #E4E1D6; border-color: rgba(176,74,58,0.85); font-weight: 500; }
+.mockup-c select { background: rgba(22,26,32,0.62); color: #E4E1D6; border-color: rgba(201,162,39,0.22); font-size: 10px; padding: 3px 5px; border-radius: 4px; }
+.mockup-c .kb-switcher { background: rgba(0,0,0,0.22); }
+.mockup-c .kb-switcher button { color: #9A958B; }
+.mockup-c .kb-switcher button.on { background: rgba(201,162,39,0.16); color: #E4E1D6; }
+.mockup-c .kb-pill { color: #9A958B; border-color: rgba(201,162,39,0.28); background: rgba(0,0,0,0.18); }
+.mockup-c .kb-pill .dot { background: #C9A227; }
+.mockup-c .upload-btn { color: #9A958B; border-color: rgba(201,162,39,0.35); }
+.mockup-c .console-link { color: #C9A227; border-color: rgba(201,162,39,0.35); background: rgba(201,162,39,0.05); }
+.mockup-c .assets-pane { background: rgba(22,26,32,0.62); border: 0.5px solid rgba(201,162,39,0.18); color: #9A958B; }
+.mockup-c .assets-pane .ap-head { color: #C9A227; border-bottom-color: rgba(201,162,39,0.20); }
+.mockup-c .assets-pane .ap-row .ap-tag { background: rgba(201,162,39,0.15); color: #E4E1D6; }
 
 /* =========================================================
-   底部对比：按钮 4 态
+   底部对比
    ========================================================= */
 .compare { margin-top: 48px; }
 .compare h2 { font-size: 14px; font-weight: 500; margin-bottom: 12px; color: #1C1C1A; letter-spacing: 0.06em; }
@@ -144,80 +234,99 @@ h1 { font-size: 22px; font-weight: 500; letter-spacing: 0.04em; }
   padding: 12px 0; border-top: 0.5px solid rgba(0,0,0,0.08); font-size: 11px; }
 .compare-row .col-name { color: #6E6B65; letter-spacing: 0.05em; }
 .compare-cell { padding: 10px 12px; border-radius: 8px; }
-.compare-cell.mockup-a { background: #14202B; color: #E8E4D9; }
+.compare-cell.mockup-a { background: #1B2A36; color: #E4E1D6; }
 .compare-cell.mockup-b { background: #ECEAE3; color: #1C1C1A; }
-.compare-cell.mockup-c { background: #0E1012; color: #E8E4D9; }
+.compare-cell.mockup-c { background: #161A20; color: #E4E1D6; }
 .compare-cell .btn { margin-right: 4px; }
 
 footer { margin-top: 40px; font-size: 11px; color: #6E6B65; text-align: center; letter-spacing: 0.05em; }
 </style>
 </head>
-<body>
+<body data-mode="single" data-theme="a">
 
-<h1>论匠前端 · 三方向视觉重构预览</h1>
-<p class="subtitle">打开本页后,三个主题并排展示,均可滚动/交互。等你看完定方向,我会按选定方向出设计规范与完整代码。</p>
+<h1>论匠前端 · v10 三主题切换预览</h1>
+<p class="subtitle">单击上方 tab 在 A / B / C 三套主题间无缝切换；右上角"三主题对照"回到并排视图。每个主题配色 + 布局 + 卷轴语言都有明显区别。</p>
+
+<div class="theme-tabs" role="tablist" aria-label="主题切换">
+  <button data-theme="a" class="on" role="tab" title="柔雾青蓝 + 卷轴木轴"><span class="chip" style="background:#1B2A36;border-color:rgba(200,168,135,.4)"></span>A 柔雾青蓝</button>
+  <button data-theme="b" role="tab" title="水墨留白 + 楷体 + 石青"><span class="chip" style="background:#ECEAE3;border-color:#999"></span>B 水墨留白</button>
+  <button data-theme="c" role="tab" title="暗墨金线 + 钤印 + 赭金"><span class="chip" style="background:#161A20;border-color:rgba(201,162,39,.4)"></span>C 暗墨柔化</button>
+  <button class="compare-btn" data-mode="compare" role="tab" title="三主题并排对照">↔ 三主题对照</button>
+</div>
+
+<div class="sync-callouts" id="sync">
+  本轮同步项：
+  <b>① 知识库切换按钮</b>（内置 · 库内 · 混合 三态）；
+  <b>② PDF / DOCX / TXT / MD 上传入口</b>；
+  <b>③ 控制台入口</b>（跳转 tuner.html）；
+  <b>④ 当前知识库状态徽章</b>（绿点 = 项目库非空 / 灰点 = 回退内置）；
+  <b>⑤ 资料清单面板</b>（PDF / DOCX / MD / TXT 文档计数）；
+  <b>⑥ ⭐ 三主题切换 tab</b>（单击平滑切换整套配色与布局）。
+</div>
 
 <div class="legend">
-  <span><span class="sw" style="background:#14202B"></span>A 主色 · 靛青底</span>
-  <span><span class="sw" style="background:#C8A15A"></span>A 强调 · 赭石金</span>
+  <span><span class="sw" style="background:#1B2A36"></span>A 主色 · 柔雾青蓝</span>
+  <span><span class="sw" style="background:#C8A887"></span>A 强调 · 赭石米</span>
   <span><span class="sw" style="background:#ECEAE3;border-color:#999"></span>B 主色 · 冷宣白</span>
   <span><span class="sw" style="background:#3C6E8F"></span>B 强调 · 石青</span>
-  <span><span class="sw" style="background:#0E1012"></span>C 主色 · 焦墨</span>
+  <span><span class="sw" style="background:#161A20"></span>C 主色 · 暗墨柔化</span>
   <span><span class="sw" style="background:#C9A227"></span>C 强调 · 赭金</span>
 </div>
 
-<div class="grid">
+<!-- 单主题模式 -->
+<div class="single-stage">
 
-  <!-- ============ A · 青绿长卷 ============ -->
-  <div class="mockup mockup-a">
+  <!-- ============ A · 柔雾青蓝 ============ -->
+  <div class="mockup mockup-a" data-theme="a">
     <div class="wood top"></div><div class="wood bot"></div>
-    <div class="ink-bg"><img src="Traditional_Chinese_blue_green_2026-09-01T13-40-09.png" alt="青绿长卷"></div>
-    <div class="label">A · 青绿长卷</div>
+    <div class="ink-bg"><img src="Soft_misty_Chinese_blue_green__2026-09-01T13-51-14.png" alt="柔雾青蓝"></div>
+    <div class="label">A · 柔雾青蓝</div>
     <div class="topbar">
-      <div class="brand">论匠 <small>·  v9</small></div>
+      <div class="brand">论匠 <small>· v10</small></div>
       <div class="grow"></div>
+      <div class="kb-switcher" title="切换知识库检索范围">
+        <button>内置</button><button class="on">库内</button><button>混合</button>
+      </div>
+      <span class="kb-pill" title="空库时自动回退内置知识库"><span class="dot"></span>内置</span>
+      <label class="upload-btn" title="PDF / DOCX / TXT / MD ｜ ≤20MB">＋📎<input type="file" accept=".pdf,.docx,.txt,.md,.markdown" multiple></label>
+      <a class="console-link" href="tuner.html" title="调参台：透明度 / 对比度实时测算">🎛</a>
       <select><option>#1 选题方向探索</option></select>
       <button class="btn">+ 新建</button>
-      <button class="btn">项目设置</button>
+      <button class="btn">设置</button>
     </div>
     <div class="body">
       <div class="sidebar">
-        <div style="font-size:9px;opacity:0.6;letter-spacing:0.15em;padding:0 6px 4px;">会 话 卷 册</div>
+        <div style="font-size:9px;opacity:0.6;letter-spacing:0.15em;padding:0 6px 4px;">会 话</div>
         <div class="sb-item">◇ 新会话</div>
-        <div class="sb-item on">昨 14:20 · 选题方向</div>
-        <div class="sb-item">昨 11:05 · 文献检索</div>
-        <div class="sb-item">昨 09:12 · 摘要初稿</div>
+        <div class="sb-item on">昨 14:20 · 选题</div>
+        <div class="sb-item">昨 11:05 · 检索</div>
+        <div class="sb-item">昨 09:12 · 摘要</div>
         <div class="sb-item">更早 →</div>
       </div>
       <div class="chat">
         <div class="chat-scroll">
-          <div class="bubble user">
-            <div class="role">USER</div>
-            帮我确定一个可行的论文选题,数据科学方向,大模型相关。
-          </div>
-          <div class="bubble assistant">
-            <div class="role">论匠 · 主控</div>
-            好的。先确认两点:① 你的专业是数据科学与大数据技术? ② 希望偏理论(可解释性/对齐)还是偏应用(检索增强/Agent)?
-          </div>
-          <div class="bubble user">
-            <div class="role">USER</div>
-            偏应用,想做 RAG 方向。
-          </div>
-          <div class="bubble assistant">
-            <div class="role">论匠 · 主控</div>
-            建议从"RAG 评测的鲁棒性"切入:对抗查询、检索失败、引用幻觉三类扰动下的指标波动。已为你调度文献 Agent,先拉近三年 50 篇核心论文。
-          </div>
+          <div class="bubble user"><div class="role">USER</div>帮我确定一个可行的论文选题,数据科学方向,大模型相关。</div>
+          <div class="bubble assistant"><div class="role">论匠 · 主控</div>已为你调度文献 Agent,先拉近三年 50 篇核心论文,空库时自动回退内置语料库。</div>
         </div>
         <div class="input-bar">
           <textarea placeholder="输入论文相关请求…"></textarea>
           <button class="btn primary send">发送</button>
         </div>
       </div>
+      <aside class="assets-pane">
+        <div class="ap-head">资料（0）</div>
+        <div class="ap-empty" style="margin-bottom:6px;">尚无上传</div>
+        <div class="ap-row"><span class="ap-tag">PDF</span>RAG-评测-鲁棒</div>
+        <div class="ap-row"><span class="ap-tag">DOC</span>开题报告-v2</div>
+        <div class="ap-row"><span class="ap-tag">MD</span>参考文献.zh</div>
+        <div class="ap-row"><span class="ap-tag">TXT</span>术语表.txt</div>
+        <div class="ap-row"><span class="ap-tag">PDF</span>综述笔记.pdf</div>
+      </aside>
     </div>
   </div>
 
   <!-- ============ B · 水墨留白 ============ -->
-  <div class="mockup mockup-b">
+  <div class="mockup mockup-b" data-theme="b">
     <div class="ink-bg"><img src="Traditional_Chinese_ink_wash_l_2026-09-01T13-40-46.png" alt="水墨留白"></div>
     <div class="label">B · 水墨留白</div>
     <div class="topbar">
@@ -226,93 +335,196 @@ footer { margin-top: 40px; font-size: 11px; color: #6E6B65; text-align: center; 
         <div class="brand-rule"></div>
       </div>
       <div class="grow"></div>
+      <div class="kb-switcher"><button>内置</button><button class="on">库内</button><button>混合</button></div>
+      <span class="kb-pill"><span class="dot"></span>内置</span>
+      <label class="upload-btn">＋📎<input type="file" accept=".pdf,.docx,.txt,.md,.markdown" multiple></label>
+      <a class="console-link" href="tuner.html">🎛</a>
       <select><option>#1 选题方向探索</option></select>
       <button class="btn">+ 新建</button>
-      <button class="btn">项目设置</button>
+      <button class="btn">设置</button>
     </div>
     <div class="body">
       <div class="sidebar">
         <div style="font-size:9px;opacity:0.55;letter-spacing:0.15em;padding:0 6px 4px;">会 话</div>
         <div class="sb-item">新会话</div>
-        <div class="sb-item on">昨 14:20 · 选题方向</div>
-        <div class="sb-item">昨 11:05 · 文献检索</div>
-        <div class="sb-item">昨 09:12 · 摘要初稿</div>
+        <div class="sb-item on">昨 14:20 · 选题</div>
+        <div class="sb-item">昨 11:05 · 检索</div>
+        <div class="sb-item">昨 09:12 · 摘要</div>
         <div class="sb-item">更早 →</div>
       </div>
       <div class="chat">
         <div class="chat-scroll">
-          <div class="bubble user">
-            <div class="role">USER</div>
-            帮我确定一个可行的论文选题,数据科学方向,大模型相关。
-          </div>
-          <div class="bubble assistant">
-            <div class="role">论 匠 · 主控</div>
-            好的。先确认两点:① 你的专业是数据科学与大数据技术? ② 希望偏理论(可解释性/对齐)还是偏应用(检索增强/Agent)?
-          </div>
-          <div class="bubble user">
-            <div class="role">USER</div>
-            偏应用,想做 RAG 方向。
-          </div>
-          <div class="bubble assistant">
-            <div class="role">论 匠 · 主控</div>
-            建议从"RAG 评测的鲁棒性"切入:对抗查询、检索失败、引用幻觉三类扰动下的指标波动。已为你调度文献 Agent,先拉近三年 50 篇核心论文。
-          </div>
+          <div class="bubble user"><div class="role">USER</div>帮我确定一个可行的论文选题,数据科学方向,大模型相关。</div>
+          <div class="bubble assistant"><div class="role">论 匠 · 主控</div>已调度文献 Agent,先拉近三年 50 篇核心论文,空库时自动回退内置语料库。</div>
         </div>
         <div class="input-bar">
           <textarea placeholder="输入论文相关请求…"></textarea>
           <button class="btn primary send">发送</button>
         </div>
       </div>
+      <aside class="assets-pane">
+        <div class="ap-head">资料（0）</div>
+        <div class="ap-empty" style="margin-bottom:6px;">尚无上传</div>
+        <div class="ap-row"><span class="ap-tag">PDF</span>RAG-评测-鲁棒</div>
+        <div class="ap-row"><span class="ap-tag">DOC</span>开题报告-v2</div>
+        <div class="ap-row"><span class="ap-tag">MD</span>参考文献.zh</div>
+        <div class="ap-row"><span class="ap-tag">TXT</span>术语表.txt</div>
+      </aside>
     </div>
   </div>
 
-  <!-- ============ C · 暗墨金线 ============ -->
-  <div class="mockup mockup-c">
-    <div class="ink-bg"><img src="Chinese_ink_painting_of_toweri_2026-09-01T13-41-26.png" alt="夜山金碧"></div>
-    <div class="label">C · 暗墨金线</div>
+  <!-- ============ C · 暗墨柔化 ============ -->
+  <div class="mockup mockup-c" data-theme="c">
+    <div class="ink-bg"><img src="Chinese_ink_painting_of_toweri_2026-09-01T13-41-26.png" alt="暗墨柔化"></div>
+    <div class="label">C · 暗墨柔化</div>
     <div class="topbar">
-      <div class="brand"><span class="seal">◈</span> 论匠 <small>· v9</small></div>
+      <div class="brand"><span class="seal">◈</span> 论匠 <small>· v10</small></div>
       <div class="grow"></div>
+      <div class="kb-switcher"><button>内置</button><button class="on">库内</button><button>混合</button></div>
+      <span class="kb-pill"><span class="dot"></span>内置</span>
+      <label class="upload-btn">＋📎<input type="file" accept=".pdf,.docx,.txt,.markdown,.txt" multiple></label>
+      <a class="console-link" href="tuner.html">🎛</a>
       <select><option>#1 选题方向探索</option></select>
       <button class="btn">+ 新建</button>
-      <button class="btn">项目设置</button>
+      <button class="btn">设置</button>
     </div>
     <div class="body">
       <div class="sidebar">
         <div style="font-size:9px;opacity:0.5;letter-spacing:0.15em;padding:0 6px 4px;color:#C9A227;">会 话 册</div>
         <div class="sb-item">◇ 新会话</div>
-        <div class="sb-item on">昨 14:20 · 选题方向</div>
-        <div class="sb-item">昨 11:05 · 文献检索</div>
-        <div class="sb-item">昨 09:12 · 摘要初稿</div>
+        <div class="sb-item on">昨 14:20 · 选题</div>
+        <div class="sb-item">昨 11:05 · 检索</div>
+        <div class="sb-item">昨 09:12 · 摘要</div>
         <div class="sb-item">更早 →</div>
       </div>
       <div class="chat">
         <div class="chat-scroll">
-          <div class="bubble user">
-            <div class="role">USER</div>
-            帮我确定一个可行的论文选题,数据科学方向,大模型相关。
-          </div>
-          <div class="bubble assistant">
-            <div class="role">论匠 · 主控</div>
-            好的。先确认两点:① 你的专业是数据科学与大数据技术? ② 希望偏理论(可解释性/对齐)还是偏应用(检索增强/Agent)?
-          </div>
-          <div class="bubble user">
-            <div class="role">USER</div>
-            偏应用,想做 RAG 方向。
-          </div>
-          <div class="bubble assistant">
-            <div class="role">论匠 · 主控</div>
-            建议从"RAG 评测的鲁棒性"切入:对抗查询、检索失败、引用幻觉三类扰动下的指标波动。已为你调度文献 Agent,先拉近三年 50 篇核心论文。
-          </div>
+          <div class="bubble user"><div class="role">USER</div>帮我确定一个可行的论文选题,数据科学方向,大模型相关。</div>
+          <div class="bubble assistant"><div class="role">论匠 · 主控</div>已调度文献 Agent,先拉近三年 50 篇核心论文,空库时自动回退内置语料库。</div>
         </div>
         <div class="input-bar">
           <textarea placeholder="输入论文相关请求…"></textarea>
           <button class="btn primary send">发送</button>
         </div>
       </div>
+      <aside class="assets-pane">
+        <div class="ap-head">资料（0）</div>
+        <div class="ap-empty" style="margin-bottom:6px;">尚无上传</div>
+        <div class="ap-row"><span class="ap-tag">PDF</span>RAG-评测-鲁棒</div>
+        <div class="ap-row"><span class="ap-tag">DOC</span>开题报告-v2</div>
+        <div class="ap-row"><span class="ap-tag">MD</span>参考文献.zh</div>
+      </aside>
     </div>
   </div>
 
+</div>
+
+<!-- 并排模式 -->
+<div class="compare-stage">
+  <div class="grid">
+
+    <div class="mockup mockup-a">
+      <div class="wood top"></div><div class="wood bot"></div>
+      <div class="ink-bg"><img src="Soft_misty_Chinese_blue_green__2026-09-01T13-51-14.png" alt="柔雾青蓝"></div>
+      <div class="label">A · 柔雾青蓝</div>
+      <div class="topbar">
+        <div class="brand">论匠 <small>· v10</small></div>
+        <div class="grow"></div>
+        <div class="kb-switcher"><button>内置</button><button class="on">库内</button><button>混合</button></div>
+        <span class="kb-pill"><span class="dot"></span>内置</span>
+        <label class="upload-btn">＋📎<input type="file" accept=".pdf,.docx,.txt,.md,.markdown" multiple></label>
+        <a class="console-link" href="tuner.html">🎛</a>
+        <select><option>#1 选题方向探索</option></select>
+        <button class="btn">+ 新建</button>
+        <button class="btn">设置</button>
+      </div>
+      <div class="body">
+        <div class="sidebar">
+          <div style="font-size:9px;opacity:0.6;letter-spacing:0.15em;padding:0 6px 4px;">会 话</div>
+          <div class="sb-item">◇ 新会话</div>
+          <div class="sb-item on">昨 14:20 · 选题</div>
+          <div class="sb-item">昨 11:05 · 检索</div>
+          <div class="sb-item">昨 09:12 · 摘要</div>
+          <div class="sb-item">更早 →</div>
+        </div>
+        <div class="chat">
+          <div class="chat-scroll">
+            <div class="bubble user"><div class="role">USER</div>帮我确定论文选题,大模型相关。</div>
+            <div class="bubble assistant"><div class="role">论匠 · 主控</div>已调度文献 Agent,空库时自动回退内置语料库。</div>
+          </div>
+          <div class="input-bar"><textarea></textarea><button class="btn primary send">发送</button></div>
+        </div>
+        <aside class="assets-pane"><div class="ap-head">资料（0）</div><div class="ap-empty">尚无上传</div><div class="ap-row"><span class="ap-tag">PDF</span>RAG-评测.pdf</div><div class="ap-row"><span class="ap-tag">DOC</span>开题报告-v2</div><div class="ap-row"><span class="ap-tag">MD</span>参考文献.zh</div></aside>
+      </div>
+    </div>
+
+    <div class="mockup mockup-b">
+      <div class="ink-bg"><img src="Traditional_Chinese_ink_wash_l_2026-09-01T13-40-46.png"></div>
+      <div class="label">B · 水墨留白</div>
+      <div class="topbar">
+        <div><div class="brand">论 匠</div><div class="brand-rule"></div></div>
+        <div class="grow"></div>
+        <div class="kb-switcher"><button>内置</button><button class="on">库内</button><button>混合</button></div>
+        <span class="kb-pill"><span class="dot"></span>内置</span>
+        <label class="upload-btn">＋📎<input type="file" multiple></label>
+        <a class="console-link" href="tuner.html">🎛</a>
+        <select><option>#1 选题方向探索</option></select>
+        <button class="btn">+ 新建</button>
+        <button class="btn">设置</button>
+      </div>
+      <div class="body">
+        <div class="sidebar">
+          <div style="font-size:9px;opacity:0.55;letter-spacing:0.15em;padding:0 6px 4px;">会 话</div>
+          <div class="sb-item">新会话</div>
+          <div class="sb-item on">昨 14:20 · 选题</div>
+          <div class="sb-item">昨 11:05 · 检索</div>
+          <div class="sb-item">昨 09:12 · 摘要</div>
+        </div>
+        <div class="chat">
+          <div class="chat-scroll">
+            <div class="bubble user"><div class="role">USER</div>帮我确定论文选题,大模型相关。</div>
+            <div class="bubble assistant"><div class="role">论 匠 · 主控</div>已调度文献 Agent,空库时自动回退内置语料库。</div>
+          </div>
+          <div class="input-bar"><textarea></textarea><button class="btn primary send">发送</button></div>
+        </div>
+        <aside class="assets-pane"><div class="ap-head">资料（0）</div><div class="ap-empty">尚无上传</div><div class="ap-row"><span class="ap-tag">PDF</span>RAG-评测.pdf</div><div class="ap-row"><span class="ap-tag">DOC</span>开题报告-v2</div></aside>
+      </div>
+    </div>
+
+    <div class="mockup mockup-c">
+      <div class="ink-bg"><img src="Chinese_ink_painting_of_toweri_2026-09-01T13-41-26.png"></div>
+      <div class="label">C · 暗墨柔化</div>
+      <div class="topbar">
+        <div class="brand"><span class="seal">◈</span> 论匠 <small>· v10</small></div>
+        <div class="grow"></div>
+        <div class="kb-switcher"><button>内置</button><button class="on">库内</button><button>混合</button></div>
+        <span class="kb-pill"><span class="dot"></span>内置</span>
+        <label class="upload-btn">＋📎<input type="file" multiple></label>
+        <a class="console-link" href="tuner.html">🎛</a>
+        <select><option>#1 选题方向探索</option></select>
+        <button class="btn">+ 新建</button>
+        <button class="btn">设置</button>
+      </div>
+      <div class="body">
+        <div class="sidebar">
+          <div style="font-size:9px;opacity:0.5;letter-spacing:0.15em;padding:0 6px 4px;color:#C9A227;">会 话 册</div>
+          <div class="sb-item">◇ 新会话</div>
+          <div class="sb-item on">昨 14:20 · 选题</div>
+          <div class="sb-item">昨 11:05 · 检索</div>
+          <div class="sb-item">昨 09:12 · 摘要</div>
+        </div>
+        <div class="chat">
+          <div class="chat-scroll">
+            <div class="bubble user"><div class="role">USER</div>帮我确定论文选题,大模型相关。</div>
+            <div class="bubble assistant"><div class="role">论匠 · 主控</div>已调度文献 Agent,空库时自动回退内置语料库。</div>
+          </div>
+          <div class="input-bar"><textarea></textarea><button class="btn primary send">发送</button></div>
+        </div>
+        <aside class="assets-pane"><div class="ap-head">资料（0）</div><div class="ap-empty">尚无上传</div><div class="ap-row"><span class="ap-tag">PDF</span>RAG-评测.pdf</div></aside>
+      </div>
+    </div>
+
+  </div>
 </div>
 
 <!-- 按钮 4 态对比 -->
@@ -320,24 +532,18 @@ footer { margin-top: 40px; font-size: 11px; color: #6E6B65; text-align: center; 
   <h2>按钮 4 态对比(从上到下:default / hover / active / disabled)</h2>
 
   <div class="compare-row" style="border-top:0;">
-    <div class="col-name">A · 青绿</div>
+    <div class="col-name">A · 柔雾</div>
     <div class="compare-cell mockup-a">
-      <button class="btn">次要</button>
-      <button class="btn primary">主要</button>
-      <button class="btn primary">已选</button>
-      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+      <button class="btn">次要</button><button class="btn primary">主要</button>
+      <button class="btn primary">已选</button><button class="btn" disabled style="opacity:0.35;">禁用</button>
     </div>
-    <div class="compare-cell mockup-a" style="background:#1B2A3A;">
-      <button class="btn">次要</button>
-      <button class="btn primary">主要</button>
-      <button class="btn primary">已选</button>
-      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+    <div class="compare-cell mockup-a" style="background:#22384A;">
+      <button class="btn">次要</button><button class="btn primary">主要</button>
+      <button class="btn primary">已选</button><button class="btn" disabled style="opacity:0.35;">禁用</button>
     </div>
-    <div class="compare-cell mockup-a" style="background:#173040;">
-      <button class="btn">次要</button>
-      <button class="btn primary">主要</button>
-      <button class="btn primary">已选</button>
-      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+    <div class="compare-cell mockup-a" style="background:#2A3F50;">
+      <button class="btn">次要</button><button class="btn primary">主要</button>
+      <button class="btn primary">已选</button><button class="btn" disabled style="opacity:0.35;">禁用</button>
     </div>
     <div class="compare-cell mockup-a">
       <button class="btn" disabled style="opacity:0.35;">禁用</button>
@@ -350,22 +556,16 @@ footer { margin-top: 40px; font-size: 11px; color: #6E6B65; text-align: center; 
   <div class="compare-row">
     <div class="col-name">B · 水墨</div>
     <div class="compare-cell mockup-b">
-      <button class="btn">次要</button>
-      <button class="btn primary">主要</button>
-      <button class="btn primary">已选</button>
-      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+      <button class="btn">次要</button><button class="btn primary">主要</button>
+      <button class="btn primary">已选</button><button class="btn" disabled style="opacity:0.35;">禁用</button>
     </div>
     <div class="compare-cell mockup-b" style="background:#F2F0E9;">
-      <button class="btn">次要</button>
-      <button class="btn primary">主要</button>
-      <button class="btn primary">已选</button>
-      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+      <button class="btn">次要</button><button class="btn primary">主要</button>
+      <button class="btn primary">已选</button><button class="btn" disabled style="opacity:0.35;">禁用</button>
     </div>
     <div class="compare-cell mockup-b" style="background:#E5E3DB;">
-      <button class="btn">次要</button>
-      <button class="btn primary">主要</button>
-      <button class="btn primary">已选</button>
-      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+      <button class="btn">次要</button><button class="btn primary">主要</button>
+      <button class="btn primary">已选</button><button class="btn" disabled style="opacity:0.35;">禁用</button>
     </div>
     <div class="compare-cell mockup-b">
       <button class="btn" disabled style="opacity:0.35;">禁用</button>
@@ -378,22 +578,16 @@ footer { margin-top: 40px; font-size: 11px; color: #6E6B65; text-align: center; 
   <div class="compare-row">
     <div class="col-name">C · 暗墨</div>
     <div class="compare-cell mockup-c">
-      <button class="btn">次要</button>
-      <button class="btn primary">主要</button>
-      <button class="btn primary">已选</button>
-      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+      <button class="btn">次要</button><button class="btn primary">主要</button>
+      <button class="btn primary">已选</button><button class="btn" disabled style="opacity:0.35;">禁用</button>
     </div>
-    <div class="compare-cell mockup-c" style="background:#1A1D20;">
-      <button class="btn">次要</button>
-      <button class="btn primary">主要</button>
-      <button class="btn primary">已选</button>
-      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+    <div class="compare-cell mockup-c" style="background:#1E2329;">
+      <button class="btn">次要</button><button class="btn primary">主要</button>
+      <button class="btn primary">已选</button><button class="btn" disabled style="opacity:0.35;">禁用</button>
     </div>
-    <div class="compare-cell mockup-c" style="background:#252A2E;">
-      <button class="btn">次要</button>
-      <button class="btn primary">主要</button>
-      <button class="btn primary">已选</button>
-      <button class="btn" disabled style="opacity:0.35;">禁用</button>
+    <div class="compare-cell mockup-c" style="background:#272D34;">
+      <button class="btn">次要</button><button class="btn primary">主要</button>
+      <button class="btn primary">已选</button><button class="btn" disabled style="opacity:0.35;">禁用</button>
     </div>
     <div class="compare-cell mockup-c">
       <button class="btn" disabled style="opacity:0.35;">禁用</button>
@@ -404,7 +598,49 @@ footer { margin-top: 40px; font-size: 11px; color: #6E6B65; text-align: center; 
   </div>
 </div>
 
-<footer>提示:本预览是 380×680 的缩比示意,选定方向后我会出全尺寸设计规范与前端实现代码(以选定方向为准)。</footer>
+<footer>v10 · 三主题切换 + 同步知识库切换 / 上传入口 / 控制台入口 / 资料清单 / 柔化色调 · backend hooks: api.uploadKnowledge / api.searchKnowledge(mode) → tuner.html</footer>
 
+<script>
+/* v10：三主题切换 tab —— data-mode / data-theme 控制 */
+(function() {
+  const body = document.body;
+
+  function setMode(mode, theme) {
+    body.setAttribute('data-mode', mode);
+    if (theme) body.setAttribute('data-theme', theme);
+
+    // tab 视觉
+    document.querySelectorAll('.theme-tabs button').forEach(b => {
+      const isModeBtn = b.hasAttribute('data-mode');
+      const isThemeBtn = b.hasAttribute('data-theme');
+      if (isModeBtn) {
+        b.classList.toggle('on', b.dataset.mode === mode);
+      } else if (isThemeBtn) {
+        b.classList.toggle('on', b.dataset.theme === theme && mode === 'single');
+      }
+    });
+
+    // 单主题模式：仅显示对应主题 mockup
+    document.querySelectorAll('.single-stage .mockup').forEach(m => {
+      m.style.display = (mode === 'single' && m.dataset.theme === theme) ? '' : 'none';
+    });
+
+    try { sessionStorage.setItem('lj_preview', JSON.stringify({ mode, theme })); } catch {}
+  }
+
+  document.querySelectorAll('.theme-tabs [data-theme]').forEach(b => {
+    b.addEventListener('click', () => setMode('single', b.dataset.theme));
+  });
+  document.querySelector('.theme-tabs [data-mode="compare"]').addEventListener('click',
+    () => setMode('compare', body.dataset.theme || 'a'));
+
+  // 还原上次状态
+  try {
+    const saved = JSON.parse(sessionStorage.getItem('lj_preview') || 'null');
+    if (saved && saved.theme) setMode(saved.mode, saved.theme);
+    else setMode('single', 'a');
+  } catch { setMode('single', 'a'); }
+})();
+</script>
 </body>
 </html>
