@@ -41,14 +41,28 @@ def _timeout(kind: str) -> float:
 
 
 class LLMProvider:
-    """异步轻量客户端：chat / chat_stream / embed。"""
+    """异步轻量客户端：chat / chat_stream / embed。
+
+    对话与嵌入可分离底座：chat 走 llm.default_provider，embed 走
+    llm.embedding_provider（默认同 default_provider）。企业场景典型组合：
+    云端对话模型(agnes/deepseek) + 本地开源嵌入(bge-m3)。
+    """
 
     def __init__(self, provider: str | None = None):
         self.name, cfg = _provider_cfg(provider)
         self.chat_model: str = cfg["chat_model"]
-        self.embedding_model: str = cfg.get("embedding_model") or ""
         self.temperature: float = cfg.get("temperature", 0.7)
         self._client = _get_client(self.name, cfg)
+
+        # 嵌入底座独立解析：<default|embedding_provider> 内取 embedding_model
+        self.embedding_model: str = ""
+        self._embed_client = None
+        emb_name = get_value("llm", "embedding_provider", default=None) or self.name
+        providers = get_value("llm", "providers")
+        emb_cfg = providers.get(emb_name, {})
+        self.embedding_model = emb_cfg.get("embedding_model") or ""
+        if self.embedding_model:
+            self._embed_client = _get_client(emb_name, emb_cfg)
 
     # ---------- 对话 ----------
     async def chat(
@@ -109,9 +123,11 @@ class LLMProvider:
 
     # ---------- 向量 ----------
     async def embed(self, texts: list[str]) -> list[list[float]]:
-        if not self.embedding_model:
-            raise ValueError(f"provider {self.name} 未配置 embedding_model")
-        resp = await self._client.embeddings.create(
+        if not self.embedding_model or self._embed_client is None:
+            raise ValueError(
+                f"嵌入底座 {get_value('llm', 'embedding_provider', default=self.name)} "
+                f"未配置 embedding_model（见 settings.yaml llm.embedding_provider）")
+        resp = await self._embed_client.embeddings.create(
             model=self.embedding_model, input=texts, timeout=_timeout("embedding"))
         return [d.embedding for d in resp.data]
 

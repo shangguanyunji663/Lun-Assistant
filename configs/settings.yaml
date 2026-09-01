@@ -11,11 +11,12 @@ app:
   secret_key: ${SECRET_KEY}
 
 # ------------------------------------------------------------
-# LLM 统一接入：切换 default_provider 即可一键换底座
-# 所有 provider 均走 OpenAI 兼容协议
+# LLM 统一接入：切换 default_provider 即可一键换对话底座（均走 OpenAI 兼容协议）
+# embedding_provider 可与对话底座分离（如：云端对话 + 本地 bge-m3 嵌入）
 # ------------------------------------------------------------
 llm:
-  default_provider: ollama
+  default_provider: agnes         # 对话底座：agnes-2.5-flash（云端，KEY 在 .env）
+  embedding_provider: ollama      # 嵌入底座：bge-m3（本地，离线可用）
   timeout:
     chat: 60           # 非流式对话超时（秒）
     chat_stream: 90    # 流式对话超时（秒）
@@ -48,6 +49,14 @@ llm:
       chat_model: qwen-plus
       embedding_model: text-embedding-v3
       embedding_dim: 1024
+      temperature: 0.7
+    # 云上高性能备选（OpenAI 兼容 /chat/completions）：本地 qwen3:4b 能力不足时切换
+    agnes:
+      base_url: ${AGNES_BASE_URL}
+      api_key: ${AGNES_API_KEY}
+      chat_model: agnes-2.5-flash
+      embedding_model: ""
+      embedding_dim: 0
       temperature: 0.7
 
 # 交叉编码器精排（本地 sentence-transformers 加载）
@@ -91,6 +100,12 @@ rag:
   chunk_size: 512
   chunk_overlap: 64
   recall_target_at5: 0.9            # 验收指标 Recall@5 目标
+  sibling_window: 1                 # 第三引擎：命中块相邻窗口扩展半径（0=关闭）
+  max_upload_size_mb: 20            # 知识库单文件大小上限
+  # 项目级私有知识库：分块复用 chunk_size/overlap，原始文件落盘目录
+  knowledge:
+    upload_dir: data/uploads
+    min_text_chars: 30              # 低于此字符数视为"无可提取文本"（扫描件）
 
 # ------------------------------------------------------------
 # 治理与风控

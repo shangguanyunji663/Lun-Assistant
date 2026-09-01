@@ -32,8 +32,13 @@ jieba>=0.42.1
 sentence-transformers>=3.3
 numpy>=1.26
 
+# ===== 文档解析（项目级知识库）=====
+pymupdf>=1.24
+python-docx>=1.1
+
 # ===== 评测与图表 =====
 matplotlib>=3.8
+psutil>=5.9
 
 # ===== 工具 =====
 httpx>=0.28
