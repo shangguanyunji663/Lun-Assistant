@@ -1,0 +1,70 @@
+name: Build & Deploy to GitHub Pages
+
+# 触发：main 分支 push；也可手动 workflow_dispatch
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# 权限：读取代码 + 写入 GitHub Pages + OIDC token
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 不要让旧 workflow 同时跑（concurrency 控制）
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    name: Build frontend + deploy to Pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      # 前端构建：vite build 会因为 base='/Lun-Assistant/' 自动给静态资源加正确前缀
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build (vite build, NODE_ENV=production → base='/Lun-Assistant/')
+        working-directory: frontend
+        run: npm run build
+
+      # 配置 GitHub Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact (frontend/dist)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist
+
+      # 部署到 GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      # workflow 跑完输出访问 URL（方便复制到 README）
+      - name: Print public URL
+        run: |
+          echo "## 🌐 公网预览已部署" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "URL: ${{ steps.deployment.outputs.page_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "注意：后端 API 在本地 8000，GitHub Pages 静态托管无后端 → 登录/对话/知识库检索会失败，" >> $GITHUB_STEP_SUMMARY
+          echo "仅主题切换 UI / 装饰元素 / 视觉风格可演示。完整功能演示请本地启动后端。" >> $GITHUB_STEP_SUMMARY
