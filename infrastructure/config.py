@@ -75,3 +75,19 @@ def get_value(*keys: str, default: Any = None, cast_bool: bool = False) -> Any:
             return _as_bool(default) if cast_bool else default
         node = node[k]
     return _as_bool(node) if cast_bool else node
+
+
+def get_embedding_dim() -> int:
+    """嵌入向量维度：跟随运行时 llm.embedding_provider（缺省回退对话底座）。
+
+    该值决定 pgvector 向量列的 DDL；切换嵌入底座导致维度变化时，
+    需重建表或迁移数据（当前未引入 Alembic，见 README「已知限制」）。
+    """
+    providers = get_value("llm", "providers") or {}
+    name = get_value("llm", "embedding_provider") or get_value("llm", "default_provider")
+    dim = int((providers.get(name) or {}).get("embedding_dim") or 0)
+    if dim <= 0:
+        raise RuntimeError(
+            f"嵌入底座 {name!r} 未配置有效 embedding_dim，无法确定 pgvector 向量列维度"
+            "（检查 configs/settings.yaml → llm.providers）")
+    return dim

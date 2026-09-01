@@ -4,11 +4,17 @@
 按 用户名+IP 维度限制尝试频率，缓解口令爆破风险。
 """
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infrastructure.audit import write_audit
+from api.auth.schemas import (
+    LoginIn,
+    RegisterIn,
+    RegisterOut,
+    TokenOut,
+    UserBrief,
+)
 from api.auth.security import create_access_token, get_current_user, hash_password, verify_password
 from infrastructure.db import get_db
 from infrastructure.models.user import User
@@ -18,16 +24,6 @@ router = APIRouter(prefix="/api/auth", tags=["auth"])
 
 # 认证端点限流：同一 用户名+IP 每分钟 5 次
 _AUTH_RPM = 5
-
-
-class RegisterIn(BaseModel):
-    username: str = Field(min_length=3, max_length=32)
-    password: str = Field(min_length=6, max_length=64)
-
-
-class LoginIn(BaseModel):
-    username: str
-    password: str
 
 
 def _client_ip(request: Request) -> str:
@@ -46,7 +42,7 @@ async def _throttle(username: str, ip: str) -> None:
         return
 
 
-@router.post("/register")
+@router.post("/register", response_model=RegisterOut)
 async def register(body: RegisterIn, request: Request, db: AsyncSession = Depends(get_db)):
     await _throttle(body.username, _client_ip(request))
     exists = await db.scalar(select(User).where(User.username == body.username))
@@ -56,10 +52,10 @@ async def register(body: RegisterIn, request: Request, db: AsyncSession = Depend
     db.add(user)
     await db.commit()
     await write_audit(db, user_id=user.id, action="auth", resource="register", ip=_client_ip(request))
-    return {"id": user.id, "username": user.username}
+    return RegisterOut(id=user.id, username=user.username)
 
 
-@router.post("/login")
+@router.post("/login", response_model=TokenOut)
 async def login(body: LoginIn, request: Request, db: AsyncSession = Depends(get_db)):
     await _throttle(body.username, _client_ip(request))
     user = await db.scalar(select(User).where(User.username == body.username))
@@ -69,9 +65,13 @@ async def login(body: LoginIn, request: Request, db: AsyncSession = Depends(get_
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "用户名或密码错误")
     token = create_access_token(user.id, user.role)
     await write_audit(db, user_id=user.id, action="auth", resource="login", ip=_client_ip(request))
-    return {"access_token": token, "token_type": "bearer", "user": {"id": user.id, "username": user.username, "role": user.role}}
+    return TokenOut(
+        access_token=token,
+        token_type="bearer",
+        user=UserBrief(id=user.id, username=user.username, role=user.role),
+    )
 
 
-@router.get("/me")
+@router.get("/me", response_model=UserBrief)
 async def me(user: User = Depends(get_current_user)):
-    return {"id": user.id, "username": user.username, "role": user.role}
+    return UserBrief(id=user.id, username=user.username, role=user.role)

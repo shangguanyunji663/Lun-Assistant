@@ -5,11 +5,25 @@ import sys
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from pydantic import BaseModel
 
 from infrastructure.config import get_value
 from infrastructure.db import dispose_engine, get_engine
 from api.middleware.audit import AuditMiddleware
 from infrastructure.models import Base  # noqa: F401 —— 聚合导入确保全部表注册
+
+
+class SystemInfoOut(BaseModel):
+    """根路径返回的服务自描述信息。"""
+    app: str
+    version: str
+    docs: str
+    health: str
+
+
+class HealthOut(BaseModel):
+    status: str
+    app: str
 
 if sys.platform == "win32":
     # psycopg 异步连接池需要 Selector 事件循环（Windows 默认 Proactor 不支持）
@@ -68,24 +82,26 @@ def create_app() -> FastAPI:
     app.add_middleware(AuditMiddleware)
 
     # ---- 健康检查 + 根路径 ----
-    @app.get("/", tags=["system"])
+    @app.get("/", response_model=SystemInfoOut, tags=["system"])
     async def root():
-        return {
-            "app": get_value("app", "name"),
-            "version": app.version,
-            "docs": "/docs",
-            "health": "/health",
-        }
+        return SystemInfoOut(
+            app=get_value("app", "name"),
+            version=app.version,
+            docs="/docs",
+            health="/health",
+        )
 
-    @app.get("/health", tags=["system"])
+    @app.get("/health", response_model=HealthOut, tags=["system"])
     async def health():
-        return {"status": "ok", "app": get_value("app", "name")}
+        return HealthOut(status="ok", app=get_value("app", "name"))
 
     # ---- 平台基座路由（原 Java 职责）----
     from api.auth.router import router as auth_router
     from api.projects.router import router as projects_router
+    from api.knowledge.router import router as knowledge_router
     app.include_router(auth_router)
     app.include_router(projects_router)
+    app.include_router(knowledge_router)
 
     # ---- AI 运行时路由（阶段2装配）----
     from api.agent.router import router as agent_router
