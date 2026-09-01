@@ -20,6 +20,7 @@ data/runtime/
 data/uploads/
 logs/
 *.log
+evals/regression_latest.json
 
 # 前端
 frontend/node_modules/

@@ -13,6 +13,8 @@
 | [🛠 优化记录一](docs/OPTIMIZATION_ROUND1.md) | 第一轮优化（性能/安全/体验）       |
 | [🛠 优化记录二](docs/OPTIMIZATION_ROUND2.md) | 第二轮优化（OOM 修复/结构重构方案）  |
 | [🛠 优化记录三](docs/OPTIMIZATION_ROUND3.md) | 第三轮优化（布尔陷阱/前端全按钮失效排查） |
+| [🛠 优化记录四](docs/OPTIMIZATION_ROUND4.md) | 第四轮优化（企业RAG知识库/三引擎检索/Planner/结构化产物） |
+| [🛠 优化记录五](docs/OPTIMIZATION_ROUND5.md) | 第五轮优化（学术工具生态/并发压测/agnes对话底座） |
 | [💡 常见问题](#常见问题)                        | 排障手册                  |
 
 ## 快速开始
@@ -75,9 +77,10 @@ envs\lunjiang\python.exe evals/harness.py              # 三项指标评测
 
 | 模块      | 说明                                       | 关键实现                            |
 | ------- | ---------------------------------------- | ------------------------------- |
-| 多智能体编排  | 1 主控 Supervisor 调度 6 类专项 Agent，最大 3 跳防回环 | `services/agent/`               |
+| 多智能体编排  | 1 主控 Supervisor 调度 6 类专项 Agent + **Plan-Execute-Replan 规划器**，最大 3 跳防回环 | `services/agent/`               |
 | 意图预分类   | 规则 → 向量原型 → LLM 兜底三级，56ms / 100% 准确      | `services/classifier/intent.py` |
-| 三阶段 RAG | Query 改写 → 稠密+稀疏 RRF 融合 → 交叉精排，含防漂移      | `services/rag/`                 |
+| 项目级知识库  | 多格式上传(PDF/DOCX/TXT/MD)→解析→分块→向量化入库，MD5去重/扫描件拒绝/跨项目隔离 | `services/rag/ingest/`          |
+| 三阶段 RAG | Query 改写(规则兜底+防漂移) → 稠密+稀疏+**相邻窗口**多路 RRF 融合 → 交叉精排+降噪对比 | `services/rag/`                 |
 | 工具治理    | RBAC → 限流 → 熔断 → 重试 → 分布式锁 → 审计 → Skill  | `services/governance/`          |
 | 四层记忆    | 短期(Redis)/结构化/长期(pgvector)/偏好 + 压缩       | `services/memory/`              |
 | SSE 流式  | EventHub 事件总线 + token 微缓冲                | `services/streaming/hub.py`     |
@@ -124,7 +127,9 @@ docs/                文档（学习指南 / 优化记录）
 
 - **`.env`**：`SECRET_KEY`（生产必改）、`APP_*`、`PG_*`、`REDIS_*`、云厂商 `*_API_KEY`（切换 provider 时填）
 
-- **`configs/settings.yaml`**：`llm.default_provider` 一键切换 ollama/deepseek/zhipu/qwen；`rag.rewrite_enabled` 可按语料规模开关
+- **`configs/settings.yaml`**：`llm.default_provider` 一键切换对话底座（ollama/deepseek/zhipu/qwen/**agnes**）；`llm.embedding_provider` 与对话解耦（推荐云端对话 + 本地 bge-m3 嵌入）；`rag.rewrite_enabled` 可按语料规模开关
+
+- **知识库**：`POST /api/projects/{id}/knowledge` 上传（PDF/DOCX/TXT/MD）自动入库存档；`.../knowledge/search` 支持 `mode=project`（仅库内）与 `mode=hybrid`（公共语料+库内融合）
 
 ## API 速览
 
@@ -132,6 +137,7 @@ docs/                文档（学习指南 / 优化记录）
 | -------- | ------------------------------------------------------------ | ------ |
 | Auth     | `POST /api/auth/register`、`POST /api/auth/login`             | 否      |
 | Projects | `GET/POST /api/projects`、`GET/PUT/DELETE /api/projects/{id}` | Bearer |
+| 知识库    | `POST/GET/DELETE /api/projects/{id}/knowledge[/{doc_id}]`、`POST .../knowledge/search` | Bearer |
 | Agent    | `POST /api/agent/chat`（SSE）、`POST /api/agent/resume`         | Bearer |
 | Trace    | `GET /observability/traces[/{id}]`                           | admin  |
 
