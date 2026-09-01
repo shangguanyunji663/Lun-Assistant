@@ -6,5 +6,7 @@ from infrastructure.models.project import Project
 from infrastructure.models.skill import Skill
 from infrastructure.models.trace import TraceSpan
 from infrastructure.models.memory import MemoryItem
+from infrastructure.models.knowledge import KnowledgeDocument
 
-__all__ = ["Base", "User", "AuditLog", "Project", "Skill", "TraceSpan", "MemoryItem"]
+__all__ = ["Base", "User", "AuditLog", "Project", "Skill", "TraceSpan",
+           "MemoryItem", "KnowledgeDocument"]

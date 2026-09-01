@@ -24,11 +24,30 @@ class HybridRetriever:
     # ---------- 稠密路 ----------
     async def dense_search(self, query: str, top_k: int = 20,
                            project_id: int | None = None) -> list[dict]:
+        """公共语料域稠密检索（document/fact/summary；BM25 索引同域，保证融合口径一致）。
+
+        project_id 参数保留兼容（项目私有文档走 project_dense_search）。
+        """
         qvec = (await self._provider.embed([query]))[0]
         async with get_session_factory()() as db:
             rows = (await db.execute(
                 select(MemoryItem)
                 .where(MemoryItem.kind.in_(["document", "fact", "summary"]))
+                .order_by(MemoryItem.embedding.cosine_distance(qvec))
+                .limit(top_k)
+            )).scalars().all()
+        return [{"id": r.id, "content": r.content, "kind": r.kind, "meta": r.meta,
+                 "dense_score": 1.0} for r in rows]
+
+    async def project_dense_search(self, query: str, project_id: int,
+                                   top_k: int = 20) -> list[dict]:
+        """项目级私有知识库稠密检索（kind="user_doc" + project_id 隔离）。"""
+        qvec = (await self._provider.embed([query]))[0]
+        async with get_session_factory()() as db:
+            rows = (await db.execute(
+                select(MemoryItem)
+                .where(MemoryItem.kind == "user_doc",
+                       MemoryItem.project_id == project_id)
                 .order_by(MemoryItem.embedding.cosine_distance(qvec))
                 .limit(top_k)
             )).scalars().all()
@@ -81,6 +100,60 @@ class HybridRetriever:
             out.append({"id": doc_id, "content": m.get("content", ""), "kind": "document",
                         "meta": m.get("meta"), "sparse_score": float(score)})
         return out
+
+    # ---------- 第三引擎：相邻窗口召回 ----------
+    async def sibling_search(self, hits: list[dict], window: int = 1,
+                             top_k: int = 20) -> list[dict]:
+        """命中块的相邻窗口召回：取同一来源（语料文件/项目文档）内前后 window 个分块。
+
+        定位方式：语料用 meta["file"]、项目文档用 meta["doc_key"]，chunk 序号在 meta["chunk"]。
+        价值：命中段落在分块边缘时补齐上下文，避免截断信息；作为 RRF 第三路参与融合。
+        """
+        from collections import defaultdict
+
+        from sqlalchemy import and_, or_
+
+        if not hits or window <= 0:
+            return []
+        # 汇总 (来源键, {目标chunk序号})
+        wanted: dict[str, set[int]] = defaultdict(set)
+        for h in hits:
+            meta = h.get("meta") or {}
+            src = meta.get("doc_key") or meta.get("file")
+            ci = meta.get("chunk")
+            if not src or ci is None:
+                continue
+            for d in range(ci - window, ci + window + 1):
+                if d != ci and d >= 0:
+                    wanted[src].add(d)
+        if not wanted:
+            return []
+
+        # 语料: (kind=document AND meta->>'file'==src)；项目文档: (kind=user_doc AND meta->>'doc_key'==src)
+        # memory_items.meta 为 JSON 列（非 JSONB），用 json_extract_path_text 提取文本值
+        from sqlalchemy import func
+
+        conds = []
+        for src, idxs in wanted.items():
+            src_cond = or_(
+                and_(MemoryItem.kind == "document",
+                     func.json_extract_path_text(MemoryItem.meta, "file") == src),
+                and_(MemoryItem.kind == "user_doc",
+                     func.json_extract_path_text(MemoryItem.meta, "doc_key") == src),
+            )
+            for i in sorted(idxs)[:64]:
+                conds.append(and_(
+                    src_cond,
+                    func.json_extract_path_text(MemoryItem.meta, "chunk") == str(i)))
+        if not conds:
+            return []
+
+        async with get_session_factory()() as db:
+            rows = (await db.execute(
+                select(MemoryItem).where(or_(*conds))
+            )).scalars().all()
+        return [{"id": r.id, "content": r.content, "kind": r.kind, "meta": r.meta,
+                 "sibling_score": 1.0} for r in rows][:top_k]
 
     # ---------- RRF 融合 ----------
     @staticmethod
