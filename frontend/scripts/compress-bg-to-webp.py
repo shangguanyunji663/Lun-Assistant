@@ -13,9 +13,9 @@ ROUND10 · L-1 体积优化
   - 保留为 _backup/<name>.png，万一需要回退可一行切回
   - 后续可走 git rm -r frontend/public/bg/_backup 等到稳态再清理
 """
-import os
 import sys
 from pathlib import Path
+
 from PIL import Image
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent

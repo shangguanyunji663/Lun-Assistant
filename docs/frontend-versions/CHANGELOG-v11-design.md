@@ -34,7 +34,7 @@
 | --- | --- | --- |
 | `preview.html` | 整体重写（三主题 → 四主题 + design tokens + 新增 C 暗墨夜山 / D 青绿金碧） | 854 |
 | `tuner.html` | 整体重写（三主题 → 四主题 + 全部 token 化 + 顶部金线/月色边线/中缝等微装饰） | 857 |
-| `CHANGELOG-v11.md` | 本文档（新文件） | — |
+| `CHANGELOG-v11-design.md` | 本文档（新文件） | — |
 
 ---
 

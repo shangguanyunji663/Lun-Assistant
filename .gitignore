@@ -28,6 +28,11 @@ frontend/dist/
 frontend/.vite/
 # WebP 转换保留的 PNG 回退资产（已移出 public，避免 vite build 复制进 dist；见 docs/OPTIMIZATION_ROUND10.md）
 frontend/_backup-assets/
+# Vite 构建临时文件
+*.timestamp-*.mjs
+# 前端调试残留（勿提交）
+frontend/_verify-upload/
+frontend/_theme-shots/
 
 # IDE
 .idea/

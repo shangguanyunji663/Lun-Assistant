@@ -6,7 +6,7 @@
 
 ## 文档导航
 
-> ⚠️ **变更标注（2026-09-02 · 文档治理轮）**：前端版本演进文档（v8→v12）已统一归入 [`docs/frontend-versions/`](docs/frontend-versions/README.md)，原 `docs/` 下的 ROUND7-11 位置保留迁移 stub。统一格式规范见 [`docs/FORMAT_STANDARD.md`](docs/FORMAT_STANDARD.md)。
+> ⚠️ **变更标注（2026-09-02 · 文档治理轮）**：前端版本演进文档（v8→v12）已统一归入 [`docs/frontend-versions/`](docs/frontend-versions/README.md)，原 `docs/`、`design-concepts/`、`frontend/` 下的迁移残留 stub 文档已清理。统一格式规范见 [`docs/FORMAT_STANDARD.md`](docs/FORMAT_STANDARD.md)。
 
 ### 通用 / 后端工程线（docs/）
 
@@ -158,6 +158,7 @@ envs\lunjiang\python.exe scripts/smoke_api.py --topic  # 端到端（需 uvicorn
 envs\lunjiang\python.exe evals/harness.py              # 三项指标评测
 envs\lunjiang\python.exe evals/regression.py           # 七大必测场景回归评测
 envs\lunjiang\python.exe -m pytest tests/ -q           # 离线单元测试（治理/模型/改写等 48 用例，无外部依赖）
+envs\lunjiang\python.exe -m ruff check .               # 静态检查（规则见 ruff.toml）
 envs\lunjiang\python.exe scripts/load_test.py          # 知识库检索并发压测（需 uvicorn 已启动）
 ```
 
@@ -205,6 +206,8 @@ tests/               离线单元测试
 ## 配置方法
 
 ### `.env`（本地环境变量，不入库）
+
+> `.env` 缺失时配置层自动回退加载 `.env.example` 占位默认值（首次 clone 与 CI 可直接跑测试）；生产部署仍须复制 `.env.example` 为 `.env` 并覆盖真实密钥。
 
 | 变量 | 说明 |
 | --- | --- |

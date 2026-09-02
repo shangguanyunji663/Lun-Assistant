@@ -38,13 +38,12 @@
 | `data/` | 语料库（corpus 48 个）+ 运行时上传目录（uploads） | ★★★ | uploads 已 gitignore |
 | `docs/` | 架构 / 部署 / 学习 / 优化记录 / 格式规范 | ★★★ | 后端线 ROUND1-6 + 通用文档留在根；前端版本线文档见 `frontend-versions/` |
 | `docs/frontend-versions/` | 前端版本演进文档（v8→v12 全部版本档案 + 索引 + 模板） | ★★★ | 前端文档单一真源（文档治理轮新建） |
-| `docs/design-concepts/` | 前端版本 stub 指针（正文已迁移至 frontend-versions/） | ★ | 仅剩迁移指针，勿作正文 |
-| `design-concepts/` | 前端设计稿资源（preview.html / tuner.html / 4 张山水 PNG） | ★★ | 设计基线，非生产代码；CHANGELOG 已迁至 frontend-versions/ |
+| `docs/design-concepts/` | 前端设计基线资产（preview.html / tuner.html / 4 张山水 PNG + JPG） | ★★ | 设计基线，非生产代码；版本线正文见 frontend-versions/ |
 | `frontend/` | React 前端（Vite） | ★★★ | 见 §3 |
 | `envs/` | 本地运行环境：`lunjiang`(venv) + `ollama_models`(模型) + `pkgs_cache`(conda 缓存) | ★★★ | **全部 gitignore**，勿提交 |
 | `.github/workflows/` | GitHub Pages CI | ★★★ | 自动构建部署 |
 | `README.md` | 项目说明 | ★★★ | 更新于 2026-09-02 |
-| `.editorconfig` / `.gitignore` / `pytest.ini` / `requirements.txt` | 工程规范 | ★★★ | — |
+| `.editorconfig` / `.gitignore` / `pytest.ini` / `ruff.toml` / `pyproject.toml` / `requirements.txt` | 工程规范 | ★★★ | ruff/mypy 规则见 `pyproject.toml` + `ruff.toml` |
 | `.env` / `.env.example` | 环境变量（密钥/端口） | ★★★ | `.env` 已 gitignore，勿提交 |
 | `.workbuddy/` | WorkBuddy 会话记忆 | ★★ | 工具数据，勿删 memory/ |
 
@@ -75,7 +74,6 @@ frontend/
 ├── index.html             # theme-color 等
 ├── vite.config.js         # base=/Lun-Assistant/（GitHub Pages）
 ├── package.json / package-lock.json
-├── CHANGELOG-v11.md       # 【stub】已迁移 → docs/frontend-versions/CHANGELOG-v11-frontend.md
 └── node_modules/          # gitignore，勿提交
 ```
 
