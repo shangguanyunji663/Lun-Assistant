@@ -41,6 +41,10 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Lint (eslint)
+        working-directory: frontend
+        run: npm run lint
+
       - name: Build (vite build, NODE_ENV=production → base='/Lun-Assistant/')
         working-directory: frontend
         run: npm run build
@@ -88,7 +92,7 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        run: pip install -r requirements.txt ruff
+        run: pip install -r requirements.txt
 
       - name: Lint (ruff)
         run: ruff check .

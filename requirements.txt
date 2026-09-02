@@ -1,49 +1,60 @@
+# 依赖锁定：`==` 固定到 2026-09 本机验证通过的版本（pip freeze 实测）。
+# 升级时需逐个 bump 并重跑 pytest / ruff / mypy / 冒烟脚本。
+# 开发工具（mypy/ruff）供本地与 CI 使用：CI 只需 `pip install -r requirements.txt`。
+
 # ===== Web 框架与服务 =====
-fastapi>=0.115
-uvicorn[standard]>=0.32
-pydantic>=2.9
-pydantic-settings>=2.6
-pyyaml>=6.0
+fastapi==0.141.1
+uvicorn[standard]==0.52.4
+pydantic==2.13.5
+pydantic-settings==2.15.0
+pyyaml==6.0.3
 
 # ===== 数据库 =====
-sqlalchemy[asyncio]>=2.0.36
-asyncpg>=0.30
-psycopg[binary,pool]>=3.2
-pgvector>=0.3.6
+sqlalchemy[asyncio]==2.0.52
+asyncpg==0.31.0
+psycopg[binary,pool]==3.3.4
+pgvector==0.5.0
+
+# ===== 数据库迁移（Alembic，替换 create_all）=====
+alembic==1.19.1
 
 # ===== Redis =====
-redis>=5.2
+redis==7.4.1
 
 # ===== 认证与安全 =====
-pyjwt>=2.10
-bcrypt>=4.2
+pyjwt==2.13.0
+bcrypt==5.0.0
 
 # ===== LLM / Agent =====
-openai>=1.58
-langchain>=0.3.14
-langchain-openai>=0.2.14
-langchain-community>=0.3.14
-langgraph>=0.2.62
-langgraph-checkpoint-postgres>=2.0.9
+openai==3.6.0
+langchain==1.3.18
+langchain-openai==1.6.0
+langchain-community==0.4.2
+langgraph==1.2.11
+langgraph-checkpoint-postgres==3.1.2
 
 # ===== RAG =====
-rank-bm25>=0.2.2
-jieba>=0.42.1
-sentence-transformers>=3.3
-numpy>=1.26
+rank-bm25==0.2.2
+jieba==0.42.1
+sentence-transformers==6.0.1
+numpy==2.4.6
 
 # ===== 文档解析（项目级知识库）=====
-pymupdf>=1.24
-python-docx>=1.1
+pymupdf==1.28.2
+python-docx==1.2.0
 
 # ===== 评测与图表 =====
-matplotlib>=3.8
-psutil>=5.9
+matplotlib==3.11.1
+psutil==7.2.2
 
 # ===== 工具 =====
-httpx>=0.28
-python-multipart>=0.0.18
+httpx==0.28.1
+python-multipart==0.0.32
 
 # ===== 测试 =====
-pytest>=8.3
-pytest-asyncio>=0.25
+pytest==9.1.1
+pytest-asyncio==1.4.0
+
+# ===== 开发工具（静态检查）=====
+mypy==2.3.1
+ruff==0.16.5
