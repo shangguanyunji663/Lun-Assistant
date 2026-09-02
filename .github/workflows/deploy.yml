@@ -45,9 +45,11 @@ jobs:
         working-directory: frontend
         run: npm run build
 
-      # 配置 GitHub Pages
+      # 配置 GitHub Pages（enablement: true 让 action 在仓库未启用 Pages 时自动启用，避免 404）
       - name: Setup Pages
         uses: actions/configure-pages@v5
+        with:
+          enablement: true
 
       - name: Upload artifact (frontend/dist)
         uses: actions/upload-pages-artifact@v3
