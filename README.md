@@ -24,6 +24,7 @@
 | [🛠 优化记录五](docs/OPTIMIZATION_ROUND5.md)   | 第五轮优化（学术工具生态/并发压测/agnes对话底座）                                            |
 | [🛠 优化记录六](docs/OPTIMIZATION_ROUND6.md)   | 第六轮优化（架构改进与工程化治理/P0修复/测试骨架）                                             |
 | [🛠 优化记录十二](docs/OPTIMIZATION_ROUND12.md) | 第十二轮优化（静态检查接入CI/依赖锁定/前端Hooks/可移植性）                                      |
+| [🛠 优化记录十三](docs/OPTIMIZATION_ROUND13.md) | 第十三轮优化（审计参数合规/Query改写自适应/记忆召回排序/多实例部署）                                  |
 | [🚀 部署指南](docs/DEPLOY.md)                 | GitHub Pages 自动部署到 `https://shangguanyunji663.github.io/Lun-Assistant/` |
 | [💡 常见问题](#常见问题)                          | 排障手册                                                                    |
 
@@ -49,9 +50,9 @@
 | 模块      | 说明                                                                                                           | 关键实现                                    |
 | ------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
 | 多智能体编排  | 1 主控 Supervisor 调度 6 类专项 Agent + **Plan-Execute-Replan 规划器**（复合任务），最大 3 跳防回环                                 | `services/agent/`                       |
-| 意图预分类   | 规则 → 向量原型 → LLM 兜底三级，56ms / 100% 准确                                                                          | `services/classifier/intent.py`         |
+| 意图预分类   | 规则 → 向量原型 → LLM 兜底三级，22 条样本 100% 准确（`evals/datasets/intent.jsonl`）                                           | `services/classifier/intent.py`         |
 | 项目级知识库  | 多格式上传(PDF/DOCX/TXT/MD)→解析→分块→向量化入库，MD5去重/扫描件拒绝/跨项目隔离，`project`/`hybrid` 双模式检索                                | `services/rag/ingest/`                  |
-| 三阶段 RAG | Query 改写(规则兜底+防漂移，返回策略标记) → 稠密+稀疏+**相邻窗口**多路 RRF 融合(项目保底) → 交叉精排+降噪对比                                        | `services/rag/`                         |
+| 三阶段 RAG | Query 改写(难度自适应 off/auto/on + 规则兜底+防漂移，返回策略标记) → 稠密+稀疏+**相邻窗口**多路 RRF 融合(项目保底) → 交叉精排+降噪对比                    | `services/rag/`                         |
 | 结构化产物   | 综述初稿 / 开题报告 / 答辩大纲（模板骨架 + RAG 证据注入，治理工具 `generate_artifact`）                                                 | `services/governance/artifacts.py`      |
 | 学术工具生态  | 翻译 / 润色 / 方法推荐 / 参考文献格式化 / 摘要生成 / 术语解析                                                                       | `services/governance/academic_tools.py` |
 | 工具治理    | RBAC → 限流 → 熔断 → 三级容错（重试/降级/人机兜底）→ 分布式锁 → 审计 → 行为观测 → Skill（论文 8 类 + 学术 6 类共 14 个工具统一经治理栈，同步 handler 自动线程池化） | `services/governance/`                  |
@@ -114,6 +115,8 @@ copy .env.example .env     # 修改 PG / Redis 连接信息（详见下文「配
 
 ```powershell
 envs\lunjiang\python.exe scripts/check_env.py          # 连通性检查（Ollama/Redis/PG/pgvector）
+# ⚠️ check_env 按 Ollama 底座探测 LLM：默认 provider=agnes（云端兼容）时"对话模型"项会 404，属预期。
+#    需全本地验证时，先把 settings.yaml 的 default_provider 临时切回 ollama 再运行（见 FAQ）。
 envs\lunjiang\python.exe scripts/ingest_corpus.py      # data/corpus/*.txt 入库（--force 重建）
 ```
 
@@ -140,7 +143,7 @@ envs\lunjiang\python.exe scripts/smoke_graph.py        # Agent 图编译检查
 envs\lunjiang\python.exe scripts/smoke_api.py --topic  # 端到端（需 uvicorn 已启动）
 envs\lunjiang\python.exe evals/harness.py              # 三项指标评测
 envs\lunjiang\python.exe evals/regression.py           # 七大必测场景回归评测
-envs\lunjiang\python.exe -m pytest tests/ -q           # 离线单元测试（治理/模型/改写等 48 用例，无外部依赖）
+envs\lunjiang\python.exe -m pytest tests/ -q           # 离线单元测试（治理/模型/改写等 59 用例，无外部依赖）
 envs\lunjiang\python.exe -m ruff check .               # 静态检查（规则见 ruff.toml）
 envs\lunjiang\python.exe scripts/load_test.py          # 知识库检索并发压测（需 uvicorn 已启动）
 ```
@@ -151,22 +154,22 @@ envs\lunjiang\python.exe scripts/load_test.py          # 知识库检索并发�
 
 > `.env` 缺失时配置层自动回退加载 `.env.example` 占位默认值（首次 clone 与 CI 可直接跑测试）；生产部署仍须复制 `.env.example` 为 `.env` 并覆盖真实密钥。
 
-| 变量                                                                       | 说明                                |
-| ------------------------------------------------------------------------ | --------------------------------- |
-| `SECRET_KEY`                                                             | JWT 签名密钥，**生产环境必须修改**             |
-| `APP_HOST` / `APP_PORT` / `APP_DEBUG`                                    | 应用监听地址、端口与调试开关                    |
-| `PG_HOST` / `PG_PORT` / `PG_USER` / `PG_PASSWORD` / `PG_DB`              | PostgreSQL 连接信息（本项目端口为 **5433**）  |
-| `REDIS_HOST` / `REDIS_PORT` / `REDIS_DB`                                 | Redis 连接信息（默认 6379/0）             |
-| `DEEPSEEK_API_KEY` / `ZHIPU_API_KEY` / `QWEN_API_KEY` / `OPENAI_API_KEY` | 各云底座密钥（切换 provider 时填写）           |
-| `AGNES_BASE_URL` / `AGNES_API_KEY`                                       | 默认对话底座 agnes-2.5-flash（OpenAI 兼容） |
+| 变量                                                          | 说明                                                                                |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `SECRET_KEY`                                                | JWT 签名密钥，**生产环境必须修改**                                                             |
+| `APP_HOST` / `APP_PORT` / `APP_DEBUG`                       | 应用监听地址、端口与调试开关                                                                    |
+| `PG_HOST` / `PG_PORT` / `PG_USER` / `PG_PASSWORD` / `PG_DB` | PostgreSQL 连接信息（本项目端口为 **5433**）                                                  |
+| `REDIS_HOST` / `REDIS_PORT` / `REDIS_DB`                    | Redis 连接信息（默认 6379/0）                                                             |
+| `DEEPSEEK_API_KEY` / `ZHIPU_API_KEY` / `QWEN_API_KEY`       | 各云底座密钥（切换 provider 时填写；settings.yaml 无 openai provider，旧 `OPENAI_API_KEY` 为无效残留键） |
+| `AGNES_BASE_URL` / `AGNES_API_KEY`                          | 默认对话底座 agnes-2.5-flash（OpenAI 兼容）                                                 |
 
 ### `configs/settings.yaml`（主配置）
 
-- **对话 / 嵌入双底座**：默认 `llm.default_provider=agnes`（云端 agnes-2.5-flash，Key 在 `.env` 的 `AGNES_API_KEY`）、`llm.embedding_provider=ollama`（本地 bge-m3，离线可用）；`default_provider` 可切换 `ollama` / `deepseek` / `zhipu` / `qwen` / `agnes`，两者可解耦。16GB 内存机器如需全本地：Ollama 的 `/v1` 兼容端点不认请求级 `options`，用 Modelfile 给 `qwen3:4b` 建 `qwen3:4b-ctx4096` 镜像副本（blob 复用，几乎不占额外磁盘）并切换 provider。
+- **对话 / 嵌入双底座**：默认 `llm.default_provider=agnes`（云端 agnes-2.5-flash，Key 在 `.env` 的 `AGNES_API_KEY`）、`llm.embedding_provider=ollama`（本地 bge-m3，离线可用）；`default_provider` 可切换 `ollama` / `deepseek` / `zhipu` / `qwen` / `agnes`，两者可解耦。16GB 内存机器如需全本地：Ollama 的 `/v1` 兼容端点不认请求级 `options`，用 Modelfile 给 `qwen3:4b` 建 `qwen3:4b-ctx4096` 镜像副本（blob 复用，几乎不占额外磁盘）并切换 provider。切换操作与 embedding 维度变更的后果见 [学习指南第 6 课](docs/LEARNING_GUIDE.md#第-6-课-llm-接入层统一入口多底座切换)。
 
 - **向量维度动态化**：pgvector 向量列维度由 `llm.providers.<底座>.embedding_dim` 动态决定（`infrastructure/config.get_embedding_dim()`）；嵌入底座返回维度不符时运行时抛错。已引入 Alembic 迁移骨架（`alembic/`），初始迁移待数据库环境就绪后生成，开发期沿用 `create_all` 兜底（见 [ROUND12](docs/OPTIMIZATION_ROUND12.md#五p0-2-alembic-迁移骨架暂停推进)）
 
-- **RAG 参数**：`rag.rewrite_enabled`（Query 改写开关）、`rag.sibling_window`（相邻窗口第三引擎半径，0=关闭）、`rag.max_upload_size_mb`（知识库单文件上限）、`rag.knowledge.upload_dir`（原始文件落盘目录，默认 `data/uploads/`，已 gitignore）、`rag.knowledge.min_text_chars`（低于该字数视为扫描件/空文档拒绝）
+- **RAG 参数**：`rag.rewrite_enabled`（Query 改写总开关）、`rag.rewrite_mode`（off/auto/on，默认 auto：短句简单查询跳过 LLM 仅规则关键词，口语化长尾才走 LLM 改写，见 [ROUND13](docs/OPTIMIZATION_ROUND13.md)）、`rag.sibling_window`（相邻窗口第三引擎半径，0=关闭）、`rag.max_upload_size_mb`（知识库单文件上限）、`rag.knowledge.upload_dir`（原始文件落盘目录，默认 `data/uploads/`，已 gitignore）、`rag.knowledge.min_text_chars`（低于该字数视为扫描件/空文档拒绝）
 
 ### `configs/tools.yaml`（工具治理参数）
 
@@ -224,7 +227,8 @@ frontend/            React 18 + Vite（SSE 对话 / Markdown / 时间线 / 项�
 docs/                文档（学习指南 / 优化记录）
 tests/               离线单元测试
 alembic/             SQLAlchemy 迁移（异步 env.py 聚合全部模型，待生成初始迁移）
-docker-compose.yml   PostgreSQL(pgvector) + Redis 一键编排（端口与 .env 一致）
+docker-compose.yml   PostgreSQL(pgvector) + Redis + app 后端服务编排（容器内走服务名；`--scale app=2` 起多实例）
+Dockerfile           后端容器镜像（python:3.12-slim，非 root + /health 健康检查，见 [ROUND13](docs/OPTIMIZATION_ROUND13.md)）
 ```
 
 依赖方向：`api → services → infrastructure → configs`，禁止反向。

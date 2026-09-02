@@ -64,23 +64,27 @@ class RagPipeline:
     async def search(self, query: str, *, top_k: int | None = None,
                      use_rewrite: bool = True, use_rerank: bool = True,
                      project_id: int | None = None,
-                     no_project_only: bool = False) -> dict:
+                     no_project_only: bool = False,
+                     rewrite_mode: str | None = None) -> dict:
         """统一检索入口。
 
         - project_id: 传入后额外纳入该项目私有知识库（user_doc）检索；None 时仅公共语料。
         - no_project_only: 仅检索项目知识库（知识库管理页"库内检索"用），跳过公共语料。
+        - rewrite_mode: "on/auto/off" 透传 Query 改写模式；None 时 use_rewrite=True 走
+          配置 rag.rewrite_mode（默认 auto），use_rewrite=False 等效 off。
+          评测脚本（ab.py/harness.py）显式传 on/off 保持 AB 组别口径不被 auto 污染。
         返回 {"rewritten", "keywords", "results": [{content, meta, scores...}]}
         """
         top_k = top_k or int(get_value("rag", "final_top_k", default=5))
         recall_k = int(get_value("rag", "recall_top_k", default=20))
         window = int(get_value("rag", "sibling_window", default=1))
 
-        # S1: Query 改写（LLM + 规则兜底；拒答回退）
+        # S1: Query 改写（LLM + 规则兜底；拒答回退；auto 难度自适应）
         rewritten, keywords = query, []
         if use_rewrite and get_value("rag", "rewrite_enabled", default=True):
-            rw = await rewrite_query(query)
+            rw = await rewrite_query(query, mode=rewrite_mode)
             rewritten, keywords = rw["rewritten"], rw["keywords"]
-            if use_rewrite and _is_rejection(rewritten):
+            if _is_rejection(rewritten):
                 rewritten = query
 
         # S2: 多路召回

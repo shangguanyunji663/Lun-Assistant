@@ -1,0 +1,14 @@
+# 构建上下文瘦身：排除本地环境/缓存/大目录
+.git
+__pycache__/
+*.pyc
+.env
+.venv
+envs
+data/uploads
+docs/design-concepts
+docs/frontend-versions/*-screenshots
+evals/charts
+frontend/node_modules
+frontend/dist
+scripts/*.png

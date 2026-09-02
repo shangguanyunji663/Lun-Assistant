@@ -33,15 +33,16 @@
 | `infrastructure/` | 基础设施（models 模型定义 / rbac 权限） | ★★★ | 数据模型与权限 |
 | `configs/` | 配置（settings.yaml / rbac.yaml / tools.yaml / ollama Modelfile） | ★★★ | 运行时配置 |
 | `scripts/` | 运维/冒烟脚本（check_env / smoke_* / ingest_corpus / load_test） | ★★ | 手动运维用 |
-| `tests/` | pytest 测试 | ★★★ | `pytest.ini` 配置 |
+| `tests/` | pytest 测试（59 用例） | ★★★ | 新增 `test_audit_sanitize.py`（R13） |
 | `evals/` | 评测（harness / ab / regression + datasets + 报告） | ★★ | 含 `__init__.py` 为包 |
-| `data/` | 语料库（corpus 48 个）+ 运行时上传目录（uploads） | ★★★ | uploads 已 gitignore |
-| `docs/` | 架构 / 部署 / 学习 / 优化记录 / 格式规范 | ★★★ | 后端线 ROUND1-6 + 通用文档留在根；前端版本线文档见 `frontend-versions/` |
+| `data/` | 语料库（corpus 81 个 txt）+ 运行时上传目录（uploads） | ★★★ | uploads 已 gitignore |
+| `docs/` | 架构 / 部署 / 学习 / 优化记录 / 格式规范 | ★★★ | 后端线 ROUND1-13 + 通用文档留在根；前端版本线文档见 `frontend-versions/` |
 | `docs/frontend-versions/` | 前端版本演进文档（v8→v12 全部版本档案 + 索引 + 模板） | ★★★ | 前端文档单一真源（文档治理轮新建） |
 | `docs/design-concepts/` | 前端设计基线资产（preview.html / tuner.html / 4 张山水 PNG + JPG） | ★★ | 设计基线，非生产代码；版本线正文见 frontend-versions/ |
 | `frontend/` | React 前端（Vite） | ★★★ | 见 §3 |
 | `envs/` | 本地运行环境：`lunjiang`(venv) + `ollama_models`(模型) + `pkgs_cache`(conda 缓存) | ★★★ | **全部 gitignore**，勿提交 |
 | `.github/workflows/` | GitHub Pages CI | ★★★ | 自动构建部署 |
+| `Dockerfile` / `.dockerignore` / `docker-compose.yml` | 容器化：后端镜像（非 root + /health）+ PG/Redis/app 编排，`--scale app=2` 起多实例 | ★★ | R13 新增 app 服务；详见 [ROUND13](OPTIMIZATION_ROUND13.md) |
 | `README.md` | 项目说明 | ★★★ | 更新于 2026-09-02 |
 | `.editorconfig` / `.gitignore` / `pytest.ini` / `ruff.toml` / `pyproject.toml` / `requirements.txt` | 工程规范 | ★★★ | ruff/mypy 规则见 `pyproject.toml` + `ruff.toml` |
 | `.env` / `.env.example` | 环境变量（密钥/端口） | ★★★ | `.env` 已 gitignore，勿提交 |

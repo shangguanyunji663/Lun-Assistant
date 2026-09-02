@@ -50,7 +50,9 @@ async def run_variant(dataset: Path, use_rewrite: bool) -> dict:
     rows = []
     for c in cases:
         t0 = time.perf_counter()
-        out = await rag_pipeline.search(c["query"], use_rewrite=use_rewrite, top_k=K)
+        # R13: 显式传 rewrite_mode 保持 AB 组别口径（on=强制LLM / off=关闭），不被 auto 污染
+        out = await rag_pipeline.search(c["query"], use_rewrite=True, top_k=K,
+                                         rewrite_mode=("on" if use_rewrite else "off"))
         dt = int((time.perf_counter() - t0) * 1000)
         files = [(r.get("meta") or {}).get("file") for r in out["results"]]
         rank = next((i + 1 for i, f in enumerate(files) if f == c["expected"]), None)

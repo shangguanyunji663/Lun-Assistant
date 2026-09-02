@@ -64,7 +64,9 @@ async def eval_rag(*, use_rewrite: bool = True, k: int = 5, verbose: bool = True
     hits, misses = 0, []
     t0 = time.perf_counter()
     for c in cases:
-        out = await rag_pipeline.search(c["query"], use_rewrite=use_rewrite, top_k=k)
+        # R13: 显式传 rewrite_mode 保持评测口径（on/off），不受线上 auto 配置影响
+        out = await rag_pipeline.search(c["query"], use_rewrite=True, top_k=k,
+                                        rewrite_mode=("on" if use_rewrite else "off"))
         files = {(r.get("meta") or {}).get("file") for r in out["results"]}
         if c["expected"] in files:
             hits += 1

@@ -89,12 +89,15 @@ memory:
   compress_trigger_tokens: 3000     # 状态体积触发压缩阈值
   target_compression_ratio: 0.3     # 四级压缩目标：压至原始30%以内
   preference_top_k: 10              # 用户偏好召回条数
+  recall_semantic_weight: 0.7       # 长期记忆召回：语义距离权重（0~1，越大越偏距离，importance 为次因子）
 
 # ------------------------------------------------------------
 # RAG 三阶段递进检索
 # ------------------------------------------------------------
 rag:
-  rewrite_enabled: true             # 阶段1：Query改写
+  rewrite_enabled: true             # 阶段1：Query改写总开关（false 时恒为 idle）
+  rewrite_mode: auto                # 改写模式: off=关闭 / auto=按查询难度自适应(默认) / on=强制LLM
+                                    # auto: 简单短句查询跳过LLM仅规则关键词(strategy=skip)，口语化长尾才走LLM
   recall_top_k: 20                  # 阶段2：双路混合召回（dense+bm25 各取）
   final_top_k: 5                    # 阶段3：精排后保留
   chunk_size: 512
@@ -127,6 +130,9 @@ governance:
     pattern_threshold: 3            # 同模式累计3次自动沉淀 Skill
   lock:
     ttl_seconds: 300                # 分布式锁默认TTL
+  audit:
+    sanitize_chars: 200             # 审计参数合规：超该字符数的字符串截断为 指纹+摘要+长度（R13）
+                                    # 硬约束：审计不存整段正文，仅留 sha256 指纹供对账
 
 # ------------------------------------------------------------
 # 可观测与评测

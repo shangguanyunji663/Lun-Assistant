@@ -91,7 +91,7 @@ cat dist/index.html | head -20                    # 看 base href 和资源路�
 同一 workflow 内并行运行 `test-backend` job（跑在云端 Ubuntu，与本机 Windows 无关）：
 1. **Setup Python 3.11** —— `pip install -r requirements.txt ruff`
 2. **Lint (ruff)** —— `ruff check .`（规则见根目录 `ruff.toml`）
-3. **Run unit tests** —— `pytest tests/ -q`（48 个离线单测，全部 mock 外部依赖；`.env` 缺失时配置层自动回退 `.env.example` 占位值，无需在 CI 造 `.env`）
+3. **Run unit tests** —— `pytest tests/ -q`（59 个离线单测，全部 mock 外部依赖；`.env` 缺失时配置层自动回退 `.env.example` 占位值，无需在 CI 造 `.env`）
 
 ### 关键设计
 - **不用 gh-pages 分支 / actions-gh-pages**：直接用官方 `actions/deploy-pages@v4` + `actions/upload-pages-artifact@v3`，更安全（OIDC token，无 write 权限泄露）

@@ -108,7 +108,7 @@
 
 | 指标            | 目标     | 定义                                 |
 | ------------- | ------ | ---------------------------------- |
-| 意图分类准确率       | ≥ 98%  | 三层分类器在 200 条测试样本上的正确率              |
+| 意图分类准确率       | ≥ 98%  | 三层分类器在评测集（22 条）上的正确率              |
 | RAG Recall\@5 | ≥ 0.90 | 检索返回的 Top5 文档里包含正确答案的比例            |
 | 上下文压缩比        | ≤ 0.30 | 压缩后 token 数 / 压缩前 token 数（省钱、省上下文） |
 
@@ -337,7 +337,7 @@ llm:
 ```
 短期对话 services/memory/short_term.py    本轮/近 N 轮（Redis List + TTL 30 天）
 项目结构化 services/memory/structured.py   该论文项目的题目/大纲/结论（PG）
-长期向量   services/memory/long_term.py    历史沉淀的知识点（PG Vector 相似度召回）
+长期向量   services/memory/long_term.py    历史沉淀的知识点（PG Vector 相似度 + 重要度加权召回）
 用户偏好   services/memory/preference.py   用户长期习惯（"我偏好综述式回答"）
 ```
 
@@ -398,7 +398,7 @@ services/rag/ingest/parsers.py         项目知识库文档解析器工厂（PD
 services/rag/ingest/pipeline.py        知识库文档 上传→解析→分块→向量化入库（MD5去重/批量embedding）
 services/rag/retriever.py              HybridRetriever：dense_search / sparse_search / project_dense_search / sibling_search / rrf_fuse
 services/rag/reranker.py               Reranker：bge-reranker-base（CPU 多线程 + 本地缓存检测）
-services/rag/query_rewrite.py          rewrite_query()：LLM 改写，失败/拒答/漂移回退规则字典改写
+services/rag/query_rewrite.py          rewrite_query(mode=off|auto|on)：难度自适应（简单短句跳过 LLM），失败/拒答/漂移回退规则字典改写
 services/rag/pipeline.py               RagPipeline.search()：把上面串成流水线（多路融合 + 项目保底 + 降噪）
 ```
 
@@ -447,7 +447,7 @@ Supervisor 要决定把请求路由给哪个专项 Agent（文献？写作？查
 第三级  LLM 兜底  让 LLM 直接输出 JSON 类别（实时准确率兜底）
 ```
 
-实测：56ms 平均耗时、100% 准确率（`evals/datasets/intent.jsonl` 上评测）。
+实测：`evals/datasets/intent.jsonl`（22 条）上 100% 准确（均值耗时约 56ms，随 LLM 底座波动）。
 
 ### 9.3 动手
 
@@ -473,7 +473,8 @@ START → supervisor（意图分类 + 路由）
               ▼
         literature │ writing │ review │ ...（6 个 specialist 节点）│ planner
               ▼
-        supervisor 再评估：任务完成？→ END；还要继续？→ 再路由（≤3 跳防回环）
+        supervisor 收尾评估（stop_reason=done/max_hops）→ END
+        （图内为"一次 supervisor → 单一专项"的单轮接力；复合任务由 planner 内部多步完成，无多 Agent 回环再分配）
 ```
 
 `AgentState`（TypedDict）是整个图的"共享黑板"，节点往里写、下个节点读。
@@ -489,7 +490,8 @@ START → supervisor（意图分类 + 路由）
 - 用户在前端看到问题并反馈 → 前端调 `/api/agent/resume` → LangGraph `Command(resume=feedback)` 从挂起点接着跑。
 
 ```python
-# specialists/node_factory.py 中伪代码示意
+# specialists/node_factory.py 伪代码示意
+# （真实 interrupt 载荷另含 type/agent/proposal 字段，完整结构见 node_factory.py L66）
 need_confirm = await _need_confirmation(state)
 if need_confirm:
     feedback = interrupt({"question": "按这个大纲继续吗?"})
@@ -546,6 +548,8 @@ services/governance/
 ⑨ Skill 观测 observe()（连续 3 次同模式成功 → 沉淀 Skill）
 ```
 
+> 注：③ 熔断按 `tools.yaml` 的 `breaker` 分组生效；④ 分布式锁**仅 `lock_key` 非空时启用**——当前内置 14 个工具均未配置，属预留能力（装配示例见 `tests/test_tool_registry_call.py::test_call_distributed_lock_assembled_for_locked_tool`）。
+
 **这就是"治理栈 9 项"冒烟测试测的东西**（`scripts/smoke_governance.py`）。
 
 ### 11.3 动手
@@ -570,7 +574,7 @@ envs\lunjiang\python.exe scripts/smoke_governance.py
 
 - token 走**微缓冲**：攒一个小批次再推，避免"一段文字被切成几十个碎片"；
 
-- 前端用 EventSource 订阅，同一队列出流，天然有序。
+- 前端用 `fetch + ReadableStream.getReader()` 逐行解析 SSE（`/api/agent/chat` 是 **POST**，EventSource 只能 GET，故不用 EventSource；见 `frontend/src/api.js`），同一队列出流，天然有序。
 
 ```python
 hub.emit("node_start", {"agent": "literature", "title": "文献检索Agent"})
@@ -599,11 +603,11 @@ envs\lunjiang\python.exe scripts/smoke_trace.py
 
 | 文件               | 职责                                    |
 | ---------------- | ------------------------------------- |
-| `main.jsx`       | 入口                                    |
-| `App.jsx`        | 登录/注册、项目页、对话页 + 时间线；**项目知识库面板**（上传/清单/检索）；助手消息走 Markdown |
-| `api.js`         | fetch 封装：自动带 token、解析 SSE 事件流；项目/知识库 API（`knowledge*` 4 接口） |
-| `styles.css`     | 全局样式（青绿设色山水主题：月白底/山影剪影/竹青/印泥红）          |
-| `vite.config.js` | dev 代理 `/api → http://127.0.0.1:8000` |
+| `main.jsx`       | React 入口                                    |
+| `App.jsx`        | 登录/注册、项目页、对话页 + 时间线；**项目知识库面板**（上传/清单/检索）；主题切换器（A 柔雾青绿/B 黑白瑞士/C 暗墨夜山/D 青绿金碧，localStorage 记忆）；状态逻辑拆分为 4 个自定义 hook（`useTheme`/`useSessions`/`useProjects`/`useChat`，见 `src/hooks/`） |
+| `api.js`         | fetch 封装：自动带 token、`fetch + getReader` 逐行解析 SSE 事件流；项目/知识库 API（`knowledge*` 4 接口） |
+| `styles.css`     | 全局样式 + 四主题 design tokens（`:root`=A 主题，`body[data-theme="b|c|d"]` 三个 token 块；ROUND11 起 B 为黑白瑞士） |
+| `vite.config.js` | dev 代理 `/api → http://127.0.0.1:8000`；生产 `base` 适配 GitHub Pages（仅 `NODE_ENV=production` 生效） |
 
 SSE 消费侧要点：`api.js` 里把 `POST /api/agent/chat` 的事件流按类型分发——`node_start/route/node_end` 更新 "Agent 正在做什么"，`token` 追加文本，`plan/step_event` 展示 Planner 的规划与步骤，`final` 收尾。
 
@@ -623,7 +627,7 @@ envs\lunjiang\python.exe scripts/smoke_api.py --topic   # 注册→登录→建�
 
 ```
 datasets/
-├── intent.jsonl           意图分类测试集（200 条？看文件即知，格式 {"text":..., "label":...}）
+├── intent.jsonl           意图分类测试集（22 条，格式 {"text":...,"intent":...}）
 ├── retrieval.jsonl        RAG 常规检索测试集
 ├── retrieval_hard.jsonl   RAG 长尾困难集（绕口令式改写查询）
 ├── retrieval_paper_hard.jsonl  论文辅助语料口语化长尾集（第 4 轮前新增，Recall@5 96.2%）
@@ -648,7 +652,7 @@ envs\lunjiang\python.exe evals/regression.py  # 七大必测场景回归（第 4
 | A₀ | 改写开（未修复）     | 漂移导致更低                |
 | A₁ | 改写开 + 防漂移三件套 | **100% 恢复，MRR +0.17** |
 
-结论：**"改写对简单查询是负优化，对长尾复杂查询是强优化"**——于是 README 配置要点里提示 `rag.rewrite_enabled` 可按语料规模开关。这就是"文档结论必须由数据支撑"的范例。
+结论：**"改写对简单查询是负优化，对长尾复杂查询是强优化"**——于是 README 配置要点里提示 `rag.rewrite_enabled` 可按语料规模开关。这就是"文档结论必须由数据支撑"的范例。（R13 起升级为 `rag.rewrite_mode=auto` 查询级难度自适应：简单短句跳过 LLM 仅规则关键词，口语化长尾才走 LLM 改写，无需再人工开关，见 [ROUND13](OPTIMIZATION_ROUND13.md)。）
 
 ***
 
@@ -670,6 +674,7 @@ envs\lunjiang\python.exe evals/regression.py  # 七大必测场景回归（第 4
 | 10 | EventHub + SSE（课 12）                        | 1h   | 打字机了   |
 | 11 | 简单 React 页面（课 13）                           | 2h   | 能演示    |
 | 12 | 评测集 + harness（课 14）                         | 1.5h | 有数据    |
+| 13 | Dockerfile + compose（PG/Redis/app 编排，`--scale` 多副本）（ROUND13） | 1h   | 可多实例部署 |
 
 自己重建时**先砍需求再迭代**：只保留 4 个 specialist、多路召回先不做相邻窗口与项目保底、治理只要限流+重试——先跑通再补全，最后逐项对齐本项目（本项目就是你的"参考答案"）。
 
@@ -726,7 +731,9 @@ await c.delete(f"{BASE}/api/projects/{pid}/knowledge/{doc_id}", headers=h)
 
 ### 16.3 多路召回与精排降噪
 
-`RagPipeline.search(query, *, top_k=None, use_rewrite=True, use_rerank=True, project_id=None, no_project_only=False)` 阶段 2 的召回路：
+`RagPipeline.search(query, *, top_k=None, use_rewrite=True, use_rerank=True, project_id=None, no_project_only=False, rewrite_mode=None)` 阶段 2 的召回路：
+
+> `rewrite_mode ∈ on/auto/off`（R13 起支持，透传 Query 改写模式）；`None` 时 `use_rewrite=True` 走配置 `rag.rewrite_mode`（默认 auto），`use_rewrite=False` 等效 off。评测脚本显式传 `on/off` 保持 AB 组别口径。
 
 ```
 dense(改写)  稀疏BM25(改写)  关键词BM25(首词)  [原查询dense,改写生效时]  [项目知识库dense,传project_id]
@@ -746,7 +753,8 @@ dense(改写)  稀疏BM25(改写)  关键词BM25(首词)  [原查询dense,改写
 | --- | --- |
 | `llm` | LLM 改写成功且通过漂移检查（与原查询字符重合度 ≥0.15） |
 | `rule_fallback` | LLM 拒答/输出过短/漂移/异常 → 回退规则字典改写 |
-| `idle` | `rag.rewrite_enabled=false`，直接原查询（规则关键词仍可用于召回路） |
+| `skip` | `mode=auto` 且判定为简单短句查询 → 跳过 LLM，仅产出规则关键词（零 LLM 开销，R13） |
+| `idle` | `mode=off` 或 `rag.rewrite_enabled=false`，直接原查询（规则关键词仍可用于召回路） |
 
 ### 16.5 复合任务规划：事件流示例
 
@@ -787,16 +795,20 @@ out = await generate_artifact(
 | --- | --- | --- |
 | `llm.default_provider` | `agnes` | 对话底座（agnes-2.5-flash，KEY 在 .env） |
 | `llm.embedding_provider` | `ollama` | 嵌入底座与对话解耦（本地 bge-m3） |
-| `rag.rewrite_enabled` | `true` | Query 改写开关（小语料可关） |
+| `rag.rewrite_enabled` | `true` | Query 改写总开关（false 时恒为 idle） |
+| `rag.rewrite_mode` | `auto` | 难度自适应：off=关闭 / auto=短句简单查询跳过 LLM（strategy=skip），长尾才走 LLM / on=强制 LLM（R13） |
 | `rag.sibling_window` | `1` | 相邻窗口半径（0=关闭第三引擎） |
 | `rag.max_upload_size_mb` | `20` | 知识库单文件大小上限 |
 | `rag.knowledge.upload_dir` | `data/uploads` | 原始文件落盘目录（gitignore） |
 | `rag.knowledge.min_text_chars` | `30` | 低于该字数视为扫描件/空文档（拒绝+failed） |
+| `memory.recall_semantic_weight` | `0.7` | 长期记忆召回：语义距离权重（0~1，importance 为次因子，R13） |
+| `governance.audit.sanitize_chars` | `200` | 审计参数截断阈值：超该字符数 → 哈希指纹+摘要+长度（R13 合规） |
 
 ```yaml
 # configs/settings.yaml 片段
 rag:
   rewrite_enabled: true
+  rewrite_mode: auto        # off/auto/on，简单短句跳过 LLM（R13）
   sibling_window: 1
   max_upload_size_mb: 20
   knowledge:

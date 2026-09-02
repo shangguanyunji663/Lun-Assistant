@@ -8,6 +8,13 @@
   2. LLM 改写失败/拒答/过短时，回退"规则字典扩写"（术语同义 + 场景补全），
      而非直接返回原始查询；
   3. 保留 json_mode 输出解析，并对关键词做词典清洗。
+
+自适应开关（R13）：
+- AB_REPORT 结论：改写对简单查询是负优化（Recall 无增益，纯开销 2.2s→61s），
+  对长尾口语化查询是强优化。故新增三级模式 rewrite_mode: off/auto/on；
+- auto（默认）：is_rewrite_worthwhile() 规则判定查询难度，简单查询跳过 LLM、
+  直接产出规则关键词（strategy="skip"），长尾查询才走 LLM 改写；
+- 评测口径保持：ab.py / harness.py 显式传 mode="on/off"，组别语义不被 auto 污染。
 """
 import logging
 
@@ -53,6 +60,17 @@ _SYNONYM_POOL = {
     "隐私": "隐私保护 数据安全 差分隐私 脱敏",
     "云原生": "云原生 容器化 Kubernetes 微服务",
 }
+
+# 口语化/长尾信号词表：命中即视为"值得 LLM 改写"的高难度查询
+# （取自 retrieval_hard.jsonl 特征：口语词 + 场景描述，语料无直接关键词）
+_COLLOQUIAL_MARKERS = (
+    "怎么破", "站不住脚", "没底", "太像", "怕过不了", "嫌我", "乱七八糟",
+    "忘了", "乱调", "像流水账", "咋", "啥", "咋办", "心里", "慌张", "怕",
+    "总被", "嫌", "管不住", "合不上", "聊着", "再开",
+)
+
+# 长句判定阈值：超过该长度且未命中口语词，保守回归"走 LLM"（与现状行为一致）
+_QUERY_LEN_LLM = 40
 
 
 def _rule_rewrite(query: str) -> dict:
@@ -116,11 +134,39 @@ def _clean_keywords(keywords: list, query: str) -> list[str]:
     return cleaned or _rule_keywords(query)
 
 
-async def rewrite_query(query: str, provider=None) -> dict:
-    """LLM 改写优先，失败/拒答/漂移时回退规则改写。"""
+def is_rewrite_worthwhile(query: str) -> bool:
+    """查询难度判定（零 LLM）：是否值得走 LLM 改写。
+
+    auto 模式依据（AB_REPORT）：改写对简单术语查询零召回增益、
+    对口语化长尾查询是强优化。判定原则「保守向 LLM」：
+    - 口语化信号命中 → 长尾，True（改写强增益）；
+    - 短句（≤40字符）且无口语信号 → 简单，False（规则关键词兜底即可）；
+    - 其余长句 → True（与现状"全走 LLM"行为一致，不引入召回回退风险）。
+    """
+    q = (query or "").strip()
+    if not q:
+        return False
+    if any(m in q for m in _COLLOQUIAL_MARKERS):
+        return True
+    return len(q) > _QUERY_LEN_LLM
+
+
+async def rewrite_query(query: str, provider=None, *, mode: str | None = None) -> dict:
+    """Query 改写（三级模式，评测口径保持）。
+
+    mode: "on"=强制 LLM 改写 / "off"=关闭（idle）/ "auto"=难度自适应（默认）。
+    None → 读配置 rag.rewrite_mode；缺失或非法值 → 自动降级 "auto"。
+    - auto 且判定简单 → strategy="skip"：跳过 LLM，仅产出规则关键词（零 LLM 开销）；
+    - on 或 auto 判定长尾 → 走 LLM 改写，失败/拒答/漂移仍回退规则改写。
+    """
     rule_fb = _rule_rewrite(query)
-    if not get_value("rag", "rewrite_enabled", default=True):
+    mode = mode or get_value("rag", "rewrite_mode", default="auto")
+    if mode not in ("on", "auto", "off"):
+        mode = "auto"
+    if mode == "off" or not get_value("rag", "rewrite_enabled", default=True):
         return {"rewritten": query, "keywords": rule_fb["keywords"], "strategy": "idle"}
+    if mode == "auto" and not is_rewrite_worthwhile(query):
+        return {**rule_fb, "strategy": "skip"}
 
     provider = provider or LLMProvider()
     try:

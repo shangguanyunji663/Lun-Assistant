@@ -1,9 +1,15 @@
-# 论匠本地依赖编排：PostgreSQL(pgvector) + Redis。
+# 论匠本地依赖编排：PostgreSQL(pgvector) + Redis（依赖服务）。
 # 用法：
 #   docker compose up -d            # 启动依赖
 #   docker compose down             # 停止
 #   docker compose down -v          # 停止并清空数据卷
 # 端口与本仓库 .env 保持一致：PG=5433 / Redis=6379。
+#
+# R13 新增 app 服务（后端容器化，多实例部署载体）：
+#   docker compose up -d --scale app=2     # 起两个后端副本（8001/8002）
+#   - 容器内 PG_HOST/PG_PORT 覆盖为服务名 postgres:5432，本机 .env 的 5433 不受影响；
+#   - 两副本共享 Redis：分布式锁互斥、三态熔断状态视图可现场验证
+#     （副本A持锁期间副本B acquire 失败；A打满熔断阈值后B直接快速失败）。
 services:
   postgres:
     image: pgvector/pgvector:pg16
@@ -37,6 +43,33 @@ services:
       timeout: 3s
       retries: 10
 
+  app:
+    build: .
+    image: lunjiang-app:local
+    # 本机 .env 需存在（缺失时可由 .env.example 占位，密钥类键仍强制配置）
+    env_file: .env
+    environment:
+      PG_HOST: postgres            # 容器网络内走服务名
+      PG_PORT: "5432"              # 覆盖 .env 的 5433；本机直连仍用宿主映射端口
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8001:8000"                # 副本1：宿主8001；--scale app=2 时副本2映射 8002
+    volumes:
+      - uploads:/app/data/uploads
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request;urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s            # 启动含交叉编码器预加载，放宽首次就绪窗口
+      retries: 5
+
 volumes:
   pgdata:
   redisdata:
+  uploads:
