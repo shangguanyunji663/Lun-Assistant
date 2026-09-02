@@ -1,7 +1,7 @@
 """全量审计日志模型（工具调用 / 平台操作留痕）。"""
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, Integer, String, func, JSON
+from sqlalchemy import JSON, BigInteger, DateTime, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from infrastructure.models.base import Base

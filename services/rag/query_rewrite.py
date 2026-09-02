@@ -9,10 +9,8 @@
      而非直接返回原始查询；
   3. 保留 json_mode 输出解析，并对关键词做词典清洗。
 """
-import json
 import logging
 
-import jieba
 import jieba.posseg as pseg
 
 from infrastructure.config import get_value

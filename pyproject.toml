@@ -1,0 +1,22 @@
+# 项目工具链配置。
+# ruff 规则见根目录 ruff.toml（独立文件，保持单一真源）。
+# mypy：仅检查已写类型注解的代码（main/api/services/infrastructure），脚本与测试保持宽松。
+
+[tool.mypy]
+python_version = "3.11"
+# 项目为扁平命名空间包（api/services/infrastructure 顶层无 __init__.py），
+# 需显式包基址才能正确解析 api.agent / services.agent 等模块，避免 Duplicate module。
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = "."
+files = ["main.py", "api", "services", "infrastructure"]
+ignore_missing_imports = true
+# 仅检查已写类型注解的函数，不强制全库补注解（保持渐进式采用）
+check_untyped_defs = false
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+# redis.asyncio 官方 stub 的方法返回类型为 Awaitable[X] | X（同步/异步双兼容），
+# 导致大量 await 误报 misc；在统一接入点忽略，避免调用处散落 type: ignore。
+module = ["redis.*", "redis.asyncio.*", "redis.asyncio.client.*", "redis.asyncio.connection.*"]
+disable_error_code = ["misc", "arg-type", "union-attr"]

@@ -1,7 +1,16 @@
 """Trace 全链路追踪模型：Trace/Log/Memory/Action 统一落库。"""
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, Float, ForeignKey, Integer, String, Text, func, JSON
+from sqlalchemy import (
+    JSON,
+    BigInteger,
+    DateTime,
+    Float,
+    Integer,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from infrastructure.models.base import Base

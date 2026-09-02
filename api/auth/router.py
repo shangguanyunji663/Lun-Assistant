@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from infrastructure.audit import write_audit
 from api.auth.schemas import (
     LoginIn,
     RegisterIn,
@@ -15,7 +14,13 @@ from api.auth.schemas import (
     TokenOut,
     UserBrief,
 )
-from api.auth.security import create_access_token, get_current_user, hash_password, verify_password
+from api.auth.security import (
+    create_access_token,
+    get_current_user,
+    hash_password,
+    verify_password,
+)
+from infrastructure.audit import write_audit
 from infrastructure.db import get_db
 from infrastructure.models.user import User
 from services.governance.rate_limiter import RateLimitExceeded, check_rate

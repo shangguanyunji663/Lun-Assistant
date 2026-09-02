@@ -1,0 +1,20 @@
+# 论匠统一 lint 规则（ruff 0.16）
+# 原则：只启用"真实错误 + 导入规范"类规则；设计性用法显式豁免，不强行改写代码风格。
+# 本地：ruff check .   CI：deploy.yml → test-backend job 内 ruff check .
+
+[lint]
+select = ["E4", "E7", "E9", "F", "I", "F541", "RUF022", "RUF100"]
+ignore = [
+    "B008",     # FastAPI 惯用：Depends()/Field() 出现在函数默认参数
+    "BLE001",   # 入口容错：故意捕获 Exception 兜底并记录日志
+    "S110",     # 冒烟/初始化脚本局部 try/except pass
+    "ASYNC230", # 初始化与脚本内的同步 open 属预期
+    "UP035",    # 保留 typing 显式导入（可读性优先，避免改动类型注解）
+    "W605",     # 既有文案中的字符串转义，不自动改写
+    "FURB167", "FURB188", "SIM103", "PYI034", "F811", "PIE808", "RUF034", "F841",
+]
+
+[lint.per-file-ignores]
+# 冒烟/压测/评测脚本允许宽松容错
+"scripts/*.py" = ["BLE001", "S110"]
+"evals/*.py" = ["BLE001", "S110"]

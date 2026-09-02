@@ -9,7 +9,7 @@
 请求无限挂起，导致前端 SSE 连接"卡死"。
 """
 import json
-from typing import AsyncIterator, Iterable
+from typing import Any, AsyncIterator, Iterable, cast
 
 from openai import AsyncOpenAI
 
@@ -110,13 +110,13 @@ class LLMProvider:
             kwargs.update(extra)
         stream = await self._client.chat.completions.create(
             model=self.chat_model,
-            messages=list(messages),
+            messages=cast(Any, list(messages)),
             temperature=temperature if temperature is not None else self.temperature,
             stream=True,
             timeout=_timeout("chat_stream"),
             **kwargs,
         )
-        async for chunk in stream:
+        async for chunk in cast(Any, stream):
             delta = chunk.choices[0].delta.content if chunk.choices else None
             if delta:
                 yield delta
@@ -161,7 +161,7 @@ class LLMProvider:
         for round_i in range(max_rounds):
             kwargs = self._extra()
             resp = await self._client.chat.completions.create(
-                model=self.chat_model, messages=msgs, tools=tools,
+                model=self.chat_model, messages=cast(Any, msgs), tools=cast(Any, tools),
                 temperature=temperature if temperature is not None else self.temperature,
                 timeout=_timeout("chat"),
                 **kwargs,
@@ -172,10 +172,14 @@ class LLMProvider:
                         "rounds": round_i + 1}
             msgs.append(msg.model_dump(exclude_none=True))
             for tc in msg.tool_calls:
-                name = tc.function.name
+                # 兼容 CustomToolCall（无 function 属性），缺失时跳过
+                fn = getattr(tc, "function", None)
+                if fn is None:
+                    continue
+                name = fn.name
                 try:
-                    args = self._extract_json(tc.function.arguments) \
-                        if tc.function.arguments.strip().startswith("{") else {}
+                    args = self._extract_json(fn.arguments) \
+                        if fn.arguments.strip().startswith("{") else {}
                     args = args if isinstance(args, dict) else {}
                 except Exception:
                     args = {}

@@ -45,8 +45,8 @@ class BehaviorTracker:
             pipe.hincrby(key, "ok", 1)
         pipe.hset(key, "last_params", json.dumps(params, ensure_ascii=False, default=str))
         pipe.expire(key, 7 * 24 * 3600)
-        await pipe.execute()
-        h = await r.hgetall(key)
+        await pipe.execute()  # type: ignore[misc]
+        h = await r.hgetall(key)  # type: ignore[misc]
         total = int(h.get("total", 0))
         ok_cnt = int(h.get("ok", 0))
         last = h.get("last_params", "{}")

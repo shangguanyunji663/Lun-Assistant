@@ -11,8 +11,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-from infrastructure.db import get_session_factory, get_engine  # noqa: E402
-from services.memory.short_term import short_term_memory  # noqa: E402
+from infrastructure.db import get_engine
+from services.memory.short_term import short_term_memory
 
 
 async def main() -> None:
@@ -41,6 +41,7 @@ async def main() -> None:
 
     # ---- L4 偏好沉淀 + 召回（取真实用户 id 满足外键）----
     from sqlalchemy import select
+
     from infrastructure.db import get_session_factory
     from infrastructure.models.user import User
     from services.memory.preference import preference_memory

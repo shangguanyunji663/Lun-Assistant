@@ -1,18 +1,17 @@
 """语料入库：模拟文献库构建 + 分块 + 向量化 + BM25 索引重建。"""
 import logging
 import re
-from pathlib import Path
 
 from sqlalchemy import delete, func, select
 
 from infrastructure.db import get_session_factory
 from infrastructure.models.memory import MemoryItem
+from infrastructure.paths import PROJECT_ROOT
 from services.llm.provider import LLMProvider
 from services.rag.retriever import hybrid_retriever
 
 logger = logging.getLogger("lunjiang.ingest")
 
-from infrastructure.paths import PROJECT_ROOT
 CORPUS_DIR = PROJECT_ROOT / "data" / "corpus"
 
 
@@ -50,7 +49,8 @@ async def ingest_corpus(force: bool = False) -> dict:
         return {"skipped": False, "documents": 0, "chunks": 0, "note": "语料目录为空"}
 
     total_chunks = 0
-    batch_docs, batch_embs = [], []
+    batch_docs: list[MemoryItem] = []
+    batch_embs: list = []
     for fp in files:
         raw = fp.read_text(encoding="utf-8", errors="ignore")
         lines = raw.splitlines()

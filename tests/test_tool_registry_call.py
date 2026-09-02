@@ -27,7 +27,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from services.governance.circuit_breaker import CircuitOpenError
-from services.governance.dist_lock import LockNotAcquired
 from services.governance.rate_limiter import RateLimitExceeded
 from services.governance.retry import HumanInterventionRequired
 from services.governance.tool_registry import ToolRegistry, ToolSpec

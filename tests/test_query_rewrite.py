@@ -1,5 +1,5 @@
 """Query 改写规则层单测（jieba 本地，不调 LLM）。"""
-from services.rag.query_rewrite import _rule_keywords, _rule_rewrite, _clean_keywords
+from services.rag.query_rewrite import _clean_keywords, _rule_keywords, _rule_rewrite
 
 
 def test_rule_rewrite_scene_prefix():

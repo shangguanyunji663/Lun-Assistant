@@ -42,7 +42,7 @@ class LongTermMemory:
                               | (MemoryItem.user_id.is_(None)))
         if kinds:
             stmt = stmt.where(MemoryItem.kind.in_(kinds))
-        rows = (await db.execute(stmt)).scalars().all()
+        rows = list((await db.execute(stmt)).scalars().all())
         # 距离与重要度加权排序
         rows.sort(key=lambda r: r.importance, reverse=True)
         return rows[:top_k]

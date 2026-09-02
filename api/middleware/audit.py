@@ -11,11 +11,9 @@ from jwt import PyJWTError
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 
-import jwt as pyjwt
-
 from api.auth.security import decode_token
-from infrastructure.db import get_session_factory
 from infrastructure.audit import write_audit
+from infrastructure.db import get_session_factory
 
 logger = logging.getLogger("lunjiang.audit")
 

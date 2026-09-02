@@ -23,12 +23,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from infrastructure.paths import PROJECT_ROOT  # noqa: E402 —— 路径唯一真源
+from infrastructure.paths import PROJECT_ROOT
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-from services.rag.pipeline import rag_pipeline  # noqa: E402
+from services.rag.pipeline import rag_pipeline
 
 DATASET_DIR = PROJECT_ROOT / "evals" / "datasets"
 SIMPLE = DATASET_DIR / "retrieval.jsonl"
@@ -224,7 +224,7 @@ async def main() -> None:
         REPORT_JSON.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
         make_charts(data["simple"], data["hard"])
         make_report(data["simple"], data["hard"])
-        print(f"已更新报告与图表（hard.on 重跑）")
+        print("已更新报告与图表（hard.on 重跑）")
         return
 
     print("== 困难集 B 组：改写关闭 ==")

@@ -1,5 +1,5 @@
 """用户模型（原 Java 用户管理职责的 Python 化）。"""
-from sqlalchemy import String, Boolean
+from sqlalchemy import Boolean, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from infrastructure.models.base import Base, IdMixin, TimestampMixin

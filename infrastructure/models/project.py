@@ -1,6 +1,6 @@
 """论文项目模型：一个用户毕业论文 = 一个项目（记忆体系/RAG 均以项目为作用域）。"""
-from sqlalchemy import ForeignKey, String, Text, JSON
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import JSON, ForeignKey, String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 
 from infrastructure.models.base import Base, IdMixin, TimestampMixin
 

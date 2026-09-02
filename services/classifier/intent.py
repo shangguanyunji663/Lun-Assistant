@@ -94,7 +94,8 @@ class IntentClassifier:
             await self._ensure_prototypes()
             qvec = (await self.provider.embed([text]))[0]
             best_intent, best_score = "chitchat", -1.0
-            for intent, vecs in self._proto_vecs.items():
+            proto_vecs = self._proto_vecs or {}
+            for intent, vecs in proto_vecs.items():
                 score = max(self._cos(qvec, v) for v in vecs)
                 if score > best_score:
                     best_intent, best_score = intent, score
@@ -118,10 +119,11 @@ class IntentClassifier:
                 [{"role": "user", "content": prompt}], json_mode=True,
                 temperature=0.0, max_tokens=64,
             )
-            intent = data.get("intent", "chitchat")
+            payload: dict = data if isinstance(data, dict) else {}
+            intent = payload.get("intent", "chitchat")
             if intent not in INTENTS:
                 intent = "chitchat"
-            return IntentResult(intent, float(data.get("confidence", 0.5)), "llm")
+            return IntentResult(intent, float(payload.get("confidence", 0.5)), "llm")
         except Exception:
             logger.exception("LLM 分类兜底失败，默认 chitchat")
             return IntentResult("chitchat", 0.3, "llm")

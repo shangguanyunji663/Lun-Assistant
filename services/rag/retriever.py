@@ -12,7 +12,7 @@ from collections import defaultdict
 
 import jieba
 from rank_bm25 import BM25Okapi
-from sqlalchemy import select, and_, or_, func
+from sqlalchemy import and_, func, or_, select
 
 from infrastructure.db import get_session_factory
 from infrastructure.models.memory import MemoryItem

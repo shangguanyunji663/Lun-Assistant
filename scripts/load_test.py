@@ -12,12 +12,12 @@ import json
 import logging
 import statistics
 import time
-from pathlib import Path
 
 import httpx
 
 logging.basicConfig(level=logging.WARNING)
 from infrastructure.paths import PROJECT_ROOT  # noqa: E402 —— 路径唯一真源
+
 BASE = "http://127.0.0.1:8000"
 SAMPLE = ("# 压测文档\n\n混合检索与交叉编码器精排技术：密集检索通过向量相似度召回候选，"
           "稀疏检索利用 BM25 词频建模，二者经倒数排名融合后由交叉编码器精排。"
@@ -101,7 +101,7 @@ async def main() -> int:
     ap.add_argument("--total", type=int, default=40)
     args = ap.parse_args()
 
-    print(f"[1/5] 初始化（注册+建库+上传样例）…")
+    print("[1/5] 初始化（注册+建库+上传样例）…")
     token, pid, _ = await _setup()
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -132,7 +132,7 @@ async def main() -> int:
     rate = ok / done if done else 0
 
     print(f"[3/5] 结果：实际请求={done} QPS={qps:.1f} P50={p50:.0f}ms P95={p95:.0f}ms 成功率={rate * 100:.1f}%")
-    print(f"[4/5] 内存采样中（服务进程，约8s）…")
+    print("[4/5] 内存采样中（服务进程，约8s）…")
     mem = _sample_memory(_server_pid(args.url), seconds=8)
 
     report = {

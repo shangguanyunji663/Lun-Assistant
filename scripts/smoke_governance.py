@@ -9,7 +9,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from infrastructure.paths import PROJECT_ROOT  # noqa: E402 —— 路径唯一真源
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -96,6 +95,7 @@ async def main() -> None:
 
     # 恢复：回拨 opened_at 模拟等待超时 → HALF_OPEN 失败 → 再次 OPEN
     import time as _t
+
     from infrastructure.redis_client import get_redis
     rds = get_redis()
     await rds.hset("breaker:smoke_brk2", "opened_at", int((_t.time() - 999) * 1000))
@@ -121,6 +121,7 @@ async def main() -> None:
 
     # ---------- 6. 审计留痕 ----------
     from sqlalchemy import func, select
+
     from infrastructure.db import get_session_factory
     from infrastructure.models.audit import AuditLog
     async with get_session_factory()() as db:

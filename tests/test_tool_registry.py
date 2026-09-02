@@ -1,8 +1,6 @@
 """工具注册中心单测：幂等注册 + 同步/异步 handler 契约（P0 回归）。"""
 import asyncio
 
-import pytest
-
 from services.governance.tool_registry import ToolRegistry, ToolSpec
 
 
@@ -51,8 +49,8 @@ async def test_async_handler_awaited_directly():
 
 def test_all_registered_handlers_awaitable_via_invoke():
     """register_all 中全部业务工具的 handler 均能被 _invoke_handler 适配。"""
-    from services.governance.tools_impl import register_all
     from services.governance.tool_registry import tool_registry
+    from services.governance.tools_impl import register_all
 
     register_all()
     assert len(tool_registry.tools) >= 14

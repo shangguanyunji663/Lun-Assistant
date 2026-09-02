@@ -16,9 +16,18 @@ _VAR_PATTERN = re.compile(r"\$\{([^}^{]+)\}")
 
 
 def _load_env_file(path: Path) -> None:
-    """极简 .env 解析：KEY=VALUE，不覆盖已存在的环境变量。"""
+    """极简 .env 解析：KEY=VALUE，不覆盖已存在的环境变量。
+
+    回退策略：目标 .env 不存在时，加载同目录 .env.example 的占位默认值，
+    保证首次 clone（无 .env）与 CI 也能加载配置跑测试；生产密钥仍需在 .env 覆盖。
+    真正需要强校验的键（如 SECRET_KEY）仍按缺失即报错处理，不静默降级。
+    """
     if not path.exists():
-        return
+        example = path.with_name(".env.example")
+        if example.exists():
+            path = example
+        else:
+            return
     for line in path.read_text(encoding="utf-8").splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:

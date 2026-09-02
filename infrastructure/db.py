@@ -1,4 +1,6 @@
 """PostgreSQL 异步引擎/会话（SQLAlchemy 2.0 async + asyncpg）。"""
+from collections.abc import AsyncIterator
+
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from infrastructure.config import get_value
@@ -28,8 +30,8 @@ def get_session_factory() -> async_sessionmaker[AsyncSession]:
     return _session_factory
 
 
-async def get_db() -> AsyncSession:
-    """FastAPI 依赖注入用会话。"""
+async def get_db() -> AsyncIterator[AsyncSession]:
+    """FastAPI 依赖注入用会话（async generator 需返回 AsyncIterator）。"""
     async with get_session_factory()() as session:
         yield session
 

@@ -78,7 +78,7 @@ class CircuitBreaker:
 
     async def before_call(self) -> None:
         r = get_redis()
-        state = await r.eval(
+        state = await r.eval(  # type: ignore[misc]
             _BEFORE_CALL, 1, self._key,
             self.recovery_timeout, int(time.time() * 1000),
         )
@@ -86,13 +86,13 @@ class CircuitBreaker:
             raise CircuitOpenError(f"[{self.name}] 熔断打开中，请求被快速失败")
 
     async def on_success(self) -> None:
-        await get_redis().eval(_ON_RESULT, 1, self._key, 1,
+        await get_redis().eval(_ON_RESULT, 1, self._key, 1,  # type: ignore[misc]
                                self.failure_threshold, self.half_open_successes, 0)
 
     async def on_failure(self) -> None:
-        await get_redis().eval(_ON_RESULT, 1, self._key, 0,
+        await get_redis().eval(_ON_RESULT, 1, self._key, 0,  # type: ignore[misc]
                                self.failure_threshold, self.half_open_successes,
                                int(time.time() * 1000))
 
     async def state(self) -> str:
-        return await get_redis().hget(self._key, "state") or "CLOSED"
+        return await get_redis().hget(self._key, "state") or "CLOSED"  # type: ignore[misc]

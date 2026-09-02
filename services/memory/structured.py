@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from infrastructure.models.project import Project
 
-DEFAULT = {
+DEFAULT: dict = {
     "topic": {},        # 选题分析结论
     "outline": [],      # 论文大纲
     "facts": [],        # 关键事实/约束（字数、格式要求等）

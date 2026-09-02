@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from api.auth.security import require_role
 from api.observability.schemas import (
+    TraceListItem,
     TraceListOut,
     TraceReplayOut,
     TraceSpanOut,
@@ -31,7 +32,8 @@ def _build_tree(spans: list[dict]) -> list[dict]:
             dependencies=[Depends(require_role("admin"))])
 async def traces(limit: int = Query(50, ge=1, le=200)):
     """最近 trace 列表：span 数 / 总耗时 / 总成本。"""
-    return TraceListOut(items=await list_traces(limit=limit))
+    items = [TraceListItem(**row) for row in await list_traces(limit=limit)]
+    return TraceListOut(items=items)
 
 
 @router.get("/traces/{trace_id}", response_model=TraceReplayOut,

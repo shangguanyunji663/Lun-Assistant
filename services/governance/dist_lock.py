@@ -53,10 +53,10 @@ class DistributedLock:
             deadline -= 0.1
 
     async def release(self) -> None:
-        await get_redis().eval(_RELEASE, 1, self._key, self.token)
+        await get_redis().eval(_RELEASE, 1, self._key, self.token)  # type: ignore[misc]
 
     async def renew(self) -> bool:
-        return bool(await get_redis().eval(_RENEW, 1, self._key, self.token, self.ttl_ms))
+        return bool(await get_redis().eval(_RENEW, 1, self._key, self.token, self.ttl_ms))  # type: ignore[misc]
 
     async def __aenter__(self) -> "DistributedLock":
         await self.acquire()

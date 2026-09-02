@@ -13,13 +13,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from infrastructure.paths import PROJECT_ROOT  # noqa: E402 —— 路径唯一真源
 
-import httpx  # noqa: E402
-import psycopg  # noqa: E402
-import redis  # noqa: E402
+import httpx
+import psycopg
+import redis
 
-from infrastructure.config import get_settings  # noqa: E402
+from infrastructure.config import get_settings
 
 RESULTS: list[tuple[str, bool, str]] = []
 

@@ -18,9 +18,9 @@ from pathlib import Path
 from sqlalchemy import and_, delete, func, select
 
 from infrastructure.config import get_value
-from infrastructure.db import get_session_factory
 from infrastructure.models.knowledge import KnowledgeDocument
 from infrastructure.models.memory import MemoryItem
+from infrastructure.paths import PROJECT_ROOT
 from services.llm.provider import LLMProvider
 from services.rag.ingest.corpus_loader import chunk_text
 from services.rag.ingest.parsers import (
@@ -32,7 +32,6 @@ from services.rag.ingest.parsers import (
 
 logger = logging.getLogger("lunjiang.ingest")
 
-from infrastructure.paths import PROJECT_ROOT
 _BATCH = 32  # 每批向量化条数
 
 

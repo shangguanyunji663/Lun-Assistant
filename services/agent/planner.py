@@ -15,6 +15,7 @@
 """
 import json
 import logging
+from typing import Any
 
 from services.governance.tool_registry import tool_registry
 from services.llm.provider import LLMProvider
@@ -64,7 +65,7 @@ _PLAN_SYSTEM = (
 def _coerce_params(params: dict) -> dict:
     """参数规范化：数值型参数转 int（防切片/分页 TypeError），其余字符串化。"""
     num_keys = {"top_k", "length", "max_tokens", "window", "k"}
-    out = {}
+    out: dict[str, Any] = {}
     for k, v in (params or {}).items():
         if isinstance(v, (dict, list)):
             out[k] = json.dumps(v, ensure_ascii=False)[:800]
@@ -144,7 +145,8 @@ async def planner_node(state: dict) -> dict:
         sp.set_io(output={"steps": len(plan["steps"])})
 
         # ---- 2. Execute（带 evidence 累积）----
-        evidence, report = [], []
+        evidence: list[str] = []
+        report: list[dict] = []
         all_ok = True
         for i, step in enumerate(plan["steps"], 1):
             action, params = step["action"], dict(step["params"])
@@ -202,7 +204,7 @@ async def _execute_step(state, action: str, params: dict, evidence: list[str],
 def _assemble(user_input: str, plan: dict, report: list[dict], evidence: list[str]) -> str:
     lines = ["# 任务执行报告", ""]
     lines.append(f"**目标**：{plan['goal'] or user_input}")
-    lines.append(f"**执行状态**：" +
+    lines.append("**执行状态**：" +
                  ("✅ 全部步骤成功" if all(r["status"] == "ok" for r in report) else "⚠️ 部分步骤未完成"))
     lines += ["", "## 执行步骤"]
     for r in report:

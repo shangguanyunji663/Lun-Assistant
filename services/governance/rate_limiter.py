@@ -34,7 +34,7 @@ class RateLimitExceeded(Exception):
 async def check_rate(key: str, rpm: int, window_ms: int = 60_000) -> None:
     """滑动窗口限流；超限抛 RateLimitExceeded。"""
     r = get_redis()
-    allowed, info = await r.eval(
+    allowed, info = await r.eval(  # type: ignore[misc]
         _ALLOW_SCRIPT, 1, f"ratelimit:{key}", int(time.time() * 1000), window_ms, rpm
     )
     if not allowed:

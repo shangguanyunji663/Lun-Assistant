@@ -1,6 +1,4 @@
 """JWT 认证与密码散列（原 Java 安全模块的 Python 化）。"""
-import hashlib
-import hmac
 import time
 from typing import Any
 
@@ -8,7 +6,6 @@ import bcrypt
 import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from infrastructure.config import get_value

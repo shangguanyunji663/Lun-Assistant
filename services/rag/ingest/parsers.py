@@ -14,7 +14,7 @@
 import hashlib
 import logging
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from infrastructure.config import get_value
 
@@ -72,7 +72,9 @@ def _parse_pdf(data: bytes, min_text_chars: int) -> str:
     parts: list[str] = []
     doc = pymupdf.open(stream=data, filetype="pdf")
     try:
-        for page in doc:
+        # 用页索引遍历：pymupdf 的 Document stub 未声明 __iter__，索引访问更稳
+        for i in range(doc.page_count):
+            page = doc[i]
             page_text = page.get_text("text").strip()
             if page_text:
                 parts.append(page_text)

@@ -15,7 +15,6 @@ from services.memory.long_term import long_term_memory
 from services.memory.preference import preference_memory
 from services.memory.short_term import short_term_memory
 from services.memory.structured import structured_memory
-from services.streaming.hub import StreamEvent
 
 logger = logging.getLogger("lunjiang.conversation")
 

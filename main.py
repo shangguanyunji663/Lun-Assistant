@@ -7,10 +7,10 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from api.middleware.audit import AuditMiddleware
 from infrastructure.config import get_value
 from infrastructure.db import dispose_engine, get_engine
-from api.middleware.audit import AuditMiddleware
-from infrastructure.models import Base  # noqa: F401 —— 聚合导入确保全部表注册
+from infrastructure.models import Base
 
 
 class SystemInfoOut(BaseModel):
@@ -97,8 +97,8 @@ def create_app() -> FastAPI:
 
     # ---- 平台基座路由（原 Java 职责）----
     from api.auth.router import router as auth_router
-    from api.projects.router import router as projects_router
     from api.knowledge.router import router as knowledge_router
+    from api.projects.router import router as projects_router
     app.include_router(auth_router)
     app.include_router(projects_router)
     app.include_router(knowledge_router)

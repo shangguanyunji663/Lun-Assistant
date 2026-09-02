@@ -43,7 +43,9 @@ async def resilient_call(
     max_delay: float | None = None,
     **kwargs: Any,
 ) -> Any:
-    tool_name = tool_name or getattr(fn, "__name__", "unknown")
+    fn_name = getattr(fn, "__name__", "unknown")
+    assert isinstance(fn_name, str), "可调用对象 __name__ 应为字符串"
+    tool_name = tool_name or fn_name
     cfg_max = int(get_value("governance", "retry", "max_attempts", default=3))
     cfg_base = float(get_value("governance", "retry", "base_delay", default=0.5))
     cfg_top = float(get_value("governance", "retry", "max_delay", default=8.0))
@@ -64,7 +66,7 @@ async def resilient_call(
                 logger.warning("[retry] %s 第%d次超时(>%ds)，%.2fs 后重试",
                                tool_name, i + 1, call_timeout,
                                min(max_delay, base_delay * (2 ** i)) * (0.5 + random.random()))
-            except Exception as e:  # noqa: BLE001 —— 容错层需要捕获一切业务异常
+            except Exception as e:
                 last_error = e
                 if i == max_attempts - 1:
                     break

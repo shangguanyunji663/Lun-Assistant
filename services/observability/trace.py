@@ -9,8 +9,8 @@ import json
 import logging
 import time
 import uuid
-from contextvars import ContextVar
 from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import Any
 
 from sqlalchemy import func, select

@@ -6,9 +6,8 @@
   + project_id/user_id，直接纳入现有 RAG 稠密/稀疏/精排链路。
 - 该设计避免知识库与语料双轨并行两套向量检索代码。
 """
-from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, func
+from sqlalchemy import ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from infrastructure.models.base import Base, IdMixin, TimestampMixin

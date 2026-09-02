@@ -9,9 +9,9 @@
 import asyncio
 import json
 import logging
-from contextvars import ContextVar
 from contextlib import contextmanager
-from dataclasses import dataclass, field
+from contextvars import ContextVar
+from dataclasses import dataclass
 from typing import Any, AsyncIterator
 
 logger = logging.getLogger("lunjiang.stream")

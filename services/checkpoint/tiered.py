@@ -11,6 +11,7 @@
 import asyncio
 import contextlib
 import logging
+from typing import Any
 
 from infrastructure.config import get_value
 
@@ -31,6 +32,7 @@ class TieredCheckpointer:
 
     @staticmethod
     async def create() -> tuple[object, str]:
+        saver: Any = None
         # ---- 一级: Redis ----
         try:
             from langgraph.checkpoint.redis.aio import AsyncRedisSaver
@@ -43,10 +45,10 @@ class TieredCheckpointer:
             logger.warning("Redis Checkpointer 不可用: %s", e)
 
         # ---- 二级: PostgreSQL ----
-        pool = None
+        pool: Any = None
         try:
-            from psycopg_pool import AsyncConnectionPool
             from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+            from psycopg_pool import AsyncConnectionPool
 
             # autocommit=True: setup() 的 CREATE INDEX CONCURRENTLY 不允许在事务块内
             pool = AsyncConnectionPool(

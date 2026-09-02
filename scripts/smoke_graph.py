@@ -13,9 +13,9 @@ if sys.platform == "win32":
     # psycopg 异步连接池需要 Selector 事件循环（Windows 默认 Proactor 不支持）
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-from services.agent.engine import AgentEngine  # noqa: E402
-from services.streaming.hub import StreamEvent  # noqa: E402
-from services.governance.tools_impl import register_all  # noqa: E402
+from services.agent.engine import AgentEngine
+from services.governance.tools_impl import register_all
+from services.streaming.hub import StreamEvent
 
 
 async def main() -> None:

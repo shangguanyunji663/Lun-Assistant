@@ -6,17 +6,17 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from api.auth.security import get_current_user
 from api.deps import get_owned_project
 from api.projects.schemas import (
+    DeletedOut,
     ProjectCreatedOut,
     ProjectDetailOut,
     ProjectIn,
     ProjectListItem,
     ProjectPatch,
     ProjectPatchedOut,
-    DeletedOut,
 )
-from api.auth.security import get_current_user
 from infrastructure.db import get_db
 from infrastructure.models.project import Project
 from infrastructure.models.user import User

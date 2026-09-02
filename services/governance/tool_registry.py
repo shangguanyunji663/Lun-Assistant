@@ -14,10 +14,10 @@ import asyncio
 import inspect
 import logging
 import time
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from functools import lru_cache
-from typing import Any, Callable, Coroutine
-from contextlib import nullcontext
+from typing import Any, Callable, Coroutine, cast
 
 import yaml
 
@@ -25,7 +25,6 @@ from infrastructure.audit import write_audit
 from infrastructure.db import get_session_factory
 from infrastructure.paths import PROJECT_ROOT
 from infrastructure.rbac import policy as rbac_policy
-
 from services.governance.circuit_breaker import CircuitBreaker, CircuitOpenError
 from services.governance.dist_lock import DistributedLock, LockNotAcquired
 from services.governance.rate_limiter import RateLimitExceeded, check_rate
@@ -89,7 +88,8 @@ class ToolRegistry:
         """异步 handler 直接 await；同步 handler 放线程池，避免冻结事件循环。"""
         if inspect.iscoroutinefunction(spec.handler):
             return await spec.handler(**kwargs)
-        return await asyncio.to_thread(spec.handler, **kwargs)
+        fn = cast(Callable[..., Any], spec.handler)
+        return await asyncio.to_thread(fn, **kwargs)
 
     # ---------- 统一治理调用 ----------
     async def call(

@@ -15,7 +15,6 @@ DB/LLM 不可用时对应场景标记 SKIP(env)，不影响其它纯逻辑场景
 """
 import asyncio
 import logging
-import os
 import sys
 import time
 from pathlib import Path
@@ -50,12 +49,13 @@ async def s1_ingest() -> None:
     if not await _db_ok():
         _record("S1", "入库流水线", False, "DB 不可用", "skip")
         return
+    from sqlalchemy import select
+
     from infrastructure.db import get_session_factory
     from infrastructure.models.knowledge import KnowledgeDocument
     from infrastructure.models.memory import MemoryItem
     from infrastructure.models.project import Project
     from infrastructure.models.user import User
-    from sqlalchemy import select
 
     factory = get_session_factory()
     async with factory() as db:
@@ -96,7 +96,7 @@ async def s1_ingest() -> None:
         _record("S1", "分块落库", (n_chunks or 0) >= 1, f"user_doc chunks={n_chunks}")
 
         # 清理
-        from services.rag.ingest.pipeline import list_documents, delete_document
+        from services.rag.ingest.pipeline import delete_document, list_documents
         for doc in (await list_documents(db, pid)):
             d = await db.get(KnowledgeDocument, doc["id"])
             if d:
@@ -113,7 +113,6 @@ async def s2_isolation() -> None:
     from infrastructure.db import get_session_factory
     from infrastructure.models.project import Project
     from infrastructure.models.user import User
-    from infrastructure.models.memory import MemoryItem
 
     factory = get_session_factory()
     async with factory() as db:
@@ -137,8 +136,8 @@ async def s2_isolation() -> None:
                 f"B 项目命中 {len(hits_b)} 条（期望0）")
 
         # 清理
-        from services.rag.ingest.pipeline import list_documents, delete_document
         from infrastructure.models.knowledge import KnowledgeDocument
+        from services.rag.ingest.pipeline import delete_document, list_documents
         for doc in (await list_documents(db, pa.id)):
             d = await db.get(KnowledgeDocument, doc["id"])
             if d:
@@ -166,7 +165,7 @@ async def s3_multi_road() -> None:
 
 
 async def s4_rewrite() -> None:
-    from services.rag.query_rewrite import _rule_rewrite, _rule_keywords
+    from services.rag.query_rewrite import _rule_rewrite
 
     rw = _rule_rewrite("怎么做好大模型微调的开题报告")
     kws = rw["keywords"]
@@ -197,7 +196,7 @@ async def s5_complex_task() -> None:
 
 async def s6_artifact() -> None:
     # 仅校验模板覆盖与参数校验（真实 LLM 生成在冒烟中验证）
-    from services.governance.artifacts import KINDS, _ARTIFACT_TEMPLATES
+    from services.governance.artifacts import KINDS
     ok = set(KINDS) == {"review_draft", "proposal_report", "defense_outline"}
     _record("S6", "产物模板覆盖", ok, f"KINDS={KINDS}")
     try:
@@ -209,9 +208,10 @@ async def s6_artifact() -> None:
 
 
 async def s7_governance() -> None:
-    from services.governance.tools_impl import register_all
-    from services.governance.tool_registry import tool_registry
     import yaml
+
+    from services.governance.tool_registry import tool_registry
+    from services.governance.tools_impl import register_all
 
     register_all()
     cfg = yaml.safe_load((PROJECT_ROOT / "configs" / "tools.yaml").read_text(

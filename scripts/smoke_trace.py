@@ -4,19 +4,17 @@
 """
 import asyncio
 import sys
-import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from infrastructure.paths import PROJECT_ROOT  # noqa: E402 —— 路径唯一真源
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 async def main() -> None:
-    from services.observability.trace import span, get_trace, list_traces
+    from services.observability.trace import get_trace, list_traces, span
 
     # ---------- 构造嵌套 Span：agent_node → tool_call → llm_call ----------
     with span("supervisor", "agent_node", input_data={"visited": []}, user_id=1) as sp:

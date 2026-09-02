@@ -70,3 +70,28 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "注意：后端 API 在本地 8000，GitHub Pages 静态托管无后端 → 登录/对话/知识库检索会失败，" >> $GITHUB_STEP_SUMMARY
           echo "仅主题切换 UI / 装饰元素 / 视觉风格可演示。完整功能演示请本地启动后端。" >> $GITHUB_STEP_SUMMARY
+
+  # 后端工程校验：跑在云端 Ubuntu，与本机 Windows 无关。
+  # config.py 在无 .env 时自动回退 .env.example 占位值，因此无需在 CI 里造 .env；
+  # 48 个离线单测全部 mock 外部依赖（Redis/PG/LLM），不依赖任何运行中的服务。
+  test-backend:
+    name: Backend unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt ruff
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Run unit tests
+        run: pytest tests/ -q

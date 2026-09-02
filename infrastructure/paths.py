@@ -18,11 +18,11 @@ EVALS_DIR = PROJECT_ROOT / "evals"
 EVALS_DATASETS_DIR = EVALS_DIR / "datasets"
 
 __all__ = [
-    "PROJECT_ROOT",
     "CONFIG_DIR",
-    "DATA_DIR",
-    "UPLOADS_DIR",
     "CORPUS_DIR",
-    "EVALS_DIR",
+    "DATA_DIR",
     "EVALS_DATASETS_DIR",
+    "EVALS_DIR",
+    "PROJECT_ROOT",
+    "UPLOADS_DIR",
 ]

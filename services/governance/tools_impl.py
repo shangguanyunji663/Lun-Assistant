@@ -1,8 +1,8 @@
 """业务工具实现：6 类论文工具（经 ToolRegistry 治理后供 Agent 调用）。"""
 import re
 
-from services.governance.artifacts import generate_artifact
 from services.governance import academic_tools as at
+from services.governance.artifacts import generate_artifact
 from services.governance.tool_registry import ToolSpec, tool_registry
 from services.llm.provider import LLMProvider
 from services.rag.pipeline import rag_pipeline
@@ -137,7 +137,8 @@ async def detect_ai_text(text: str, mode: str = "standard"):
         [{"role": "system", "content": _AI_SYSTEM},
          {"role": "user", "content": text[:2500]}],
         json_mode=True, temperature=0.1, max_tokens=400)
-    llm_prob = float(llm_out.get("ai_probability", 0.5))
+    payload: dict = llm_out if isinstance(llm_out, dict) else {}
+    llm_prob = float(payload.get("ai_probability", 0.5))
     return {"ai_probability": round(0.4 * heuristic + 0.6 * llm_prob, 3),
             "heuristic_signals": {"sentence_len_variance": round(var, 1),
                                   "ai_word_hits": hits},
