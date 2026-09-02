@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react'
-import { api, sse } from './api.js'
+import React, { useEffect, useState } from 'react'
+import { api } from './api.js'
 import InkBackground from './InkBackground.jsx'
 import { Seal, Markdown, WoodRoll } from './components/decor.jsx'
 import AuthPage from './components/AuthPage.jsx'
@@ -8,122 +8,41 @@ import TracePanel from './components/TracePanel.jsx'
 import KnowledgePanel from './components/KnowledgePanel.jsx'
 import ProjectArchive from './components/ProjectArchive.jsx'
 import ProjectDialog from './components/ProjectDialog.jsx'
+import { useChat } from './hooks/useChat.js'
+import { useProjects } from './hooks/useProjects.js'
+import { useSessions } from './hooks/useSessions.js'
+import { useTheme } from './hooks/useTheme.js'
 
 /* ============================================================
    主应用：卷轴木轴 + 会话卷册 + 对话主区 + 右栏三 tab
+   状态逻辑已拆分至 src/hooks/（主题 / 会话 / 项目 / 对话）
    ============================================================ */
-
-const LS_KEY = 'lj_sessions_v1'
-const MAX_SESSIONS = 30
-
-const makeId = () => `web-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
-
-/** 会话标题：取首条用户消息前 18 字 */
-const titleOf = (text) => {
-  const t = String(text || '').replace(/\s+/g, ' ').trim()
-  return t ? (t.length > 18 ? t.slice(0, 18) + '…' : t) : '新会话'
-}
-
-const loadSessions = () => {
-  try {
-    const raw = localStorage.getItem(LS_KEY)
-    if (!raw) return []
-    const list = JSON.parse(raw)
-    return Array.isArray(list) ? list.filter(s => s && s.id) : []
-  } catch { return [] }
-}
 
 export default function App() {
   const [user, setUser] = useState(null)
   const [booting, setBooting] = useState(true)
   const [tab, setTab] = useState('chat')
-  const [projects, setProjects] = useState([])
-  const [projectsErr, setProjectsErr] = useState('')
-  const [projectId, setProjectId] = useState(null)
-  const [archiveKey, setArchiveKey] = useState(0)
-  const [dialog, setDialog] = useState(null)          // {mode:'create'|'edit', project?}
-
-  // 会话卷册（原单会话全局 state 改为多会话）
-  const [sessions, setSessions] = useState(loadSessions)
-  const [activeId, setActiveId] = useState(null)
-  const [streaming, setStreaming] = useState(false)
-  const [interrupt, setInterrupt] = useState(null)
-  const [input, setInput] = useState('')
   const [sideTab, setSideTab] = useState('timeline')
-  const bottomRef = useRef(null)
 
-  /* 山水浓度：AI 底图不透明度，用户可实时调节并持久化 */
-  const [inkOp, setInkOp] = useState(() => {
-    const v = Number(localStorage.getItem('lj_ink_op'))
-    return Number.isFinite(v) && v >= 0 && v <= 0.4 ? v : 0.16
-  })
-  useEffect(() => {
-    document.documentElement.style.setProperty('--ink-photo-op', String(inkOp))
-    try { localStorage.setItem('lj_ink_op', String(inkOp)) } catch { /* 隐私模式忽略 */ }
-  }, [inkOp])
+  // ---- 主题 + 山水浓度 ----
+  const { theme, setTheme, inkOp, setInkOp, THEMES } = useTheme()
 
-  /* 调参台联动：监听 storage 事件（跨 tab）。
-     用户在 console/tuner.html 改 lj_theme / lj_ink_op 后，主应用实时生效。
-     白名单与下方 [theme, setTheme] 一致：当前 a/b/c/d 共 4 主题。 */
-  useEffect(() => {
-    const onStorage = (e) => {
-      if (e.key === 'lj_theme' && ['a','b','c','d'].includes(e.newValue)) {
-        setTheme(e.newValue)
-      } else if (e.key === 'lj_ink_op') {
-        const v = Number(e.newValue)
-        if (Number.isFinite(v) && v >= 0 && v <= 0.4) setInkOp(v)
-      }
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
-  }, [])
+  // ---- 会话卷册 ----
+  const {
+    sessions, active, setActiveId, messages, timeline, bottomRef,
+    patchSession, newSession: createSession, removeSession: deleteSession,
+  } = useSessions()
 
-  /* v11 · 四主题切换（A 柔雾青绿 / B 水墨留白 / C 暗墨夜山 / D 青绿金碧）。
-     持久化到 localStorage.lj_theme；初始化时若 localStorage 没值则读 :root 默认的 data-theme，
-     否则从 localStorage 取。新增 D 主题对应青绿金碧参考图（Traditional Chinese blue-green）。 */
-  const [theme, setTheme] = useState(() => {
-    const t = localStorage.getItem('lj_theme')
-    return ['a','b','c','d'].includes(t) ? t : 'a'
-  })
-  useEffect(() => {
-    document.body.dataset.theme = theme
-    try { localStorage.setItem('lj_theme', theme) } catch { /* 隐私模式忽略 */ }
-    // 主题切换音效：Web Audio API 程序化生成短"卷轴松开"咔哒声；零外部资产
-    // 仅在用户已与页面交互后（autoplay 策略），故 try/catch 包裹隐私模式 / iOS 静音
-    if (themeTickRef.current) {
-      try {
-        const AC = window.AudioContext || window.webkitAudioContext
-        if (AC) {
-          const ac = new AC()
-          const osc = ac.createOscillator(), gain = ac.createGain()
-          osc.type = 'triangle'
-          osc.frequency.setValueAtTime(880, ac.currentTime)
-          osc.frequency.exponentialRampToValueAtTime(220, ac.currentTime + 0.15)
-          gain.gain.setValueAtTime(0.06, ac.currentTime)
-          gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.18)
-          osc.connect(gain).connect(ac.destination)
-          osc.start(ac.currentTime); osc.stop(ac.currentTime + 0.20)
-          setTimeout(() => ac.close(), 250)
-        }
-      } catch { /* autoplay blocked or audio disabled */ }
-    }
-    themeTickRef.current = true
-  }, [theme])
+  // ---- 项目 ----
+  const {
+    projects, projectsErr, setProjectsErr, projectId, setProjectId,
+    archiveKey, setArchiveKey, dialog, setDialog, currentProject,
+    createProject, patchProject, deleteProject,
+  } = useProjects(user)
 
-  /* ref: 首次 mount 时不响（避免 reload 主题后立刻播放） */
-  const themeTickRef = useRef(false)
-
-  /* chip 取各主题底色（A 略深一档以免在浅底上糊掉），B/C/D 与 styles.css 的 --bg-deep 一致 */
-  const THEMES = [
-    { id: 'a', label: '柔雾青绿', chip: '#C5DBE8' },
-    { id: 'b', label: '黑白瑞士', chip: '#000000' },
-    { id: 'c', label: '暗墨夜山', chip: '#0A1424' },
-    { id: 'd', label: '青绿金碧', chip: '#C9B58A' },
-  ]
-
-  const active = sessions.find(s => s.id === activeId) || sessions[0] || null
-  const messages = active?.msgs ?? []
-  const timeline = active?.timeline ?? []
+  // ---- 对话发送 / SSE 流式 ----
+  const { streaming, interrupt, setInterrupt, input, setInput, send } =
+    useChat({ active, patchSession, projectId, setArchiveKey })
 
   /* ---- 自动登录 ---- */
   useEffect(() => {
@@ -135,137 +54,40 @@ export default function App() {
     }).finally(() => setBooting(false))
   }, [])
 
-  /* ---- 项目列表 ---- */
-  useEffect(() => {
-    if (user) {
-      api.projects().then(ps => { setProjects(ps); setProjectsErr('') })
-        .catch(e => {
-          const msg = String(e.message || e)
-          setProjectsErr(msg)
-          console.warn('[projects] 加载失败:', msg)
-        })
-    }
-  }, [user])
-
-  /* ---- 确保至少有一个会话 ---- */
-  useEffect(() => {
-    if (!sessions.length) {
-      const s = { id: makeId(), title: '新会话', msgs: [], timeline: [], updatedAt: Date.now() }
-      setSessions([s]); setActiveId(s.id)
-    } else if (!sessions.some(s => s.id === activeId)) {
-      setActiveId(sessions[0].id)
-    }
-  }, [sessions, activeId])
-
-  /* ---- 持久化 ---- */
-  useEffect(() => {
-    try { localStorage.setItem(LS_KEY, JSON.stringify(sessions.slice(0, MAX_SESSIONS))) } catch {}
-  }, [sessions])
-
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, timeline])
-
-  if (booting) return <div className="center muted">加载中…</div>
-  if (!user) return <AuthPage onLogin={setUser} />
-
-  const patchSession = (id, fn) =>
-    setSessions(list => list.map(s => (s.id === id ? { ...fn(s), updatedAt: Date.now() } : s)))
-
+  /* ---- 会话增删（生成中锁定）---- */
   const newSession = () => {
     if (streaming) return
-    const s = { id: makeId(), title: '新会话', msgs: [], timeline: [], updatedAt: Date.now() }
-    setSessions(list => [s, ...list].slice(0, MAX_SESSIONS))
-    setActiveId(s.id)
+    createSession()
     setInterrupt(null)
     setInput('')
   }
 
   const removeSession = (id) => {
     if (streaming) return
-    setSessions(list => {
-      const rest = list.filter(s => s.id !== id)
-      if (rest.length) { if (id === activeId) setActiveId(rest[0].id); return rest }
-      const s = { id: makeId(), title: '新会话', msgs: [], timeline: [], updatedAt: Date.now() }
-      setActiveId(s.id)
-      return [s]
-    })
+    deleteSession(id)
   }
 
-  const send = async (text, resume = null) => {
-    if (streaming || !active) return
-    const sid = active.id
-    const body = resume ? `[确认反馈] ${resume}` : text
-
-    setStreaming(true)
+  const selectSession = (id) => {
+    if (streaming) return
+    setActiveId(id)
     setInterrupt(null)
-    if (!resume) setInput('')
-
-    // 追加用户消息；若为本会话首条，用它作标题
-    patchSession(sid, s => ({
-      ...s,
-      title: s.msgs.length ? s.title : titleOf(text),
-      msgs: [...s.msgs, { role: 'user', content: body }],
-    }))
-    // 占位助手消息
-    patchSession(sid, s => ({ ...s, msgs: [...s.msgs, { role: 'assistant', content: '' }] }))
-
-    let acc = ''
-    const patchLast = (content) =>
-      patchSession(sid, s => {
-        if (!s.msgs.length) return s
-        const c = [...s.msgs]
-        c[c.length - 1] = { role: 'assistant', content }
-        return { ...s, msgs: c }
-      })
-
-    try {
-      const finalText = await sse(resume ? '/agent/resume' : '/agent/chat',
-        resume
-          ? { session_id: sid, feedback: resume, project_id: projectId }
-          : { session_id: sid, message: text, project_id: projectId },
-        (type, payload, node) => {
-          if (type === 'token') { acc += payload || ''; patchLast(acc) }
-          else if (type === 'final') { if (payload?.output) patchLast(payload.output) }
-          else if (type === 'interrupt') {
-            setInterrupt(payload)
-            patchSession(sid, s => ({ ...s, timeline: [...s.timeline, { type: 'interrupt', payload, node }] }))
-          } else if (type === 'error') {
-            patchSession(sid, s => ({ ...s, timeline: [...s.timeline, { type: 'error', payload, node }] }))
-          } else if (['node_start', 'node_end', 'intent', 'route', 'plan', 'step_event'].includes(type)) {
-            patchSession(sid, s => ({ ...s, timeline: [...s.timeline, { type, payload, node }] }))
-          }
-        })
-      if (finalText) patchLast(finalText)
-      if (projectId) setArchiveKey(k => k + 1)
-    } catch (e) {
-      patchLast(`请求失败：${e.message || e}`)
-      console.warn('[chat]', e)
-    } finally { setStreaming(false) }
   }
 
-  /* ---- 项目 CRUD ---- */
-  const createProject = async (title, major, requirement) => {
-    const p = await api.createProject(title, major, requirement)
-    setProjects(ps => [p, ...ps]); setProjectId(p.id); setProjectsErr('')
-  }
-  const patchProject = async (patch) => {
-    await api.patchProject(projectId, patch)
-    setProjects(ps => ps.map(p => p.id === projectId ? { ...p, ...patch } : p))
-    setArchiveKey(k => k + 1)
-  }
-  const deleteProject = async () => {
-    await api.deleteProject(projectId)
-    setProjects(ps => ps.filter(p => p.id !== projectId))
-    setProjectId(null); setDialog(null)
-  }
-
-  const currentProject = projects.find(p => p.id === projectId) || null
   const fmtTime = (ts) => {
-    const d = new Date(ts), now = new Date()
+    const d = new Date(ts)
+    const now = new Date()
     const sameDay = d.toDateString() === now.toDateString()
     return sameDay
       ? `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
       : `${d.getMonth() + 1}月${d.getDate()}日`
   }
+
+  // bottomRef 为自定义 hook 返回的稳定 ref，静态分析无法识别其身份，无需加入依赖
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, timeline])
+
+  if (booting) return <div className="center muted">加载中…</div>
+  if (!user) return <AuthPage onLogin={setUser} />
 
   return (
     <div className="app">
@@ -311,7 +133,7 @@ export default function App() {
                     className={theme === t.id ? 'on' : ''}
                     title={`${t.label}${theme === t.id ? '（当前）' : ''}`}
                     onClick={() => setTheme(t.id)}>
-              <span className="chip" style={{background: t.chip}} />
+              <span className="chip" style={{ background: t.chip }} />
               {t.label}
             </button>
           ))}
@@ -352,7 +174,7 @@ export default function App() {
               {sessions.map(s => (
                 <div key={s.id}
                      className={`sess-item${s.id === active?.id ? ' on' : ''}`}
-                     onClick={() => { if (!streaming) { setActiveId(s.id); setInterrupt(null) } }}
+                     onClick={() => selectSession(s.id)}
                      title={streaming ? '生成中，暂不可切换' : s.title}>
                   <div className="sess-title">{s.title}</div>
                   <div className="sess-meta">{fmtTime(s.updatedAt)} · {s.msgs.length} 条</div>
