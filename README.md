@@ -10,55 +10,55 @@
 
 ### 通用 / 后端工程线（docs/）
 
-| 文档                                      | 用途                                |
-| --------------------------------------- | --------------------------------- |
-| [📖 学习指南](docs/LEARNING_GUIDE.md)       | 从零理解并重建本项目（推荐先读）                  |
-| [📐 架构总览](#目录结构)                        | 分层结构与模块职责                         |
-| [📋 目录结构审查](docs/ARCHITECTURE_REVIEW.md) | 目录合理性评估（问题清单 + 优化建议）          |
-| [📂 项目结构说明](docs/PROJECT_STRUCTURE.md)   | 目录与关键文件用途说明（2026-09-02 归档）    |
-| [📐 统一格式规范](docs/FORMAT_STANDARD.md)     | 全部 Markdown 文档的格式规范              |
-| [🛠 优化记录一](docs/OPTIMIZATION_ROUND1.md) | 第一轮优化（性能/安全/体验）                   |
-| [🛠 优化记录二](docs/OPTIMIZATION_ROUND2.md) | 第二轮优化（OOM 修复/结构重构方案）              |
-| [🛠 优化记录三](docs/OPTIMIZATION_ROUND3.md) | 第三轮优化（布尔陷阱/前端全按钮失效排查）             |
-| [🛠 优化记录四](docs/OPTIMIZATION_ROUND4.md) | 第四轮优化（RAG知识库/多引擎检索/Planner/结构化产物） |
-| [🛠 优化记录五](docs/OPTIMIZATION_ROUND5.md) | 第五轮优化（学术工具生态/并发压测/agnes对话底座）      |
-| [🛠 优化记录六](docs/OPTIMIZATION_ROUND6.md) | 第六轮优化（架构改进与工程化治理/P0修复/测试骨架）       |
-| [🛠 优化记录十二](docs/OPTIMIZATION_ROUND12.md) | 第十二轮优化（静态检查接入CI/依赖锁定/前端Hooks/可移植性） |
-| [🚀 部署指南](docs/DEPLOY.md)               | GitHub Pages 自动部署到 `https://shangguanyunji663.github.io/Lun-Assistant/` |
-| [💡 常见问题](#常见问题)                        | 排障手册                              |
+| 文档                                        | 用途                                                                      |
+| ----------------------------------------- | ----------------------------------------------------------------------- |
+| [📖 学习指南](docs/LEARNING_GUIDE.md)         | 从零理解并重建本项目（推荐先读）                                                        |
+| [📐 架构总览](#目录结构)                          | 分层结构与模块职责                                                               |
+| [📋 目录结构审查](docs/ARCHITECTURE_REVIEW.md)  | 目录合理性评估（问题清单 + 优化建议）                                                    |
+| [📂 项目结构说明](docs/PROJECT_STRUCTURE.md)    | 目录与关键文件用途说明（2026-09-02 归档）                                              |
+| [📐 统一格式规范](docs/FORMAT_STANDARD.md)      | 全部 Markdown 文档的格式规范                                                     |
+| [🛠 优化记录一](docs/OPTIMIZATION_ROUND1.md)   | 第一轮优化（性能/安全/体验）                                                         |
+| [🛠 优化记录二](docs/OPTIMIZATION_ROUND2.md)   | 第二轮优化（OOM 修复/结构重构方案）                                                    |
+| [🛠 优化记录三](docs/OPTIMIZATION_ROUND3.md)   | 第三轮优化（布尔陷阱/前端全按钮失效排查）                                                   |
+| [🛠 优化记录四](docs/OPTIMIZATION_ROUND4.md)   | 第四轮优化（RAG知识库/多引擎检索/Planner/结构化产物）                                       |
+| [🛠 优化记录五](docs/OPTIMIZATION_ROUND5.md)   | 第五轮优化（学术工具生态/并发压测/agnes对话底座）                                            |
+| [🛠 优化记录六](docs/OPTIMIZATION_ROUND6.md)   | 第六轮优化（架构改进与工程化治理/P0修复/测试骨架）                                             |
+| [🛠 优化记录十二](docs/OPTIMIZATION_ROUND12.md) | 第十二轮优化（静态检查接入CI/依赖锁定/前端Hooks/可移植性）                                      |
+| [🚀 部署指南](docs/DEPLOY.md)                 | GitHub Pages 自动部署到 `https://shangguanyunji663.github.io/Lun-Assistant/` |
+| [💡 常见问题](#常见问题)                          | 排障手册                                                                    |
 
 ### 前端版本线（docs/frontend-versions/，v8 → v12）
 
-| 文档 | 版本 | 用途 |
-|---|---|---|
-| [🧭 版本线索引](docs/frontend-versions/README.md) | — | 前端版本演进总索引（新增版本入口） |
-| [🧩 版本模板](docs/frontend-versions/TEMPLATE.md) | — | 新增版本直接套用 |
-| [🎨 视觉三方向提案](docs/frontend-versions/VISUAL_DIRECTIONS.md) | v8 | 青绿长卷 / 水墨改良 / 暗墨金线 提案 |
-| [📐 设计规范](docs/frontend-versions/DESIGN_SPEC.md) | v9 | 青绿长卷·放松版设计令牌规范 |
-| [🛠 优化记录七](docs/frontend-versions/OPTIMIZATION_ROUND7.md) | v9 | 前端视觉重构：青绿长卷/会话卷册/山水浓度滑杆 |
-| [🛠 优化记录八](docs/frontend-versions/OPTIMIZATION_ROUND8.md) | v10 | 前端功能同步 + 三主题切换（生产代码落地） |
-| [🛠 优化记录九](docs/frontend-versions/OPTIMIZATION_ROUND9.md) | v10 | 主题图 WebP 压缩 5.32→0.26MB + GitHub Pages 部署 |
-| [🛠 优化记录十](docs/frontend-versions/OPTIMIZATION_ROUND10.md) | v10 | v10 遗留项落地：内置模式 / B-C 装饰 / 音效 / 移动端 / 截图 |
-| [📝 v11 变更（设计稿侧）](docs/frontend-versions/CHANGELOG-v11-design.md) | v11 | 四主题 A/B/C/D · preview/tuner.html 重构 |
-| [📝 v11 变更（生产侧）](docs/frontend-versions/CHANGELOG-v11-frontend.md) | v11 | 四主题 · frontend/ 端到端改造 |
-| [📝 v12 变更（设计稿侧）](docs/frontend-versions/CHANGELOG-v12.md) | v12 | B 主题黑白瑞士 · 设计稿侧 |
-| [🛠 优化记录十一](docs/frontend-versions/OPTIMIZATION_ROUND11.md) | v12 | B 主题由水墨留白翻转为黑白瑞士（修复 B↔D 区分度） |
+| 文档                                                                 | 版本  | 用途                                        |
+| ------------------------------------------------------------------ | --- | ----------------------------------------- |
+| [🧭 版本线索引](docs/frontend-versions/README.md)                       | —   | 前端版本演进总索引（新增版本入口）                         |
+| [🧩 版本模板](docs/frontend-versions/TEMPLATE.md)                      | —   | 新增版本直接套用                                  |
+| [🎨 视觉三方向提案](docs/frontend-versions/VISUAL_DIRECTIONS.md)          | v8  | 青绿长卷 / 水墨改良 / 暗墨金线 提案                     |
+| [📐 设计规范](docs/frontend-versions/DESIGN_SPEC.md)                   | v9  | 青绿长卷·放松版设计令牌规范                            |
+| [🛠 优化记录七](docs/frontend-versions/OPTIMIZATION_ROUND7.md)          | v9  | 前端视觉重构：青绿长卷/会话卷册/山水浓度滑杆                   |
+| [🛠 优化记录八](docs/frontend-versions/OPTIMIZATION_ROUND8.md)          | v10 | 前端功能同步 + 三主题切换（生产代码落地）                    |
+| [🛠 优化记录九](docs/frontend-versions/OPTIMIZATION_ROUND9.md)          | v10 | 主题图 WebP 压缩 5.32→0.26MB + GitHub Pages 部署 |
+| [🛠 优化记录十](docs/frontend-versions/OPTIMIZATION_ROUND10.md)         | v10 | v10 遗留项落地：内置模式 / B-C 装饰 / 音效 / 移动端 / 截图   |
+| [📝 v11 变更（设计稿侧）](docs/frontend-versions/CHANGELOG-v11-design.md)  | v11 | 四主题 A/B/C/D · preview/tuner.html 重构       |
+| [📝 v11 变更（生产侧）](docs/frontend-versions/CHANGELOG-v11-frontend.md) | v11 | 四主题 · frontend/ 端到端改造                     |
+| [📝 v12 变更（设计稿侧）](docs/frontend-versions/CHANGELOG-v12.md)         | v12 | B 主题黑白瑞士 · 设计稿侧                           |
+| [🛠 优化记录十一](docs/frontend-versions/OPTIMIZATION_ROUND11.md)        | v12 | B 主题由水墨留白翻转为黑白瑞士（修复 B↔D 区分度）              |
 
 ## 核心特性
 
-| 模块      | 说明                                                                            | 关键实现                                    |
-| ------- | ----------------------------------------------------------------------------- | --------------------------------------- |
-| 多智能体编排  | 1 主控 Supervisor 调度 6 类专项 Agent + **Plan-Execute-Replan 规划器**（复合任务），最大 3 跳防回环  | `services/agent/`                       |
-| 意图预分类   | 规则 → 向量原型 → LLM 兜底三级，56ms / 100% 准确                                           | `services/classifier/intent.py`         |
-| 项目级知识库  | 多格式上传(PDF/DOCX/TXT/MD)→解析→分块→向量化入库，MD5去重/扫描件拒绝/跨项目隔离，`project`/`hybrid` 双模式检索 | `services/rag/ingest/`                  |
-| 三阶段 RAG | Query 改写(规则兜底+防漂移，返回策略标记) → 稠密+稀疏+**相邻窗口**多路 RRF 融合(项目保底) → 交叉精排+降噪对比         | `services/rag/`                         |
-| 结构化产物   | 综述初稿 / 开题报告 / 答辩大纲（模板骨架 + RAG 证据注入，治理工具 `generate_artifact`）                  | `services/governance/artifacts.py`   |
-| 学术工具生态  | 翻译 / 润色 / 方法推荐 / 参考文献格式化 / 摘要生成 / 术语解析                                        | `services/governance/academic_tools.py` |
-| 工具治理    | RBAC → 限流 → 熔断 → 三级容错（重试/降级/人机兜底）→ 分布式锁 → 审计 → 行为观测 → Skill（论文 8 类 + 学术 6 类共 14 个工具统一经治理栈，同步 handler 自动线程池化）        | `services/governance/`                  |
-| 四层记忆    | 短期(Redis)/结构化/长期(pgvector)/偏好 + 压缩                                            | `services/memory/`                      |
-| SSE 流式  | EventHub 事件总线 + token 微缓冲                                                     | `services/streaming/hub.py`             |
-| 人机介入    | LangGraph interrupt 挂起 → /resume 续跑                                           | `api/agent/router.py`                   |
-| 全链路可观测  | Trace/Log/Memory/Action 统一 Span，树形回放                                          | `services/observability/`               |
+| 模块      | 说明                                                                                                           | 关键实现                                    |
+| ------- | ------------------------------------------------------------------------------------------------------------ | --------------------------------------- |
+| 多智能体编排  | 1 主控 Supervisor 调度 6 类专项 Agent + **Plan-Execute-Replan 规划器**（复合任务），最大 3 跳防回环                                 | `services/agent/`                       |
+| 意图预分类   | 规则 → 向量原型 → LLM 兜底三级，56ms / 100% 准确                                                                          | `services/classifier/intent.py`         |
+| 项目级知识库  | 多格式上传(PDF/DOCX/TXT/MD)→解析→分块→向量化入库，MD5去重/扫描件拒绝/跨项目隔离，`project`/`hybrid` 双模式检索                                | `services/rag/ingest/`                  |
+| 三阶段 RAG | Query 改写(规则兜底+防漂移，返回策略标记) → 稠密+稀疏+**相邻窗口**多路 RRF 融合(项目保底) → 交叉精排+降噪对比                                        | `services/rag/`                         |
+| 结构化产物   | 综述初稿 / 开题报告 / 答辩大纲（模板骨架 + RAG 证据注入，治理工具 `generate_artifact`）                                                 | `services/governance/artifacts.py`      |
+| 学术工具生态  | 翻译 / 润色 / 方法推荐 / 参考文献格式化 / 摘要生成 / 术语解析                                                                       | `services/governance/academic_tools.py` |
+| 工具治理    | RBAC → 限流 → 熔断 → 三级容错（重试/降级/人机兜底）→ 分布式锁 → 审计 → 行为观测 → Skill（论文 8 类 + 学术 6 类共 14 个工具统一经治理栈，同步 handler 自动线程池化） | `services/governance/`                  |
+| 四层记忆    | 短期(Redis)/结构化/长期(pgvector)/偏好 + 压缩                                                                           | `services/memory/`                      |
+| SSE 流式  | EventHub 事件总线 + token 微缓冲                                                                                    | `services/streaming/hub.py`             |
+| 人机介入    | LangGraph interrupt 挂起 → /resume 续跑                                                                          | `api/agent/router.py`                   |
+| 全链路可观测  | Trace/Log/Memory/Action 统一 Span，树形回放                                                                         | `services/observability/`               |
 
 ## 快速开始
 
@@ -66,13 +66,13 @@
 
 **依赖清单**（端口约定以本表为准：PG **5433** / Redis 6379 / Ollama 11434）
 
-| 依赖 | 版本要求 | 用途 | 连接地址（默认） |
-| --- | --- | --- | --- |
-| Python | 3.11（conda 环境 `envs/lunjiang`） | 后端运行时 | — |
-| Node.js | 18+ | 前端构建（Vite 5） | — |
-| PostgreSQL | 15+（含 pgvector 扩展） | 主存储：业务表 + 向量记忆 + 知识库 | `127.0.0.1:5433` |
-| Redis | 6+ | 短期记忆 / 限流窗口 / 分布式锁 | `127.0.0.1:6379` |
-| Ollama | 最新版 | 本地嵌入模型 bge-m3 | `127.0.0.1:11434` |
+| 依赖         | 版本要求                           | 用途                   | 连接地址（默认）          |
+| ---------- | ------------------------------ | -------------------- | ----------------- |
+| Python     | 3.11（conda 环境 `envs/lunjiang`） | 后端运行时                | —                 |
+| Node.js    | 18+                            | 前端构建（Vite 5）         | —                 |
+| PostgreSQL | 15+（含 pgvector 扩展）             | 主存储：业务表 + 向量记忆 + 知识库 | `127.0.0.1:5433`  |
+| Redis      | 6+                             | 短期记忆 / 限流窗口 / 分布式锁   | `127.0.0.1:6379`  |
+| Ollama     | 最新版                            | 本地嵌入模型 bge-m3        | `127.0.0.1:11434` |
 
 **启动基础设施（顺序：PG → Redis → Ollama）**
 
@@ -151,19 +151,21 @@ envs\lunjiang\python.exe scripts/load_test.py          # 知识库检索并发�
 
 > `.env` 缺失时配置层自动回退加载 `.env.example` 占位默认值（首次 clone 与 CI 可直接跑测试）；生产部署仍须复制 `.env.example` 为 `.env` 并覆盖真实密钥。
 
-| 变量 | 说明 |
-| --- | --- |
-| `SECRET_KEY` | JWT 签名密钥，**生产环境必须修改** |
-| `APP_HOST` / `APP_PORT` / `APP_DEBUG` | 应用监听地址、端口与调试开关 |
-| `PG_HOST` / `PG_PORT` / `PG_USER` / `PG_PASSWORD` / `PG_DB` | PostgreSQL 连接信息（本项目端口为 **5433**） |
-| `REDIS_HOST` / `REDIS_PORT` / `REDIS_DB` | Redis 连接信息（默认 6379/0） |
-| `DEEPSEEK_API_KEY` / `ZHIPU_API_KEY` / `QWEN_API_KEY` / `OPENAI_API_KEY` | 各云底座密钥（切换 provider 时填写） |
-| `AGNES_BASE_URL` / `AGNES_API_KEY` | 默认对话底座 agnes-2.5-flash（OpenAI 兼容） |
+| 变量                                                                       | 说明                                |
+| ------------------------------------------------------------------------ | --------------------------------- |
+| `SECRET_KEY`                                                             | JWT 签名密钥，**生产环境必须修改**             |
+| `APP_HOST` / `APP_PORT` / `APP_DEBUG`                                    | 应用监听地址、端口与调试开关                    |
+| `PG_HOST` / `PG_PORT` / `PG_USER` / `PG_PASSWORD` / `PG_DB`              | PostgreSQL 连接信息（本项目端口为 **5433**）  |
+| `REDIS_HOST` / `REDIS_PORT` / `REDIS_DB`                                 | Redis 连接信息（默认 6379/0）             |
+| `DEEPSEEK_API_KEY` / `ZHIPU_API_KEY` / `QWEN_API_KEY` / `OPENAI_API_KEY` | 各云底座密钥（切换 provider 时填写）           |
+| `AGNES_BASE_URL` / `AGNES_API_KEY`                                       | 默认对话底座 agnes-2.5-flash（OpenAI 兼容） |
 
 ### `configs/settings.yaml`（主配置）
 
 - **对话 / 嵌入双底座**：默认 `llm.default_provider=agnes`（云端 agnes-2.5-flash，Key 在 `.env` 的 `AGNES_API_KEY`）、`llm.embedding_provider=ollama`（本地 bge-m3，离线可用）；`default_provider` 可切换 `ollama` / `deepseek` / `zhipu` / `qwen` / `agnes`，两者可解耦。16GB 内存机器如需全本地：Ollama 的 `/v1` 兼容端点不认请求级 `options`，用 Modelfile 给 `qwen3:4b` 建 `qwen3:4b-ctx4096` 镜像副本（blob 复用，几乎不占额外磁盘）并切换 provider。
+
 - **向量维度动态化**：pgvector 向量列维度由 `llm.providers.<底座>.embedding_dim` 动态决定（`infrastructure/config.get_embedding_dim()`）；嵌入底座返回维度不符时运行时抛错。已引入 Alembic 迁移骨架（`alembic/`），初始迁移待数据库环境就绪后生成，开发期沿用 `create_all` 兜底（见 [ROUND12](docs/OPTIMIZATION_ROUND12.md#五p0-2-alembic-迁移骨架暂停推进)）
+
 - **RAG 参数**：`rag.rewrite_enabled`（Query 改写开关）、`rag.sibling_window`（相邻窗口第三引擎半径，0=关闭）、`rag.max_upload_size_mb`（知识库单文件上限）、`rag.knowledge.upload_dir`（原始文件落盘目录，默认 `data/uploads/`，已 gitignore）、`rag.knowledge.min_text_chars`（低于该字数视为扫描件/空文档拒绝）
 
 ### `configs/tools.yaml`（工具治理参数）
@@ -175,7 +177,9 @@ envs\lunjiang\python.exe scripts/load_test.py          # 知识库检索并发�
 YAML 驱动的 RBAC，`resource` 命名 `<域>:<动作>`，支持 `*` 与 `prefix:*` 通配：
 
 - `student`：项目 CRUD、发起/介入 Agent 会话、全部论文工具（治理层另有限流/审计）
+
 - `admin`：全量权限（含 Trace 回放）
+
 - `anonymous`：仅注册与登录
 
 ### 知识库使用
@@ -227,20 +231,27 @@ docker-compose.yml   PostgreSQL(pgvector) + Redis 一键编排（端口与 .env 
 
 ## API 速览
 
-| 分组       | 端点                                                                                    | 鉴权     |
-| -------- | ------------------------------------------------------------------------------------- | ------ |
-| Auth     | `POST /api/auth/register`、`POST /api/auth/login`、`GET /api/auth/me`                  | 前两者免鉴权；`/me` 需 Bearer |
-| Projects | `POST/GET /api/projects`、`GET/PATCH/DELETE /api/projects/{id}`                        | Bearer |
-| 知识库      | `POST/GET/DELETE /api/projects/{id}/knowledge[/{doc_id}]`、`POST .../knowledge/search` | Bearer |
-| Agent    | `POST /api/agent/chat`（SSE）、`POST /api/agent/resume`                                  | Bearer |
-| Trace    | `GET /api/observability/traces`、`GET /api/observability/traces/{trace_id}`、`GET /api/observability/metrics` | admin  |
+| 分组       | 端点                                                                                                          | 鉴权                    |
+| -------- | ----------------------------------------------------------------------------------------------------------- | --------------------- |
+| Auth     | `POST /api/auth/register`、`POST /api/auth/login`、`GET /api/auth/me`                                         | 前两者免鉴权；`/me` 需 Bearer |
+| Projects | `POST/GET /api/projects`、`GET/PATCH/DELETE /api/projects/{id}`                                              | Bearer                |
+| 知识库      | `POST/GET/DELETE /api/projects/{id}/knowledge[/{doc_id}]`、`POST .../knowledge/search`                       | Bearer                |
+| Agent    | `POST /api/agent/chat`（SSE）、`POST /api/agent/resume`                                                        | Bearer                |
+| Trace    | `GET /api/observability/traces`、`GET /api/observability/traces/{trace_id}`、`GET /api/observability/metrics` | admin                 |
 
 ## 常见问题
 
-- **后端启动报 `ConnectionRefusedError: [WinError 1225]`**：应用启动时会立即连接 PostgreSQL 建表，该错误说明 **PostgreSQL（或 Redis）未启动**。按[快速开始第 0 节](#0-环境准备)的连通性自检确认监听，并依次启动依赖后重启。
-- **`pg_ctl start` 提示 another server might be running 并卡住**：多为异常退出残留 `postmaster.pid`（确认 5433 无监听、无 postgres 进程后）删除 `D:\Develop\DB\PostgreSQL16\data\postmaster.pid` 再启动。
+- **后端启动报** **`ConnectionRefusedError: [WinError 1225]`**：应用启动时会立即连接 PostgreSQL 建表，该错误说明 **PostgreSQL（或 Redis）未启动**。按[快速开始第 0 节](#0-环境准备)的连通性自检确认监听，并依次启动依赖后重启。
+
+- **`pg_ctl start`** **提示 another server might be running 并卡住**：多为异常退出残留 `postmaster.pid`（确认 5433 无监听、无 postgres 进程后）删除 `D:\Develop\DB\PostgreSQL16\data\postmaster.pid` 再启动。
+
 - **Ollama 返回 500（KV Cache OOM）**：参考 [优化记录二](docs/OPTIMIZATION_ROUND2.md)（`num_ctx=4096` 已由 Modelfile 镜像固化）；当前对话默认走云端 agnes，此问题主要影响本地回退场景。
+
 - **端口冲突**：若本机 5433/6379 被占用，先释放端口，或调整 `.env` 与 `postgresql.conf` 保持一致。
-- **`check_env.py` 报错**：该脚本按 Ollama `/api/generate` 格式探测 LLM 底座，若 `default_provider` 为 OpenAI 兼容云端（如 agnes）会 404；以 `scripts/` 其余冒烟脚本与 `netstat` 端口检查为准。
+
+- **`check_env.py`** **报错**：该脚本按 Ollama `/api/generate` 格式探测 LLM 底座，若 `default_provider` 为 OpenAI 兼容云端（如 agnes）会 404；以 `scripts/` 其余冒烟脚本与 `netstat` 端口检查为准。
+
 - **中文乱码**：全部文件保持 UTF-8（已配 `.editorconfig` + IDE settings）。
+
 - **知识库上传返回 failed（扫描件）**：扫描版 PDF 无可提取文本，本期不支持 OCR，接口返回 `status=failed` + 错误说明；请上传含文本层的 PDF 或 DOCX/TXT/MD。
+
