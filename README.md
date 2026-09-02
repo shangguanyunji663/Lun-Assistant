@@ -10,23 +10,23 @@
 
 ### 通用 / 后端工程线（docs/）
 
-| 文档                                        | 用途                                                                      |
-| ----------------------------------------- | ----------------------------------------------------------------------- |
-| [📖 学习指南](docs/LEARNING_GUIDE.md)         | 从零理解并重建本项目（推荐先读）                                                        |
-| [📐 架构总览](#目录结构)                          | 分层结构与模块职责                                                               |
-| [📋 目录结构审查](docs/ARCHITECTURE_REVIEW.md)  | 目录合理性评估（问题清单 + 优化建议）                                                    |
-| [📂 项目结构说明](docs/PROJECT_STRUCTURE.md)    | 目录与关键文件用途说明（2026-09-02 归档）                                              |
-| [📐 统一格式规范](docs/FORMAT_STANDARD.md)      | 全部 Markdown 文档的格式规范                                                     |
-| [🛠 优化记录一](docs/OPTIMIZATION_ROUND1.md)   | 第一轮优化（性能/安全/体验）                                                         |
-| [🛠 优化记录二](docs/OPTIMIZATION_ROUND2.md)   | 第二轮优化（OOM 修复/结构重构方案）                                                    |
-| [🛠 优化记录三](docs/OPTIMIZATION_ROUND3.md)   | 第三轮优化（布尔陷阱/前端全按钮失效排查）                                                   |
-| [🛠 优化记录四](docs/OPTIMIZATION_ROUND4.md)   | 第四轮优化（RAG知识库/多引擎检索/Planner/结构化产物）                                       |
-| [🛠 优化记录五](docs/OPTIMIZATION_ROUND5.md)   | 第五轮优化（学术工具生态/并发压测/agnes对话底座）                                            |
-| [🛠 优化记录六](docs/OPTIMIZATION_ROUND6.md)   | 第六轮优化（架构改进与工程化治理/P0修复/测试骨架）                                             |
-| [🛠 优化记录十二](docs/OPTIMIZATION_ROUND12.md) | 第十二轮优化（静态检查接入CI/依赖锁定/前端Hooks/可移植性）                                      |
-| [🛠 优化记录十三](docs/OPTIMIZATION_ROUND13.md) | 第十三轮优化（审计参数合规/Query改写自适应/记忆召回排序/多实例部署）                                  |
-| [🚀 部署指南](docs/DEPLOY.md)                 | GitHub Pages 自动部署到 `https://shangguanyunji663.github.io/Lun-Assistant/` |
-| [💡 常见问题](#常见问题)                          | 排障手册                                                                    |
+| 文档                                        | 用途                                                                             |
+| ----------------------------------------- | ------------------------------------------------------------------------------ |
+| [📖 学习指南](docs/LEARNING_GUIDE.md)         | **三部分**：设计推演（第 0–16 课）/ 八大能力模块解剖（第 0 课基础设施层地基 + 第 17–25 课，含最小可复现骨架）/ 从零复现（第 26–28 课）+ 四附录（调用链 / 依赖矩阵 / FAQ / 设计决策回溯）。推荐先读第一部分 |
+| [📐 架构总览](#目录结构)                          | 分层结构与模块职责                                                                      |
+| [📋 目录结构审查](docs/ARCHITECTURE_REVIEW.md)  | 目录合理性评估（问题清单 + 优化建议）                                                           |
+| [📂 项目结构说明](docs/PROJECT_STRUCTURE.md)    | 目录与关键文件用途说明（2026-09-02 归档）                                                     |
+| [📐 统一格式规范](docs/FORMAT_STANDARD.md)      | 全部 Markdown 文档的格式规范                                                            |
+| [🛠 优化记录一](docs/OPTIMIZATION_ROUND1.md)   | 第一轮优化（性能/安全/体验）                                                                |
+| [🛠 优化记录二](docs/OPTIMIZATION_ROUND2.md)   | 第二轮优化（OOM 修复/结构重构方案）                                                           |
+| [🛠 优化记录三](docs/OPTIMIZATION_ROUND3.md)   | 第三轮优化（布尔陷阱/前端全按钮失效排查）                                                          |
+| [🛠 优化记录四](docs/OPTIMIZATION_ROUND4.md)   | 第四轮优化（RAG知识库/多引擎检索/Planner/结构化产物）                                              |
+| [🛠 优化记录五](docs/OPTIMIZATION_ROUND5.md)   | 第五轮优化（学术工具生态/并发压测/agnes对话底座）                                                   |
+| [🛠 优化记录六](docs/OPTIMIZATION_ROUND6.md)   | 第六轮优化（架构改进与工程化治理/P0修复/测试骨架）                                                    |
+| [🛠 优化记录十二](docs/OPTIMIZATION_ROUND12.md) | 第十二轮优化（静态检查接入CI/依赖锁定/前端Hooks/可移植性）                                             |
+| [🛠 优化记录十三](docs/OPTIMIZATION_ROUND13.md) | 第十三轮优化（审计参数合规/Query改写自适应/记忆召回排序/多实例部署）                                         |
+| [🚀 部署指南](docs/DEPLOY.md)                 | GitHub Pages 自动部署到 `https://shangguanyunji663.github.io/Lun-Assistant/`        |
+| [💡 常见问题](#常见问题)                          | 排障手册                                                                           |
 
 ### 前端版本线（docs/frontend-versions/，v8 → v12）
 
