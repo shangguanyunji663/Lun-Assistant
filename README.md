@@ -23,6 +23,7 @@
 | [🛠 优化记录四](docs/OPTIMIZATION_ROUND4.md) | 第四轮优化（RAG知识库/多引擎检索/Planner/结构化产物） |
 | [🛠 优化记录五](docs/OPTIMIZATION_ROUND5.md) | 第五轮优化（学术工具生态/并发压测/agnes对话底座）      |
 | [🛠 优化记录六](docs/OPTIMIZATION_ROUND6.md) | 第六轮优化（架构改进与工程化治理/P0修复/测试骨架）       |
+| [🛠 优化记录十二](docs/OPTIMIZATION_ROUND12.md) | 第十二轮优化（静态检查接入CI/依赖锁定/前端Hooks/可移植性） |
 | [🚀 部署指南](docs/DEPLOY.md)               | GitHub Pages 自动部署到 `https://shangguanyunji663.github.io/Lun-Assistant/` |
 | [💡 常见问题](#常见问题)                        | 排障手册                              |
 
@@ -199,6 +200,8 @@ scripts/             初始化 + 冒烟 + 压测脚本
 frontend/            React 18 + Vite（SSE 对话 / Markdown / 时间线 / 项目知识库面板）
 docs/                文档（学习指南 / 优化记录）
 tests/               离线单元测试
+alembic/             SQLAlchemy 迁移（异步 env.py 聚合全部模型，待生成初始迁移）
+docker-compose.yml   PostgreSQL(pgvector) + Redis 一键编排（端口与 .env 一致）
 ```
 
 依赖方向：`api → services → infrastructure → configs`，禁止反向。
@@ -221,7 +224,7 @@ tests/               离线单元测试
 ### `configs/settings.yaml`（主配置）
 
 - **对话底座切换**：`llm.default_provider` 一键切换（`ollama` / `deepseek` / `zhipu` / `qwen` / `agnes`）；`llm.embedding_provider` 与对话解耦（推荐云端对话 + 本地 bge-m3 嵌入）
-- **向量维度动态化**：pgvector 向量列维度由 `llm.providers.<底座>.embedding_dim` 动态决定（`infrastructure/config.get_embedding_dim()`，不再硬编码 1024）；嵌入底座返回维度不符时运行时抛错，切换底座若维度变化需重建 `memory_items` 表或迁移数据（当前未引入 Alembic）
+- **向量维度动态化**：pgvector 向量列维度由 `llm.providers.<底座>.embedding_dim` 动态决定（`infrastructure/config.get_embedding_dim()`，不再硬编码 1024）；嵌入底座返回维度不符时运行时抛错，切换底座若维度变化需重建 `memory_items` 表或迁移数据。已引入 Alembic 迁移骨架（`alembic/`，异步 env.py 聚合全部模型）；初始迁移待数据库环境就绪后生成，当前开发期沿用 `create_all` 兜底（见 [ROUND12](docs/OPTIMIZATION_ROUND12.md#五p0-2-alembic-迁移骨架暂停推进)）
 - **RAG 参数**：`rag.rewrite_enabled`（Query 改写开关）、`rag.sibling_window`（相邻窗口第三引擎半径，0=关闭）、`rag.max_upload_size_mb`（知识库单文件上限）、`rag.knowledge.upload_dir`（原始文件落盘目录，默认 `data/uploads/`，已 gitignore）、`rag.knowledge.min_text_chars`（低于该字数视为扫描件/空文档拒绝）
 
 ### `configs/tools.yaml`（工具治理参数）
