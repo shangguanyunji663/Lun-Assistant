@@ -66,10 +66,12 @@ main { flex: 1; display: flex; gap: 22px; padding: 0 28px 28px; min-height: 0; }
   opacity: var(--p-op, .16); filter: saturate(0.95) brightness(1.05);
   transition: opacity .45s ease, filter .45s ease;
 }
-body[data-theme="b"] .ink-photo {
-  background: url('Traditional_Chinese_ink_wash_l_2026-09-01T13-40-46.png') right bottom / 65% no-repeat;
-  opacity: var(--p-op, .12); filter: contrast(0.92) saturate(0.4);
-}
+/* ROUND11 · E2 黑线瑞士：移除背景图、遮罩、墨滴、中缝、纸纹、brand 短线 —— 黑线瑞士视觉极简 */
+body[data-theme="b"] .ink-photo { display: none; }
+body[data-theme="b"] .ink-veil { background: transparent; }
+body[data-theme="b"] .ink-blob-1, body[data-theme="b"] .ink-blob-2 { display: none; }
+body[data-theme="b"] .paper-grain { opacity: 0.015; }
+body[data-theme="b"] .ink-divider { opacity: 0; }
 body[data-theme="c"] .ink-photo {
   background: url('Chinese_ink_painting_of_toweri_2026-09-01T13-41-26.png') center 30% / cover no-repeat;
   opacity: var(--p-op, .20); filter: saturate(0.85) brightness(0.85);
@@ -87,10 +89,7 @@ body[data-theme="d"] .ink-photo {
   transition: background .45s ease;
 }
 body[data-theme="b"] .ink-veil {
-  background: linear-gradient(180deg,
-    rgba(236,230,214,calc(var(--v-top,.06) * 0.5)) 0%,
-    rgba(236,230,214,calc(var(--v-mid,.40))) 55%,
-    rgba(214,206,188,.72) 100%);
+  background: transparent;
 }
 body[data-theme="c"] .ink-veil {
   background:
@@ -376,34 +375,38 @@ footer { font-size: 11px; color: var(--text-muted); padding: 14px 28px 24px; let
   --font-sans: 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Noto Sans SC', system-ui, sans-serif;
 }
 
-/* B · 水墨留白 */
+/* ROUND11 · B 主题由「水墨留白」翻转为「黑白瑞士」（Swiss Black Outline）
+   ─────────────────────────────────────────────
+   触发：v11 B 宣纸米 #ECE6D6 与 D 古绢黄 #C9B58A 同属暖色域，明度差仅 ~10%，
+   切换时区分度不足。改为「冷 vs 暖 × 黑 vs 金」双重对比，区分度从 1.5 档跃至 7 档。
+   视觉锚点：Apple HIG / Vignelli 瑞士现代主义 — 纯白底 + 1.5px 实线黑边 + 直角 + Helvetica。 */
 body[data-theme="b"] {
-  --bg-page: #ECE6D6;
-  --bg-card: linear-gradient(180deg, #ECE6D6 0%, #E0DAC9 100%);
-  --surface: rgba(245, 240, 228, 0.65);
-  --surface-2: rgba(252, 248, 238, 0.92);
-  --surface-side: rgba(220, 213, 196, 0.55);
-  --surface-active: rgba(28, 28, 24, 0.10);
-  --surface-input: rgba(245, 240, 228, 0.78);
-  --surface-accent-soft: rgba(28, 28, 24, 0.08);
-  --surface-kbswitch: rgba(245, 240, 228, 0.85);
-  --topbar-bg: rgba(252, 248, 238, 0.82);
-  --border: rgba(60, 56, 42, 0.22);
-  --border-strong: rgba(60, 56, 42, 0.42);
-  --text: #2C2820;
-  --text-muted: rgba(60, 56, 42, 0.62);
-  --accent: #2C2820;
-  --accent-on: #ECE6D6;
-  --shadow-tabs: 0 2px 12px rgba(60, 56, 42, 0.12);
+  --bg-page: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --surface: rgba(0, 0, 0, 0.04);
+  --surface-2: rgba(0, 0, 0, 0.06);
+  --surface-side: rgba(0, 0, 0, 0.04);
+  --surface-active: rgba(0, 0, 0, 0.10);
+  --surface-input: #FFFFFF;
+  --surface-accent-soft: rgba(0, 0, 0, 0.04);
+  --surface-kbswitch: #FFFFFF;
+  --topbar-bg: #FFFFFF;
+  --border: #000000;
+  --border-strong: #000000;
+  --text: #000000;
+  --text-muted: rgba(0, 0, 0, 0.62);
+  --accent: #000000;
+  --accent-on: #FFFFFF;
+  --shadow-tabs: 0 2px 12px rgba(0, 0, 0, 0.10);
   --shadow-on: 0 4px 14px rgba(0, 0, 0, 0.20);
-  --shadow-mockup: 0 20px 56px rgba(60, 56, 42, 0.22), 0 1px 0 rgba(255, 255, 255, 0.5) inset;
-  --shadow-col: 0 4px 14px rgba(60, 56, 42, 0.08);
-  --radius-card: 14px;
-  --radius-col: 10px;
-  --radius-topbar: 8px;
-  --font-serif: 'STKaiti', 'KaiTi', '楷体', serif;
-  --font-serif-title: 'STKaiti', 'KaiTi', '楷体', serif;
-  --font-sans: 'STKaiti', 'KaiTi', 'PingFang SC', system-ui, sans-serif;
+  --shadow-mockup: 0 16px 48px rgba(0, 0, 0, 0.18), 0 0 0 1.5px #000000 inset;
+  --shadow-col: 0 4px 14px rgba(0, 0, 0, 0.06);
+  --radius-card: 0px;
+  --radius-col: 0px;
+  --radius-topbar: 0px;
+  --font-serif: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+  --font-serif-title: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+  --font-sans: 'Helvetica Neue', 'Helvetica', 'Arial', 'PingFang SC', system-ui, sans-serif;
 }
 
 /* C · 暗墨夜山 */
@@ -495,8 +498,8 @@ body[data-theme="d"] .console-badge { color: #4A3820; border-color: #B89048; bac
     <button data-theme="a" class="on" role="tab" title="A 柔雾青绿 · 石青 + 青绿">
       <span class="chip" style="background:linear-gradient(135deg,#DDE9F0,#5B9E84)"></span>A 柔雾青绿
     </button>
-    <button data-theme="b" role="tab" title="B 水墨留白 · 宣纸 + 楷体">
-      <span class="chip" style="background:linear-gradient(135deg,#ECE6D6,#2C2820)"></span>B 水墨留白
+    <button data-theme="b" role="tab" title="B 黑白瑞士 · Swiss Black Outline（ROUND11）">
+      <span class="chip" style="background:linear-gradient(135deg,#FFFFFF,#000000)"></span>B 黑白瑞士
     </button>
     <button data-theme="c" role="tab" title="C 暗墨夜山 · 月光墨蓝">
       <span class="chip" style="background:radial-gradient(circle,#F2EBD0,#050B11 70%)"></span>C 暗墨夜山
@@ -680,7 +683,7 @@ body[data-theme="d"] .console-badge { color: #4A3820; border-color: #B89048; bac
   </div>
 </main>
 
-<footer id="footCaption">v11 · 四主题切换 · 柔雾青绿 / 水墨留白 / 暗墨夜山 / 青绿金碧 · design tokens 统一 · <code>4 张参考图各用其主图</code></footer>
+<footer id="footCaption">v11 → ROUND11 · B 主题由水墨留白翻转为黑白瑞士 · 柔雾青绿 / 黑白瑞士 / 暗墨夜山 / 青绿金碧 · design tokens 统一 · <code>4 张参考图各用其主图</code></footer>
 
 <script>
 /* v11：四主题切换，所有底色 + 图色 + 预设值统一管理 */

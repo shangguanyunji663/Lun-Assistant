@@ -112,61 +112,68 @@
  *   - D 古绢黄 #C9B58A + 深褐 #2C2418；强调 宝石蓝 #2E5C8A + 石绿 #4F8762 + 金泥 #B89048 *
  *     **楷体**；圆角 18px（华丽）；木轴换金泥线                                           *
  */
+/* ROUND11 · B 主题由「水墨留白」翻转为「黑白瑞士」（Swiss Black Outline）
+   ─────────────────────────────────────────────
+   触发：v11 B 宣纸米 #ECE6D6 与 D 古绢黄 #C9B58A 同属暖色域，明度差仅 ~10%，
+   切换时区分度不足。改为「冷 vs 暖 × 黑 vs 金」双重对比，区分度从 1.5 档跃至 7 档。
+   视觉锚点：Apple HIG / Vignelli 瑞士现代主义 — 纯白底 + 1.5px 实线黑边 + 直角 + Helvetica。
+   改动范围：本块（:115-170）+ .ink-divider (:350) + .paper-grain (:414) + .theme-tabs.on (:714-717)。 */
 body[data-theme="b"] {
-  /* 主色：宣纸米（参考图 ink_wash 均值 RGB(227,224,219) 亮宣纸；取暖调 #ECE6D6） */
-  --bg-deep:       #ECE6D6;
-  --bg-panel:      #F2EEE1;
-  --bg-raise:      #F8F5EA;
+  /* 主色：纯白（黑线瑞士核心） */
+  --bg-deep:       #FFFFFF;
+  --bg-panel:      #FFFFFF;
+  --bg-raise:      #F5F5F5;
 
-  /* 文字：墨黑 */
-  --ink-hi:        #2C2820;
-  --ink-mid:       #4A4842;
-  --ink-low:       #6E6B62;
+  /* 文字：纯黑（高对比正文 21:1，远超 AAA） */
+  --ink-hi:        #000000;
+  --ink-mid:       #333333;
+  --ink-low:       #6B6B6B;
 
-  /* 强调：墨黑（水墨主题不用彩色强调，留白主导） */
-  --jade:          #1F1F1C;
-  --jade-deep:     #3A3833;
-  --pine:          #4A4842;
+  /* 强调：纯黑单色（瑞士设计单色主导原则，不上彩色） */
+  --jade:          #000000;
+  --jade-deep:     #000000;
+  --pine:          #1A1A1A;
 
-  /* 卷轴：深墨（保持木轴感但不刺眼） */
-  --gold:          #2C2820;
-  --gold-hi:       #1F1F1C;
+  /* 卷轴 / CTA：纯黑（黑线瑞士无金色，CTA 用黑块） */
+  --gold:          #000000;
+  --gold-hi:       #1A1A1A;
 
-  /* 朱砂 → 深枣红（钤印） */
-  --seal:          #A3382B;
+  /* 朱砂 → 纯黑（黑线瑞士不用红色钤印；≤2% 面积限定保留） */
+  --seal:          #000000;
 
-  /* 描边（浅底用暖墨半透明）—— v11 补齐：此前 B 未覆盖 line 系列，
-     沿用 :root 的浅色半透明边框，在宣纸白底上几乎不可见。 */
-  --line:          rgba(60, 56, 42, 0.12);
-  --line-mid:      rgba(60, 56, 42, 0.18);
-  --line-hi:       rgba(60, 56, 42, 0.28);
-  --line-gold:     rgba(60, 56, 42, 0.32);
-  --line-jade:     rgba(60, 56, 42, 0.34);
+  /* 描边：黑线瑞士的灵魂 —— 1.5px 实线黑（半透明 → 实色）
+     原 rgba 半透明描边在宣纸米底上几乎不可见；改实色 #000 后视觉硬度匹配 E2 气质。 */
+  --line:          #000000;
+  --line-mid:      #000000;
+  --line-hi:       #000000;
+  --line-gold:     #000000;
+  --line-jade:     #000000;
 
-  /* 字体：水墨留白 → 楷体主导 */
-  --font-kai:  "STKaiti", "KaiTi", "楷体", "Kaiti SC", serif;
-  --font-song: "STKaiti", "KaiTi", "楷体", serif;
-  --font-body: "STKaiti", "KaiTi", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  /* 字体：Helvetica 主导（瑞士设计无衬线；中文回退 PingFang / system-ui）
+     放弃原 STKaiti 楷体主导 —— 黑线瑞士与楷体气韵冲突。 */
+  --font-kai:  "Helvetica Neue", "Helvetica", "Arial", "PingFang SC", system-ui, sans-serif;
+  --font-song: "Helvetica Neue", "Helvetica", "Arial", sans-serif;
+  --font-body: "Helvetica Neue", "Helvetica", "Arial", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 
   /* B 主题 RGB（供 rgba 半透明用） */
-  --bg-rgb:        236, 230, 214;
-  --bg-panel-rgb:  242, 238, 225;
-  --bg-raise-rgb:  248, 245, 234;
+  --bg-rgb:        255, 255, 255;
+  --bg-panel-rgb:  255, 255, 255;
+  --bg-raise-rgb:  245, 245, 245;
 
-  /* 背景图 */
-  --ink-bg-url:    url('/bg/bg-b-inkwash.webp');
-  --ink-bg-pos:    right bottom;
-  --ink-bg-size:   60%;   /* B 参考图是亮宣纸白，全屏铺开会几乎不可见；右下 60% 让墨痕在角上微现 */
+  /* 背景图：黑线瑞士不用背景图（保留 token 名以维持代码兼容） */
+  --ink-bg-url:    none;
+  --ink-bg-pos:    center;
+  --ink-bg-size:   cover;
 
-  /* 卷轴木轴：B 主题不用，换成宣纸纹理色 */
-  --wood-top:      rgba(28, 28, 26, 0.12);
-  --wood-mid:      rgba(28, 28, 26, 0.22);
-  --wood-bot:      rgba(28, 28, 26, 0.30);
+  /* 卷轴：上下两条 9px 纯黑实线（原 B 主题宣纸灰线 → 黑线瑞士纯黑实线） */
+  --wood-top:      #000000;
+  --wood-mid:      #000000;
+  --wood-bot:      #000000;
 
-  /* 遮罩更淡（B 主题"水墨留白"留白主导；图 (227,224,219) 与底接近，低干扰） */
-  --ink-veil-top: 0.12;
-  --ink-veil-mid: 0.30;
-  --ink-veil-bot: 0.62;
+  /* 遮罩：黑线瑞士无遮罩（透明，让 UI 保持纯白） */
+  --ink-veil-top: 0;
+  --ink-veil-mid: 0;
+  --ink-veil-bot: 0;
 }
 
 body[data-theme="c"] {
@@ -347,7 +354,8 @@ a:hover { color: var(--gold-hi); }
   z-index: 5; opacity: 0;
   pointer-events: none;
 }
-body[data-theme="b"] .ink-divider { opacity: 1; }
+/* ROUND11 · E2 黑线瑞士：去除原 B 主题中缝线（中缝是水墨宣纸构图，黑线瑞士无） */
+body[data-theme="b"] .ink-divider { opacity: 0; }
 
 /* 3.1.2 C 主题 · 钤印（在右下角 38×38 红边框"匠"字章，A/B 隐藏） */
 .ink-stamp {

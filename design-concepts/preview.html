@@ -200,50 +200,51 @@ body[data-theme="a"] {
 .mockup-a .sb-item.on .role, .mockup-a .bubble.user .role { color: #5B9E84; }
 
 /* =========================================================
-   Theme B · 水墨留白（Traditional_Chinese_ink_wash_l_*.png）
+   Theme B · 黑白瑞士（Swiss Black Outline · ROUND11）
    ========================================================= */
 body[data-theme="b"] {
-  --bg-page: #ECE6D6;
-  --bg-card: linear-gradient(180deg, #ECE6D6 0%, #E0DAC9 100%);
-  --surface: rgba(245, 240, 228, 0.65);
-  --surface-2: rgba(252, 248, 238, 0.92);
-  --surface-side: rgba(220, 213, 196, 0.55);
-  --surface-active: rgba(28, 28, 24, 0.08);
-  --surface-input: rgba(245, 240, 228, 0.70);
-  --surface-input-2: rgba(252, 248, 238, 0.92);
-  --surface-accent-soft: rgba(28, 28, 24, 0.06);
-  --surface-kbswitch: rgba(245, 240, 228, 0.85);
-  --border: rgba(60, 56, 42, 0.18);
-  --border-strong: rgba(60, 56, 42, 0.40);
-  --text: #2C2820;
-  --text-muted: rgba(60, 56, 42, 0.62);
-  --accent: #1F1F1C;
-  --accent-secondary: #4A4842;
-  --accent-on: #ECE6D6;
-  --shadow-tabs: 0 2px 12px rgba(60, 56, 42, 0.10);
+  --bg-page: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --surface: rgba(0, 0, 0, 0.04);
+  --surface-2: rgba(0, 0, 0, 0.06);
+  --surface-side: rgba(0, 0, 0, 0.04);
+  --surface-active: rgba(0, 0, 0, 0.10);
+  --surface-input: #FFFFFF;
+  --surface-input-2: #FFFFFF;
+  --surface-accent-soft: rgba(0, 0, 0, 0.04);
+  --surface-kbswitch: #FFFFFF;
+  --border: #000000;
+  --border-strong: #000000;
+  --text: #000000;
+  --text-muted: rgba(0, 0, 0, 0.62);
+  --accent: #000000;
+  --accent-secondary: #000000;
+  --accent-on: #FFFFFF;
+  --shadow-tabs: 0 2px 12px rgba(0, 0, 0, 0.10);
   --shadow-on: 0 4px 14px rgba(0, 0, 0, 0.20);
-  --shadow-mockup: 0 16px 48px rgba(60, 56, 42, 0.22), 0 1px 0 rgba(255, 255, 255, 0.5) inset;
-  --radius-card: 14px;
-  --font-serif: 'STKaiti', 'KaiTi', '楷体', serif;
-  --font-serif-title: 'STKaiti', 'KaiTi', '楷体', serif;
-  --font-sans: 'STKaiti', 'KaiTi', 'PingFang SC', system-ui, sans-serif;
-  --label-bg: rgba(252, 248, 238, 0.92);
-  --label-text: #2C2820;
-  --label-border: rgba(60, 56, 42, 0.30);
+  --shadow-mockup: 0 16px 48px rgba(0, 0, 0, 0.18), 0 0 0 1.5px #000000 inset;
+  --radius-card: 0px;
+  --font-serif: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+  --font-serif-title: 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+  --font-sans: 'Helvetica Neue', 'Helvetica', 'Arial', 'PingFang SC', system-ui, sans-serif;
+  --label-bg: #FFFFFF;
+  --label-text: #000000;
+  --label-border: #000000;
 }
 
-.mockup-b .ink-bg img { object-position: right bottom; width: 65%; height: 65%; left: auto; right: 0; top: auto; bottom: 0; opacity: 0.18; filter: contrast(0.92) saturate(0.4); }
-.mockup-b .ink-bg::after { background: radial-gradient(ellipse at top left, transparent 35%, rgba(236, 230, 214, 0.55) 100%); }
-.mockup-b .topbar { background: rgba(252, 248, 238, 0.78); backdrop-filter: blur(10px); border-bottom: 0.5px solid rgba(60, 56, 42, 0.16); }
-.mockup-b .brand { letter-spacing: 0.42em; }
-.mockup-b .brand::before { content: ''; display: inline-block; width: 18px; height: 1px; background: #2C2820; vertical-align: middle; margin-right: 12px; opacity: 0.5; }
-.mockup-b .bubble.user { border-color: #2C2820; color: #2C2820; background: rgba(252, 248, 238, 0.85); border-top-right-radius: 4px; }
-.mockup-b .bubble.assistant { border-color: rgba(60, 56, 42, 0.22); color: #2C2820; background: rgba(255, 255, 255, 0.50); border-top-left-radius: 4px; }
-.mockup-b .bubble .role { color: rgba(60, 56, 42, 0.55); }
-.mockup-b .bubble.user .role { color: #2C2820; }
-.mockup-b .input-bar { background: rgba(245, 240, 228, 0.85); }
-.mockup-b .kb-switcher button.on { background: #2C2820; color: #ECE6D6; }
-.mockup-b .kb-pill .dot { background: #2C2820; box-shadow: none; }
+/* E2 黑线瑞士：不加载背景图（中缝线 / 墨痕都不用），直角 + 1.5px 黑边 */
+.mockup-b .ink-bg { display: none; }
+.mockup-b .ink-bg::after { display: none; }
+.mockup-b .topbar { background: #FFFFFF; backdrop-filter: none; border-bottom: 1.5px solid #000000; }
+.mockup-b .brand { letter-spacing: 0.16em; }
+.mockup-b .brand::before { display: none; }
+.mockup-b .bubble.user { border: 1.5px solid #000000; color: #000000; background: #FFFFFF; border-radius: 0; }
+.mockup-b .bubble.assistant { border: 1.5px solid #000000; color: #000000; background: #FFFFFF; border-radius: 0; }
+.mockup-b .bubble .role { color: #000000; opacity: 0.55; }
+.mockup-b .bubble.user .role { color: #000000; opacity: 1; }
+.mockup-b .input-bar { background: #FFFFFF; border-top: 1.5px solid #000000; }
+.mockup-b .kb-switcher button.on { background: #000000; color: #FFFFFF; border: 1.5px solid #000000; }
+.mockup-b .kb-pill .dot { background: #000000; box-shadow: none; }
 
 /* =========================================================
    Theme C · 暗墨夜山（Chinese_ink_painting_of_toweri_*.png）
@@ -448,10 +449,10 @@ footer { margin-top: 44px; font-size: 11px; color: var(--text-muted); text-align
     </div>
   </div>
 
-  <!-- B · 水墨留白 -->
+  <!-- B · 黑白瑞士 -->
   <div class="mockup mockup-b" data-theme="b">
-    <div class="ink-bg"><img src="Traditional_Chinese_ink_wash_l_2026-09-01T13-40-46.png" alt="水墨留白"></div>
-    <div class="label">B · 水墨留白</div>
+    <div class="ink-bg"></div>
+    <div class="label">B · 黑白瑞士</div>
     <div class="topbar">
       <div>
         <div class="brand">论 匠<small>· v11</small></div>
@@ -621,8 +622,8 @@ footer { margin-top: 44px; font-size: 11px; color: var(--text-muted); text-align
     </div>
 
     <div class="mockup mockup-b">
-      <div class="ink-bg"><img src="Traditional_Chinese_ink_wash_l_2026-09-01T13-40-46.png"></div>
-      <div class="label">B · 水墨留白</div>
+      <div class="ink-bg"></div>
+      <div class="label">B · 黑白瑞士</div>
       <div class="topbar">
         <div class="brand">论 匠<small>· v11</small></div>
         <div class="grow"></div>
@@ -744,7 +745,7 @@ footer { margin-top: 44px; font-size: 11px; color: var(--text-muted); text-align
   </div>
 
   <div class="compare-row">
-    <div class="col-name">B · 水墨</div>
+    <div class="col-name">B · 黑白瑞士</div>
     <div class="compare-cell mockup-b">
       <button class="btn">次要</button><button class="btn primary">主要</button>
       <button class="btn primary">已选</button><button class="btn" disabled style="opacity:0.35;">禁用</button>
@@ -810,7 +811,7 @@ footer { margin-top: 44px; font-size: 11px; color: var(--text-muted); text-align
   </div>
 </div>
 
-<footer>v11 · 四主题切换 · 严格按 4 张参考图还原：柔雾青绿 / 水墨留白 / 暗墨夜山 / 青绿金碧 · design tokens 统一管理 · backend hooks: api.uploadKnowledge / api.searchKnowledge(mode) → tuner.html</footer>
+<footer>v11 → ROUND11 · B 主题由水墨留白翻转为黑白瑞士 · 严格按 4 张参考图还原：柔雾青绿 / 黑白瑞士 / 暗墨夜山 / 青绿金碧 · design tokens 统一管理 · backend hooks: api.uploadKnowledge / api.searchKnowledge(mode) → tuner.html</footer>
 
 <script>
 (function() {

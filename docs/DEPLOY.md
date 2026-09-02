@@ -1,5 +1,12 @@
 # 部署指南 · GitHub Pages 自动部署
 
+> 文档域：ops
+> 文档类型：操作手册 / 指南
+> 主题版本：—
+> 轮次：—
+> 日期：2026-09-01
+> 状态：已落地
+
 > 这是 ROUND9 末尾扩展（求职作品集 R-4 + R-5 落地）的部署说明。改 `frontend/vite.config.js` 加 `base` 切换 + 写 `.github/workflows/deploy.yml` 实现 `main` 分支 push → 自动 build → 部署到 GitHub Pages。
 
 ## 一、最终访问 URL

@@ -1,5 +1,12 @@
 # Lun-Assistant · 项目结构与文件用途说明
 
+> 文档域：general
+> 文档类型：操作手册 / 指南
+> 主题版本：—
+> 轮次：—
+> 日期：2026-09-02
+> 状态：已落地
+
 > 2026-09-02 全面整理后的归档文档。目的：让项目结构一目了然、新人/未来会话能快速定位每个目录与关键文件的用途与价值。
 > 本文档只做说明，不改变任何代码逻辑。
 
@@ -29,8 +36,10 @@
 | `tests/` | pytest 测试 | ★★★ | `pytest.ini` 配置 |
 | `evals/` | 评测（harness / ab / regression + datasets + 报告） | ★★ | 含 `__init__.py` 为包 |
 | `data/` | 语料库（corpus 48 个）+ 运行时上传目录（uploads） | ★★★ | uploads 已 gitignore |
-| `docs/` | 架构 / 部署 / 学习 / 10 轮优化记录 / 设计规范 | ★★★ | 含 `design-concepts/` 设计文档 |
-| `design-concepts/` | 前端设计稿与参考图（preview.html / tuner.html / 4 张山水 PNG） | ★★ | 设计基线，非生产代码 |
+| `docs/` | 架构 / 部署 / 学习 / 优化记录 / 格式规范 | ★★★ | 后端线 ROUND1-6 + 通用文档留在根；前端版本线文档见 `frontend-versions/` |
+| `docs/frontend-versions/` | 前端版本演进文档（v8→v12 全部版本档案 + 索引 + 模板） | ★★★ | 前端文档单一真源（文档治理轮新建） |
+| `docs/design-concepts/` | 前端版本 stub 指针（正文已迁移至 frontend-versions/） | ★ | 仅剩迁移指针，勿作正文 |
+| `design-concepts/` | 前端设计稿资源（preview.html / tuner.html / 4 张山水 PNG） | ★★ | 设计基线，非生产代码；CHANGELOG 已迁至 frontend-versions/ |
 | `frontend/` | React 前端（Vite） | ★★★ | 见 §3 |
 | `envs/` | 本地运行环境：`lunjiang`(venv) + `ollama_models`(模型) + `pkgs_cache`(conda 缓存) | ★★★ | **全部 gitignore**，勿提交 |
 | `.github/workflows/` | GitHub Pages CI | ★★★ | 自动构建部署 |
@@ -66,7 +75,7 @@ frontend/
 ├── index.html             # theme-color 等
 ├── vite.config.js         # base=/Lun-Assistant/（GitHub Pages）
 ├── package.json / package-lock.json
-├── CHANGELOG-v11.md       # v11 四主题改造（诊断→修复→验证）
+├── CHANGELOG-v11.md       # 【stub】已迁移 → docs/frontend-versions/CHANGELOG-v11-frontend.md
 └── node_modules/          # gitignore，勿提交
 ```
 
@@ -75,7 +84,7 @@ frontend/
 | 文件 | 价值 |
 |------|------|
 | `src/App.jsx` | ★★★ 主题切换逻辑（THEMES 4 项 + localStorage 联动 + SSE 会话流） |
-| `src/styles.css` | ★★★ 四主题 token（A 柔雾青绿亮底 / B 水墨留白楷体 / C 暗墨夜山 / D 青绿金碧） |
+| `src/styles.css` | ★★★ 四主题 token（A 柔雾青绿亮底 / B 黑白瑞士（ROUND11） / C 暗墨夜山 / D 青绿金碧） |
 | `src/InkBackground.jsx` | ★★★ 背景分层骨架（图层与主题装饰开关） |
 | `public/console/tuner.html` | ★★ 调参台（控制台入口 `🎛 控制台`） |
 | `scripts/shot-app.mjs` | ★★ 回归脚本，改主题后重跑即可出 4 张截图 |
@@ -97,7 +106,7 @@ frontend/
 | `data/uploads/` 5 重复样本 + 8 空目录 | 上传测试残留 |
 
 ### 已归档
-- `frontend/_theme-shots/` 8 张 v11 截图 → `docs/design-concepts/v11-screenshots/`
+- `frontend/_theme-shots/` 8 张 v11 截图 → `docs/frontend-versions/v11-screenshots/`
 
 ### 待处理（由人工决定）
 - `envs/pkgs_cache/` 残留 9 个 conda 解压目录（约 130MB，`bzip2/libffi/libzlib/openssl/python-3.11.16/sqlite/vc14_runtime/xz`）
@@ -119,4 +128,4 @@ frontend/
 
 ---
 
-_归档时间：2026-09-02 · 配套：`frontend/CHANGELOG-v11.md`（v11 改造）、`design-concepts/CHANGELOG-v11.md`（设计稿）_
+_归档时间：2026-09-02 · 配套：前端版本线文档统一归档于 `docs/frontend-versions/`（v11 生产侧改造 = `CHANGELOG-v11-frontend.md`；v11 设计稿 = `CHANGELOG-v11-design.md`）_

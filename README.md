@@ -6,23 +6,42 @@
 
 ## 文档导航
 
+> ⚠️ **变更标注（2026-09-02 · 文档治理轮）**：前端版本演进文档（v8→v12）已统一归入 [`docs/frontend-versions/`](docs/frontend-versions/README.md)，原 `docs/` 下的 ROUND7-11 位置保留迁移 stub。统一格式规范见 [`docs/FORMAT_STANDARD.md`](docs/FORMAT_STANDARD.md)。
+
+### 通用 / 后端工程线（docs/）
+
 | 文档                                      | 用途                                |
 | --------------------------------------- | --------------------------------- |
 | [📖 学习指南](docs/LEARNING_GUIDE.md)       | 从零理解并重建本项目（推荐先读）                  |
 | [📐 架构总览](#目录结构)                        | 分层结构与模块职责                         |
 | [📋 目录结构审查](docs/ARCHITECTURE_REVIEW.md) | 目录合理性评估（问题清单 + 优化建议）          |
+| [📂 项目结构说明](docs/PROJECT_STRUCTURE.md)   | 目录与关键文件用途说明（2026-09-02 归档）    |
+| [📐 统一格式规范](docs/FORMAT_STANDARD.md)     | 全部 Markdown 文档的格式规范（本文档治理轮制定）|
 | [🛠 优化记录一](docs/OPTIMIZATION_ROUND1.md) | 第一轮优化（性能/安全/体验）                   |
 | [🛠 优化记录二](docs/OPTIMIZATION_ROUND2.md) | 第二轮优化（OOM 修复/结构重构方案）              |
 | [🛠 优化记录三](docs/OPTIMIZATION_ROUND3.md) | 第三轮优化（布尔陷阱/前端全按钮失效排查）             |
 | [🛠 优化记录四](docs/OPTIMIZATION_ROUND4.md) | 第四轮优化（RAG知识库/多引擎检索/Planner/结构化产物） |
 | [🛠 优化记录五](docs/OPTIMIZATION_ROUND5.md) | 第五轮优化（学术工具生态/并发压测/agnes对话底座）      |
 | [🛠 优化记录六](docs/OPTIMIZATION_ROUND6.md) | 第六轮优化（架构改进与工程化治理/P0修复/测试骨架）       |
-| [🛠 优化记录七](docs/OPTIMIZATION_ROUND7.md) | 第七轮修改（前端视觉重构：青绿长卷/会话卷册/山水浓度滑杆） |
-| [🛠 优化记录八](docs/OPTIMIZATION_ROUND8.md) | 第八轮修改（前端功能同步 + 三主题切换；含 v10 三主题切到 React 主应用生产代码） |
-| [🛠 优化记录九](docs/OPTIMIZATION_ROUND9.md) | 第九轮修改（v10 主题图 WebP 压缩 5.32→0.26MB + R-4/R-5 GitHub Pages 自动部署） |
-| [🛠 优化记录十](docs/OPTIMIZATION_ROUND10.md) | 第十轮修改（v10 三主题系统全部遗留项落地：仅内置模式 / B-C 装饰 / 音效 / 移动端 / 双浏览器截图） |
 | [🚀 部署指南](docs/DEPLOY.md)               | GitHub Pages 自动部署到 `https://shangguanyunji663.github.io/Lun-Assistant/` |
 | [💡 常见问题](#常见问题)                        | 排障手册                              |
+
+### 前端版本线（docs/frontend-versions/，v8 → v12）
+
+| 文档 | 版本 | 用途 |
+|---|---|---|
+| [🧭 版本线索引](docs/frontend-versions/README.md) | — | 前端版本演进总索引（新增版本入口） |
+| [🧩 版本模板](docs/frontend-versions/TEMPLATE.md) | — | 新增版本直接套用 |
+| [🎨 视觉三方向提案](docs/frontend-versions/VISUAL_DIRECTIONS.md) | v8 | 青绿长卷 / 水墨改良 / 暗墨金线 提案 |
+| [📐 设计规范](docs/frontend-versions/DESIGN_SPEC.md) | v9 | 青绿长卷·放松版设计令牌规范 |
+| [🛠 优化记录七](docs/frontend-versions/OPTIMIZATION_ROUND7.md) | v9 | 前端视觉重构：青绿长卷/会话卷册/山水浓度滑杆 |
+| [🛠 优化记录八](docs/frontend-versions/OPTIMIZATION_ROUND8.md) | v10 | 前端功能同步 + 三主题切换（生产代码落地） |
+| [🛠 优化记录九](docs/frontend-versions/OPTIMIZATION_ROUND9.md) | v10 | 主题图 WebP 压缩 5.32→0.26MB + GitHub Pages 部署 |
+| [🛠 优化记录十](docs/frontend-versions/OPTIMIZATION_ROUND10.md) | v10 | v10 遗留项落地：内置模式 / B-C 装饰 / 音效 / 移动端 / 截图 |
+| [📝 v11 变更（设计稿侧）](docs/frontend-versions/CHANGELOG-v11-design.md) | v11 | 四主题 A/B/C/D · preview/tuner.html 重构 |
+| [📝 v11 变更（生产侧）](docs/frontend-versions/CHANGELOG-v11-frontend.md) | v11 | 四主题 · frontend/ 端到端改造 |
+| [📝 v12 变更（设计稿侧）](docs/frontend-versions/CHANGELOG-v12.md) | v12 | B 主题黑白瑞士 · 设计稿侧 |
+| [🛠 优化记录十一](docs/frontend-versions/OPTIMIZATION_ROUND11.md) | v12 | B 主题由水墨留白翻转为黑白瑞士（修复 B↔D 区分度） |
 
 ## 项目简介
 

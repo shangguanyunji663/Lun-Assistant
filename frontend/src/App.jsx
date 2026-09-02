@@ -116,7 +116,7 @@ export default function App() {
   /* chip 取各主题底色（A 略深一档以免在浅底上糊掉），B/C/D 与 styles.css 的 --bg-deep 一致 */
   const THEMES = [
     { id: 'a', label: '柔雾青绿', chip: '#C5DBE8' },
-    { id: 'b', label: '水墨留白', chip: '#ECE6D6' },
+    { id: 'b', label: '黑白瑞士', chip: '#000000' },
     { id: 'c', label: '暗墨夜山', chip: '#0A1424' },
     { id: 'd', label: '青绿金碧', chip: '#C9B58A' },
   ]
