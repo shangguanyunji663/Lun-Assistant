@@ -21,8 +21,8 @@ logger = logging.getLogger("lunjiang.conversation")
 # 偏好沉淀触发词：命中任一即视为用户在表达长期写作偏好
 PREFERENCE_MARKERS = ("记住", "以后都", "以后请", "必须", "我要求", "请用", "请勿")
 
-_SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no",
-                "Connection": "keep-alive"}
+# interrupt 续跑产出归档为长期决策记忆时，正文截断上限（字符）
+_DECISION_ARCHIVE_CHARS = 600
 
 
 def _fire(coro) -> None:
@@ -50,7 +50,7 @@ async def _archive_decision(user_id: int, project_id: int | None, output: str) -
     from infrastructure.db import get_session_factory
     async with get_session_factory()() as db:
         await long_term_memory.remember(
-            db, content=output[:600], kind="decision",
+            db, content=output[:_DECISION_ARCHIVE_CHARS], kind="decision",
             project_id=project_id, user_id=user_id, importance=0.8)
         if project_id is not None:
             title = output.strip().splitlines()[0][:120] if output.strip() else ""

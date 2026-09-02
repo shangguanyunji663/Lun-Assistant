@@ -1,5 +1,10 @@
 """可观测路由：全链路 Trace 查询与 Agent 行为回放（admin 权限）。"""
+import time
+from typing import Any
+
+import psutil
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func, select
 
 from api.auth.security import require_role
 from api.observability.schemas import (
@@ -9,9 +14,27 @@ from api.observability.schemas import (
     TraceSpanOut,
     TraceSummary,
 )
+from infrastructure.db import get_session_factory
+from infrastructure.models.audit import AuditLog
+from infrastructure.models.knowledge import KnowledgeDocument
+from infrastructure.models.project import Project
+from infrastructure.models.trace import TraceSpan
+from infrastructure.models.user import User
 from services.observability.trace import get_trace, list_traces
 
 router = APIRouter(prefix="/api/observability", tags=["observability"])
+
+# 进程启动时刻（monotonic 基准），用于计算运行时长
+_PROCESS_START = time.monotonic()
+
+# 指标端点统计的表：模型 → 指标键名
+_METRIC_TABLES: list[tuple[Any, str]] = [
+    (User, "users"),
+    (Project, "projects"),
+    (TraceSpan, "trace_spans"),
+    (AuditLog, "audit_logs"),
+    (KnowledgeDocument, "knowledge_documents"),
+]
 
 
 def _build_tree(spans: list[dict]) -> list[dict]:
@@ -57,3 +80,26 @@ async def replay(trace_id: str):
             error_count=len(errors),
         ),
     )
+
+
+async def _table_count(model: Any) -> int | None:
+    """表行数计数；数据库不可用时返回 None（进程指标仍可用）。"""
+    try:
+        async with get_session_factory()() as db:
+            return (await db.scalar(select(func.count()).select_from(model))) or 0
+    except Exception:
+        return None
+
+
+@router.get("/metrics", dependencies=[Depends(require_role("admin"))])
+async def metrics() -> dict[str, Any]:
+    """轻量运行指标：进程运行时长 / 内存 + 各核心表行数（DB 容错）。"""
+    process = psutil.Process()
+    counts: dict[str, int | None] = {}
+    for model, key in _METRIC_TABLES:
+        counts[key] = await _table_count(model)
+    return {
+        "uptime_s": round(time.monotonic() - _PROCESS_START, 1),
+        "process_rss_mb": round(process.memory_info().rss / (1024 * 1024), 1),
+        "counts": counts,
+    }

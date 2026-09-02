@@ -1,0 +1,42 @@
+# 论匠本地依赖编排：PostgreSQL(pgvector) + Redis。
+# 用法：
+#   docker compose up -d            # 启动依赖
+#   docker compose down             # 停止
+#   docker compose down -v          # 停止并清空数据卷
+# 端口与本仓库 .env 保持一致：PG=5433 / Redis=6379。
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: lunjiang-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: local-trust
+      POSTGRES_DB: lunjiang
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d lunjiang"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: lunjiang-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pgdata:
+  redisdata:
