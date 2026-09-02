@@ -63,10 +63,11 @@ export default function App() {
   }, [inkOp])
 
   /* 调参台联动：监听 storage 事件（跨 tab）。
-     用户在 console/tuner.html 改 lj_theme / lj_ink_op 后，主应用实时生效。 */
+     用户在 console/tuner.html 改 lj_theme / lj_ink_op 后，主应用实时生效。
+     白名单与下方 [theme, setTheme] 一致：当前 a/b/c/d 共 4 主题。 */
   useEffect(() => {
     const onStorage = (e) => {
-      if (e.key === 'lj_theme' && (e.newValue === 'a' || e.newValue === 'b' || e.newValue === 'c')) {
+      if (e.key === 'lj_theme' && ['a','b','c','d'].includes(e.newValue)) {
         setTheme(e.newValue)
       } else if (e.key === 'lj_ink_op') {
         const v = Number(e.newValue)
@@ -77,12 +78,12 @@ export default function App() {
     return () => window.removeEventListener('storage', onStorage)
   }, [])
 
-  /* v10 · 三主题切换（A 柔雾青蓝 / B 水墨留白 / C 暗墨柔化）。
+  /* v11 · 四主题切换（A 柔雾青绿 / B 水墨留白 / C 暗墨夜山 / D 青绿金碧）。
      持久化到 localStorage.lj_theme；初始化时若 localStorage 没值则读 :root 默认的 data-theme，
-     否则从 localStorage 取。                                                       */
+     否则从 localStorage 取。新增 D 主题对应青绿金碧参考图（Traditional Chinese blue-green）。 */
   const [theme, setTheme] = useState(() => {
     const t = localStorage.getItem('lj_theme')
-    return t === 'a' || t === 'b' || t === 'c' ? t : 'a'
+    return ['a','b','c','d'].includes(t) ? t : 'a'
   })
   useEffect(() => {
     document.body.dataset.theme = theme
@@ -112,10 +113,12 @@ export default function App() {
   /* ref: 首次 mount 时不响（避免 reload 主题后立刻播放） */
   const themeTickRef = useRef(false)
 
+  /* chip 取各主题底色（A 略深一档以免在浅底上糊掉），B/C/D 与 styles.css 的 --bg-deep 一致 */
   const THEMES = [
-    { id: 'a', label: '柔雾青蓝', chip: '#1B2A36' },
-    { id: 'b', label: '水墨留白', chip: '#ECEAE3' },
-    { id: 'c', label: '暗墨柔化', chip: '#161A20' },
+    { id: 'a', label: '柔雾青绿', chip: '#C5DBE8' },
+    { id: 'b', label: '水墨留白', chip: '#ECE6D6' },
+    { id: 'c', label: '暗墨夜山', chip: '#0A1424' },
+    { id: 'd', label: '青绿金碧', chip: '#C9B58A' },
   ]
 
   const active = sessions.find(s => s.id === activeId) || sessions[0] || null
@@ -298,7 +301,7 @@ export default function App() {
         <a className="btn btn-ghost btn-sm console-entry" href="console/tuner.html" target="_blank" rel="noreferrer"
            title="打开透明度调参台（多维度调节 + WCAG 实时测算，改动实时同步回本页）">🎛 控制台</a>
 
-        {/* v10 · 三主题切换（A 柔雾青蓝 / B 水墨留白 / C 暗墨柔化）。
+        {/* v11 · 四主题切换（A 柔雾青绿 / B 水墨留白 / C 暗墨夜山 / D 青绿金碧）。
             单击切换整套配色 + 背景图 + 卷轴语言；持久化到 localStorage.lj_theme。 */}
         <div className="theme-tabs" role="tablist" aria-label="主题切换">
           {THEMES.map(t => (

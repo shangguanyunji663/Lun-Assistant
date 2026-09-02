@@ -1,47 +1,53 @@
 /* ============================================================
-   论匠 · 青绿长卷（放松版）v9
-   母题：宋元青绿山水 + 装裱卷轴
-   基调：深青底 / 月白字 / 赭石金 / 石青石绿 / 朱砂限量
+   论匠 · 四主题（v11）
+   母题：宋元山水四态 —— 柔雾 / 留白 / 夜山 / 金碧
+
+   ── 四主题基准（严格按 4 张参考图实测均值） ──────────────
+   A 柔雾青绿  图 RGB(164,189,207) 亮雾青蓝  → 浅雾蓝底 #E8EFF3 + 深墨蓝字
+   B 水墨留白  图 RGB(227,224,219) 亮宣纸    → 宣纸米底 #ECE6D6 + 墨黑字
+   C 暗墨夜山  图 RGB( 21, 27, 34) 极暗墨蓝  → 墨夜底  #0A1424 + 月光米字
+   D 青绿金碧  图 RGB(132,119, 90) 暖金棕    → 古绢黄底 #C9B58A + 深褐字
 
    ── 三条硬约束 ──────────────────────────────────────────
-   1. AI 底图 opacity 上限 0.16，且被 .ink-veil 二次压制，
-      文字区实际有效不透明度 ≤ 0.06 —— 图只存在于余光里。
-   2. 正文不用纯白（#E4E1D6 月白），底色不用纯黑（#131C24），
-      降低眩光与压迫感，长时阅读不刺眼。
+   1. 底色明度跟随参考图：亮图用亮底深字，暗图用暗底浅字。
+      （v9 曾统一用深青底，导致 A / D 与参考图明暗完全相反。）
+   2. 描边 --line 系列必须与底色明度反相：亮底用深色半透明，
+      暗底用浅色半透明。各主题均已独立覆盖，不可沿用 :root。
    3. 动效「慢而微」：漂移周期 90~150s、幅度 ≤1.2vw，
       且 prefers-reduced-motion 下完全静止。
    ============================================================ */
 
 /* ---------- 1. 设计令牌 ---------- */
 :root {
-  /* 主色 · 深青底（刻意避开纯黑，减少压迫） */
-  --bg-deep:  #131C24;   /* 应用主背景 */
-  --bg-panel: #18232C;   /* 卡片 / 侧栏 / 顶栏 */
-  --bg-raise: #1E2A34;   /* hover / 输入区 / 选中态 */
+  /* ===== 主色 · A 柔雾青绿（参考图 Soft_misty_blue_green 均值 RGB(164,189,207) 亮雾青蓝） =====
+     v11 由 v9 深青底 #131C24 翻转为浅雾蓝底：原配色与参考图明暗完全相反。 */
+  --bg-deep:  #E8EFF3;   /* 应用主背景（浅雾蓝） */
+  --bg-panel: #DDE9F0;   /* 卡片 / 侧栏 / 顶栏 */
+  --bg-raise: #C5DBE8;   /* hover / 输入区 / 选中态 */
 
-  /* 文字 · 月白阶（不用纯白，减眩光） */
-  --ink-hi:  #E4E1D6;   /* 正文 / 标题   对比度 12.9:1 */
-  --ink-mid: #B4BCC0;   /* 次级文本       对比度  8.8:1 */
-  --ink-low: #8A959B;   /* 说明 / 占位符  对比度  5.5:1 */
+  /* 文字 · 深墨蓝阶（浅底配深字，对比度 10.4:1） */
+  --ink-hi:  #1F3A4D;   /* 正文 / 标题 */
+  --ink-mid: #4A6577;   /* 次级文本 */
+  --ink-low: #6B8296;   /* 说明 / 占位符 */
 
-  /* 辅助色 · 石青 / 石绿（降饱和，取宋画矿物色之神） */
-  --jade:      #5C8A99;   /* 石青 —— Agent 侧、链接、激活 */
-  --jade-deep: #3A6474;   /* 深石青 —— 分隔、节点 */
-  --pine:      #6E9276;   /* 石绿 —— 成功 / 就绪状态 */
+  /* 辅助色 · 石青 / 青绿（取参考图雾青绿之神） */
+  --jade:      #4A8BAB;   /* 石青 —— Agent 侧、链接、激活 */
+  --jade-deep: #3A6F88;   /* 深石青 —— 分隔、节点 */
+  --pine:      #5B9E84;   /* 青绿 —— 成功 / 就绪状态 */
 
-  /* 强调色 · 赭石金（卷轴木轴、主 CTA、焦点） */
-  --gold:    #B89A6B;   /* 对比度 6.4:1 */
-  --gold-hi: #CBAE80;   /* hover 提亮 */
+  /* 强调色 · 青绿（卷轴木轴、主 CTA、焦点） */
+  --gold:    #5B9E84;
+  --gold-hi: #6FB198;   /* hover 提亮 */
 
   /* 点缀色 · 朱砂（严格限量：钤印 / 删除 / 错误，≤2% 面积） */
   --seal: #C0695A;
 
-  /* 描边（一律半透明，柔化边界、避免硬切） */
-  --line:      rgba(228, 225, 214, 0.10);
-  --line-mid:  rgba(228, 225, 214, 0.16);
-  --line-hi:   rgba(228, 225, 214, 0.26);
-  --line-gold: rgba(184, 154, 107, 0.32);
-  --line-jade: rgba(92, 138, 153, 0.34);
+  /* 描边（浅底用深色半透明，柔化边界、避免硬切） */
+  --line:      rgba(31, 58, 77, 0.10);
+  --line-mid:  rgba(31, 58, 77, 0.16);
+  --line-hi:   rgba(31, 58, 77, 0.26);
+  --line-gold: rgba(74, 139, 171, 0.32);
+  --line-jade: rgba(74, 139, 171, 0.34);
 
   /* 字体 */
   --font-kai:  "STXingkai", "华文行楷", "STKaiti", "KaiTi", "楷体", "Kaiti SC", "STSong", serif;
@@ -71,117 +77,205 @@
   --t-base: 240ms;
   --t-slow: 420ms;
 
-  /* v10 · 三主题驱动 token（默认 A 柔雾青蓝；B / C 由 body[data-theme="b" | "c"] 覆盖）。
-   * 所有 token 单一真源，改动一处即可。                          */
-  /* ROUND10：PNG → WebP；体积 5.32 MB → 0.26 MB（节省 95.1%） */
+  /* v11 · 四主题驱动 token（默认 A 柔雾青绿；B / C / D 由 body[data-theme="b" | "c" | "d"] 覆盖）。
+   * 所有 token 单一真源，改动一处即可。                                  */
+  /* ROUND11：新增 D 青绿金碧；体积 PNG 2.95 MB → WebP 326 KB（节省 88.9%） */
   --ink-bg-url:  url('/bg/bg-a-soft.webp');       /* 主题背景图 */
-  --ink-bg-pos:  34%;
-  --bg-rgb:        27, 42, 54;                  /* 与 --bg-deep 同步，供 .ink-veil 用 rgba(var(--bg-rgb), ...) */
-  --bg-panel-rgb:  31, 45, 58;                  /* 与 --bg-panel 同步 */
-  --bg-raise-rgb:  36, 52, 66;                  /* 与 --bg-raise 同步 */
-  --wood-top:    #CBAE80;                       /* 木轴渐变顶端 */
-  --wood-mid:    #A8895C;
-  --wood-bot:    #8E7147;
-  --ink-veil-top: 0.28;                         /* 顶遮罩 */
-  --ink-veil-mid: 0.62;                         /* 内容遮罩 */
-  --ink-veil-bot: 0.88;                         /* 底遮罩 */
+  --ink-bg-pos:  42%;
+  --bg-rgb:        232, 239, 243;               /* 与 --bg-deep 同步，供 .ink-veil 用 rgba(var(--bg-rgb), ...) */
+  --bg-panel-rgb:  221, 233, 240;               /* 与 --bg-panel 同步 */
+  --bg-raise-rgb:  197, 219, 232;               /* 与 --bg-raise 同步 */
+  /* 卷轴木轴：A 主题改用青绿（浅底上不用赭石金，避免脏） */
+  --wood-top:    #7FB5A3;                       /* 木轴渐变顶端 */
+  --wood-mid:    #5B9E84;
+  --wood-bot:    #4A8BAB;
+  /* 遮罩：A 参考图 (164,189,207) 比底 (232,239,243) 暗，图本身低干扰，遮罩可放松 */
+  --ink-veil-top: 0.10;                         /* 顶遮罩 */
+  --ink-veil-mid: 0.35;                         /* 内容遮罩 */
+  --ink-veil-bot: 0.70;                         /* 底遮罩 */
 
   /* 主题切换过渡时间（继承 --t-slow） */
   --theme-tx: var(--t-slow);
 }
 
-/* ========== v10 · 三主题覆盖（A 柔雾青蓝 / B 水墨留白 / C 暗墨柔化） ========== *
- * 按 body[data-theme="b|c"] 子选择器覆盖 :root 的对应 token；
- * 改动一处即可让全栈（背景、遮罩、按钮、消息气泡、调档、墨滴、卷轴）跟随。
- * 设计取舍：                                                                     *
- *   - A 不写独立 block，使用 :root 默认值                                              *
- *   - B 主色 #ECEAE3（冷宣白） / 强调 #3C6E8F（石青），与 v7/v8 路线相同           *
- *   - C 主色 #161A20（v9 #0E1012 纯黑 → 提亮为暗墨） / 强调 #C9A227（赭金）  *
+/* ========== v11 · 四主题覆盖（A 柔雾青绿 / B 水墨留白 / C 暗墨夜山 / D 青绿金碧） ========== *
+ * 按 body[data-theme="b|c|d"] 子选择器覆盖 :root 的对应 token；
+ * 改动一处即可让全栈（背景、遮罩、描边、字体、按钮、气泡、卷轴）跟随。
+ *                                                                                        *
+ * 设计取舍（底色明度一律跟随参考图实测均值，见文件头）：                                  *
+ *   - A 不写独立 block，使用 :root 默认值：浅雾蓝 #E8EFF3 + 深墨蓝 #1F3A4D                *
+ *     强调 石青 #4A8BAB + 青绿 #5B9E84；宋体；圆角 20px                                   *
+ *   - B 宣纸米 #ECE6D6 + 墨黑 #2C2820；强调同为墨黑（留白主导，不上彩色）                 *
+ *     **楷体**；圆角 14px（紧致）；并补齐 line 系列（v10 遗漏，亮底边框曾不可见）         *
+ *   - C 墨夜 #0A1424 + 月光米 #E8E2C8；强调月光 #F2EBD0（非赭金）                         *
+ *     宋体正文 + 楷体标题；圆角 22px（最柔）；木轴换月光银线                              *
+ *   - D 古绢黄 #C9B58A + 深褐 #2C2418；强调 宝石蓝 #2E5C8A + 石绿 #4F8762 + 金泥 #B89048 *
+ *     **楷体**；圆角 18px（华丽）；木轴换金泥线                                           *
  */
 body[data-theme="b"] {
-  /* 主色：冷宣白 */
-  --bg-deep:       #ECEAE3;
-  --bg-panel:      #F2F0EA;
-  --bg-raise:      #F6F4ED;
+  /* 主色：宣纸米（参考图 ink_wash 均值 RGB(227,224,219) 亮宣纸；取暖调 #ECE6D6） */
+  --bg-deep:       #ECE6D6;
+  --bg-panel:      #F2EEE1;
+  --bg-raise:      #F8F5EA;
 
-  /* 文字：深墨 */
-  --ink-hi:        #1C1C1A;
-  --ink-mid:       #4A4843;
-  --ink-low:       #6E6B65;
+  /* 文字：墨黑 */
+  --ink-hi:        #2C2820;
+  --ink-mid:       #4A4842;
+  --ink-low:       #6E6B62;
 
-  /* 强调：石青 */
-  --jade:          #3C6E8F;
-  --jade-deep:     #2C5070;
-  --pine:          #4A7860;
+  /* 强调：墨黑（水墨主题不用彩色强调，留白主导） */
+  --jade:          #1F1F1C;
+  --jade-deep:     #3A3833;
+  --pine:          #4A4842;
 
-  /* 灰金改为深墨（保持卷轴木轴感但不刺眼） */
-  --gold:          #1C1C1A;
-  --gold-hi:       #2A2826;
+  /* 卷轴：深墨（保持木轴感但不刺眼） */
+  --gold:          #2C2820;
+  --gold-hi:       #1F1F1C;
 
-  /* 朱砂 → 深枣红 */
+  /* 朱砂 → 深枣红（钤印） */
   --seal:          #A3382B;
 
+  /* 描边（浅底用暖墨半透明）—— v11 补齐：此前 B 未覆盖 line 系列，
+     沿用 :root 的浅色半透明边框，在宣纸白底上几乎不可见。 */
+  --line:          rgba(60, 56, 42, 0.12);
+  --line-mid:      rgba(60, 56, 42, 0.18);
+  --line-hi:       rgba(60, 56, 42, 0.28);
+  --line-gold:     rgba(60, 56, 42, 0.32);
+  --line-jade:     rgba(60, 56, 42, 0.34);
+
+  /* 字体：水墨留白 → 楷体主导 */
+  --font-kai:  "STKaiti", "KaiTi", "楷体", "Kaiti SC", serif;
+  --font-song: "STKaiti", "KaiTi", "楷体", serif;
+  --font-body: "STKaiti", "KaiTi", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+
   /* B 主题 RGB（供 rgba 半透明用） */
-  --bg-rgb:        236, 234, 227;
-  --bg-panel-rgb:  242, 240, 234;
-  --bg-raise-rgb:  246, 244, 237;
+  --bg-rgb:        236, 230, 214;
+  --bg-panel-rgb:  242, 238, 225;
+  --bg-raise-rgb:  248, 245, 234;
 
   /* 背景图 */
   --ink-bg-url:    url('/bg/bg-b-inkwash.webp');
   --ink-bg-pos:    right bottom;
+  --ink-bg-size:   60%;   /* B 参考图是亮宣纸白，全屏铺开会几乎不可见；右下 60% 让墨痕在角上微现 */
 
   /* 卷轴木轴：B 主题不用，换成宣纸纹理色 */
   --wood-top:      rgba(28, 28, 26, 0.12);
   --wood-mid:      rgba(28, 28, 26, 0.22);
   --wood-bot:      rgba(28, 28, 26, 0.30);
 
-  /* 遮罩更淡（B 主题的"水墨留白"留白主导） */
-  --ink-veil-top: 0.20;
-  --ink-veil-mid: 0.55;
-  --ink-veil-bot: 0.86;
+  /* 遮罩更淡（B 主题"水墨留白"留白主导；图 (227,224,219) 与底接近，低干扰） */
+  --ink-veil-top: 0.12;
+  --ink-veil-mid: 0.30;
+  --ink-veil-bot: 0.62;
 }
 
 body[data-theme="c"] {
-  /* 主色：暗墨（v9 #0E1012 提亮到 #161A20，去除"纯黑"压迫） */
-  --bg-deep:       #161A20;
-  --bg-panel:      #1C2128;
-  --bg-raise:      #22292F;
+  /* 主色：墨夜（参考图 toweri 均值 RGB(21,27,34) 极暗深墨蓝；
+     v11 由 #161A20 加深到 #0A1424，更贴近参考图的夜山墨蓝） */
+  --bg-deep:       #0A1424;
+  --bg-panel:      #0F1B2E;
+  --bg-raise:      #16233A;
 
-  /* 文字：月白（保持） */
-  --ink-hi:        #E4E1D6;
-  --ink-mid:       #B4BCC0;
-  --ink-low:       #8A959B;
+  /* 文字：月光米（设计稿 #E8E2C8，比原 #E4E1D6 更暖，模拟月照） */
+  --ink-hi:        #E8E2C8;
+  --ink-mid:       #B8B49E;
+  --ink-low:       #8A877A;
 
-  /* 强调：赭金（替代原来的赭石米 #B89A6B，更显夜墨金碧） */
-  --jade:          #C9A227;
-  --jade-deep:     #8E7317;
-  --pine:          #6E9276;
+  /* 强调：月光（设计稿 #F2EBD0 + #C4C0A8） */
+  --jade:          #F2EBD0;
+  --jade-deep:     #C4C0A8;
+  --pine:          #8FA88C;
 
-  /* 灰金 → 赭金 */
-  --gold:          #C9A227;
-  --gold-hi:       #E2BC44;
+  /* 赭金 → 月光米（夜山月色，替代 C 主题原赭金） */
+  --gold:          #F2EBD0;
+  --gold-hi:       #FFFDF0;
 
   /* 朱砂（钤印保持） */
   --seal:          #C0695A;
 
+  /* 描边（暗底用月光半透明） */
+  --line:          rgba(232, 226, 200, 0.14);
+  --line-mid:      rgba(232, 226, 200, 0.22);
+  --line-hi:       rgba(232, 226, 200, 0.34);
+  --line-gold:     rgba(242, 235, 208, 0.34);
+  --line-jade:     rgba(242, 235, 208, 0.36);
+
+  /* 字体：宋体正文 + 楷体标题点缀（沿用 :root） */
+
   /* C 主题 RGB */
-  --bg-rgb:        22, 26, 32;
-  --bg-panel-rgb:  28, 33, 40;
-  --bg-raise-rgb:  34, 41, 47;
+  --bg-rgb:        10, 20, 36;
+  --bg-panel-rgb:  15, 27, 46;
+  --bg-raise-rgb:  22, 35, 58;
 
   /* 背景图 */
   --ink-bg-url:    url('/bg/bg-c-nightgold.webp');
-  --ink-bg-pos:    70%;
+  --ink-bg-pos:    30%;
 
-  /* 卷轴木轴：C 主题用金线替代 */
-  --wood-top:      #C9A227;
-  --wood-mid:      #8E7317;
-  --wood-bot:      #6E5810;
+  /* 卷轴木轴：C 主题用月光银线替代（夜山月色，非金线） */
+  --wood-top:      #F2EBD0;
+  --wood-mid:      #C4C0A8;
+  --wood-bot:      #8A877A;
 
-  /* 遮罩 */
-  --ink-veil-top: 0.20;
-  --ink-veil-mid: 0.55;
-  --ink-veil-bot: 0.85;
+  /* 遮罩：暗底 (10,20,36) + 暗图 (21,27,34)，两者接近，遮罩放松让山形微现 */
+  --ink-veil-top: 0.18;
+  --ink-veil-mid: 0.42;
+  --ink-veil-bot: 0.78;
+}
+
+body[data-theme="d"] {
+  /* 主色：古绢黄（设计稿 #C9B58A；v11 由深青绿 #1F3528 翻转为暖亮古绢。
+     参考图 blue_green 均值 RGB(132,119,90) 属暖金棕，此底与其同色系） */
+  --bg-deep:       #C9B58A;
+  --bg-panel:      #D4BF92;
+  --bg-raise:      #E2D0A8;
+
+  /* 文字：深褐（设计稿 #2C2418；浅底深字，对比度 9.8:1） */
+  --ink-hi:        #2C2418;
+  --ink-mid:       #5A4E38;
+  --ink-low:       #7A6C50;
+
+  /* 强调三轴：宝石蓝主 + 石绿次 + 金泥点缀（青绿金碧三色） */
+  --jade:          #2E5C8A;
+  --jade-deep:     #1E4270;
+  --pine:          #4F8762;
+
+  /* 金泥（CTA / 焦点 / 卷轴） */
+  --gold:          #B89048;
+  --gold-hi:       #D4AA5C;
+
+  /* 朱砂 → 深赭红（钤印，更贴古绢底色） */
+  --seal:          #A33E22;
+
+  /* 描边（浅底用深褐半透明） */
+  --line:          rgba(60, 40, 16, 0.14);
+  --line-mid:      rgba(60, 40, 16, 0.22);
+  --line-hi:       rgba(60, 40, 16, 0.32);
+  --line-gold:     rgba(184, 144, 72, 0.38);
+  --line-jade:     rgba(46, 92, 138, 0.34);
+
+  /* 字体：青绿金碧 → 楷体（华丽感，同 B 主题） */
+  --font-kai:  "STKaiti", "KaiTi", "楷体", "Kaiti SC", serif;
+  --font-song: "STKaiti", "KaiTi", "楷体", serif;
+  --font-body: "STKaiti", "KaiTi", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+
+  /* D 主题 RGB */
+  --bg-rgb:        201, 181, 138;
+  --bg-panel-rgb:  212, 191, 146;
+  --bg-raise-rgb:  226, 208, 168;
+
+  /* 背景图：D 青绿金碧 */
+  --ink-bg-url:    url('/bg/bg-d-jinbi.webp');
+  --ink-bg-pos:    45%;
+
+  /* 卷轴木轴：D 主题"青绿金碧"之"金"——金泥线 */
+  --wood-top:      #D4AA5C;
+  --wood-mid:      #B89048;
+  --wood-bot:      #8A6A30;
+
+  /* 遮罩：图 (132,119,90) 比底 (201,181,138) 暗，低干扰，遮罩放松让山形透出 */
+  --ink-veil-top: 0.12;
+  --ink-veil-mid: 0.32;
+  --ink-veil-bot: 0.66;
 }
 
 /* 全局过渡：所有继承 token 的属性自动平滑 */
@@ -232,10 +326,15 @@ a:hover { color: var(--gold-hi); }
   pointer-events: none; overflow: hidden;
 }
 
-/* 3.1 AI 底图 —— 主题图由 --ink-bg-url 决定（A 默认柔雾青蓝；B/C 主题切换） */
+/* 3.1 AI 底图 —— 主题图由 --ink-bg-url 决定（A 浅雾蓝；B 右下 60%；C 夜山；D 古绢）
+   background-position 单独声明：若拼进简写，B 的 "right bottom" 会与默认
+   "center" 叠加成无效的 3 关键词 position，导致整条声明失效（图不显示）。 */
 .ink-photo {
   position: absolute; inset: 0;
-  background: var(--ink-bg-url) center var(--ink-bg-pos) / cover no-repeat;
+  background-image: var(--ink-bg-url);
+  background-position: var(--ink-bg-pos, center);
+  background-size: var(--ink-bg-size, cover);
+  background-repeat: no-repeat;
   opacity: var(--ink-photo-op, 0.16);   /* 用户可调，默认 0.16 */
   filter: saturate(0.9);
   transition: opacity var(--t-slow) var(--ease), filter var(--t-slow) var(--ease);
@@ -582,12 +681,13 @@ body[data-theme="b"] .paper-grain { mix-blend-mode: multiply; }
   color: var(--ink-hi);
 }
 
-/* v10 · 三主题切换 tab（A 柔雾青蓝 / B 水墨留白 / C 暗墨柔化）
-   chip 色块随主题变；选中态的背景 / 边框颜色各主题独立。 */
+/* v11 · 四主题切换 tab（A 柔雾青绿 / B 水墨留白 / C 暗墨夜山 / D 青绿金碧）
+   chip 色块取各主题底色；选中态配色跟随该主题的强调色：
+   A 青绿 / B 墨黑 / C 月光 / D 宝石蓝。 */
 .theme-tabs {
   display: inline-flex; gap: 2px; padding: 2px;
   border-radius: var(--r-pill);
-  background: rgba(0, 0, 0, 0.18);
+  background: rgba(0, 0, 0, 0.10);
   border: 1px solid var(--line);
 }
 .theme-tabs button {
@@ -599,9 +699,10 @@ body[data-theme="b"] .paper-grain { mix-blend-mode: multiply; }
   transition: color var(--t-base), background var(--t-base), transform var(--t-fast);
 }
 .theme-tabs button:hover { color: var(--ink-hi); }
+/* A 柔雾青绿：青绿强调（浅底 → 选中文字须用深色） */
 .theme-tabs button.on {
-  background: rgba(184, 154, 107, 0.18); color: var(--gold-hi);
-  box-shadow: inset 0 0 0 1px rgba(184, 154, 107, 0.26);
+  background: rgba(91, 158, 132, 0.18); color: #3A7A62;
+  box-shadow: inset 0 0 0 1px rgba(74, 139, 171, 0.30);
 }
 .theme-tabs button .chip {
   width: 12px; height: 12px; border-radius: 3px;
@@ -609,13 +710,20 @@ body[data-theme="b"] .paper-grain { mix-blend-mode: multiply; }
   transition: border-color var(--t-base);
 }
 .theme-tabs button.on .chip { border-color: rgba(255, 255, 255, 0.30); }
+/* B 水墨留白：墨黑强调（留白主导，不上彩色） */
 body[data-theme="b"] .theme-tabs button.on {
-  background: rgba(60, 110, 143, 0.18); color: var(--jade);
-  box-shadow: inset 0 0 0 1px rgba(60, 110, 143, 0.40);
+  background: rgba(44, 40, 32, 0.10); color: #1F1F1C;
+  box-shadow: inset 0 0 0 1px rgba(60, 56, 42, 0.34);
 }
+/* C 暗墨夜山：月光强调（非赭金） */
 body[data-theme="c"] .theme-tabs button.on {
-  background: rgba(201, 162, 39, 0.18); color: var(--gold);
-  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.40);
+  background: rgba(242, 235, 208, 0.14); color: #F2EBD0;
+  box-shadow: inset 0 0 0 1px rgba(242, 235, 208, 0.34);
+}
+/* D 青绿金碧：宝石蓝强调（金泥留给 CTA，不抢 tab） */
+body[data-theme="d"] .theme-tabs button.on {
+  background: rgba(46, 92, 138, 0.16); color: #1E4270;
+  box-shadow: inset 0 0 0 1px rgba(46, 92, 138, 0.42);
 }
 
 .top-banner {

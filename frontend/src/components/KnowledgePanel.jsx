@@ -36,7 +36,19 @@ export default function KnowledgePanel({ projectId }) {
     try {
       const r = await api.uploadKnowledge(projectId, arr)
       setSummary(r)
-      setUploadMsg(r.ready > 0 ? `已入库 ${r.ready}/${arr.length} 份` : `本次 ${arr.length} 份均未入库`)
+      // 三态文案：ready=新入库 / skipped=去重跳过 / failed=失败 —— 避免"去重"被误报成"未入库"
+      const skipped = (r.results || []).filter(x => x.status === 'skipped').length
+      const failed = (r.results || []).filter(x => x.status === 'failed').length
+      if (r.ready > 0) {
+        setUploadMsg(`新入库 ${r.ready}/${arr.length} 份` +
+          (skipped ? `，${skipped} 份已存在自动跳过` : '') +
+          (failed ? `，${failed} 份解析失败` : ''))
+      } else if (skipped === arr.length) {
+        setUploadMsg(`本次 ${arr.length} 份均已存在（自动去重），无需重复入库`)
+      } else {
+        setUploadMsg(`本次 ${arr.length} 份均未入库` +
+          (failed ? `（${failed} 份解析失败）` : ''))
+      }
     } catch (e) { setErr(String(e.message || e)) }
     finally { setUploading(false); setHits(null); load() }
     fileRef.current && (fileRef.current.value = '')
@@ -86,7 +98,8 @@ export default function KnowledgePanel({ projectId }) {
           <div className="kb-upload-msg">
             <span>{uploadMsg}</span>
             {summary?.results?.map((r, i) => (
-              <span key={i} className={`kb-mini kb-mini-${r.status}`}>
+              <span key={i} className={`kb-mini kb-mini-${r.status}`}
+                    title={r.status === 'skipped' ? (r.reason || '同内容已入库，自动去重') : (r.error || '')}>
                 {r.status === 'ready' ? '✓' : r.status === 'skipped' ? '＝' : '✕'} {r.filename}
               </span>
             ))}
