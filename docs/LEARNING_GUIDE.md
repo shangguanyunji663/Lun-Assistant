@@ -432,7 +432,7 @@ $r = Invoke-RestMethod -Uri "http://127.0.0.1:8000/api/auth/login" -Method Post 
 
 ### 6.1 现成的仓库问题
 
-项目要支持 Ollama / DeepSeek / 智谱 / 通义 / agnes 等多种模型，但它们都兼容 **OpenAI 协议**。所以正确做法是：**统一封装一层，内部切换 base\_url**；同时**对话与嵌入可分离底座**（如默认对话走云端 agnes-2.5-flash、嵌入走本地 bge-m3）。
+项目要支持 Ollama / DeepSeek / 智谱 / 通义 / agnes 等多种模型，但它们都兼容 **OpenAI 协议**。所以正确做法是：**统一封装一层，内部切换 base\_url**；同时**对话与嵌入可分离底座**（默认对话与嵌入均走本地 Ollama：qwen3:4b-ctx4096 + bge-m3，也可按需切云上底座）。
 
 ### 6.2 LLMProvider 类（[services/llm/provider.py](../services/llm/provider.py)）
 
@@ -462,8 +462,8 @@ class LLMProvider:
 
 ```yaml
 llm:
-  default_provider: agnes          # 对话底座 ← 可选 ollama / deepseek / zhipu / qwen
-  embedding_provider: ollama       # 嵌入底座与对话解耦（本地 bge-m3）
+  default_provider: ollama          # 对话底座（本地 qwen3:4b-ctx4096）← 可切 deepseek / zhipu / qwen / agnes
+  embedding_provider: ollama        # 嵌入底座与对话解耦（本地 bge-m3）
 ```
 
 代码零改动。
@@ -1073,7 +1073,7 @@ out = await generate_artifact(
 
 | 配置键 | 默认 | 说明 |
 | --- | --- | --- |
-| `llm.default_provider` | `agnes` | 对话底座（agnes-2.5-flash，KEY 在 .env） |
+| `llm.default_provider` | `ollama` | 对话底座（本地 qwen3:4b-ctx4096，离线可用） |
 | `llm.embedding_provider` | `ollama` | 嵌入底座与对话解耦（本地 bge-m3） |
 | `rag.rewrite_enabled` | `true` | Query 改写总开关（false 时恒为 idle） |
 | `rag.rewrite_mode` | `auto` | 难度自适应：off=关闭 / auto=短句简单查询跳过 LLM（strategy=skip），长尾才走 LLM / on=强制 LLM（R13） |
@@ -3637,7 +3637,7 @@ copy .env.example .env             # 修改 PG / Redis 连接信息与 AGNES_API
 
 | 配置键 | 默认 | 说明 |
 | --- | --- | --- |
-| `llm.default_provider` | `agnes` | 对话底座（云端 agnes-2.5-flash） |
+| `llm.default_provider` | `ollama` | 对话底座（本地 qwen3:4b-ctx4096） |
 | `llm.embedding_provider` | `ollama` | 嵌入底座（本地 bge-m3），**与对话解耦** |
 | `storage.postgres.sync_dsn` | — | PG 连接串（注意端口 5433） |
 | `storage.redis.url` | — | Redis 连接串 |
@@ -3655,7 +3655,7 @@ envs\lunjiang\python.exe scripts/check_env.py
 预期输出（5 项全 PASS）：
 
 ```
-== 论匠环境检查（LLM provider: agnes）==
+== 论匠环境检查（LLM provider: ollama）==
 
 [PASS] Ollama 对话模型 | qwen3:4b-ctx4096 -> 'OK'
 [PASS] Ollama Embedding | bge-m3 向量维度=1024
@@ -3666,9 +3666,8 @@ envs\lunjiang\python.exe scripts/check_env.py
 结果: 5/5 通过
 ```
 
-> ⚠️ **默认 provider 是 `agnes`（云端）时，"Ollama 对话模型" 项会 404**——因为 `check_env.py` 按 Ollama 的
-> `/api/generate` 格式探测（L36）。这**属预期行为**，不是环境坏了。要全本地验证需先把
-> `configs/settings.yaml` 的 `llm.default_provider` 临时改成 `ollama`。详见附录三 Q3。
+> ⚠️ 默认 provider 为 `ollama`（本地）时五项均可直测；若临时切到 OpenAI 兼容云端（如 `agnes`），
+> `check_env.py` 按 Ollama `/api/generate` 格式探测（L36）会 404，**属预期行为**，不是环境坏了。详见附录三 Q3。
 
 ### 26.3 环境失败的快速定位
 
@@ -3732,7 +3731,7 @@ cd frontend; npm install; npm run dev
 
 | # | 命令 | 验证什么 | 通过标准 |
 | --- | --- | --- | --- |
-| 1 | `scripts/check_env.py` | 五层地基 | `结果: 5/5 通过`（agnes 下对话项 404 属预期） |
+| 1 | `scripts/check_env.py` | 五层地基 | `结果: 5/5 通过`（默认 ollama 全项可直测；切云端后对话项 404 属预期） |
 | 2 | `scripts/ingest_corpus.py` | 语料入库 | 日志显示入库块数（约 1376 块） |
 | 3 | `scripts/smoke_rag.py` | ③ 检索 | 各查询返回非空 results |
 | 4 | `scripts/smoke_memory.py` | ② 记忆 | 四层读写 + 压缩比 ≤0.30 |
@@ -3975,10 +3974,10 @@ services/observability/trace.py 全程 span 记录；api/middleware/audit.py 后
 ```powershell
 ollama pull qwen3:4b
 ollama create qwen3:4b-ctx4096 -f configs\ollama\Modelfile.qwen3-ctx4096
-# 然后把 configs/settings.yaml 的 llm.default_provider 改为 ollama、chat_model 改为 qwen3:4b-ctx4096
+# 镜像名与 configs/settings.yaml 的 ollama.chat_model=qwen3:4b-ctx4096 对应，即开即用
 ```
 
-当前默认对话底座是云端 `agnes`，只有本地回退场景才会遇到。详见 `docs/OPTIMIZATION_ROUND2.md`。
+当前默认对话底座就是本地 `ollama`/`qwen3:4b-ctx4096`，该适配属默认路径而非回退。详见 `docs/OPTIMIZATION_ROUND2.md`。
 
 **Q2 · 后端启动报 `ConnectionRefusedError: [WinError 1225]`？**
 
@@ -3987,11 +3986,11 @@ ollama create qwen3:4b-ctx4096 -f configs\ollama\Modelfile.qwen3-ctx4096
 
 **Q3 · `check_env.py` 报 404，是环境坏了么？**
 
-不是。该脚本按 **Ollama `/api/generate`** 格式探测（`check_env.py:36`），而默认 `default_provider`
-是 OpenAI 兼容的云端 `agnes`，端点不同必然 404。两种处理方式：
+不是。该脚本按 **Ollama `/api/generate`** 格式探测（`check_env.py:36`），默认 `default_provider=ollama` 可直测。
+只有当临时切到 OpenAI 兼容云端（如 `agnes`）时端点不同才会 404。两种处理方式：
 
 1. 以 `netstat` 端口检查 + `scripts/` 其余冒烟脚本为准；
-2. 需要全本地验证时，临时把 `settings.yaml` 的 `llm.default_provider` 改成 `ollama` 再跑。
+2. 需要全本地验证时，先把 `settings.yaml` 的 `llm.default_provider` 切回 `ollama` 再跑。
 
 **Q4 · `pg_ctl start` 提示 another server might be running 并卡住？**
 

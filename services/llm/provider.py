@@ -44,8 +44,8 @@ class LLMProvider:
     """异步轻量客户端：chat / chat_stream / embed。
 
     对话与嵌入可分离底座：chat 走 llm.default_provider，embed 走
-    llm.embedding_provider（默认同 default_provider）。企业场景典型组合：
-    云端对话模型(agnes/deepseek) + 本地开源嵌入(bge-m3)。
+    llm.embedding_provider（默认同 default_provider）。典型组合：
+    本地开源对话/嵌入(ollama qwen3:4b-ctx4096 + bge-m3)，或云端对话(agnes/deepseek) + 本地嵌入(bge-m3)。
     """
 
     def __init__(self, provider: str | None = None):

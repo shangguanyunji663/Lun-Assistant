@@ -2,7 +2,7 @@
 
 论匠（LunJiang）是一套面向**毕业论文 / 学术论文写作全流程**的多智能体辅助平台：基于 LangGraph 主从式编排，一个主控 Supervisor 统一调度六类专项 Agent（选题 / 文献 / 写作 / 格式 / 查重 / 答辩），配合 Plan-Execute-Replan 规划器处理复合任务，覆盖选题分析 → 文献检索 → 论文写作 → 格式校验 → 查重降重 → 答辩准备，并配套**项目级知识库**、**四层记忆**、**三阶段 RAG**、**工具治理**与**全链路可观测**。前后端分离：后端 FastAPI 异步服务，前端 React 18 + Vite 单页应用。
 
-> 技术栈：Python 3.11 + FastAPI + LangGraph + PostgreSQL(pgvector) + Redis + Ollama + React 18 + Vite（对话底座默认云端 agnes-2.5-flash，嵌入走本地 bge-m3）
+> 技术栈：Python 3.11 + FastAPI + LangGraph + PostgreSQL(pgvector) + Redis + Ollama + React 18 + Vite（对话与嵌入均走本地 Ollama：qwen3:4b-ctx4096 + bge-m3）
 
 ## 文档导航
 
@@ -10,23 +10,23 @@
 
 ### 通用 / 后端工程线（docs/）
 
-| 文档                                        | 用途                                                                             |
-| ----------------------------------------- | ------------------------------------------------------------------------------ |
+| 文档                                        | 用途                                                                                                                            |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | [📖 学习指南](docs/LEARNING_GUIDE.md)         | **三部分**：设计推演（第 0–16 课）/ 八大能力模块解剖（第 0 课基础设施层地基 + 第 17–25 课，含最小可复现骨架）/ 从零复现（第 26–28 课）+ 四附录（调用链 / 依赖矩阵 / FAQ / 设计决策回溯）。推荐先读第一部分 |
-| [📐 架构总览](#目录结构)                          | 分层结构与模块职责                                                                      |
-| [📋 目录结构审查](docs/ARCHITECTURE_REVIEW.md)  | 目录合理性评估（问题清单 + 优化建议）                                                           |
-| [📂 项目结构说明](docs/PROJECT_STRUCTURE.md)    | 目录与关键文件用途说明（2026-09-02 归档）                                                     |
-| [📐 统一格式规范](docs/FORMAT_STANDARD.md)      | 全部 Markdown 文档的格式规范                                                            |
-| [🛠 优化记录一](docs/OPTIMIZATION_ROUND1.md)   | 第一轮优化（性能/安全/体验）                                                                |
-| [🛠 优化记录二](docs/OPTIMIZATION_ROUND2.md)   | 第二轮优化（OOM 修复/结构重构方案）                                                           |
-| [🛠 优化记录三](docs/OPTIMIZATION_ROUND3.md)   | 第三轮优化（布尔陷阱/前端全按钮失效排查）                                                          |
-| [🛠 优化记录四](docs/OPTIMIZATION_ROUND4.md)   | 第四轮优化（RAG知识库/多引擎检索/Planner/结构化产物）                                              |
-| [🛠 优化记录五](docs/OPTIMIZATION_ROUND5.md)   | 第五轮优化（学术工具生态/并发压测/agnes对话底座）                                                   |
-| [🛠 优化记录六](docs/OPTIMIZATION_ROUND6.md)   | 第六轮优化（架构改进与工程化治理/P0修复/测试骨架）                                                    |
-| [🛠 优化记录十二](docs/OPTIMIZATION_ROUND12.md) | 第十二轮优化（静态检查接入CI/依赖锁定/前端Hooks/可移植性）                                             |
-| [🛠 优化记录十三](docs/OPTIMIZATION_ROUND13.md) | 第十三轮优化（审计参数合规/Query改写自适应/记忆召回排序/多实例部署）                                         |
-| [🚀 部署指南](docs/DEPLOY.md)                 | GitHub Pages 自动部署到 `https://shangguanyunji663.github.io/Lun-Assistant/`        |
-| [💡 常见问题](#常见问题)                          | 排障手册                                                                           |
+| [📐 架构总览](#目录结构)                          | 分层结构与模块职责                                                                                                                     |
+| [📋 目录结构审查](docs/ARCHITECTURE_REVIEW.md)  | 目录合理性评估（问题清单 + 优化建议）                                                                                                          |
+| [📂 项目结构说明](docs/PROJECT_STRUCTURE.md)    | 目录与关键文件用途说明（2026-09-02 归档）                                                                                                    |
+| [📐 统一格式规范](docs/FORMAT_STANDARD.md)      | 全部 Markdown 文档的格式规范                                                                                                           |
+| [🛠 优化记录一](docs/OPTIMIZATION_ROUND1.md)   | 第一轮优化（性能/安全/体验）                                                                                                               |
+| [🛠 优化记录二](docs/OPTIMIZATION_ROUND2.md)   | 第二轮优化（OOM 修复/结构重构方案）                                                                                                          |
+| [🛠 优化记录三](docs/OPTIMIZATION_ROUND3.md)   | 第三轮优化（布尔陷阱/前端全按钮失效排查）                                                                                                         |
+| [🛠 优化记录四](docs/OPTIMIZATION_ROUND4.md)   | 第四轮优化（RAG知识库/多引擎检索/Planner/结构化产物）                                                                                             |
+| [🛠 优化记录五](docs/OPTIMIZATION_ROUND5.md)   | 第五轮优化（学术工具生态/并发压测/agnes对话底座）                                                                                                  |
+| [🛠 优化记录六](docs/OPTIMIZATION_ROUND6.md)   | 第六轮优化（架构改进与工程化治理/P0修复/测试骨架）                                                                                                   |
+| [🛠 优化记录十二](docs/OPTIMIZATION_ROUND12.md) | 第十二轮优化（静态检查接入CI/依赖锁定/前端Hooks/可移植性）                                                                                            |
+| [🛠 优化记录十三](docs/OPTIMIZATION_ROUND13.md) | 第十三轮优化（审计参数合规/Query改写自适应/记忆召回排序/多实例部署）                                                                                        |
+| [🚀 部署指南](docs/DEPLOY.md)                 | GitHub Pages 自动部署到 `https://shangguanyunji663.github.io/Lun-Assistant/`                                                       |
+| [💡 常见问题](#常见问题)                          | 排障手册                                                                                                                          |
 
 ### 前端版本线（docs/frontend-versions/，v8 → v12）
 
@@ -86,13 +86,11 @@ D:\Develop\DB\PostgreSQL16\Library\bin\pg_ctl -D D:\Develop\DB\PostgreSQL16\data
 # 2) Redis（端口 6379；若注册为 Windows 服务则直接 net start Redis）
 redis-server
 
-# 3) Ollama：新开窗口常驻启动，拉取嵌入模型
+# 3) Ollama：新开窗口常驻启动，拉取嵌入与对话模型
 ollama serve
 ollama pull bge-m3
-
-# （可选）本地对话回退：拉 qwen3 并创建 16GB 内存适配镜像，再把 default_provider 改回 ollama
 ollama pull qwen3:4b
-ollama create qwen3:4b-ctx4096 -f configs\ollama\Modelfile.qwen3-ctx4096   # 固定 num_ctx=4096，防 KV Cache OOM
+ollama create qwen3:4b-ctx4096 -f configs\ollama\Modelfile.qwen3-ctx4096   # 固定 num_ctx=4096，防 KV Cache OOM（默认 default_provider=ollama 必需）
 ```
 
 **停止 PostgreSQL**：`D:\Develop\DB\PostgreSQL16\Library\bin\pg_ctl -D D:\Develop\DB\PostgreSQL16\data stop`
@@ -114,9 +112,7 @@ copy .env.example .env     # 修改 PG / Redis 连接信息（详见下文「配
 ### 2. 初始化数据
 
 ```powershell
-envs\lunjiang\python.exe scripts/check_env.py          # 连通性检查（Ollama/Redis/PG/pgvector）
-# ⚠️ check_env 按 Ollama 底座探测 LLM：默认 provider=agnes（云端兼容）时"对话模型"项会 404，属预期。
-#    需全本地验证时，先把 settings.yaml 的 default_provider 临时切回 ollama 再运行（见 FAQ）。
+envs\lunjiang\python.exe scripts/check_env.py          # 连通性检查（Ollama/Redis/PG/pgvector；默认对话底座为本地 ollama，全项可直测）
 envs\lunjiang\python.exe scripts/ingest_corpus.py      # data/corpus/*.txt 入库（--force 重建）
 ```
 
@@ -161,11 +157,11 @@ envs\lunjiang\python.exe scripts/load_test.py          # 知识库检索并发�
 | `PG_HOST` / `PG_PORT` / `PG_USER` / `PG_PASSWORD` / `PG_DB` | PostgreSQL 连接信息（本项目端口为 **5433**）                                                  |
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_DB`                    | Redis 连接信息（默认 6379/0）                                                             |
 | `DEEPSEEK_API_KEY` / `ZHIPU_API_KEY` / `QWEN_API_KEY`       | 各云底座密钥（切换 provider 时填写；settings.yaml 无 openai provider，旧 `OPENAI_API_KEY` 为无效残留键） |
-| `AGNES_BASE_URL` / `AGNES_API_KEY`                          | 默认对话底座 agnes-2.5-flash（OpenAI 兼容）                                                 |
+| `AGNES_BASE_URL` / `AGNES_API_KEY`                          | 云上备选对话底座 agnes-2.5-flash（OpenAI 兼容，切换 provider 时填写）                     |
 
 ### `configs/settings.yaml`（主配置）
 
-- **对话 / 嵌入双底座**：默认 `llm.default_provider=agnes`（云端 agnes-2.5-flash，Key 在 `.env` 的 `AGNES_API_KEY`）、`llm.embedding_provider=ollama`（本地 bge-m3，离线可用）；`default_provider` 可切换 `ollama` / `deepseek` / `zhipu` / `qwen` / `agnes`，两者可解耦。16GB 内存机器如需全本地：Ollama 的 `/v1` 兼容端点不认请求级 `options`，用 Modelfile 给 `qwen3:4b` 建 `qwen3:4b-ctx4096` 镜像副本（blob 复用，几乎不占额外磁盘）并切换 provider。切换操作与 embedding 维度变更的后果见 [学习指南第 6 课](docs/LEARNING_GUIDE.md#第-6-课-llm-接入层统一入口多底座切换)。
+- **对话 / 嵌入双底座**：默认 `llm.default_provider=ollama`（本地 qwen3:4b-ctx4096，离线可用）、`llm.embedding_provider=ollama`（本地 bge-m3）；`default_provider` 可切换 `deepseek` / `zhipu` / `qwen` / `agnes`（云上底座 Key 填 `.env`），两者可解耦。Ollama 的 `/v1` 兼容端点不认请求级 `options`，已用 Modelfile 给 `qwen3:4b` 建 `qwen3:4b-ctx4096` 镜像副本（blob 复用，几乎不占额外磁盘）固化 `num_ctx=4096`，防 16GB 内存机器 KV Cache OOM。切换操作与 embedding 维度变更的后果见 [学习指南第 6 课](docs/LEARNING_GUIDE.md#第-6-课-llm-接入层统一入口多底座切换)。
 
 - **向量维度动态化**：pgvector 向量列维度由 `llm.providers.<底座>.embedding_dim` 动态决定（`infrastructure/config.get_embedding_dim()`）；嵌入底座返回维度不符时运行时抛错。已引入 Alembic 迁移骨架（`alembic/`），初始迁移待数据库环境就绪后生成，开发期沿用 `create_all` 兜底（见 [ROUND12](docs/OPTIMIZATION_ROUND12.md#五p0-2-alembic-迁移骨架暂停推进)）
 
@@ -249,11 +245,11 @@ Dockerfile           后端容器镜像（python:3.12-slim，非 root + /health 
 
 - **`pg_ctl start`** **提示 another server might be running 并卡住**：多为异常退出残留 `postmaster.pid`（确认 5433 无监听、无 postgres 进程后）删除 `D:\Develop\DB\PostgreSQL16\data\postmaster.pid` 再启动。
 
-- **Ollama 返回 500（KV Cache OOM）**：参考 [优化记录二](docs/OPTIMIZATION_ROUND2.md)（`num_ctx=4096` 已由 Modelfile 镜像固化）；当前对话默认走云端 agnes，此问题主要影响本地回退场景。
+- **Ollama 返回 500（KV Cache OOM）**：参考 [优化记录二](docs/OPTIMIZATION_ROUND2.md)（`num_ctx=4096` 已由 Modelfile 镜像 `qwen3:4b-ctx4096` 固化）；默认对话即走本地 Ollama，确认使用了该镜像而非裸 `qwen3:4b`。
 
 - **端口冲突**：若本机 5433/6379 被占用，先释放端口，或调整 `.env` 与 `postgresql.conf` 保持一致。
 
-- **`check_env.py`** **报错**：该脚本按 Ollama `/api/generate` 格式探测 LLM 底座，若 `default_provider` 为 OpenAI 兼容云端（如 agnes）会 404；以 `scripts/` 其余冒烟脚本与 `netstat` 端口检查为准。
+- **`check_env.py`** **报错**：该脚本按 Ollama `/api/generate` 格式探测 LLM 底座，默认 `default_provider=ollama` 可直测；若临时切换到 OpenAI 兼容云端（如 agnes）会 404 属预期，以 `scripts/` 其余冒烟脚本与 `netstat` 端口检查为准。
 
 - **中文乱码**：全部文件保持 UTF-8（已配 `.editorconfig` + IDE settings）。
 

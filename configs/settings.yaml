@@ -15,8 +15,8 @@ app:
 # embedding_provider 可与对话底座分离（如：云端对话 + 本地 bge-m3 嵌入）
 # ------------------------------------------------------------
 llm:
-  default_provider: agnes         # 对话底座：agnes-2.5-flash（云端，KEY 在 .env）
-  embedding_provider: ollama      # 嵌入底座：bge-m3（本地，离线可用）
+  default_provider: ollama           # 对话底座：qwen3:4b-ctx4096（本地 Ollama，离线可用）
+  embedding_provider: ollama         # 嵌入底座：bge-m3（本地，离线可用）
   timeout:
     chat: 60           # 非流式对话超时（秒）
     chat_stream: 90    # 流式对话超时（秒）
