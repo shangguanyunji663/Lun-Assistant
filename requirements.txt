@@ -54,6 +54,7 @@ python-multipart==0.0.32
 # ===== 测试 =====
 pytest==9.1.1
 pytest-asyncio==1.4.0
+aiosqlite==0.22.1   # API 层离线集成测试的内存 SQLite（替代 PostgreSQL）
 
 # ===== 开发工具（静态检查）=====
 mypy==2.3.1

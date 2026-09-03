@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *.egg-info/
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
 .coverage
 htmlcov/
 .venv/
@@ -38,8 +40,9 @@ frontend/_theme-shots/
 .idea/
 .vscode/
 
-# 工具数据（WorkBuddy 会话记忆等，不入库）
+# 工具数据（WorkBuddy 会话记忆、Mimosa 审计/会话产物等，不入库）
 .workbuddy/
+.mimosa/
 
 # OS
 Thumbs.db

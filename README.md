@@ -135,15 +135,15 @@ cd frontend; npm install; npm run dev                   # 前端 5173，/api 代
 ### 4. 冒烟与评测
 
 ```powershell
-envs\lunjiang\python.exe scripts/smoke_memory.py       # 四层记忆 + 压缩
-envs\lunjiang\python.exe scripts/smoke_rag.py          # 三阶段检索
-envs\lunjiang\python.exe scripts/smoke_governance.py   # 治理栈 9 项
-envs\lunjiang\python.exe scripts/smoke_trace.py        # Trace 回放
-envs\lunjiang\python.exe scripts/smoke_graph.py        # Agent 图编译检查
+envs\lunjiang\python.exe scripts/smoke_memory.py       # 四层记忆 + 压缩（需 PostgreSQL）
+envs\lunjiang\python.exe scripts/smoke_rag.py          # 三阶段检索（需 PostgreSQL+Ollama，语料已入库）
+envs\lunjiang\python.exe scripts/smoke_governance.py   # 治理栈自检（需 Redis/PostgreSQL/Ollama）
+envs\lunjiang\python.exe scripts/smoke_trace.py        # Trace 回放（需 PostgreSQL）
+envs\lunjiang\python.exe scripts/smoke_graph.py        # Agent 图编译检查（需 LLM 底座可达）
 envs\lunjiang\python.exe scripts/smoke_api.py --topic  # 端到端（需 uvicorn 已启动）
-envs\lunjiang\python.exe evals/harness.py              # 三项指标评测
-envs\lunjiang\python.exe evals/regression.py           # 七大必测场景回归评测
-envs\lunjiang\python.exe -m pytest tests/ -q           # 离线单元测试（治理/模型/改写等 59 用例，无外部依赖）
+envs\lunjiang\python.exe evals/harness.py              # 三项指标评测（需 PostgreSQL+Ollama）
+envs\lunjiang\python.exe evals/regression.py           # 七大必测场景回归评测（需 PostgreSQL+LLM 底座）
+envs\lunjiang\python.exe -m pytest tests/ -q           # 离线测试（治理/模型/改写/API 集成/评测口径等 89 用例，无外部依赖）
 envs\lunjiang\python.exe -m ruff check .               # 静态检查（规则见 ruff.toml）
 envs\lunjiang\python.exe scripts/load_test.py          # 知识库检索并发压测（需 uvicorn 已启动）
 ```

@@ -16,7 +16,7 @@
 > | --- | --- | --- | --- |
 > | 第一部分 设计推演 | 第 0–16 课 | **为什么**这样设计？技术选型背后的取舍是什么？ | 第一次接触本项目，先建立整体认知 |
 > | 第二部分 模块解剖 | 第 17–25 课 | 每个模块**具体怎么实现**？数据怎么流动？谁调谁？ | 已读过第一部分，要动手改代码 / 准备面试 |
-> | 第三部分 从零复现 | 第 26–28 课 | 怎么在**自己机器上跑起来**并逐项验证？ | 要独立复现、复刻到毕设 / 作品集 |
+> | 第三部分 从零复现 | 第 26–29 课 | 怎么在**自己机器上跑起来**并逐项验证？ | 要独立复现、复刻到毕设 / 作品集 |
 >
 > 每一课都留了「读代码」和「动手做」两个动作。第一部分通读约一个晚上；第二、三部分可以按需跳读。
 
@@ -80,13 +80,15 @@
 
 - [第 25 课 编排中枢（agent）](#第-25-课-编排中枢agent)
 
-**第三部分 · 从零复现实操（第 26–28 课）**
+**第三部分 · 从零复现实操（第 26–29 课）**
 
 - [第 26 课 环境准备：从裸机到全绿](#第-26-课-环境准备从裸机到全绿)
 
 - [第 27 课 运行启动与端到端自检](#第-27-课-运行启动与端到端自检)
 
 - [第 28 课 八大能力复现清单](#第-28-课-八大能力复现清单)
+
+- [第 29 课 多实例部署：Docker 编排与水平扩展](#第-29-课-多实例部署docker-编排与水平扩展)
 
 - [附录 关键类与调用链速查](#附录-关键类与调用链速查)
 
@@ -286,7 +288,7 @@ envs\lunjiang\python.exe -m uvicorn main:app --port 8000
 | ------------ | ------------------------------------------------ |
 | `user.py`    | 用户（密码哈希、角色）                                      |
 | `project.py` | 论文项目（题目/领域/状态）                                   |
-| `memory.py`  | **记忆条目**，含 `Vector(1024)` 列 —— 就是 pgvector 的用武之地 |
+| `memory.py`  | **记忆条目**，含 `Vector(get_embedding_dim())` 动态维度列（默认 1024）—— 就是 pgvector 的用武之地 |
 | `trace.py`   | 全链路追踪 Span                                       |
 | `audit.py`   | 审计日志（参数截断 + 指纹化）                                 |
 | `skill.py`   | 自动沉淀的可复用技能                                       |
@@ -321,7 +323,97 @@ envs\lunjiang\python.exe scripts/check_env.py   # 应看到 PostgreSQL/pgvector 
 
 角色控制同理：`require_role("admin")` 是依赖工厂，`/api/observability/traces` 就只对 admin 开放（[api/observability/router.py](../api/observability/router.py)）。
 
-### 5.3 动手
+### 5.3 从零重建认证：四个文件
+
+认证属于"平台侧"代码，是 28.2 复现顺序里第 4 步的落地物。全部实现只有 4 个文件：
+
+| 文件 | 职责 |
+| --- | --- |
+| [api/auth/schemas.py](../api/auth/schemas.py) | 请求/响应契约：`RegisterIn`（username 3–32 字符 / password 6–64）、`LoginIn`、`TokenOut{access_token, token_type, user}`、`UserBrief{id, username, role}` |
+| [api/auth/security.py](../api/auth/security.py) | bcrypt 散列 + JWT 签发/解析 + FastAPI 依赖（本课主角） |
+| [api/auth/router.py](../api/auth/router.py) | `/register` `/login` `/me` 三端点 + 登录限流 |
+| [api/deps.py](../api/deps.py) | `get_owned_project()`：项目归属校验，projects / knowledge 路由共用 |
+
+**security.py 的四段式**（`api/auth/security.py:24-72`）：
+
+- **散列**（24-32）：`bcrypt.hashpw / checkpw`，盐内嵌在哈希串里无需单独存；`verify_password` 对畸形哈希串捕 `ValueError` 返回 `False`，而不是让登录接口 500。
+- **签发**（35-42）：payload 固定 `{sub: str(user_id), role, iat, exp}`，HS256，密钥取 `app.secret_key`（`.env` 的 `SECRET_KEY`）。`sub` 必须是**字符串**——JWT 规范要求，整型会在部分解码端炸。
+- **解析**（49-63）：`HTTPBearer(auto_error=False)` 拿到 `None` 时自己抛 401（默认 `auto_error=True` 的报错文案是英文，前端无法友好提示）；`jwt.PyJWTError` 统一转 401；最后 `db.get(User, sub)` 校验用户存在且 `is_active`——**token 有效但用户已被禁用也要拦**。
+- **角色**（66-72）：`require_role(*roles)` 是依赖工厂，返回的内层依赖先走 `get_current_user` 再比对角色。`/api/observability/*` 全部挂 `require_role("admin")`（22.5）。
+
+**router.py 的两个安全细节**（`api/auth/router.py:38-77`）：
+
+- `_throttle()` **fail-open**（38-47）：Redis 挂了放行而不是 500——限流是缓解措施，不能反过来变成"锁死全部用户"的单点。
+- **登录失败也写审计**（68-69）：`login_failed` 带 `user_id=None` + 尝试的 username，供爆破排查（审计净化见 0.4）。
+
+**deps.py 的归属校验**（`api/deps.py:9-14`）：`get_owned_project()` 对"项目不存在"和"存在但不属于你"一律返回 404"项目不存在或无权访问"。故意用 404 而非 403——**不向调用者泄露"这个 ID 存在但不是你的"**，避免资源枚举。
+
+### 5.4 最小可复现骨架：认证（≈55 行，等价于 api/auth/ 真实实现）
+
+```python
+# 最小可复现：JWT + bcrypt 认证（≈55 行）
+# 依赖：get_value（第 0 课配置骨架）；get_db / User（第 0 课 ②/④ 骨架的真实模型层）
+import time
+import bcrypt, jwt
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPBearer
+
+from infrastructure.config import get_value
+from infrastructure.db import get_db
+from infrastructure.models.user import User
+
+_SECRET = get_value("app", "secret_key")     # .env 的 SECRET_KEY
+_bearer = HTTPBearer(auto_error=False)
+
+def hash_password(plain: str) -> str:
+    return bcrypt.hashpw(plain.encode(), bcrypt.gensalt()).decode()
+
+def verify_password(plain: str, hashed: str) -> bool:
+    try:
+        return bcrypt.checkpw(plain.encode(), hashed.encode())
+    except ValueError:
+        return False                          # 畸形哈希串 ≠ 500
+
+def create_access_token(user_id: int, role: str) -> str:
+    now = int(time.time())
+    return jwt.encode({"sub": str(user_id), "role": role,        # sub 必须是 str
+                       "iat": now, "exp": now + 24 * 3600},
+                      _SECRET, algorithm="HS256")
+
+async def get_current_user(cred=Depends(_bearer), db=Depends(get_db)):
+    if cred is None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "未提供认证凭证")
+    try:
+        payload = jwt.decode(cred.credentials, _SECRET, algorithms=["HS256"])
+    except jwt.PyJWTError as e:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, f"Token 无效: {e}") from e
+    user = await db.get(User, int(payload["sub"]))
+    if user is None or not user.is_active:    # token 有效 ≠ 用户可用
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "用户不存在或已禁用")
+    return user
+
+def require_role(*roles):                     # 用法：dependencies=[Depends(require_role("admin"))]
+    async def _dep(user: User = Depends(get_current_user)) -> User:
+        if roles and user.role not in roles:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, f"需要角色: {roles}")
+        return user
+    return _dep
+```
+
+> 归属校验骨架（deps.py）只有 6 行：`db.get(Project, pid)` → `proj is None or (proj.user_id != user.id and user.role != "admin")` → 抛 404。业务路由里**永远先过这一步再读写**。
+
+### 5.5 验证与预期输出
+
+认证流程已进入**离线集成测试**（SQLite 内存库 + 真实 bcrypt/JWT），不起服务、不连 PG/Redis 即可验证全部安全行为：
+
+```powershell
+envs\lunjiang\python.exe -m pytest tests/test_api_offline.py -q
+# → 14 passed：注册→登录→/me 闭环；409 重名；401 错密码/坏 token；429 限流；
+#   项目 CRUD 生命周期、他人项目 404（归属隔离）、admin 跨用户放行；
+#   observability student 403 / admin 200；agent 端点未登录 401
+```
+
+### 5.6 动手
 
 ```powershell
 $body = @{username="demo"; password="Demo123!"} | ConvertTo-Json
@@ -662,7 +754,7 @@ services/governance/
 
 > 注：③ 熔断按 `tools.yaml` 的 `breaker` 分组生效；④ 分布式锁**仅 `lock_key` 非空时启用**——当前内置 14 个工具均未配置，属预留能力（装配示例见 `tests/test_tool_registry_call.py::test_call_distributed_lock_assembled_for_locked_tool`）。
 
-**这就是"治理栈 9 项"冒烟测试测的东西**（`scripts/smoke_governance.py`）。
+**这就是 `smoke_governance.py` 冒烟测试测的东西**（`scripts/smoke_governance.py`）。
 
 ### 11.3 动手
 
@@ -733,17 +825,17 @@ envs\lunjiang\python.exe scripts/smoke_api.py --topic   # 注册→登录→建�
 
 ## 第 14 课 用评测体系守住质量
 
-### 14.1 评测 = 三个数据集 + 一个 harness
+### 14.1 评测 = 四个数据集 + 一个 harness
 
 `evals/` 的结构：
 
 ```
 datasets/
 ├── intent.jsonl           意图分类测试集（22 条，格式 {"text":...,"intent":...}）
-├── retrieval.jsonl        RAG 常规检索测试集
-├── retrieval_hard.jsonl   RAG 长尾困难集（绕口令式改写查询）
-├── retrieval_paper_hard.jsonl  论文辅助语料口语化长尾集（第 4 轮前新增，Recall@5 96.2%）
-harness.py                 三项指标评测入口
+├── retrieval.jsonl        RAG 常规检索测试集（8 条，expected 指向语料文件名）
+├── retrieval_hard.jsonl   RAG 长尾困难集（8 条，ab.py 实验组）
+├── retrieval_paper_hard.jsonl  论文辅助语料口语化长尾集（26 条，25/26 命中 = 96.2%）
+harness.py                 三项指标评测入口（评分算术抽为纯函数，可离线单测）
 ab.py                      A/B 实验：同一数据集，不同配置/策略对比，输出图表+报告
 regression.py              七大必测场景回归（知识库入库/项目隔离/多路召回/改写/Planner/产物/治理）
 ```
@@ -754,7 +846,81 @@ envs\lunjiang\python.exe evals/ab.py          # A/B：简单集 vs 长尾困难�
 envs\lunjiang\python.exe evals/regression.py  # 七大必测场景回归（第 4 轮加入）
 ```
 
-### 14.2 用 A/B 学会"拿证据说话"
+### 14.2 Harness 拆解：三个评测项的口径（`evals/harness.py`）
+
+harness 的核心价值是**口径（什么算命中）明确且稳定**。代码上把评分算术抽成了三个纯函数（`score_intent` / `score_rag` / `build_compression_fixture`），与数据加载、真实调用分离——口径本身不依赖 PG/LLM 就能被单测回归（见 14.4）。
+
+**① 意图分类：Top-1 准确率 + 分层归因**（`harness.py:98` I/O + `:37` `score_intent`）
+
+- 逐条调 `intent_classifier.classify(text)`（走**真实三级流水线**，vector 层需 Ollama、llm 层需对话底座）；
+- 口径：`got == expected` 即正确，**只看 Top-1**，不看候选列表；
+- 附加产出比准确率更有诊断价值：`layer_distribution`（每层**接手**了多少条）与 `layer_accuracy`（每层**命中**多少条）——准确率下降时先看是哪层的锅；`misses` 逐条给出 text/expect/got/layer。
+
+**② RAG 检索：文件级 Recall@5**（`harness.py:111` I/O + `:63` `score_rag`）
+
+- 口径：期望语料文件（`expected`）出现在 Top5 结果的 `meta.file` **集合**里即算一次召回——**不要求排第 1**（chunk 级排序质量归 MRR，由 ab.py 报告）；
+- 两个容易踩的口径细节：`meta` 缺失按 `"?"` 归一（去重发生在归一化**之前**，多条无 meta 会折叠成一个 `"?"`）；R13 起显式传 `rewrite_mode=on/off` 固定评测口径，**不受线上 `auto` 自适应影响**——否则评测基线会随配置漂移；
+- 目标值不在代码里写死：`main()` 读配置 `rag.recall_target_at5`（默认 0.9）。
+
+**③ 上下文压缩：压缩率**（`harness.py:132` I/O + `:86` `build_compression_fixture`）
+
+- 造数：合成长对话 10 轮 × 约 500 字 ≈ 1 万字，**必须超过触发阈值**（`memory.compress_trigger_tokens`，默认 3000 字），配合 `force=True`——测的是"压缩率"而不是"触发逻辑"；
+- 口径：`ratio = 压缩后字符 / 压缩前字符 ≤ 0.3`。
+
+**汇总**（`harness.py:146` `main()`）：三项结果写 `evals/results_latest.json`，供跨轮次对比。
+
+### 14.3 最小可复现骨架：评测 Harness（≈45 行，score 与真实实现同口径）
+
+```python
+# 最小可复现：三项指标评测 Harness（≈45 行）
+import json, time
+from pathlib import Path
+
+DATASET_DIR = Path("evals/datasets")
+
+def _load(name):                              # JSONL：一行一个 JSON，跳过空行
+    return [json.loads(l) for l in open(DATASET_DIR / name, encoding="utf-8") if l.strip()]
+
+def score_intent(predictions, elapsed_s):     # predictions: [{text, expected, got, layer}]
+    correct = sum(p["got"] == p["expected"] for p in predictions)
+    return {"suite": "intent", "cases": len(predictions),
+            "accuracy": round(correct / len(predictions), 3),
+            "avg_ms": round(elapsed_s * 1000 / len(predictions)),
+            "misses": [p for p in predictions if p["got"] != p["expected"]]}
+
+def score_rag(cases, results_per_case, k=5):  # 文件级 Recall@k：期望文件 ∈ Top-k 文件集合
+    hits, misses = 0, []
+    for c, results in zip(cases, results_per_case):
+        files = {(r.get("meta") or {}).get("file") for r in results}
+        if c["expected"] in files:
+            hits += 1
+        else:
+            misses.append({"query": c["query"], "expect": c["expected"],
+                           "got": sorted(f or "?" for f in files)})
+    return {"suite": f"rag@{k}", "cases": len(cases),
+            "recall": round(hits / len(cases), 3), "misses": misses}
+
+async def eval_rag(search, k=5):              # search 注入：真实 rag_pipeline.search 或 mock
+    cases = _load("retrieval.jsonl")
+    t0 = time.perf_counter()
+    outs = [(await search(c["query"], top_k=k))["results"] for c in cases]
+    return score_rag(cases, outs, k=k, elapsed_s=time.perf_counter() - t0)
+```
+
+> 设计要点：**search 作为参数注入**，评分函数拿到的是纯数据——单测时传 mock 结果列表即可验证口径，不需要真检索。
+
+### 14.4 验证与预期输出
+
+```powershell
+envs\lunjiang\python.exe -m pytest tests/test_evals_scoring.py -q
+# → 8 passed：评分算术（Top-1/分层归因/文件级 Recall/"?"归一/压缩造数超阈值）
+#   + 数据集完整性（intent 22 条、三个检索集的 expected 文件必须真实存在于 data/corpus）
+envs\lunjiang\python.exe evals/harness.py compression   # 实跑单项（需 LLM 底座）
+# → 9920 字 → 2194 字 (ratio=0.221, 目标≤0.3, PASS)（具体数字随 LLM 输出浮动）
+# 全量三项 intent/rag 需 PostgreSQL + Ollama（vector 层与检索），环境见第 26 课
+```
+
+### 14.5 用 A/B 学会"拿证据说话"
 
 第 1 轮优化做了一个经典 A/B：**Query 改写开关对比**。
 
@@ -786,7 +952,7 @@ envs\lunjiang\python.exe evals/regression.py  # 七大必测场景回归（第 4
 | 10 | EventHub + SSE（课 12）                        | 1h   | 打字机了   |
 | 11 | 简单 React 页面（课 13）                           | 2h   | 能演示    |
 | 12 | 评测集 + harness（课 14）                         | 1.5h | 有数据    |
-| 13 | Dockerfile + compose（PG/Redis/app 编排，`--scale` 多副本）（ROUND13） | 1h   | 可多实例部署 |
+| 13 | Dockerfile + compose（PG/Redis/app 编排，`--scale` 多副本）（ROUND13，走读见第 29 课） | 1h   | 可多实例部署 |
 
 自己重建时**先砍需求再迭代**：只保留 4 个 specialist、多路召回先不做相邻窗口与项目保底、治理只要限流+重试——先跑通再补全，最后逐项对齐本项目（本项目就是你的"参考答案"）。
 
@@ -807,6 +973,8 @@ envs\lunjiang\python.exe evals/regression.py  # 七大必测场景回归（第 4
 - 原始文件落盘 `data/uploads/{project_id}/`（已 gitignore）。
 
 ### 16.2 知识库数据流与 API 示例
+
+实现文件：[api/knowledge/router.py](../api/knowledge/router.py)（4 个端点：上传/列表/库内检索/删除，路由级挂 `get_current_user`，每个端点先过 `get_owned_project` 归属校验）+ [api/knowledge/schemas.py](../api/knowledge/schemas.py)（上传/列表契约）；业务逻辑全部委托给 `services/rag/ingest/pipeline.py`（见 19.4）。前端因此**永远看不到别人的项目文档**——归属控制在路由层统一收口。
 
 链路：`上传 → infer_type(魔数/扩展名) → 大小上限 20MB → MD5 同项目去重 → 解析(线程池) → 分块(512/64) → 批量向量化(32/批) → status=ready`。
 
@@ -1008,7 +1176,7 @@ envs\lunjiang\python.exe scripts/load_test.py  # 知识库检索并发压测（�
 
 ### 0.3 核心数据结构
 
-**① 配置 = 嵌套 dict（`config.py:56-86`）**：`_interpolate()` 把 YAML 里 `${VAR}` 替换成环境变量；`get_value("a","b",default=...)` 按路径取值。配置只读一份（`@lru_cache`），全项目同一视图。
+**① 配置 = 嵌套 dict（`config.py:39-61`）**：`_interpolate()`（39-53）把 YAML 里 `${VAR}` 替换成环境变量；`get_value("a","b",default=...)` 按路径取值。配置只读一份（`@lru_cache`），全项目同一视图。
 
 **② 异步引擎 / 会话（`db.py:12-36`）**：`create_async_engine` 建异步引擎（`pool_pre_ping=True` 防断连）；`async_sessionmaker` 产 `AsyncSession`；`get_db()` 是 `async generator`，供 FastAPI `Depends` 注入。
 
@@ -1022,7 +1190,7 @@ envs\lunjiang\python.exe scripts/load_test.py  # 知识库检索并发压测（�
 | `importance` | `Float` | 召回排序权重（偏好固定 0.8） |
 | `meta` | `JSON` | 来源/标题/分块号等溯源信息 |
 
-> ⚠️ **坑**：`embedding` 维度由 `get_embedding_dim()` 在**定义类时**求值（`models/memory.py:22`）。切换嵌入底座导致维度变化时，必须重建 `memory_items` 表或迁数据（当前未引 Alembic）——这是"换 embedding 模型先重建索引"的底层原因。
+> ⚠️ **坑**：`embedding` 维度由 `get_embedding_dim()` 在**定义类时**求值（`models/memory.py:22`）。切换嵌入底座导致维度变化时，必须重建 `memory_items` 表或迁数据——Alembic 骨架已就位（`alembic.ini` + `env.py`），但 `versions/` 尚为空，现阶段建表仍走 `create_all` 兜底。这是"换 embedding 模型先重建索引"的底层原因。
 
 **④ 审计净化（`audit.py:23-51`）**：`detail` 里超 200 字符的字符串 → `{fp: sha256前16位, sum: 前200字, len: 原文长}`。纯函数 `sanitize_detail()`，覆盖 HTTP/认证/工具三条入口，**合规硬约束**。
 
@@ -1261,7 +1429,7 @@ envs\lunjiang\python.exe -c "import asyncio, infrastructure.redis_client as r; p
 
 ### 17.4 代码走读
 
-**入口：`classify()` — `intent.py:64-75`**。整个函数只有 11 行，就是一个三级瀑布：
+**入口：`classify()` — `intent.py:64-75`**。整个函数只有 12 行，就是一个三级瀑布：
 
 ```python
 async def classify(self, text: str) -> IntentResult:
@@ -1666,7 +1834,7 @@ print('摘要前 80 字:', r.summary[:80])
 | 面试点：为什么 L3 用「距离×重要度」而不是纯向量 | 纯向量会让"语义最像但一次性的闲聊"顶掉"语义稍远但用户反复强调的结论"。`hybrid_rank` 用 α=0.7 让语义主导、重要度兜底（ROUND13 修复点）。 |
 | 坑：`compress_trigger_tokens` 名不副实 | 名字叫 token，**实际比的是字符数**（`compressor.py:72/76/135`）。没有接 tokenizer，是刻意简化。 |
 | 坑：`project_id=None` 时读写 key 不一致 | 写入侧 `conversation_service.py:70` 用 `pid = project_id or 0` → key `chat:0:{sid}`；读取侧 `engine.py:131` 直接用原始 `project_id` → key `chat:None:{sid}`。**不带项目发对话时历史读不到**。这是真实存在的不一致，排查"记忆没生效"时优先看这里。 |
-| 坑：记忆层失败是静默的 | `engine.py:135/160` 只 `logger.warning`，前端完全无感。验证记忆是否生效要看日志里的 `短期记忆不可用` / `DB 记忆层不可用`。 |
+| 坑：记忆层失败是静默的 | `engine.py:136/161` 只 `logger.warning`，前端完全无感。验证记忆是否生效要看日志里的 `短期记忆不可用` / `DB 记忆层不可用`。 |
 
 ***
 
@@ -2048,7 +2216,7 @@ async def generate_artifact(kind, topic, *, requirement="", references="",
 三个值得学的点：
 - **骨架固定，让 LLM 填空**（`artifacts.py:14-66`）：综述/开题/答辩三类产物各有一套 `outline`+`instruction`，结构完整性由模板保证，不赌模型自觉——这与 20.4 ②"规则抓硬伤"同源：**能用确定性手段锁住的，就不交给概率**。
 - **先生成证据再生成文**（`artifacts.py:82-87`）：把 RAG 检索结果编成 `[编号]` 注入提示词，逼模型引用来源，抑制空泛编造；检索为空时**显式降级话术**而不是硬编。
-- **证据截断 260 字/条、top_k=6**（`artifacts.py:83-85`）：控制上下文长度——产物是长文，证据必须省着用。
+- **证据截断 260 字/条、top_k=6**（`artifacts.py:82-85`）：控制上下文长度——产物是长文，证据必须省着用。
 
 ### 20.5 调用关系
 
@@ -2386,7 +2554,7 @@ async def resilient_call(fn, *, tool_name, fallback_kwargs=None,
 ### 21.7 验证与预期输出
 
 ```powershell
-envs\lunjiang\python.exe scripts/smoke_governance.py    # 治理栈 9 项冒烟
+envs\lunjiang\python.exe scripts/smoke_governance.py    # 治理栈冒烟（需 Redis/PG/ollama）
 ```
 
 逐项验证六个治理件（需 Redis 在跑）：
@@ -2742,7 +2910,7 @@ async def create() -> tuple[object, str]:
 
 恢复
   前端 POST /api/agent/resume {session_id, feedback}
-      → api/agent/router.py:55 → conversation_service.stream_resume()
+      → api/agent/router.py:58 → conversation_service.stream_resume()
       → engine.run(resume=feedback) → graph.astream(Command(resume=feedback))
       → 从 interrupt 那行继续 → 综合反馈产出 final_output
       → conversation_service._archive_decision()  写 long_term(kind=decision) + structured.topic
@@ -3327,9 +3495,11 @@ def build_graph(checkpointer=None):
         b.add_node(name, make_specialist_node(spec))
     b.add_node("planner", planner_node)
     b.add_edge(START, "supervisor")
-    b.add_conditional_edges("supervisor",                             # 路由只做"翻译"
-                            lambda s: s.get("next_agent") or END,
-                            ["supervisor", "planner", *SPECIALISTS, END])
+    def route(s):                                                     # 白名单路由（真实实现
+        nxt = s.get("next_agent") or END                              # builder.py:29-33）：
+        return nxt if nxt in SPECIALISTS or nxt in ("supervisor", "planner") else END
+    b.add_conditional_edges("supervisor", route,                      # LLM 幻觉出的节点名
+                            ["supervisor", "planner", *SPECIALISTS, END])  # 一律落到 END
     for name in SPECIALISTS:
         b.add_edge(name, "supervisor")                                # 回环
     b.add_edge("planner", "supervisor")
@@ -3352,9 +3522,23 @@ async def supervisor_node(state):
     # 收尾：hops 达上限则强制结束，防无限回环
     stop = "max_hops" if len(visited) >= _max_hops() else "done"
     return {"next_agent": "__end__", "stop_reason": stop}
+
+# ── 骨架引用的三个 helper（伪代码；真实实现见标注位置）──
+async def _chitchat_reply(state, hub) -> str:
+    """supervisor.py:79 —— 闲聊不进专项链路：系统提示 + 近期历史 + 用户输入，流式作答"""
+    ...
+
+def _max_hops() -> int:
+    """supervisor.py:24 —— 读 agent.max_hops 配置（默认 3），收尾判定的保险丝"""
+    ...
+
+def _interrupt_payload(snap) -> dict | None:
+    """engine.py:166 —— 从挂起的图状态提取 interrupt 载荷（type/agent/question/proposal），
+    完整结构见 10.3 与 node_factory.py:66-70"""
+    ...
 ```
 
-**复现要点**：① 图必须单例；② `thread_id` 是 resume 的唯一凭证；③ 生产/消费者用 `finally` 双向清理（一边 `close()`、一边 `cancel()`）；④ 路由函数只翻译 `next_agent`，判断放在节点内；⑤ `max_hops`（默认 3，**`supervisor.py:21`**）是防止 Agent 无限回环的保险丝。
+**复现要点**：① 图必须单例；② `thread_id` 是 resume 的唯一凭证；③ 生产/消费者用 `finally` 双向清理（一边 `close()`、一边 `cancel()`）；④ 路由函数做**白名单校验**——`next_agent` 只允许落回已注册节点，LLM 幻觉出的节点名一律落到 `END`，复杂任务/收尾等分支判断放在节点内；⑤ `max_hops`（默认 3，**`supervisor.py:21`**）是防止 Agent 无限回环的保险丝。
 
 ### 25.7 验证与预期输出
 
@@ -3396,7 +3580,7 @@ node_start(supervisor) → intent → route(topic_agent) → node_end
 # 第三部分 · 从零复现实操
 
 > 前两部分讲"怎么理解"，这一部分讲"**怎么在自己机器上跑起来并证明它真的能用**"。
-> 假设你拿到的是一台**只有 Python 和 Git 的裸机**，按 26 → 27 → 28 的顺序执行即可。
+> 假设你拿到的是一台**只有 Python 和 Git 的裸机**，按 26 → 27 → 28 的顺序执行即可；要部署为多实例服务，最后走第 29 课。
 
 ## 第 26 课 环境准备：从裸机到全绿
 
@@ -3468,7 +3652,7 @@ copy .env.example .env             # 修改 PG / Redis 连接信息与 AGNES_API
 envs\lunjiang\python.exe scripts/check_env.py
 ```
 
-预期输出（4 项全 PASS）：
+预期输出（5 项全 PASS）：
 
 ```
 == 论匠环境检查（LLM provider: agnes）==
@@ -3533,7 +3717,7 @@ cd frontend; npm install; npm run dev
 
 | # | 动作 | 位置 | 说明 |
 | --- | --- | --- | --- |
-| 1 | `Base.metadata.create_all` 建表 | `main.py:60-62` | 开发期直接建表；**生产应改用 Alembic** |
+| 1 | `Base.metadata.create_all` 建表 | `main.py:60-62` | 开发期直接建表；Alembic 骨架已就位（`alembic.ini` + `env.py`），`versions/` 为空，生成首个迁移后即可切换 |
 | 2 | `register_all()` 注册 14 个治理工具 | `main.py:64-65` | 幂等，重复调用安全 |
 | 3 | `create_task(_warmup_bm25())` | `main.py:68` | 后台重建 BM25 索引，不阻塞就绪 |
 | 4 | `create_task(_warmup_reranker())` | `main.py:69` | 后台加载交叉编码器（CPU 首载 10~60s） |
@@ -3552,12 +3736,12 @@ cd frontend; npm install; npm run dev
 | 2 | `scripts/ingest_corpus.py` | 语料入库 | 日志显示入库块数（约 1376 块） |
 | 3 | `scripts/smoke_rag.py` | ③ 检索 | 各查询返回非空 results |
 | 4 | `scripts/smoke_memory.py` | ② 记忆 | 四层读写 + 压缩比 ≤0.30 |
-| 5 | `scripts/smoke_governance.py` | ⑤ 治理 | 治理栈 9 项通过 |
+| 5 | `scripts/smoke_governance.py` | ⑤ 治理 | 治理栈各项 PASS（RBAC/限流/降级/熔断/锁） |
 | 6 | `scripts/smoke_trace.py` | ⑥ 可观测 | Span 嵌套与回放正常 |
 | 7 | `scripts/smoke_graph.py` | ⑦ 人机介入 + 编排 | 图编译 + 路由 + 中断恢复 |
 | 8 | `scripts/smoke_api.py --topic` | 端到端（需 uvicorn） | 注册→登录→建项目→对话全链路 |
 | 9 | `evals/harness.py` | 质量指标 | 意图准确率 / Recall@5 / 压缩比 |
-| 10 | `-m pytest tests/ -q` | 离线单测 | 59 用例通过，无外部依赖 |
+| 10 | `-m pytest tests/ -q` | 离线测试 | 89 用例（治理/纯逻辑/API 集成/评测口径）通过，无外部依赖 |
 
 ### 27.5 停止与清理
 
@@ -3586,25 +3770,26 @@ D:\Develop\DB\PostgreSQL16\Library\bin\pg_ctl -D D:\Develop\DB\PostgreSQL16\data
 
 ### 28.2 后端核心模块复现顺序（照着写代码用）
 
-如果你要**从零把后端核心写出来**（毕设 / 作品集），按下面 13 步推进。每一步都标注了**骨架代码在第几课**——照抄即可跑通：
+如果你要**从零把后端核心写出来**（毕设 / 作品集），按下面 14 步推进。每一步都标注了**骨架代码在第几课**——照抄即可跑通：
 
 | 步 | 产出 | 骨架出处 | 完成标志 |
 | --- | --- | --- | --- |
 | 1 | 配置层 `get_settings()` / `get_value()` | **第 0 课** + 第 3 课 | 能从 YAML 按路径取值 |
 | 2 | FastAPI 骨架 + `/health` + lifespan | 第 3 课 + 27.3 | 服务能起，启动期建表 |
 | 3 | PG + Redis 连接 + ORM 模型 | **第 0 课** + 第 4 课 | `memory_items` / `projects` / `trace_spans` 建出来 |
-| 4 | JWT + bcrypt 认证 | 第 5 课 | 注册/登录闭环 |
-| 5 | `LLMProvider`（chat / chat_stream / embed / chat_tools） | 第 6 课 | 四个方法都能通 |
-| 6 | ① 意图分类器 | **17.6** | 三类样本分别命中 rule/vector/llm |
-| 7 | ③ RAG：入库 → 多路召回 → RRF → 精排 | **19.6** | Recall@5 ≥ 0.90 |
-| 8 | ② 记忆四层 + 压缩 | **18.6** | 压缩比 ≤0.30，四层各能读写 |
-| 9 | ④ 工具实现 + 注册 | **20.6** | 14 个工具注册成功且可直调 |
-| 10 | ⑤ 治理栈六步流水线 | **21.6** | RBAC/限流/熔断/重试 各能单独验证 |
-| 11 | ⑧ EventHub + SSE | **24.6** | 帧序列符合 24.7 的预期 |
-| 12 | ⑥ Trace span | **22.6** | 嵌套 span 能还原成树 |
-| 13 | 编排中枢：state + builder + supervisor + specialists + engine | **25.6** | 图编译 + 路由 + ⑦ interrupt 恢复（**23.6**） |
+| 4 | JWT + bcrypt 认证（schemas/security/router/deps 四件套） | 第 5 课（**5.4 骨架**） | 注册/登录闭环，他人项目 404 |
+| 5 | 平台路由：projects CRUD + 归属校验 + observability 查询（knowledge 端点待步 7 RAG 就绪后挂接） | 第 5 课 5.3 + 16.2 + 22.5 | `pytest tests/test_api_offline.py` 14 用例全绿 |
+| 6 | `LLMProvider`（chat / chat_stream / embed / chat_tools） | 第 6 课 | 四个方法都能通 |
+| 7 | ① 意图分类器 | **17.6** | 三类样本分别命中 rule/vector/llm |
+| 8 | ③ RAG：入库 → 多路召回 → RRF → 精排 | **19.6** | Recall@5 ≥ 0.90 |
+| 9 | ② 记忆四层 + 压缩 | **18.6** | 压缩比 ≤0.30，四层各能读写 |
+| 10 | ④ 工具实现 + 注册 | **20.6** | 14 个工具注册成功且可直调 |
+| 11 | ⑤ 治理栈六步流水线 | **21.6** | RBAC/限流/熔断/重试 各能单独验证 |
+| 12 | ⑧ EventHub + SSE | **24.6** | 帧序列符合 24.7 的预期 |
+| 13 | ⑥ Trace span | **22.6** | 嵌套 span 能还原成树 |
+| 14 | 编排中枢：state + builder + supervisor + specialists + engine | **25.6** | 图编译 + 路由 + ⑦ interrupt 恢复（**23.6**） |
 
-> 步骤 6~13 的**骨架代码是本复现路径的核心资产**。建议：先照抄跑通 → 再回头对照 N.4 的真实实现补齐
+> 步骤 7~14 的**骨架代码是本复现路径的核心资产**（步 4~5 的认证与平台路由看 5.4 骨架 + 离线集成测试）。建议：先照抄跑通 → 再回头对照 N.4 的真实实现补齐
 > 降级、日志、配置等工程细节 → 最后用 28.1 的清单逐项验收。
 
 ### 28.3 什么算"复现成功"
@@ -3616,6 +3801,62 @@ D:\Develop\DB\PostgreSQL16\Library\bin\pg_ctl -D D:\Develop\DB\PostgreSQL16\data
 3. **能回答"为什么"**：任意挑一个模块，说清它的输入/输出、上下游、以及至少一个设计取舍（N.8 的面试点）。
 
 达到这三条，你就不是在"抄一个项目"，而是**真的掌握了这套架构**。
+
+***
+
+## 第 29 课 多实例部署：Docker 编排与水平扩展（ROUND13）
+
+### 29.1 两个文件各管什么
+
+| 文件 | 回答的问题 |
+| --- | --- |
+| [Dockerfile](../Dockerfile) | **单个副本长什么样**：运行环境 + 代码 + 健康检查，打成镜像 |
+| [docker-compose.yml](../docker-compose.yml) | **副本们怎么活**：依赖服务（PG/Redis）、容器网络、环境注入、扩容 |
+
+### 29.2 Dockerfile 走读（`Dockerfile:8-39`）
+
+| 决策 | 位置 | 为什么 |
+| --- | --- | --- |
+| 基础镜像 `python:3.12-slim`，只装 `libgomp1`/`libglib2.0` | 8-20 | torch CPU 推理的最小系统库；**不含编译工具链**，镜像体积减半 |
+| 先 `COPY requirements.txt` 再安装依赖 | 23-24 | 层缓存：改代码不触发重装依赖，构建从分钟级回到秒级 |
+| 非 root 运行（`uid 1000`）+ `chown /app` | 29-32 | 安全基线：容器内进程无 root 权限 |
+| HEALTHCHECK 用 `urllib` 而非 curl | 36-37 | slim 镜像**没有 curl**；`start-period=60s` 给交叉编码器预加载留窗口（27.3 预热步骤 4） |
+| `HF_HUB_OFFLINE=1` | 12 | 运行期不访问 HuggingFace——模型必须随镜像或挂载卷就位，避免"起服务变成下模型" |
+
+### 29.3 compose 走读（`docker-compose.yml:13-70`）
+
+三个服务，两条关键机制：
+
+- **postgres**：官方 `pgvector/pgvector:pg16` 镜像（vector 扩展开箱即用，免手动 `CREATE EXTENSION`）；宿主 5433 → 容器 5432（与 `.env` 对齐）；healthcheck 用 `pg_isready`。
+- **redis**：`redis:7-alpine` + 数据卷。
+- **app**（多副本载体）：
+  - **环境注入的覆盖顺序**：`env_file: .env` 先整体载入，`environment:` 再覆盖 `PG_HOST=postgres` / `PG_PORT=5432`——同一份 `settings.yaml` 里的 `${PG_HOST}` 占位符（第 0 课配置层）在本机解析为 5433、在容器网络解析为服务名 postgres，**一份配置两端跑**；
+  - `depends_on` 用 `condition: service_healthy`——等 PG/Redis **真的就绪**而不是"容器启动了"；
+  - `uploads` 共享卷：原始文件与 MD5 去重记录全副本一致。
+
+### 29.4 `--scale` 扩容的四个前提（面试点）
+
+1. **端口必须是区间**（`"8001-8002:8000"`）：写死单端口时，第二个副本绑宿主端口直接报 `port is already allocated` 起不来——这是本次走读实际修复的 bug；
+2. **无状态才能无脑扩**：JWT 无状态（第 5 课）、限流计数/熔断状态/分布式锁全在 Redis（第 21 课）——任意副本宕机，其余副本照常服务；
+3. **有状态的部分要么共享、要么接受最终一致**：BM25 索引与交叉编码器是**每副本内存里各一份**（27.3 预热步骤 3/4），语料入库不会广播到其他副本——**变更语料后需滚动重启各副本**重建索引；uploads 共享卷保证文件一致；
+4. **`create_all` 建表竞态**：多副本同时冷启动会并发建表，PG 下通常无害但存在窗口——**先单副本 `healthy` 再 `--scale`**，或等 Alembic 迁移接管（27.3 步骤 1）。
+
+### 29.5 动手（需 Docker 环境）
+
+```powershell
+docker compose up -d postgres redis
+docker compose build app
+docker compose up -d app                    # 先单副本，等 healthy（规避建表竞态）
+docker compose up -d --scale app=2          # 扩到两副本：宿主 8001 / 8002
+
+curl http://localhost:8001/health           # → {"status":"ok","app":"lunjiang"}
+curl http://localhost:8002/health           # → 同上
+# 跨副本治理验证（Redis 状态共享的现场证据）：
+# - 限流：同一账号在 8001 把 rpm 打满 → 8002 上同样被限（计数在 Redis 不在进程）
+# - 分布式锁：副本 A 持锁期间副本 B acquire 失败
+# - 熔断：A 打满某工具失败阈值 → B 对该工具直接快速失败
+docker compose down                         # down -v 连数据卷一起清
+```
 
 ***
 

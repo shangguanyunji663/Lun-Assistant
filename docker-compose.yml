@@ -57,7 +57,8 @@ services:
       redis:
         condition: service_healthy
     ports:
-      - "8001:8000"                # 副本1：宿主8001；--scale app=2 时副本2映射 8002
+      - "8001-8002:8000"           # 端口区间：--scale app=2 时副本分别映射 8001/8002
+                                   # （固定单端口会在扩容第二个副本时报端口冲突）
     volumes:
       - uploads:/app/data/uploads
     restart: unless-stopped

@@ -40,17 +40,20 @@ async def main() -> None:
         rate_limit_rpm=1000, breaker="smoke_brk3",
         fallback_kwargs={"query": "SAFE_DEFAULT"}))
 
-    # ---------- 1. RBAC：student 禁调 admin_reindex ----------
+    # ---------- 1. RBAC：未知角色默认拒绝；student 按 rbac.yaml 的 tool:* 放行 ----------
+    # （66a8e58 起策略收敛为"学生可用全部论文工具"，拒绝路径改用未配置的角色验证）
     from services.governance.rate_limiter import RateLimitExceeded
     from services.governance.retry import HumanInterventionRequired
     tool_registry.register(ToolSpec(
         name="admin_reindex", description="冒烟-管理工具", handler=ok_tool,
         rate_limit_rpm=1000, breaker="smoke_brk4"))
     try:
-        await tool_registry.call("admin_reindex", user_id=1, user_role="student")
-        print("[RBAC] FAIL - 未拦截")
+        await tool_registry.call("admin_reindex", user_id=1, user_role="ghost")
+        print("[RBAC] FAIL - 未知角色未被拦截")
     except PermissionError as e:
-        print(f"[RBAC] PASS - student 被拦截: {e}")
+        print(f"[RBAC] PASS - 未知角色 ghost 被拦截: {e}")
+    r = await tool_registry.call("admin_reindex", user_id=1, user_role="student", query="ok")
+    print(f"[RBAC] {'PASS' if r == 'OK:ok' else 'FAIL'} - student 按 tool:* 放行: {r}")
 
     # ---------- 2. 限流：smoke_ok rpm=3，第4次应拒绝 ----------
     ok_cnt = 0
