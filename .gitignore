@@ -23,6 +23,8 @@ data/uploads/
 logs/
 *.log
 evals/regression_latest.json
+# hold-out 测试集不入库（保证其对检索管线「未见过」，避免泄漏）
+evals/datasets/holdout.jsonl
 
 # 前端
 frontend/node_modules/

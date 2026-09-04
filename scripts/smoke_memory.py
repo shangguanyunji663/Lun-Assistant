@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-from infrastructure.db import get_engine
+from infrastructure.db import dispose_engine, get_engine
 from services.memory.short_term import short_term_memory
 
 
@@ -67,6 +67,7 @@ async def main() -> None:
     print("memory_brief 预览:", brief[:300].replace("\n", " | "))
 
     print("\nmemory smoke OK")
+    await dispose_engine()   # 关连接池，避免 asyncio.run 收尾时挂起
 
 
 if __name__ == "__main__":

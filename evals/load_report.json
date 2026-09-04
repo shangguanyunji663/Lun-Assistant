@@ -1,19 +1,19 @@
 {
   "endpoint": "http://127.0.0.1:8000/api/projects/{id}/knowledge/search",
-  "concurrency": 4,
-  "total": 16,
-  "elapsed_s": 99.74,
-  "qps": 0.6,
+  "concurrency": 8,
+  "total": 40,
+  "elapsed_s": 168.37,
+  "qps": 1.9,
   "latency_ms": {
-    "p50": 4054,
-    "p95": 9886,
-    "max": 16198
+    "p50": 4016,
+    "p95": 5574,
+    "max": 6024
   },
   "success_rate": 1.0,
   "memory_mb": {
     "sampled": true,
-    "rss_mb_baseline": 1497.0,
-    "rss_mb_peak": 1497.0,
+    "rss_mb_baseline": 1189.6,
+    "rss_mb_peak": 1189.6,
     "rss_mb_growth": 0.0
   },
   "note": "检索含 bge-m3 稠密路（本地CPU）+ 精排；QPS 受限于本地嵌入/精排吞吐"

@@ -33,7 +33,7 @@
 | `infrastructure/` | 基础设施（models 模型定义 / rbac 权限） | ★★★ | 数据模型与权限 |
 | `configs/` | 配置（settings.yaml / rbac.yaml / tools.yaml / ollama Modelfile） | ★★★ | 运行时配置 |
 | `scripts/` | 运维/冒烟脚本（check_env / smoke_* / ingest_corpus / load_test） | ★★ | 手动运维用 |
-| `tests/` | pytest 测试（59 用例） | ★★★ | 新增 `test_audit_sanitize.py`（R13） |
+| `tests/` | pytest 测试（89 用例） | ★★★ | 新增 `test_audit_sanitize.py`（R13）；含治理/模型/改写/API 集成/评测口径等 |
 | `evals/` | 评测（harness / ab / regression + datasets + 报告） | ★★ | 含 `__init__.py` 为包 |
 | `data/` | 语料库（corpus 81 个 txt）+ 运行时上传目录（uploads） | ★★★ | uploads 已 gitignore |
 | `docs/` | 架构 / 部署 / 学习 / 优化记录 / 格式规范 | ★★★ | 后端线 ROUND1-13 + 通用文档留在根；前端版本线文档见 `frontend-versions/` |

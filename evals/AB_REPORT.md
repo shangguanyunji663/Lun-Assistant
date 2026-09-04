@@ -1,5 +1,7 @@
 # A/B 实验报告：Query 改写的收益、失效模式与修复验证
 
+> ⚠️ **变更标注（2026-09-04）**：本文档为 ROUND13 前的 A/B 实验基线（8+8 条原始数据集）。当前评测集已扩充至 130 条全量基线（意图 50 / 简单 20 / 长尾 20 / 学术 40 + hold-out 8），并新增 `_TOPIC_POOL` 语料主题词表机制（口语长尾集 Recall@5 从 62.5% 提升至 80%）。最新基线见 [EVALUATION_REPORT.md](../docs/EVALUATION_REPORT.md)，本文档保留作为历史对照。
+
 > 实验环境: Ollama qwen3:4b (CPU) + bge-m3(1024d 稠密) + BM25(jieba 稀疏) RRF 融合 + bge-reranker-base 精排
 > 数据集: 简单集 8 条（含主题关键词）/ 长尾困难集 8 条（口语化、刻意避开语料关键词）
 

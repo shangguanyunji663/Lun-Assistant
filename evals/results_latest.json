@@ -1,10 +1,43 @@
 {
+  "intent": {
+    "suite": "intent",
+    "cases": 22,
+    "accuracy": 1.0,
+    "avg_ms": 56,
+    "layer_distribution": {
+      "rule": 16,
+      "vector": 6,
+      "llm": 0
+    },
+    "layer_accuracy": {
+      "rule": 16,
+      "vector": 6,
+      "llm": 0
+    },
+    "misses": []
+  },
   "rag": {
     "suite": "rag@5",
     "cases": 8,
-    "recall": 1.0,
-    "avg_ms": 47747,
+    "recall": 0.875,
+    "avg_ms": 75308,
     "use_rewrite": true,
-    "misses": []
+    "misses": [
+      {
+        "query": "实验设计如何保证信度效度",
+        "expect": "research_method.txt",
+        "got": [
+          "experimental_design.txt"
+        ]
+      }
+    ]
+  },
+  "compression": {
+    "suite": "compression",
+    "original_chars": 9920,
+    "compressed_chars": 2121,
+    "ratio": 0.214,
+    "target_ratio": 0.3,
+    "pass": true
   }
 }

@@ -144,6 +144,26 @@ envs\lunjiang\python.exe -m ruff check .               # 静态检查（规则�
 envs\lunjiang\python.exe scripts/load_test.py          # 知识库检索并发压测（需 uvicorn 已启动）
 ```
 
+**预期输出示例**（全本地 Ollama 底座 · 2026-09-04 实测基线；逐项完整输出见 [📊 冒烟与评测基线](docs/EVALUATION_REPORT.md)）：
+
+```text
+== 论匠环境检查（LLM provider: ollama）==
+[PASS] Ollama 对话模型 | qwen3:4b-ctx4096 -> 'OK'      # 模型正常回复即 PASS（qwen3 会回一长段话）
+[PASS] Ollama Embedding | bge-m3 向量维度=1024
+[PASS] Redis | PING=True, SET/GET=ok
+[PASS] PostgreSQL 连接 | 数据库 lunjiang 已存在
+[PASS] pgvector 扩展 | vector 类型可用
+结果: 5/5 通过
+```
+
+```text
+envs\lunjiang\python.exe scripts/smoke_api.py --topic   # 选题端到端（登录→SSE→interrupt→resume）
+login OK → [intent] topic_analysis → [route] topic_agent
+→ [interrupt] 请确认选题方案 → resume → [final] 最终选题结论
+```
+
+> 每个脚本的「通过特征」（成功时应看到的关键输出锚点）见 📊 评测基线报告「三、冒烟命令明细」。
+
 ## 配置方法
 
 ### `.env`（本地环境变量，不入库）
@@ -157,7 +177,7 @@ envs\lunjiang\python.exe scripts/load_test.py          # 知识库检索并发�
 | `PG_HOST` / `PG_PORT` / `PG_USER` / `PG_PASSWORD` / `PG_DB` | PostgreSQL 连接信息（本项目端口为 **5433**）                                                  |
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_DB`                    | Redis 连接信息（默认 6379/0）                                                             |
 | `DEEPSEEK_API_KEY` / `ZHIPU_API_KEY` / `QWEN_API_KEY`       | 各云底座密钥（切换 provider 时填写；settings.yaml 无 openai provider，旧 `OPENAI_API_KEY` 为无效残留键） |
-| `AGNES_BASE_URL` / `AGNES_API_KEY`                          | 云上备选对话底座 agnes-2.5-flash（OpenAI 兼容，切换 provider 时填写）                     |
+| `AGNES_BASE_URL` / `AGNES_API_KEY`                          | 云上备选对话底座 agnes-2.5-flash（OpenAI 兼容，切换 provider 时填写）                               |
 
 ### `configs/settings.yaml`（主配置）
 

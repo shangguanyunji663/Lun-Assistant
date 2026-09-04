@@ -11,9 +11,13 @@ import asyncio
 import json
 import logging
 import statistics
+import sys
 import time
+from pathlib import Path
 
 import httpx
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 logging.basicConfig(level=logging.WARNING)
 from infrastructure.paths import PROJECT_ROOT  # noqa: E402 —— 路径唯一真源

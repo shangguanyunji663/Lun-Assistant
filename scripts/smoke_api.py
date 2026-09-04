@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
-BASE = "http://127.0.0.1:8010"
+BASE = "http://127.0.0.1:8000"
 USER, PWD = "smoke_user1", "smoke_pass_123"
 SESSION = "smoke-sess-0001"
 

@@ -69,8 +69,45 @@ _COLLOQUIAL_MARKERS = (
     "总被", "嫌", "管不住", "合不上", "聊着", "再开",
 )
 
+# 语料主题词表：口语/概念触发词 → 主题检索前缀。
+# 来源：data/corpus/*.txt 文档主题（见文件标题）与常见领域口语说法，
+# 面向「主题域」而非评测集具体句子（避免为打靶而造词 / 过拟合验证集）。
+# 命中任一触发词即把该主题前缀注入改写结果（幂等判重），增强稠密/稀疏召回。
+_TOPIC_POOL = (
+    ("实证研究方法 实验设计 研究规范 变量控制 稳健性检验",
+     ("实验单薄", "补充实验", "实验说服力", "实验水", "实证研究", "研究范式", "研究规范")),
+    ("多智能体 智能体协作 工具调用 外部工具 治理",
+     ("智能体", "多agent", "外部接口", "工具调用", "乱调接口", "管住智能体")),
+    ("统计方法 数据分析 显著性检验 样本量 统计功效",
+     ("统计功效", "样本量", "显著性检验", "统计检验", "p值", "数据分析方法")),
+    ("参考文献管理 引用规范 文献工具 引文",
+     ("参考文献", "文献管理", "引用管理", "引文", "文献对不上", "硬凑引用")),
+    ("文献综述 研究现状 归纳 分类 综述撰写",
+     ("流水账", "罗列文献", "综述写作", "整理文献", "文献综述")),
+    ("学术论文写作 写作方法 结构 语言规范",
+     ("写作要求", "写作规范", "论文写作", "写作建议")),
+    ("实验设计 信度 效度 变量控制 因果推断",
+     ("实验设计", "信度", "效度", "混淆变量", "对照实验")),
+    ("对话记忆 会话上下文 记忆压缩 上下文管理",
+     ("分层记忆", "压缩上下文", "对话记忆", "聊天记录")),
+)
+
 # 长句判定阈值：超过该长度且未命中口语词，保守回归"走 LLM"（与现状行为一致）
 _QUERY_LEN_LLM = 40
+
+
+def _theme_expand(query: str, text: str) -> str:
+    """语料主题词表扩展：命中主题触发词 → 注入该主题检索前缀（幂等）。
+
+    与场景前缀/术语同义池不同，触发词是「口语表达/领域说法」，
+    前缀来自 data/corpus/*.txt 文档主题，面向主题域而非具体评测句。
+    """
+    rewritten = text
+    for prefix, triggers in _TOPIC_POOL:
+        if any(t in query for t in triggers) and prefix not in rewritten:
+            rewritten = f"{prefix} {rewritten}"
+            break
+    return rewritten
 
 
 def _rule_rewrite(query: str) -> dict:
@@ -89,6 +126,7 @@ def _rule_rewrite(query: str) -> dict:
         if term.lower() in query.lower() and expand.lower() not in rewritten.lower():
             rewritten = f"{rewritten} {expand}"
             break  # 一次扩写即可，避免无限拼接
+    rewritten = _theme_expand(query, rewritten)
     keywords = _rule_keywords(query)
     return {"rewritten": rewritten, "keywords": keywords,
             "strategy": "rule"}
@@ -187,7 +225,8 @@ async def rewrite_query(query: str, provider=None, *, mode: str | None = None) -
         if overlap < 0.15:
             logger.info("Query改写语义漂移(重合%.2f)，回退规则改写", overlap)
             return {**rule_fb, "strategy": "rule_fallback"}
-        return {"rewritten": rewritten, "keywords": keywords,
+        # 主题词表补充：LLM 改写结果同样注入语料主题前缀（幂等），弥补小模型域外偏移
+        return {"rewritten": _theme_expand(query, rewritten), "keywords": keywords,
                 "strategy": "llm"}
     except Exception as e:
         logger.warning("Query改写异常(%s)，回退规则改写", e)

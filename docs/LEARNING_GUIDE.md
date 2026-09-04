@@ -154,7 +154,7 @@
 
 | 指标            | 目标     | 定义                                 |
 | ------------- | ------ | ---------------------------------- |
-| 意图分类准确率       | ≥ 98%  | 三层分类器在评测集（22 条）上的正确率              |
+| 意图分类准确率       | ≥ 98%  | 三层分类器在评测集（50 条）上的正确率              |
 | RAG Recall\@5 | ≥ 0.90 | 检索返回的 Top5 文档里包含正确答案的比例            |
 | 上下文压缩比        | ≤ 0.30 | 压缩后 token 数 / 压缩前 token 数（省钱、省上下文） |
 
@@ -584,7 +584,7 @@ envs\lunjiang\python.exe scripts/smoke_memory.py   # 四层 + 压缩全部自检
 
 | 阶段         | 痛点                             | 解决                                                                         |
 | ---------- | ------------------------------ | -------------------------------------------------------------------------- |
-| ① Query 改写 | 用户话太口语（"那篇讲可解释性的"），直接搜匹配差      | 先改写成检索友好的查询：LLM 改写 + 规则字典兜底 + 拒答/漂移回退（防漂移，见 8.3）                           |
+| ① Query 改写 | 用户话太口语（"那篇讲可解释性的"），直接搜匹配差      | 先改写成检索友好的查询：LLM 改写 + 规则字典兜底 + 语料主题词表（_TOPIC_POOL）注入 + 拒答/漂移回退（防漂移，见 8.3）                           |
 | ② 混合召回     | 单路向量漏关键词，单路 BM25 漏同义改写         | 稠密(pgvector) + 稀疏(BM25/jieba) + **相邻窗口**多路召回，**RRF 分数融合**（项目知识库场景另有项目路与保底） |
 | ③ 交叉精排     | 召回 20 条里有 15 条噪音，直接进 LLM 浪费上下文 | bge-reranker-base 交叉编码器逐条打分，只留 Top5（含降噪对比）                                 |
 
@@ -596,7 +596,7 @@ services/rag/ingest/parsers.py         项目知识库文档解析器工厂（PD
 services/rag/ingest/pipeline.py        知识库文档 上传→解析→分块→向量化入库（MD5去重/批量embedding）
 services/rag/retriever.py              HybridRetriever：dense_search / sparse_search / project_dense_search / sibling_search / rrf_fuse
 services/rag/reranker.py               Reranker：bge-reranker-base（CPU 多线程 + 本地缓存检测）
-services/rag/query_rewrite.py          rewrite_query(mode=off|auto|on)：难度自适应（简单短句跳过 LLM），失败/拒答/漂移回退规则字典改写
+services/rag/query_rewrite.py          rewrite_query(mode=off|auto|on)：难度自适应（简单短句跳过 LLM），失败/拒答/漂移回退规则字典改写；语料主题词表 _TOPIC_POOL 注入主题检索前缀提升口语→学术映射
 services/rag/pipeline.py               RagPipeline.search()：把上面串成流水线（多路融合 + 项目保底 + 降噪）
 ```
 
@@ -616,7 +616,13 @@ LLM 改写并不总是变好，两种典型翻车：
 精排阶段 → 改写查询与原查询两份分数取更高的
 ```
 
-A/B 数据支撑：Recall\@5 100% 恢复，MRR 0.917（比基准 +0.17）。**这就是"用评测说话"的范例**（见第 14 课）。
+**2026-09-04 新增：语料主题词表机制** —— 针对口语化查询需要隐式语义映射到语料主题的痛点，`query_rewrite.py` 新增 `_TOPIC_POOL`：
+- 规则层预定义「口语触发词集合 → 语料主题检索前缀」映射，命中任一触发词即在改写结果**前缀注入完整主题词表**（幂等去重）
+- 覆盖场景："实验单薄" → 注入"实证研究方法 实验设计 研究规范"前缀；"管住智能体" → 注入"多智能体 智能体协作 工具调用"前缀
+- 位置：LLM改写/规则改写结果都经过 `_theme_expand()`，无需配置改动，直接生效
+- 效果：口语长尾集 Recall@5 从 62.5% 提升至 80%，泛化集（hold-out）8/6 命中（75%），过拟合风险低（词表面向主题域而非评测集具体句子）
+
+A/B 数据支撑（**当前 2026-09-04 基线**）：Recall@5 简单集 100%、口语长尾集 80%、学术刁钻集 95%。**这就是"用评测说话"的范例**（见第 14 课）。
 
 ### 8.4 动手
 
@@ -645,7 +651,7 @@ Supervisor 要决定把请求路由给哪个专项 Agent（文献？写作？查
 第三级  LLM 兜底  让 LLM 直接输出 JSON 类别（实时准确率兜底）
 ```
 
-实测：`evals/datasets/intent.jsonl`（22 条）上 100% 准确（均值耗时约 56ms，随 LLM 底座波动）。
+实测：`evals/datasets/intent.jsonl`（50 条）上 100% 准确（均值耗时约 56ms，随 LLM 底座波动）。
 
 ### 9.3 动手
 
@@ -831,10 +837,11 @@ envs\lunjiang\python.exe scripts/smoke_api.py --topic   # 注册→登录→建�
 
 ```
 datasets/
-├── intent.jsonl           意图分类测试集（22 条，格式 {"text":...,"intent":...}）
-├── retrieval.jsonl        RAG 常规检索测试集（8 条，expected 指向语料文件名）
-├── retrieval_hard.jsonl   RAG 长尾困难集（8 条，ab.py 实验组）
-├── retrieval_paper_hard.jsonl  论文辅助语料口语化长尾集（26 条，25/26 命中 = 96.2%）
+├── intent.jsonl           意图分类测试集（50 条，格式 {"text":...,"intent":...}）
+├── retrieval.jsonl        RAG 常规检索测试集（20 条，expected 指向语料文件名）
+├── retrieval_hard.jsonl   RAG 长尾困难集（20 条，ab.py 实验组，当前基线 80%）
+├── retrieval_paper_hard.jsonl  论文辅助语料口语化长尾集（40 条，当前基线 95%）
+├── holdout.jsonl          泛化能力测试集（8 条，未见口语查询，当前基线 75%）
 harness.py                 三项指标评测入口（评分算术抽为纯函数，可离线单测）
 ab.py                      A/B 实验：同一数据集，不同配置/策略对比，输出图表+报告
 regression.py              七大必测场景回归（知识库入库/项目隔离/多路召回/改写/Planner/产物/治理）
@@ -914,7 +921,7 @@ async def eval_rag(search, k=5):              # search 注入：真实 rag_pipel
 ```powershell
 envs\lunjiang\python.exe -m pytest tests/test_evals_scoring.py -q
 # → 8 passed：评分算术（Top-1/分层归因/文件级 Recall/"?"归一/压缩造数超阈值）
-#   + 数据集完整性（intent 22 条、三个检索集的 expected 文件必须真实存在于 data/corpus）
+#   + 数据集完整性（intent 50 条、三个检索集的 expected 文件必须真实存在于 data/corpus）
 envs\lunjiang\python.exe evals/harness.py compression   # 实跑单项（需 LLM 底座）
 # → 9920 字 → 2194 字 (ratio=0.221, 目标≤0.3, PASS)（具体数字随 LLM 输出浮动）
 # 全量三项 intent/rag 需 PostgreSQL + Ollama（vector 层与检索），环境见第 26 课

@@ -15,6 +15,14 @@ if sys.platform == "win32":
 
 
 async def main() -> None:
+    # ---- 造 smoke 专用用户（限流/降级用假 id 隔离计数；同时满足 skills.created_by 外键）----
+    from infrastructure.db import get_session_factory
+    from infrastructure.models.user import User
+    async with get_session_factory()() as db:
+        if await db.get(User, 900) is None:
+            db.add(User(id=900, username="smoke-rl", password_hash="*", role="student"))
+            await db.commit()
+
     from services.governance.tool_registry import ToolSpec, tool_registry
 
     # ---------- 注册冒烟专用工具 ----------
@@ -125,7 +133,7 @@ async def main() -> None:
     # ---------- 6. 审计留痕 ----------
     from sqlalchemy import func, select
 
-    from infrastructure.db import get_session_factory
+    from infrastructure.db import dispose_engine, get_session_factory
     from infrastructure.models.audit import AuditLog
     async with get_session_factory()() as db:
         n = await db.scalar(select(func.count()).select_from(AuditLog)
@@ -148,6 +156,8 @@ async def main() -> None:
         hits = await tracker.match_skills("smoke_agent", "帮我执行 smoke_ok 查询")
         print(f"[Skill匹配] {'PASS' if hits else 'FAIL'} - 召回 {len(hits)} 条, "
               f"TOP1={hits[0].name if hits else '-'}")
+
+    await dispose_engine()   # 关连接池，避免 asyncio.run 收尾时挂起
 
 
 if __name__ == "__main__":
