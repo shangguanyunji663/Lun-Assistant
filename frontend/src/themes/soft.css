@@ -18,12 +18,12 @@
      03 · 晨雾有机   波浪分隔 ×3 / 有机 blob ×2 / 雾蓝强调 / 圆润几何微标签
      04 · 弱动效
 
-   ── 需新增 JSX 标签才能 100% 还原的点（本文件只写样式，不动组件）─────────
-   1) 流式光标：App.jsx 助手气泡（.msg.assistant .bubble）内、Markdown 之后
-      插入 <span className="cursor" aria-hidden="true" />，仅在 streaming 时渲染。
-      本文件已按 .cursor / .stream-cursor 两种类名写好柔和圆点呼吸样式。
-   2) 时间线「进行中」：Timeline.jsx 建议给正在执行的节点加类 .tl-live；
-      暂无该标签时，本文件以 .tl-item:last-child 与 .tl-item.tl-interrupt 兜底呼吸。
+     ── 需新增 JSX 标签部分的还原情况 ─────────────────────────────────
+   1) 流式光标：已完成 —— App.jsx 助手气泡内、Markdown 之后输出
+      <span className="cursor" />（仅 streaming 最后一条渲染）。
+      本文件按 .cursor / .stream-cursor 两种类名写好柔和圆点呼吸样式。
+   2) 时间线「进行中」：Timeline.jsx 暂未加 .tl-live 类；
+      本文件以 .tl-item:last-child 与 .tl-item.tl-interrupt 兜底呼吸。
    3) 波浪分隔：proposal-10 用独立 .wavewrap 区块承载；本文件改用
       .topbar::after / .input-bar::before / .auth-wrap::after 三处伪元素等效还原
       （波形用 mask-image 承载，background-color 取 --wave-c，颜色仍走令牌）。

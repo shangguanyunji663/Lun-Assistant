@@ -27,17 +27,18 @@ export function useChat({ active, patchSession, projectId, setArchiveKey }) {
     patchSession(sid, s => ({
       ...s,
       title: s.msgs.length ? s.title : titleOf(text),
-      msgs: [...s.msgs, { role: 'user', content: body }],
+      msgs: [...s.msgs, { role: 'user', content: body, ts: Date.now() }],
     }))
     // 占位助手消息
-    patchSession(sid, s => ({ ...s, msgs: [...s.msgs, { role: 'assistant', content: '' }] }))
+    patchSession(sid, s => ({ ...s, msgs: [...s.msgs, { role: 'assistant', content: '', ts: Date.now() }] }))
 
     let acc = ''
+    // 只替换 content，保留该消息的 ts（供 ops 主题显示等宽时间戳）
     const patchLast = (content) =>
       patchSession(sid, s => {
         if (!s.msgs.length) return s
         const c = [...s.msgs]
-        c[c.length - 1] = { role: 'assistant', content }
+        c[c.length - 1] = { ...c[c.length - 1], content }
         return { ...s, msgs: c }
       })
 

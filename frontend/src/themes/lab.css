@@ -19,19 +19,18 @@
      · 不用 !important 覆盖交互态；交互反馈由本层显式重写（:hover / .on）
 
    ---------------------------------------------------------------------------
-   纯 CSS 已 100% 还原（本文件实现，无需改 JSX）：
+   纯 CSS 已 100% 还原（本文件实现）：
      横格纸 / 记录页红边线 / 索引卡 / 和纸胶带（毛边）/ 打孔圆点 / 手写页码 /
-     勾选框 / 铅笔下划线 / 荧光笔 / 便利贴 / 椭圆橡皮章 / 记录头卡 / 印章按下动画
+     勾选框 / 铅笔下划线 / 荧光笔 / 便利贴 / 橡皮章 / 记录头卡 / 印章按下动画
 
-   建议新增标签（仅这 3 处，纯 CSS 只能近似；当前均已用伪元素兜底）：
-     1) 记录头卡 → 在 <section className="chat-col"> 内、.messages 之前插入
-        <div className="rec-head">REC-#012 · 日期 2026-10-01 · 记录人 吕江</div>
-        （现用 .chat-col::before 浮层 + .msgs-inner 顶部留白近似）
-     2) 便利贴 → 在 .side-scroll 内、Timeline / KnowledgePanel 之后插入
-        <div className="note">记得补两篇 RAG 评测文献<br/>before chapter 3 —</div>
-        （现用 .side-col::after 单行文案近似，承载不了第二行小字与折角）
-     3) 橡皮章（可选）→ KnowledgePanel 的 .kb-doc 内插入双椭圆 <svg className="stamp">，
-        与样张的双线 SVG 完全一致；现用 .kb-status-ready 的 border + outline 椭圆近似。
+   需新增标签部分的还原情况：
+     1) 记录头卡 —— 仍用 .chat-col::before 浮层 + .msgs-inner 顶部留白；
+        若要占位，建议在 <section className="chat-col"> 内、.messages 之前插入
+        <div className="rec-head">REC-#012 · 日期 2026-10-01 · 记录人 吕江</div>。
+     2) 便利贴 —— 仍用 .side-col::after 两行文案；若要第二行小字与折角，
+        建议在 .side-scroll 内插入 .note 节点。
+     3) 橡皮章 —— 已完成：KnowledgePanel 输出真节点 svg.stamp（双线椭圆 + 文字），
+        本文件点亮并隐藏原文字标签（见 §9）。
    ============================================================================ */
 
 /* ============================================================ 0. 私有变量
@@ -326,24 +325,42 @@
 }
 
 /* ============================================================ 9. 橡皮章与褐色标签
-   知识库「已入库」= 椭圆红章（双线边框 = border + outline，半透明油墨）；「解析中」= 褐色小标签。 */
+   知识库「已入库」= 双线椭圆红章：KnowledgePanel 已输出真节点 svg.stamp
+   （两条 .stamp-ring 椭圆 + .stamp-text），本主题点亮并隐藏原文字标签；
+   「解析中」= 褐色小标签。 */
 [data-theme="lab"] .kb-status-ready {
+  position: relative;
   display: inline-block;
-  padding: 2px 12px;
-  font-family: var(--font-hand);
-  font-size: var(--fs-xs);
-  line-height: 1.25;
-  letter-spacing: .06em;
+  width: 74px;
+  height: 46px;
   color: var(--lab-red);
   background: transparent;
-  border: 1.6px solid var(--lab-red);
-  border-radius: 50%;
-  outline: 1px solid color-mix(in srgb, var(--lab-red) 85%, transparent);
-  outline-offset: 2.5px;
-  opacity: .82;
-  mix-blend-mode: multiply;
   transform: rotate(-8deg);
+  mix-blend-mode: multiply;
   animation: lab-press .6s var(--ease) both;
+}
+[data-theme="lab"] .kb-status-ready .kb-status-text { display: none; }
+[data-theme="lab"] .kb-status-ready .stamp {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+[data-theme="lab"] .kb-status-ready .stamp-ring {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  opacity: .85;
+}
+[data-theme="lab"] .kb-status-ready .stamp-ring + .stamp-ring {
+  stroke-width: 1;
+  opacity: .7;
+}
+[data-theme="lab"] .kb-status-ready .stamp-text {
+  fill: currentColor;
+  font-family: var(--font-hand);
+  font-size: 19px;
+  letter-spacing: .06em;
 }
 [data-theme="lab"] .kb-status-parsing {
   display: inline-block;
@@ -360,7 +377,6 @@
 /* ============================================================ 10. 柔态微调
    柔态专属：材质更软（褶皱更淡）、印章更浅、胶带投影更柔；其余差异已由上面的私有变量控制。 */
 [data-theme="lab"][data-soft="on"] .kb-status-ready {
-  border-width: 1.4px;
   opacity: .78;
   transform: rotate(-6deg);
 }

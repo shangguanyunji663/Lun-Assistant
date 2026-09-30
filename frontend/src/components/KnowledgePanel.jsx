@@ -4,9 +4,21 @@ import { api } from '../api.js'
 const FMT_ICON = { pdf: 'PDF', docx: 'DOC', txt: 'TXT', md: 'MD' }
 
 // 文档状态徽章（后端 ingest pipeline 仅产出 ready / parsing / failed）
+// ready 额外渲染一枚双线椭圆「已入库」橡皮章（SVG），仅 lab 主题显示（见 themes/lab.css）
 function StatusBadge({ status }) {
   const label = { ready: '已入库', parsing: '解析中', failed: '失败' }[status] || status
-  return <span className={`kb-status kb-status-${status}`}>{label}</span>
+  return (
+    <span className={`kb-status kb-status-${status}`}>
+      {status === 'ready' && (
+        <svg className="stamp" viewBox="0 0 132 84" aria-hidden="true">
+          <ellipse className="stamp-ring" cx="66" cy="42" rx="62" ry="37" />
+          <ellipse className="stamp-ring" cx="66" cy="42" rx="55" ry="31" />
+          <text className="stamp-text" x="66" y="50" textAnchor="middle">已入库</text>
+        </svg>
+      )}
+      <span className="kb-status-text">{label}</span>
+    </span>
+  )
 }
 
 export default function KnowledgePanel({ projectId }) {

@@ -8,18 +8,14 @@
         作用域内以 --bp-* 私有变量补充并注明（见 §0）。
    样张：proposal-2-blueprint.html（锐）/ proposal-6-blueprint-soft.html（柔）
 
-   ★ 100% 还原所需的新增标签建议（当前全部用伪元素近似，未改任何组件）：
-     1) 图纸标题栏 —— 建议在 <aside className="side-col card"> 底部新增
-        <div className="titleblock"><table>图号/比例/日期/审定</table></div>。
-        现用 .side-col::after + 多行 content 近似：不占布局、会浮在内容之上。
-     2) 尺寸标注线 —— 建议在 <main className="chat-layout"> 顶部插入样张里的
-        <svg className="dimline">（dl-main / dl-tick / dl-arrow），才有真正的
-        描线动画与箭头。现用 .chat-layout::before + 渐变刻度近似。
-     3) 手写批注 —— 建议在对话区插入
-        <div className="chat-note"><svg className="lead-svg"/><span>…</span></div>。
-        现用 .chat-col::after 近似（固定在输入区上方）。
-     4) 圈号 / 施工勾选框 —— 建议在 Timeline.jsx 的 .tl-item 内加 <span className="chk"/>；
-        现用 ::before（带圈数字）/ ::after（☑ / ☐）实现。
+   ★ 需新增标签的部分还原情况：
+     1) 图纸标题栏 —— 仍用 .side-col::after + 多行 content 近似（不占布局、浮在内容之上）；
+        若要占位，建议在 <aside className="side-col card"> 底部新增 .titleblock。
+     2) 尺寸标注线 —— 已改为真节点：App.jsx 输出 .bench-deco > svg.dimline
+        （dl-main / dl-tick / dl-arrow），本文件用 stroke-dashoffset 做描线动画。
+     3) 手写批注 —— 仍用 .chat-col::after 近似（固定在输入区上方）；
+        若要样张的曲线引出线，建议在对话区插入 .chat-note + svg。
+     4) 圈号 / 施工勾选框 —— 仍用 ::before（带圈数字）/ ::after（☑ / ☐）实现。
    ============================================================================ */
 
 /* ============================================================ 0. 私有装饰变量 */
@@ -135,39 +131,62 @@
 }
 
 /* ============================================================ 4. 尺寸标注线
-   样张 §4：两端短刻度 + 中部标注文字，画入动画（样张用 SVG stroke-dashoffset，
-   这里用伪元素 clip-path + keyframes 模拟）。挂在 .chat-layout::before。     */
-[data-theme="blueprint"] .chat-layout {
-  position: relative;
-}
-[data-theme="blueprint"] .chat-layout::before {
-  content: "Layout 1240 × Auto";
-  position: absolute;
-  left: var(--gap);
-  right: var(--gap);
-  top: 0;
-  height: 15px;
-  z-index: 2;
+   样张 §4：两端短刻度 + 箭头 + 中部标注文字，SVG 描线（stroke-dashoffset）画入。
+   App.jsx 已在 <main class="chat-layout"> 之前输出真节点 .bench-deco > svg.dimline
+   （基态 display:none，见 styles.css），本主题点亮。                            */
+[data-theme="blueprint"] .bench-deco {
   display: block;
-  text-align: center;
-  line-height: 11px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: .16em;
-  color: var(--text-3);
-  background-image:
-    linear-gradient(var(--line-2), var(--line-2)),   /* 主标注线 */
-    linear-gradient(var(--line-2), var(--line-2)),   /* 左端刻度 */
-    linear-gradient(var(--line-2), var(--line-2));   /* 右端刻度 */
-  background-size: 100% 1px, 1px 7px, 1px 7px;
-  background-position: 0 13px, 0 6px, 100% 6px;
-  background-repeat: no-repeat;
+  position: relative;
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 0 var(--gap);
   pointer-events: none;
+}
+[data-theme="blueprint"] .dimline {
+  display: block;
+  width: 100%;
+  height: 30px;
+  overflow: visible;
+}
+[data-theme="blueprint"] .dimline .dl-main,
+[data-theme="blueprint"] .dimline .dl-tick,
+[data-theme="blueprint"] .dimline .dl-arrow {
+  fill: none;
+  stroke: var(--line-2);
+  stroke-width: 1;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
+[data-theme="blueprint"] .dimline .dl-main {
+  stroke-dasharray: 1200;
+  stroke-dashoffset: 1200;
   animation: bp-dim-draw .9s var(--ease) both;
 }
+[data-theme="blueprint"] .dimline .dl-tick,
+[data-theme="blueprint"] .dimline .dl-arrow {
+  opacity: 0;
+  animation: bp-dim-fade .3s var(--ease) .85s both;
+}
 @keyframes bp-dim-draw {
-  from { clip-path: inset(0 100% 0 0); }
-  to   { clip-path: inset(0 0 0 0); }
+  from { stroke-dashoffset: 1200; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes bp-dim-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+[data-theme="blueprint"] .dimline-label {
+  position: absolute;
+  left: 50%;
+  top: -4px;
+  transform: translateX(-50%);
+  padding: 0 var(--s-2);
+  font-family: var(--font-hand);
+  font-size: var(--fs-micro);
+  letter-spacing: .12em;
+  color: var(--accent-2);
+  background: var(--bg);
+  white-space: nowrap;
 }
 
 /* ============================================================ 5. 虚线引出线 + 手写批注
@@ -361,8 +380,11 @@
 
 /* ============================================================ 10. 弱动效偏好 */
 @media (prefers-reduced-motion: reduce) {
-  [data-theme="blueprint"] .chat-layout::before {
+  [data-theme="blueprint"] .dimline .dl-main,
+  [data-theme="blueprint"] .dimline .dl-tick,
+  [data-theme="blueprint"] .dimline .dl-arrow {
     animation: none;
-    clip-path: none;
+    opacity: 1;
+    stroke-dashoffset: 0;
   }
 }

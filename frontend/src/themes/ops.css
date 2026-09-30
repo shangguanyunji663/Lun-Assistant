@@ -175,29 +175,29 @@
   50%      { opacity: 1; }
 }
 
-/* ============================================================ 5. 等宽时间戳与呼号（.msg）
-   样张 .ts + .call：等宽、--text-3、小字号。真实 DOM 无该节点，用 .msg 伪元素近似，
-   固定示例时间戳 [14:32:07]，用户侧 [用户]、助手侧 [主控]。其余主题由各自文件控制，
-   本文件只在 ops 下显示。 */
+/* ============================================================ 5. 等宽时间戳与呼号（.msg-meta）
+   App.jsx 为每条消息输出真实节点 <span class="msg-meta">[HH:MM:SS] [用户|主控]</span>
+   （时间戳来自 useChat 写入的 msg.ts；基态 display:none，见 styles.css）。
+   本主题把它绝对定位到气泡上方，等宽 + tabular-nums + --text-3。 */
 [data-theme="ops"] .msg {
   position: relative;
   padding-top: 16px;
 }
-[data-theme="ops"] .msg::before {
-  content: "[14:32:07] [主控]";
+[data-theme="ops"] .msg-meta {
+  display: block;
   position: absolute;
   top: 0;
   left: calc(30px + var(--s-3));
   z-index: 2;
   pointer-events: none;
+  white-space: nowrap;
   font-family: var(--font-mono);
   font-size: var(--fs-micro);
   letter-spacing: .1em;
+  font-variant-numeric: tabular-nums;
   color: var(--text-3);
-  white-space: nowrap;
 }
-[data-theme="ops"] .msg.user::before {
-  content: "[14:32:07] [用户]";
+[data-theme="ops"] .msg.user .msg-meta {
   left: auto;
   right: calc(30px + var(--s-3));
 }

@@ -84,6 +84,14 @@ export default function App() {
       : `${d.getMonth() + 1}月${d.getDate()}日`
   }
 
+  /* 等宽时钟，供 ops 主题展示「[14:32:07] [主控]」式呼号；无 ts 的历史消息返回空串 */
+  const fmtClock = (ts) => {
+    if (!ts) return ''
+    const d = new Date(ts)
+    const p = (n) => String(n).padStart(2, '0')
+    return `[${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}]`
+  }
+
   // bottomRef 为自定义 hook 返回的稳定 ref，静态分析无法识别其身份，无需加入依赖
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, timeline])
@@ -136,7 +144,19 @@ export default function App() {
       )}
 
       {tab === 'chat' ? (
-        <main className="chat-layout">
+        <>
+          {/* 图纸尺寸标注线：blueprint 主题显示（见 blueprint.css），其余主题隐藏 */}
+          <div className="bench-deco" aria-hidden="true">
+            <svg className="dimline" viewBox="0 0 1200 34">
+              <line className="dl-main" x1="8" y1="20" x2="1192" y2="20" />
+              <line className="dl-tick" x1="8" y1="11" x2="8" y2="29" />
+              <line className="dl-tick" x1="1192" y1="11" x2="1192" y2="29" />
+              <path className="dl-arrow" d="M8 20 L22 15 M8 20 L22 25" />
+              <path className="dl-arrow" d="M1192 20 L1178 15 M1192 20 L1178 25" />
+            </svg>
+            <span className="dimline-label">Layout 1240 × Auto</span>
+          </div>
+          <main className="chat-layout">
           {/* 会话卷册 */}
           <aside className="sessions card">
             <div className="sess-head">
@@ -180,10 +200,17 @@ export default function App() {
                 )}
                 {messages.map((m, i) => (
                   <div key={i} className={`msg ${m.role}`}>
+                    {/* 等宽时间戳 + 呼号：ops 主题显示，其余主题隐藏（见 styles.css 基态） */}
+                    <span className="msg-meta" aria-hidden="true">
+                      {fmtClock(m.ts)}{m.role === 'user' ? ' [用户]' : ' [主控]'}
+                    </span>
                     <div className="msg-mark">{m.role === 'user' ? '言' : '匠'}</div>
                     <div className="bubble">
                       {m.role === 'assistant'
-                        ? <Markdown>{m.content || (streaming && i === messages.length - 1 ? '…' : '')}</Markdown>
+                        ? <>
+                            <Markdown>{m.content || (streaming && i === messages.length - 1 ? '' : '')}</Markdown>
+                            {streaming && i === messages.length - 1 && <span className="cursor" aria-hidden="true" />}
+                          </>
                         : m.content}
                     </div>
                   </div>
@@ -246,6 +273,7 @@ export default function App() {
             </div>
           </aside>
         </main>
+        </>
       ) : (
         <main className="trace-main"><TracePanel /></main>
       )}

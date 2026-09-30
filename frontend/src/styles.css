@@ -1294,3 +1294,29 @@ img, svg { display: block; max-width: 100%; }
 
   html { scroll-behavior: auto; }
 }
+
+/* ============================================================================
+   v16 · 主题专属装饰的宿主节点（基态隐藏，由各 themes/*.css 按主题点亮）
+   这些节点由 JSX 输出（消息时间戳 / 流式光标 / 图纸标注线 / 橡皮章），
+   与主题无关地存在于 DOM 中，只有对应主题才显示。
+   ============================================================================ */
+
+/* ops：等宽时间戳 + 呼号（[14:32:07] [主控]） */
+.msg-meta { display: none; }
+
+/* 流式输出光标：基态为闪烁竖条，soft 主题会覆盖为呼吸圆点 */
+.cursor {
+  display: inline-block;
+  width: 2px; height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.12em;
+  background: var(--accent);
+  animation: cursor-blink 1.05s steps(1, end) infinite;
+}
+@keyframes cursor-blink { 50% { opacity: 0; } }
+
+/* 图纸尺寸标注线（blueprint 主题显示） */
+.bench-deco { display: none; }
+
+/* 双线椭圆「已入库」橡皮章（lab 主题显示） */
+.stamp { display: none; }
