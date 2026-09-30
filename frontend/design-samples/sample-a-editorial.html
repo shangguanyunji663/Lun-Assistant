@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>样图 A · 墨格编辑部 — 论匠</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   样图 A · 墨格编辑部（Editorial Ink Grid）
+   数字杂志语言：超大宋体 / 不对称栏格 / 细线分割 / 页边批注
+   纸白 + 墨黑 + 单点朱红；零依赖静态样图
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --paper: #FAF8F3;
+  --ink: #1A1815;
+  --mid: #57534A;
+  --low: #8A857A;
+  --seal: #C8341F;
+  --line: rgba(26, 24, 21, 0.14);
+  --line-hi: rgba(26, 24, 21, 0.55);
+  --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
+  --mono: "IBM Plex Mono", Consolas, monospace;
+  --sans: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+html { scroll-behavior: smooth; }
+body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.7; }
+
+/* ---- 顶栏：期刊头 ---- */
+.masthead {
+  display: flex; align-items: baseline; gap: 18px;
+  padding: 18px 5vw 14px;
+  border-bottom: 1.5px solid var(--ink);
+}
+.masthead .vol { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; color: var(--seal); }
+.masthead .name { font-family: var(--serif); font-weight: 900; font-size: 20px; letter-spacing: 0.3em; }
+.masthead nav { margin-left: auto; display: flex; gap: 26px; }
+.masthead nav a { color: var(--mid); text-decoration: none; font-size: 13px; letter-spacing: 0.12em; position: relative; }
+.masthead nav a::after {
+  content: ''; position: absolute; left: 0; bottom: -4px; height: 1.5px; width: 100%;
+  background: var(--seal); transform: scaleX(0); transform-origin: left;
+  transition: transform 0.35s var(--ease);
+}
+.masthead nav a:hover { color: var(--ink); }
+.masthead nav a:hover::after { transform: scaleX(1); }
+.masthead .cta {
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.14em;
+  color: var(--paper); background: var(--ink); text-decoration: none;
+  padding: 9px 20px; transition: background 0.25s var(--ease);
+}
+.masthead .cta:hover { background: var(--seal); }
+
+/* ---- Hero：期刊封面 ---- */
+.hero { position: relative; padding: 9vh 5vw 7vh; border-bottom: 1px solid var(--line); }
+.hero .folio {
+  position: absolute; top: 34px; right: 5vw;
+  font-family: var(--mono); font-size: 11px; color: var(--low);
+  text-align: right; line-height: 2; letter-spacing: 0.1em;
+  writing-mode: vertical-rl;
+}
+.hero .kicker { font-family: var(--mono); font-size: 12px; letter-spacing: 0.42em; color: var(--seal); margin-bottom: 26px; }
+.hero h1 {
+  font-family: var(--serif); font-weight: 900;
+  font-size: clamp(52px, 9.5vw, 124px);
+  line-height: 1.12; letter-spacing: 0.02em; max-width: 12em;
+}
+.hero h1 .ln { display: block; overflow: hidden; }
+.hero h1 .ln > span { display: inline-block; transform: translateY(110%); animation: rise 0.9s var(--ease) forwards; }
+.hero h1 .ln:nth-child(2) > span { animation-delay: 0.12s; }
+.hero h1 .ln:nth-child(3) > span { animation-delay: 0.24s; }
+@keyframes rise { to { transform: translateY(0); } }
+.hero h1 em { font-style: normal; color: var(--seal); }
+.hero .deck {
+  margin-top: 34px; max-width: 34em;
+  font-family: var(--serif); font-size: 16px; color: var(--mid); line-height: 2;
+}
+.hero .byline { margin-top: 26px; display: flex; gap: 14px; align-items: center; }
+.hero .byline .rule { width: 64px; height: 1.5px; background: var(--ink); }
+.hero .byline span { font-family: var(--mono); font-size: 11.5px; letter-spacing: 0.16em; color: var(--mid); }
+/* marquee 跑马灯 */
+.marquee { overflow: hidden; border-top: 1.5px solid var(--ink); border-bottom: 1.5px solid var(--ink); margin-top: 7vh; }
+.marquee .track {
+  display: inline-flex; gap: 0; white-space: nowrap; padding: 10px 0;
+  animation: slide 26s linear infinite;
+  font-family: var(--serif); font-weight: 700; font-size: 15px; letter-spacing: 0.3em;
+}
+.marquee .track b { font-weight: 700; }
+.marquee .track i { font-style: normal; color: var(--seal); margin: 0 22px; }
+@keyframes slide { to { transform: translateX(-50%); } }
+
+/* ---- 目录：能力区（杂志目次） ---- */
+.toc { padding: 9vh 5vw; }
+.toc-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 7vh; }
+.toc-head h2 { font-family: var(--serif); font-weight: 900; font-size: clamp(26px, 4vw, 40px); letter-spacing: 0.06em; }
+.toc-head .en { font-family: var(--mono); font-size: 11px; letter-spacing: 0.3em; color: var(--low); }
+.toc ol { list-style: none; }
+.toc li {
+  display: grid; grid-template-columns: 72px 1fr auto; gap: 24px; align-items: baseline;
+  padding: 26px 6px; border-top: 1px solid var(--line);
+  transition: background 0.3s var(--ease), padding-left 0.3s var(--ease);
+  cursor: pointer;
+}
+.toc li:last-child { border-bottom: 1px solid var(--line); }
+.toc li:hover { background: rgba(200, 52, 31, 0.045); padding-left: 18px; }
+.toc .no { font-family: var(--mono); font-size: 13px; color: var(--seal); letter-spacing: 0.1em; }
+.toc .t { font-family: var(--serif); font-weight: 700; font-size: clamp(18px, 2.4vw, 26px); letter-spacing: 0.04em; }
+.toc .t small { display: block; font-family: var(--sans); font-weight: 400; font-size: 13px; color: var(--low); margin-top: 6px; letter-spacing: 0.02em; }
+.toc .pg { font-family: var(--mono); font-size: 11px; color: var(--low); letter-spacing: 0.1em; }
+
+/* ---- 工作台一角：编辑部仪表盘 ---- */
+.console-sec { background: #14120F; color: #EDE8DC; padding: 9vh 5vw; }
+.console-sec .sec-k { font-family: var(--mono); font-size: 11px; letter-spacing: 0.42em; color: #C8341F; margin-bottom: 18px; }
+.console-sec h2 { font-family: var(--serif); font-weight: 900; font-size: clamp(26px, 4vw, 40px); margin-bottom: 8px; }
+.console-sec .sub { color: #8A857A; font-size: 13.5px; margin-bottom: 6vh; }
+.console {
+  border: 1px solid rgba(237, 232, 220, 0.22);
+  background: #1B1815;
+  display: grid; grid-template-columns: 220px 1fr 260px;
+  min-height: 460px;
+}
+.console .col + .col { border-left: 1px solid rgba(237, 232, 220, 0.14); }
+.console .col-h {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.3em;
+  color: #8A857A; padding: 14px 16px 12px; border-bottom: 1px solid rgba(237, 232, 220, 0.14);
+  display: flex; justify-content: space-between;
+}
+.console .col-h b { color: #C8341F; font-weight: 500; }
+.doc-item { padding: 13px 16px; border-bottom: 1px solid rgba(237, 232, 220, 0.08); transition: background 0.25s var(--ease); cursor: pointer; }
+.doc-item:hover { background: rgba(200, 52, 31, 0.08); }
+.doc-item.on { background: rgba(200, 52, 31, 0.12); box-shadow: inset 2px 0 0 var(--seal); }
+.doc-item .t { font-family: var(--serif); font-size: 13px; color: #EDE8DC; }
+.doc-item .m { font-family: var(--mono); font-size: 10px; color: #8A857A; margin-top: 3px; }
+.draft { padding: 22px 26px; }
+.draft .head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 20px; }
+.draft .head .st { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; color: #4FE3C1; border: 1px solid rgba(79, 227, 193, 0.4); padding: 3px 9px; }
+.draft .head h3 { font-family: var(--serif); font-size: 17px; font-weight: 700; }
+.draft p { font-family: var(--serif); font-size: 14px; line-height: 2.15; color: #C9C2B2; margin-bottom: 14px; }
+.draft p .hl { background: linear-gradient(transparent 62%, rgba(200, 52, 31, 0.4) 62%); color: #EDE8DC; }
+.draft .caret { display: inline-block; width: 8px; height: 15px; background: #C8341F; vertical-align: -2px; animation: blink 1.05s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: rgba(237, 232, 220, 0.14); }
+.metric { background: #1B1815; padding: 18px 16px; }
+.metric .n { font-family: var(--mono); font-size: 26px; color: #EDE8DC; }
+.metric .n i { font-style: normal; color: #C8341F; }
+.metric .l { font-size: 11px; color: #8A857A; margin-top: 5px; line-height: 1.6; }
+.metric:hover .n { color: #4FE3C1; transition: color 0.3s var(--ease); }
+.pipeline { padding: 14px 16px; border-top: 1px solid rgba(237, 232, 220, 0.14); }
+.pl-node { display: flex; align-items: baseline; gap: 9px; font-family: var(--mono); font-size: 10.5px; color: #8A857A; padding: 5px 0; }
+.pl-node b { width: 6px; height: 6px; border-radius: 50%; background: #3A362E; align-self: center; }
+.pl-node.done b { background: #4FE3C1; }
+.pl-node.run b { background: #C8341F; box-shadow: 0 0 8px rgba(200, 52, 31, 0.8); }
+.pl-node.run { color: #EDE8DC; }
+
+/* ---- 页脚 ---- */
+.colophon { padding: 7vh 5vw; border-top: 1.5px solid var(--ink); display: flex; justify-content: space-between; align-items: baseline; }
+.colophon .big { font-family: var(--serif); font-weight: 900; font-size: clamp(28px, 5vw, 54px); letter-spacing: 0.1em; }
+.colophon .meta { font-family: var(--mono); font-size: 10.5px; color: var(--low); letter-spacing: 0.12em; text-align: right; line-height: 2; }
+
+@media (max-width: 860px) {
+  .masthead nav { display: none; }
+  .hero .folio { display: none; }
+  .console { grid-template-columns: 1fr; }
+  .console .col + .col { border-left: none; border-top: 1px solid rgba(237,232,220,0.14); }
+  .toc li { grid-template-columns: 44px 1fr; }
+  .toc .pg { display: none; }
+  .colophon { flex-direction: column; gap: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+  .hero h1 .ln > span { transform: none; }
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <span class="vol">VOL.01 — 2026</span>
+  <span class="name">论 匠</span>
+  <nav>
+    <a href="#toc">目次</a>
+    <a href="#console">工作台</a>
+    <a href="#">评测量表</a>
+  </nav>
+  <a class="cta" href="#">进入工作台 →</a>
+</header>
+
+<section class="hero">
+  <div class="folio">LUNJIANG REVIEW<br/>创刊号 · 秋</div>
+  <p class="kicker">多智能体论文全流程工作台 · 创刊号</p>
+  <h1>
+    <span class="ln"><span>论匠，</span></span>
+    <span class="ln"><span>帮你把论文</span></span>
+    <span class="ln"><span><em>写完</em>。</span></span>
+  </h1>
+  <p class="deck">六个环节，一支编队。主控智能体识别意图、拆解任务、按环节路由给专项角色——每一次产出都经你确认后，落进稿纸。</p>
+  <div class="byline">
+    <span class="rule"></span>
+    <span>主控调度 / 混合检索 / 人机协同 — 全链路留痕</span>
+  </div>
+  <div class="marquee" aria-hidden="true">
+    <div class="track">
+      <span>选题立项<i>◆</i>文献综述<i>◆</i>方法论<i>◆</i>格式规范<i>◆</i>查重降重<i>◆</i>答辩准备<i>◆</i></span>
+      <span>选题立项<i>◆</i>文献综述<i>◆</i>方法论<i>◆</i>格式规范<i>◆</i>查重降重<i>◆</i>答辩准备<i>◆</i></span>
+    </div>
+  </div>
+</section>
+
+<section class="toc" id="toc">
+  <div class="toc-head">
+    <h2>目次 · 六个环节</h2>
+    <span class="en">CONTENTS / 01—06</span>
+  </div>
+  <ol>
+    <li><span class="no">01</span><span class="t">选题立项<small>可行性评估 · 创新点定位 · 开题报告</small></span><span class="pg">P.01</span></li>
+    <li><span class="no">02</span><span class="t">文献综述<small>混合检索 · RRF 融合 · 引用核对</small></span><span class="pg">P.08</span></li>
+    <li><span class="no">03</span><span class="t">方法与写作<small>章节规划 · 初稿起草 · 逐段改写</small></span><span class="pg">P.16</span></li>
+    <li><span class="no">04</span><span class="t">格式规范<small>GB/T 7714 · 图表编号 · 样式套版</small></span><span class="pg">P.24</span></li>
+    <li><span class="no">05</span><span class="t">查重降重<small>语义改写 · 引用边界 · 风险标注</small></span><span class="pg">P.31</span></li>
+    <li><span class="no">06</span><span class="t">答辩准备<small>讲稿生成 · 预演问答 · 材料清单</small></span><span class="pg">P.38</span></li>
+  </ol>
+</section>
+
+<section class="console-sec" id="console">
+  <p class="sec-k">CONSOLE · 工作台样张</p>
+  <h2>稿纸即仪表盘。</h2>
+  <p class="sub">左侧文档卷册 · 中央稿纸（AI 块写入，朱红高亮为待确认段）· 右栏实时指标与调度管线。</p>
+  <div class="console">
+    <div class="col">
+      <div class="col-h"><span>文档卷册</span><b>04</b></div>
+      <div class="doc-item on"><div class="t">第三章 · 方法论初稿</div><div class="m">2026-09-30 · 2,410 字</div></div>
+      <div class="doc-item"><div class="t">第二章 · 文献综述</div><div class="m">2026-09-28 · 5,873 字</div></div>
+      <div class="doc-item"><div class="t">开题报告 v3</div><div class="m">2026-09-21 · 3,208 字</div></div>
+      <div class="doc-item"><div class="t">参考文献整理</div><div class="m">2026-09-18 · 52 条</div></div>
+    </div>
+    <div class="col">
+      <div class="col-h"><span>稿纸 · 第三章</span><span>自动保存</span></div>
+      <div class="draft">
+        <div class="head"><h3>3.2 混合检索的召回策略</h3><span class="st">AI 草拟 · 待确认</span></div>
+        <p>本项目采用向量与关键词<span class="hl">多路召回、RRF 融合</span>的策略：bge-m3 负责语义向量召回，PostgreSQL 全文检索负责关键词路，两路结果经 Reciprocal Rank Fusion 合并后再由重排模型精排。</p>
+        <p>相比单一向量召回，该策略在学术刁钻查询集上显著降低漏检率<span class="caret"></span></p>
+      </div>
+      <div class="pipeline">
+        <div class="pl-node done"><b></b>route · 意图分类 · 56ms</div>
+        <div class="pl-node done"><b></b>plan · Planner 规划 · 3 步</div>
+        <div class="pl-node run"><b></b>retrieve · 混合检索 · 412ms</div>
+        <div class="pl-node"><b></b>generate · 流式生成 · 待触发</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="col-h"><span>实时指标</span><span>SESSION</span></div>
+      <div class="metrics">
+        <div class="metric"><div class="n">100<i>%</i></div><div class="l">意图分类 Top-1<br>50 条 · 56ms/条</div></div>
+        <div class="metric"><div class="n">100<i>%</i></div><div class="l">Recall@5<br>20 条简单集</div></div>
+        <div class="metric"><div class="n">16<i>/16</i></div><div class="l">回归场景通过<br>S1–S7 必测</div></div>
+        <div class="metric"><div class="n">89<i>项</i></div><div class="l">离线测试用例<br>治理/模型/改写</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="colophon">
+  <div class="big">论匠 LUNJIANG</div>
+  <div class="meta">样图 A · 墨格编辑部<br/>Noto Serif SC + IBM Plex Mono · 纸白/墨黑/朱红<br/>EDITORIAL INK GRID — SAMPLE</div>
+</footer>
+
+</body>
+</html>

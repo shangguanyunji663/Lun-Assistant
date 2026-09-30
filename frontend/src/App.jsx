@@ -174,7 +174,10 @@ export default function App() {
               {sessions.map(s => (
                 <div key={s.id}
                      className={`sess-item${s.id === active?.id ? ' on' : ''}`}
+                     role="button" tabIndex={0}
+                     aria-pressed={s.id === active?.id}
                      onClick={() => selectSession(s.id)}
+                     onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectSession(s.id) } }}
                      title={streaming ? '生成中，暂不可切换' : s.title}>
                   <div className="sess-title">{s.title}</div>
                   <div className="sess-meta">{fmtTime(s.updatedAt)} · {s.msgs.length} 条</div>

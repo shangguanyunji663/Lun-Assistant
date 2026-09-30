@@ -2,7 +2,7 @@
 
 > 文档域：frontend-versions
 > 文档类型：操作手册 / 指南
-> 主题版本：v8 → v13
+> 主题版本：v8 → v15
 > 轮次：—
 > 日期：2026-09-02
 > 状态：已落地
@@ -13,7 +13,7 @@
 
 ## 一、本目录作用
 
-1. **前端版本线单一真源**：v8 → v13 每个版本的提案 / 设计规范 / 变更档案 / 工程落档全部收敛于此，形成完整版本时间线。
+1. **前端版本线单一真源**：v8 → v15 每个版本的提案 / 设计规范 / 变更档案 / 工程落档全部收敛于此，形成完整版本时间线。
 2. **后续版本扩展锚点**：新增版本（如 v14）时，复制 [`TEMPLATE.md`](./TEMPLATE.md) 起步，按 `CHANGELOG-v{N}.md` 命名，并在「三、版本索引」追加一行。
 
 ***
@@ -40,6 +40,16 @@ v12  B 主题黑白瑞士（ROUND11）     → CHANGELOG-v12.md（设计稿侧�
    │
    ▼
 v13  新增三主题 E/F/G（ROUND14）   → CHANGELOG-v13.md（生产侧直改，无设计稿侧；含 7 主题截图）
+   │
+   ▼
+R15  落地页（静态多页+双主题）      → OPTIMIZATION_ROUND15.md（工作台入口迁 app.html，零新依赖）
+   │
+   ▼
+v14  顶栏修复+落地页mock化（ROUND16） → CHANGELOG-v14.md（版本变更）+ OPTIMIZATION_ROUND16.md（轮次记录）
+   │
+   ▼
+v15  现代艺术四主题（ROUND17）     → CHANGELOG-v15.md（版本变更）+ OPTIMIZATION_ROUND17.md（轮次记录）
+     工作台 A-K 十一主题 · 落地页编辑部双结构六主题 · 与经典七版共存
 ```
 
 ***
@@ -60,7 +70,10 @@ v13  新增三主题 E/F/G（ROUND14）   → CHANGELOG-v13.md（生产侧直改
 | v12      | [`CHANGELOG-v12.md`](./CHANGELOG-v12.md)                             | 版本变更 | v12 B 黑白瑞士 · 设计稿侧                         |
 | v12      | [`OPTIMIZATION_ROUND11.md`](./OPTIMIZATION_ROUND11.md)               | 轮次记录 | v12 B 黑白瑞士 · 生产侧落档                        |
 | v13      | [`CHANGELOG-v13.md`](./CHANGELOG-v13.md)                             | 版本变更 | v13 新增三主题 E/F/G · 生产侧（ROUND14）             |
-| v13      | [`CHANGELOG-v13.md`](./CHANGELOG-v13.md)                             | 版本变更 | v13 新增三主题 E/F/G · 生产侧（ROUND14）             |
+| v14      | [`CHANGELOG-v14.md`](./CHANGELOG-v14.md)                             | 版本变更 | v14 顶栏容量修复 + 落地页 mock 化 + tuner 追平（ROUND16） |
+| v14      | [`OPTIMIZATION_ROUND16.md`](./OPTIMIZATION_ROUND16.md)               | 轮次记录 | ROUND16 · 一致性收尾 / 顶栏修复 / C1~C3 / a11y       |
+| v15      | [`CHANGELOG-v15.md`](./CHANGELOG-v15.md)                             | 版本变更 | v15 现代艺术四主题 H/I/J/K · 工作台 11 主题（ROUND17） |
+| v15      | [`OPTIMIZATION_ROUND17.md`](./OPTIMIZATION_ROUND17.md)               | 轮次记录 | ROUND17 · 落地页编辑部双结构 · 字体接入 · tuner 追平 |
 
 ***
 
@@ -69,7 +82,8 @@ v13  新增三主题 E/F/G（ROUND14）   → CHANGELOG-v13.md（生产侧直改
 | 类型              | 位置                                                           |
 | --------------- | ------------------------------------------------------------ |
 | 设计稿资源（HTML/PNG） | `design-concepts/`（preview\.html / tuner.html / 参考图）         |
-| 生产代码            | `frontend/src/styles.css`（token）`frontend/src/App.jsx`（主题切换） |
+| 设计样图（v15 四方向） | `frontend/design-samples/`（sample-{a-editorial,b-konstrukt,c-nightflight,d-riso}.html） |
+| 生产代码            | `frontend/src/styles.css`（token）· `src/hooks/useTheme.js`（主题注册）· `src/landing.css`/`landing.js`（落地页）· `public/console/tuner.html`（调参台） |
 | 后端 / 通用轮次       | `docs/OPTIMIZATION_ROUND{1-6}.md` 等                          |
 
 ***
@@ -87,7 +101,7 @@ v13  新增三主题 E/F/G（ROUND14）   → CHANGELOG-v13.md（生产侧直改
 
 ***
 
-## 六、本目录文件清单（11 份正文 + 1 模板 + v13 截图目录）
+## 六、本目录文件清单（12 份正文 + 1 模板 + v13 截图目录）
 
 ```
 docs/frontend-versions/
@@ -104,6 +118,7 @@ docs/frontend-versions/
 ├── CHANGELOG-v12.md             ← v12 设计稿侧
 ├── OPTIMIZATION_ROUND11.md      ← v12 生产侧落档
 ├── CHANGELOG-v13.md             ← v13 新增三主题（E/F/G）
-└── v13-screenshots/             ← v13 七主题实拍截图（theme-a~g.png）
+├── v13-screenshots/             ← v13 七主题实拍截图（theme-a~g.png）
+└── OPTIMIZATION_ROUND15.md      ← R15 落地页（静态多页 + 双主题）
 ```
 

@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 
 /* v11 · 四主题切换（A 柔雾青绿 / B 黑白瑞士 / C 暗墨夜山 / D 青绿金碧）
-   v13 · 新增 E 雨过天青 / F 玄墨赭金 / G 秋香宣纸（注册与切换机制和四主题完全一致） */
+   v13 · 新增 E 雨过天青 / F 玄墨赭金 / G 秋香宣纸（注册与切换机制和四主题完全一致）
+   v15 · 现代艺术四主题 H 墨格编辑部 / I 新构成主义 / J 夜航诗意 / K 拓印套色
+   （样式见 styles.css「v15 · 现代艺术四主题」节；旧 7 版零改动共存） */
 export const THEMES = [
   { id: 'a', label: '柔雾青绿', chip: '#C5DBE8' },
   { id: 'b', label: '黑白瑞士', chip: '#000000' },
@@ -11,9 +13,14 @@ export const THEMES = [
   { id: 'e', label: '雨过天青', chip: '#C7D3CB' },
   { id: 'f', label: '玄墨赭金', chip: '#171512' },
   { id: 'g', label: '秋香宣纸', chip: '#E6DECB' },
+  // v15 · 现代艺术四主题（编辑部 / 构成主义 / 夜航 / 套色）
+  { id: 'h', label: '墨格编辑部', chip: '#C8341F' },
+  { id: 'i', label: '新构成主义', chip: '#2B4BC7' },
+  { id: 'j', label: '夜航诗意', chip: '#0B0C10' },
+  { id: 'k', label: '拓印套色', chip: '#FF48B0' },
 ]
 
-const VALID_THEMES = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+const VALID_THEMES = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k']
 const INK_MIN = 0
 const INK_MAX = 0.4
 const INK_DEFAULT = 0.16

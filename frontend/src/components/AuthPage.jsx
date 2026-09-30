@@ -64,6 +64,8 @@ export default function AuthPage({ onLogin }) {
           {isLogin ? '尚无账号 · 注册' : '已有账号 · 登录'}
         </a>
 
+        <a className="muted link" href="./">← 返回论匠首页</a>
+
         {err && <div className="err">{err}</div>}
       </form>
 

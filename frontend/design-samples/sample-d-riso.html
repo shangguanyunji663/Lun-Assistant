@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>样图 D · 拓印套色 — 论匠</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   样图 D · 拓印套色（Riso Print）
+   独立印刷质感：网点纹理 / 荧光粉×靛蓝叠印错位 / 纸张肌理
+   粗宋标题；mix-blend-mode: multiply 模拟油墨叠印
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --paper: #FBF6EC;
+  --ink: #26241E;
+  --pink: #FF48B0;
+  --indigo: #2B3AAB;
+  --mint: #16A97C;
+  --mid: #6E6A5C;
+  --low: #98937F;
+  --line: rgba(38, 36, 30, 0.16);
+  --serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
+  --mono: "IBM Plex Mono", Consolas, monospace;
+  --sans: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper); color: var(--ink);
+  font-family: var(--sans); font-size: 15px; line-height: 1.75;
+  /* 纸张肌理 + 细网点 */
+  background-image:
+    radial-gradient(rgba(43, 58, 171, 0.045) 1px, transparent 1.4px),
+    radial-gradient(rgba(255, 72, 176, 0.035) 1px, transparent 1.4px);
+  background-size: 9px 9px, 13px 13px;
+  background-position: 0 0, 4px 6px;
+}
+::selection { background: var(--pink); color: var(--paper); }
+
+/* ---- 顶栏 ---- */
+.rz-header {
+  display: flex; align-items: center; gap: 20px;
+  padding: 18px 5vw;
+  border-bottom: 2px solid var(--ink);
+}
+.rz-header .stamp {
+  font-family: var(--serif); font-weight: 900; font-size: 19px; letter-spacing: 0.26em;
+  color: var(--indigo);
+  text-shadow: 2px 2px 0 rgba(255, 72, 176, 0.55);
+}
+.rz-header .ed { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.2em; color: var(--mid); }
+.rz-header nav { margin-left: auto; display: flex; gap: 24px; }
+.rz-header nav a { color: var(--mid); text-decoration: none; font-size: 13px; letter-spacing: 0.1em; transition: color 0.25s var(--ease); }
+.rz-header nav a:hover { color: var(--pink); }
+.rz-header .cta {
+  font-family: var(--mono); font-size: 12px; letter-spacing: 0.1em; text-decoration: none;
+  color: var(--paper); background: var(--indigo); padding: 10px 20px;
+  box-shadow: 3px 3px 0 var(--pink);
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.rz-header .cta:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0 var(--pink); }
+
+/* ---- Hero：叠印标题 ---- */
+.rz-hero { position: relative; padding: 11vh 5vw 8vh; overflow: hidden; }
+.rz-hero .meta-side {
+  position: absolute; right: 5vw; top: 12vh;
+  font-family: var(--mono); font-size: 10.5px; color: var(--low);
+  writing-mode: vertical-rl; letter-spacing: 0.34em; line-height: 2.2;
+}
+.rip {
+  font-family: var(--serif); font-weight: 900;
+  font-size: clamp(50px, 9.2vw, 122px); line-height: 1.14; letter-spacing: 0.01em;
+  position: relative; max-width: 12em;
+}
+.rip .layer {
+  display: block; position: relative; white-space: nowrap; width: fit-content;
+}
+/* 双色叠印：粉层偏移，multiply 出第三色 */
+.rip .layer::before, .rip .layer::after {
+  content: attr(data-t);
+  position: absolute; inset: 0; mix-blend-mode: multiply;
+  transition: transform 0.35s var(--ease);
+}
+.rip .layer::before { color: var(--pink); transform: translate(-4px, 3px); }
+.rip .layer::after { color: var(--indigo); transform: translate(4px, -3px); }
+.rip .layer { color: transparent; }
+.rip .layer:hover::before { transform: translate(-9px, 7px); }
+.rip .layer:hover::after { transform: translate(9px, -7px); }
+.rip .solid { color: var(--ink); }
+.rz-hero .sub {
+  margin-top: 36px; max-width: 33em;
+  font-size: 15.5px; color: var(--mid); line-height: 2;
+}
+.rz-hero .sub b { color: var(--ink); font-weight: 700; }
+.rz-hero .cta-row { margin-top: 36px; display: flex; gap: 18px; flex-wrap: wrap; }
+.btn-rz {
+  font-family: var(--mono); font-size: 13px; letter-spacing: 0.1em; text-decoration: none;
+  padding: 14px 30px; border: 2px solid var(--ink);
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.btn-rz.solid { background: var(--pink); color: var(--paper); box-shadow: 4px 4px 0 var(--indigo); }
+.btn-rz.ghost { background: var(--paper); color: var(--ink); box-shadow: 4px 4px 0 var(--pink); }
+.btn-rz:hover { transform: translate(-3px, -3px); }
+.btn-rz.solid:hover { box-shadow: 7px 7px 0 var(--indigo); }
+.btn-rz.ghost:hover { box-shadow: 7px 7px 0 var(--pink); }
+/* 油墨滚轮章 */
+.roller {
+  margin-top: 8vh; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
+  overflow: hidden;
+}
+.roller .track {
+  display: inline-flex; white-space: nowrap; padding: 11px 0;
+  animation: roll 24s linear infinite;
+  font-family: var(--serif); font-weight: 900; font-size: 15px; letter-spacing: 0.34em;
+}
+.roller .track i { font-style: normal; margin: 0 24px; color: var(--pink); }
+.roller .track b:nth-child(even) { color: var(--indigo); }
+@keyframes roll { to { transform: translateX(-50%); } }
+
+/* ---- 能力：色卡 ---- */
+.swatches { padding: 9vh 5vw; }
+.sw-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6vh; }
+.sw-head h2 { font-family: var(--serif); font-weight: 900; font-size: clamp(26px, 4vw, 42px); letter-spacing: 0.05em; }
+.sw-head .en { font-family: var(--mono); font-size: 11px; letter-spacing: 0.28em; color: var(--low); }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+.card {
+  border: 2px solid var(--ink); background: var(--paper);
+  padding: 0; position: relative;
+  transition: transform 0.25s var(--ease), box-shadow 0.25s var(--ease);
+}
+.card:nth-child(odd) { transform: rotate(-0.6deg); }
+.card:nth-child(even) { transform: rotate(0.5deg); }
+.card:hover { transform: rotate(0deg) translate(-4px, -4px); box-shadow: 8px 8px 0 rgba(255, 72, 176, 0.85); z-index: 2; }
+.card .chip {
+  height: 86px; border-bottom: 2px solid var(--ink);
+  position: relative; overflow: hidden;
+}
+.card:nth-child(1) .chip { background: var(--pink); }
+.card:nth-child(2) .chip { background: var(--indigo); }
+.card:nth-child(3) .chip { background: var(--mint); }
+.card:nth-child(4) .chip { background: var(--paper); }
+.card:nth-child(5) .chip { background: var(--indigo); }
+.card:nth-child(6) .chip { background: var(--pink); }
+/* 网点覆盖 */
+.card .chip::after {
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(251, 246, 236, 0.55) 1.2px, transparent 1.6px);
+  background-size: 7px 7px;
+}
+.card .chip .code {
+  position: absolute; left: 12px; bottom: 10px; z-index: 1;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; color: var(--paper);
+}
+.card .body { padding: 18px 20px 20px; }
+.card h3 { font-family: var(--serif); font-weight: 900; font-size: 20px; letter-spacing: 0.05em; }
+.card p { font-size: 13px; color: var(--mid); line-height: 1.9; margin-top: 8px; }
+.card .tagline {
+  display: inline-block; margin-top: 12px;
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em;
+  border: 1.5px solid var(--ink); padding: 3px 9px;
+}
+
+/* ---- 工作台一角：套色稿台 ---- */
+.rz-console-sec { background: var(--indigo); color: var(--paper); padding: 9vh 5vw; border-top: 2px solid var(--ink); }
+.rz-console-sec .en { font-family: var(--mono); font-size: 11px; letter-spacing: 0.34em; color: var(--pink); margin-bottom: 14px; }
+.rz-console-sec h2 { font-family: var(--serif); font-weight: 900; font-size: clamp(26px, 4vw, 42px); margin-bottom: 8px; }
+.rz-console-sec .sub { color: rgba(251, 246, 236, 0.65); font-size: 13.5px; margin-bottom: 6vh; }
+.desk {
+  background: var(--paper); color: var(--ink);
+  border: 2px solid var(--ink);
+  box-shadow: 10px 10px 0 var(--pink);
+  display: grid; grid-template-columns: 215px 1fr 265px;
+  min-height: 470px;
+}
+.desk .p + .p { border-left: 2px solid var(--ink); }
+.desk .p-h {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.26em;
+  padding: 13px 15px 11px; border-bottom: 2px solid var(--ink);
+  display: flex; justify-content: space-between; color: var(--mid);
+  background: repeating-linear-gradient(45deg, transparent, transparent 6px, rgba(43, 58, 171, 0.05) 6px, rgba(43, 58, 171, 0.05) 7px);
+}
+.desk .p-h b { color: var(--pink); }
+.stack .it {
+  padding: 12px 15px; border-bottom: 1.5px solid var(--line);
+  font-size: 12.5px; cursor: pointer; transition: all 0.22s var(--ease);
+  background: var(--paper);
+}
+.stack .it:hover { background: rgba(255, 72, 176, 0.07); }
+.stack .it.on { background: rgba(43, 58, 171, 0.08); box-shadow: inset 3px 0 0 var(--indigo); }
+.stack .it .t { font-family: var(--serif); font-weight: 700; font-size: 13px; }
+.stack .it .m { font-family: var(--mono); font-size: 9.5px; color: var(--low); margin-top: 3px; }
+.plate { padding: 22px 24px; }
+.plate .head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+.plate .head h3 { font-family: var(--serif); font-size: 16.5px; font-weight: 900; }
+.plate .head .badge {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.16em;
+  color: var(--indigo); border: 1.5px dashed var(--indigo); padding: 3px 9px;
+}
+.plate p { font-size: 13.5px; line-height: 2.05; color: #4A4638; margin-bottom: 13px; }
+.plate p .pink-hl { background: rgba(255, 72, 176, 0.28); padding: 0 3px; }
+.plate p .indigo-hl { background: rgba(43, 58, 171, 0.16); padding: 0 3px; }
+.plate .caret { display: inline-block; width: 8px; height: 15px; background: var(--pink); vertical-align: -2px; animation: blink 1.05s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.regmarks { border-top: 2px solid var(--ink); padding: 14px 16px; display: flex; gap: 18px; align-items: center; }
+.regmarks .rm { display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 10px; color: var(--mid); }
+.regmarks .rm i { width: 11px; height: 11px; border-radius: 50%; border: 2.5px solid var(--ink); display: inline-block; }
+.regmarks .rm.p i { border-color: var(--pink); background: rgba(255, 72, 176, 0.4); }
+.regmarks .rm.b i { border-color: var(--indigo); background: rgba(43, 58, 171, 0.4); }
+.reports { display: grid; grid-template-columns: 1fr; gap: 0; }
+.rp { padding: 15px 16px; border-bottom: 1.5px solid var(--line); transition: background 0.22s var(--ease); }
+.rp:hover { background: rgba(22, 169, 124, 0.06); }
+.rp .n { font-family: var(--mono); font-size: 23px; }
+.rp:nth-child(1) .n { color: var(--indigo); }
+.rp:nth-child(2) .n { color: var(--pink); }
+.rp:nth-child(3) .n { color: var(--mint); }
+.rp:nth-child(4) .n { color: var(--ink); }
+.rp .l { font-size: 10.5px; color: var(--low); margin-top: 4px; line-height: 1.6; }
+
+/* ---- 页脚 ---- */
+.rz-foot { border-top: 2px solid var(--ink); padding: 6vh 5vw; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 18px; }
+.rz-foot .mark {
+  font-family: var(--serif); font-weight: 900; font-size: clamp(26px, 4.4vw, 48px); letter-spacing: 0.12em;
+  color: var(--ink);
+}
+.rz-foot .mark em { font-style: normal; color: transparent; -webkit-text-stroke: 1.5px var(--pink); }
+.rz-foot .meta { font-family: var(--mono); font-size: 10.5px; color: var(--mid); letter-spacing: 0.12em; text-align: right; line-height: 2; }
+
+@media (max-width: 860px) {
+  .rz-header nav { display: none; }
+  .rz-hero .meta-side { display: none; }
+  .desk { grid-template-columns: 1fr; box-shadow: 6px 6px 0 var(--pink); }
+  .desk .p + .p { border-left: none; border-top: 2px solid var(--ink); }
+  .rip .layer::before { transform: translate(-2px, 1.5px); }
+  .rip .layer::after { transform: translate(2px, -1.5px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="rz-header">
+  <span class="stamp">论匠 RISO</span>
+  <span class="ed">— 独立印刷第 01 版 · 2026 秋</span>
+  <nav>
+    <a href="#swatches">色卡</a>
+    <a href="#desk">工作台</a>
+    <a href="#">印张</a>
+  </nav>
+  <a class="cta" href="#">进入工作台 →</a>
+</header>
+
+<section class="rz-hero">
+  <p class="meta-side">LUNJIANG PRESS · TWO-COLOR RISO · EDITION 01</p>
+  <h1 class="rip">
+    <span class="layer" data-t="论匠，">论匠，</span>
+    <span class="layer" data-t="把论文写完。">把论文写完。</span>
+    <span class="layer" data-t="一次一版。">一次一版。</span>
+  </h1>
+  <p class="sub">六个环节一支<b>智能体编队</b>：主控识别意图、拆解任务、按环节路由给专项角色。像套色印刷——<b>机器上墨，人对版</b>，每一版产出都要经你签字付印。</p>
+  <div class="cta-row">
+    <a class="btn-rz solid" href="#">进入工作台 →</a>
+    <a class="btn-rz ghost" href="#">GitHub 源码</a>
+  </div>
+  <div class="roller" aria-hidden="true">
+    <div class="track">
+      <b>选题立项</b><i>●</i><b>文献综述</b><i>●</i><b>方法写作</b><i>●</i><b>格式规范</b><i>●</i><b>查重降重</b><i>●</i><b>答辩准备</b><i>●</i>
+      <b>选题立项</b><i>●</i><b>文献综述</b><i>●</i><b>方法写作</b><i>●</i><b>格式规范</b><i>●</i><b>查重降重</b><i>●</i><b>答辩准备</b><i>●</i>
+    </div>
+  </div>
+</section>
+
+<section class="swatches" id="swatches">
+  <div class="sw-head">
+    <h2>六张色卡 · 六个环节</h2>
+    <span class="en">INK SWATCHES — 01/06</span>
+  </div>
+  <div class="cards">
+    <article class="card"><div class="chip"><span class="code">INK-PINK / 01</span></div><div class="body"><h3>选题立项</h3><p>可行性评估、创新点定位、开题报告，一次成稿。</p><span class="tagline">AUTO · 全自动</span></div></article>
+    <article class="card"><div class="chip"><span class="code">INK-INDIGO / 02</span></div><div class="body"><h3>文献综述</h3><p>向量 + 关键词多路召回，RRF 融合精排，引用可核对。</p><span class="tagline">AUTO · 全自动</span></div></article>
+    <article class="card"><div class="chip"><span class="code">INK-MINT / 03</span></div><div class="body"><h3>方法与写作</h3><p>章节规划、初稿起草、逐段改写，AI 块写入稿纸。</p><span class="tagline">CO-PILOT · 协同</span></div></article>
+    <article class="card"><div class="chip"><span class="code">INK-PAPER / 04</span></div><div class="body"><h3>格式规范</h3><p>GB/T 7714 引用、图表编号、样式套版一键完成。</p><span class="tagline">AUTO · 全自动</span></div></article>
+    <article class="card"><div class="chip"><span class="code">INK-INDIGO / 05</span></div><div class="body"><h3>查重降重</h3><p>语义改写守住原意，引用边界清晰，风险如实标注。</p><span class="tagline">CO-PILOT · 协同</span></div></article>
+    <article class="card"><div class="chip"><span class="code">INK-PINK / 06</span></div><div class="body"><h3>答辩准备</h3><p>讲稿生成、预演问答、材料清单，逐项打卡。</p><span class="tagline">MANUAL · 人主</span></div></article>
+  </div>
+</section>
+
+<section class="rz-console-sec" id="desk">
+  <p class="en">PRESS DESK · 工作台样张</p>
+  <h2>稿台：套色印刷的仪表盘。</h2>
+  <p class="sub">左：纸叠（会话）· 中：印版（稿纸，粉/靛两色高亮为 AI 待确认块）· 右：印张指标与套准标记。</p>
+  <div class="desk">
+    <div class="p stack">
+      <div class="p-h"><span>纸叠 PAPER STACK</span><b>04</b></div>
+      <div class="it on"><div class="t">第三章 · 方法论初稿</div><div class="m">2026-09-30 · 2,410 字</div></div>
+      <div class="it"><div class="t">第二章 · 文献综述</div><div class="m">2026-09-28 · 5,873 字</div></div>
+      <div class="it"><div class="t">开题报告 v3</div><div class="m">2026-09-21 · 3,208 字</div></div>
+      <div class="it"><div class="t">参考文献整理</div><div class="m">2026-09-18 · 52 条</div></div>
+    </div>
+    <div class="p plate">
+      <div class="p-h"><span>印版 PLATE · 第三章</span><span>自动保存</span></div>
+      <div class="head"><h3>3.2 混合检索的召回策略</h3><span class="badge">AI 草拟 · 待付印</span></div>
+      <p>本项目采用<span class="indigo-hl">向量与关键词多路召回、RRF 融合</span>的策略：bge-m3 负责语义向量召回，PostgreSQL 全文检索负责关键词路，两路结果经 Reciprocal Rank Fusion 合并后再精排。</p>
+      <p>相比单一向量召回，该策略在学术刁钻查询集上<span class="pink-hl">显著降低漏检率</span><span class="caret"></span></p>
+      <div class="regmarks">
+        <span class="rm p"><i></i>PINK · 建议层</span>
+        <span class="rm b"><i></i>INDIGO · 引用层</span>
+        <span class="rm"><i></i>套准 OK</span>
+      </div>
+    </div>
+    <div class="p reports">
+      <div class="p-h"><span>印张 METRICS</span><span>LIVE</span></div>
+      <div class="rp"><div class="n">100%</div><div class="l">意图分类 Top-1<br>50 条 · 56ms/条</div></div>
+      <div class="rp"><div class="n">100%</div><div class="l">检索 Recall@5<br>20 条简单集</div></div>
+      <div class="rp"><div class="n">16/16</div><div class="l">回归场景通过<br>S1–S7 必测</div></div>
+      <div class="rp"><div class="n">89 项</div><div class="l">离线测试用例<br>治理/模型/改写</div></div>
+    </div>
+  </div>
+</section>
+
+<footer class="rz-foot">
+  <span class="mark">论匠 <em>RISO</em></span>
+  <span class="meta">样图 D · 拓印套色<br/>Noto Serif SC 900 + IBM Plex Mono · 纸白/荧光粉/靛蓝/薄荷<br/>TWO-COLOR RISO — SAMPLE</span>
+</footer>
+
+</body>
+</html>

@@ -104,7 +104,7 @@
 ```mermaid
 flowchart TB
     subgraph FE["前端 Frontend · React 18 + Vite"]
-        UI["对话流 / 时间线 / 知识库面板 / Trace 回放 / 四主题切换"]
+        UI["对话流 / 时间线 / 知识库面板 / Trace 回放 / 十一主题切换"]
     end
 
     subgraph API["接口层 api/"]
@@ -406,7 +406,7 @@ Lun-Assistant/
 ├── evals/                   评测 Harness + A/B + 七大场景回归 + 报告图表
 ├── scripts/                 初始化 + 冒烟 + 压测脚本
 ├── tests/                   离线单元测试（89 用例，无外部依赖）
-├── frontend/                React 18 + Vite（SSE 对话 / Markdown / 时间线 / 知识库面板 / Trace 面板）
+├── frontend/                React 18 + Vite（落地页 + 工作台 / SSE 对话 / 时间线 / 知识库 / Trace / 十一主题）
 ├── docs/                    文档（学习指南 / 优化记录 / 前端版本线 frontend-versions/）
 ├── alembic/                 SQLAlchemy 迁移（异步 env.py 聚合全部模型）
 ├── docker-compose.yml       PostgreSQL(pgvector) + Redis + app 编排（--scale app=2 起多实例）
@@ -478,7 +478,7 @@ Lun-Assistant/
 | [🛠 优化记录](docs/OPTIMIZATION_ROUND1.md) | Round 1–6：性能 / OOM / 前端排障 / RAG / 学术工具 / 工程化治理 |
 | [🛠 优化记录十二 / 十三](docs/OPTIMIZATION_ROUND12.md) | CI 静态检查 / 依赖锁定 / 前端 Hooks / 可移植性；审计合规 / 改写自适应 / 记忆排序 / 多实例部署 |
 
-**前端版本线**（[总索引](docs/frontend-versions/README.md) · v8 → v13）
+**前端版本线**（[总索引](docs/frontend-versions/README.md) · v8 → v15）
 
 | 版本 | 文档 | 内容 |
 | :--- | :--- | :--- |
@@ -488,7 +488,9 @@ Lun-Assistant/
 | v11 | [变更（设计稿侧）](docs/frontend-versions/CHANGELOG-v11-design.md) · [（生产侧）](docs/frontend-versions/CHANGELOG-v11-frontend.md) | 四主题 A / B / C / D |
 | v12 | [变更](docs/frontend-versions/CHANGELOG-v12.md) · [Round 11](docs/frontend-versions/OPTIMIZATION_ROUND11.md) | B 主题翻转为黑白瑞士（修复 B↔D 区分度） |
 | v13 | [变更](docs/frontend-versions/CHANGELOG-v13.md) | 新增三主题 E 雨过天青 / F 玄墨赭金 / G 秋香宣纸（反 AI 味设计 · 现有主题零改动） |
-| v13 | [变更](docs/frontend-versions/CHANGELOG-v13.md) | 新增三主题 E 雨过天青 / F 玄墨赭金 / G 秋香宣纸（反 AI 味设计 · 现有主题零改动） |
+| R15 | [Round 15](docs/frontend-versions/OPTIMIZATION_ROUND15.md) | 落地页门面（静态多页 · 双主题 · 零依赖），工作台入口迁 app.html |
+| v14 | [变更](docs/frontend-versions/CHANGELOG-v14.md) · [Round 16](docs/frontend-versions/OPTIMIZATION_ROUND16.md) | 顶栏容量修复（五档减法）· 落地页 mock 化（替换过时截图）· tuner 追平七主题 · a11y 补强 |
+| v15 | [变更](docs/frontend-versions/CHANGELOG-v15.md) · [Round 17](docs/frontend-versions/OPTIMIZATION_ROUND17.md) | 现代艺术四主题 H 墨格编辑部 / I 新构成主义 / J 夜航诗意 / K 拓印套色（工作台 11 主题共存）· 落地页编辑部双结构（6 主题）· web 字体接入 |
 
 ---
 

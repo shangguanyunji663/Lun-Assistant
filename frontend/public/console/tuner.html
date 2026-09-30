@@ -381,26 +381,389 @@
   body[data-theme="d"] .ink-blob-2 { background: radial-gradient(circle at 60% 40%, rgba(79,135,98,.08), transparent 72%); }
   body[data-theme="d"] .ink-stamp { border-color: #A33E22; color: #A33E22; background: rgba(163,62,34,.08); }
   body[data-theme="d"] h1 .ver-tag { background: #C9B58A; color: #2C2418; }
+
+/* =========================================================
+   v13 · E / F / G 三主题（反AI味语言：无背景图 · 实色面板 · 小圆角）
+   与主应用 styles.css v13 段同源：--ink-bg-url none / 遮罩全零 / 圆角收紧。
+   本段全部为「新增选择器」，不改 A-D 任何既有规则。
+   E 雨过天青 #E3E9E5 + 黛青 #589384 / F 玄墨赭金 #171512 + 赭金 #C2955A / G 秋香宣纸 #EFE8D9 + 秋香褐 #A0824A
+   ========================================================= */
+  /* --- 通用：E/F/G 关闭装饰层（背景图 / 墨滴 / 中缝 / 钤印 / 木轴） --- */
+  body[data-theme="e"] .ink-photo,
+  body[data-theme="f"] .ink-photo,
+  body[data-theme="g"] .ink-photo,
+  body[data-theme="e"] .ink-veil,
+  body[data-theme="f"] .ink-veil,
+  body[data-theme="g"] .ink-veil,
+  body[data-theme="e"] .ink-blob,
+  body[data-theme="f"] .ink-blob,
+  body[data-theme="g"] .ink-blob,
+  body[data-theme="e"] .ink-divider,
+  body[data-theme="f"] .ink-divider,
+  body[data-theme="g"] .ink-divider,
+  body[data-theme="e"] .ink-stamp,
+  body[data-theme="f"] .ink-stamp,
+  body[data-theme="g"] .ink-stamp,
+  body[data-theme="e"] .wood-roll,
+  body[data-theme="f"] .wood-roll,
+  body[data-theme="g"] .wood-roll { display: none; }
+
+  /* --- 通用：实色面板 + 小圆角 + 贴地细影（面板色取各主题 --bg-panel） --- */
+  body[data-theme="e"] .col,
+  body[data-theme="f"] .col,
+  body[data-theme="g"] .col { backdrop-filter: none; border-radius: 9px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.10); }
+  body[data-theme="e"] .col { background: #DAE2DC; border-color: rgba(34,48,42,.10); }
+  body[data-theme="f"] .col { background: #1E1B17; border-color: rgba(233,226,212,.13); box-shadow: 0 1px 3px rgba(0,0,0,.40); }
+  body[data-theme="g"] .col { background: #E6DECB; border-color: rgba(50,44,32,.12); }
+  body[data-theme="e"] .topbar::after { background: linear-gradient(90deg,transparent,rgba(88,147,132,.34) 20%,rgba(88,147,132,.34) 80%,transparent); opacity: .6; }
+  body[data-theme="f"] .topbar::after { background: linear-gradient(90deg,transparent,rgba(194,149,90,.42) 20%,rgba(194,149,90,.42) 80%,transparent); opacity: .6; }
+  body[data-theme="g"] .topbar::after { background: linear-gradient(90deg,transparent,rgba(160,130,74,.38) 20%,rgba(160,130,74,.38) 80%,transparent); opacity: .6; }
+
+  /* --- stage 底色 + 字色 --- */
+  body[data-theme="e"] .stage { background: #E3E9E5; color: #22302A; box-shadow: 0 8px 24px rgba(34,48,42,.14); }
+  body[data-theme="f"] .stage { background: #171512; color: #E9E2D4; box-shadow: 0 10px 28px rgba(0,0,0,.50); }
+  body[data-theme="g"] .stage { background: #EFE8D9; color: #322C20; box-shadow: 0 8px 24px rgba(50,44,32,.14); }
+
+  /* --- 文字层级（预览 UI 与主应用令牌同源） --- */
+  body[data-theme="e"] .brand small { color: #68776E; }
+  body[data-theme="f"] .brand small { color: #877E6B; }
+  body[data-theme="g"] .brand small { color: #7D745E; }
+  body[data-theme="e"] .btn { border-color: rgba(34,48,42,.16); background: rgba(34,48,42,.03); color: #46564E; border-radius: 6px; }
+  body[data-theme="f"] .btn { border-color: rgba(233,226,212,.20); background: rgba(233,226,212,.04); color: #B3AA96; border-radius: 6px; }
+  body[data-theme="g"] .btn { border-color: rgba(50,44,32,.18); background: rgba(50,44,32,.03); color: #5C5442; border-radius: 6px; }
+  body[data-theme="e"] .btn.gold { background: #589384; color: #17222B; font-weight: 400; }
+  body[data-theme="f"] .btn.gold { background: #C2955A; color: #17222B; font-weight: 400; }
+  body[data-theme="g"] .btn.gold { background: #A0824A; color: #17222B; font-weight: 400; }
+  body[data-theme="e"] .btn.on { background: rgba(88,147,132,.16); border-color: rgba(58,107,92,.36); color: #2C564A; }
+  body[data-theme="f"] .btn.on { background: rgba(216,207,187,.14); border-color: rgba(216,207,187,.34); color: #E9E2D4; }
+  body[data-theme="g"] .btn.on { background: rgba(160,130,74,.16); border-color: rgba(107,91,54,.36); color: #52452A; }
+
+  body[data-theme="e"] .kb-switcher { background: rgba(34,48,42,.06); border-radius: 6px; }
+  body[data-theme="f"] .kb-switcher { background: rgba(0,0,0,.30); border: 1px solid rgba(233,226,212,.13); border-radius: 6px; }
+  body[data-theme="g"] .kb-switcher { background: rgba(50,44,32,.07); border-radius: 6px; }
+  body[data-theme="e"] .kb-switcher button { color: #68776E; }
+  body[data-theme="f"] .kb-switcher button { color: #877E6B; }
+  body[data-theme="g"] .kb-switcher button { color: #7D745E; }
+  body[data-theme="e"] .kb-switcher button.on { background: rgba(88,147,132,.18); color: #2C564A; }
+  body[data-theme="f"] .kb-switcher button.on { background: rgba(216,207,187,.16); color: #E9E2D4; }
+  body[data-theme="g"] .kb-switcher button.on { background: rgba(160,130,74,.18); color: #52452A; }
+
+  body[data-theme="e"] .kb-state { border-color: rgba(34,48,42,.16); color: #46564E; border-radius: 6px; }
+  body[data-theme="f"] .kb-state { border-color: rgba(233,226,212,.20); color: #B3AA96; border-radius: 6px; }
+  body[data-theme="g"] .kb-state { border-color: rgba(50,44,32,.18); color: #5C5442; border-radius: 6px; }
+  body[data-theme="e"] .kb-state .dot { background: #589384; }
+  body[data-theme="f"] .kb-state .dot { background: #C2955A; }
+  body[data-theme="g"] .kb-state .dot { background: #A0824A; }
+  body[data-theme="e"] .kb-state.empty .dot { background: #68776E; }
+  body[data-theme="f"] .kb-state.empty .dot { background: #877E6B; }
+  body[data-theme="g"] .kb-state.empty .dot { background: #7D745E; }
+
+  body[data-theme="e"] .upload-btn { border-color: rgba(58,107,92,.36); color: #46564E; border-radius: 6px; }
+  body[data-theme="f"] .upload-btn { border-color: rgba(194,149,90,.42); color: #B3AA96; border-radius: 6px; }
+  body[data-theme="g"] .upload-btn { border-color: rgba(160,130,74,.38); color: #5C5442; border-radius: 6px; }
+  body[data-theme="e"] .console-badge { background: rgba(88,147,132,.16); border: 1px solid rgba(88,147,132,.34); color: #2C564A; border-radius: 6px; }
+  body[data-theme="f"] .console-badge { background: rgba(194,149,90,.18); border: 1px solid rgba(194,149,90,.42); color: #E9E2D4; border-radius: 6px; }
+  body[data-theme="g"] .console-badge { background: rgba(160,130,74,.16); border: 1px solid rgba(160,130,74,.38); color: #52452A; border-radius: 6px; }
+
+  body[data-theme="e"] nav { background: rgba(34,48,42,.07); border-radius: 6px; }
+  body[data-theme="f"] nav { background: rgba(0,0,0,.30); border: 1px solid rgba(233,226,212,.13); border-radius: 6px; }
+  body[data-theme="g"] nav { background: rgba(50,44,32,.08); border-radius: 6px; }
+  body[data-theme="e"] nav button { color: #68776E; }
+  body[data-theme="f"] nav button { color: #877E6B; }
+  body[data-theme="g"] nav button { color: #7D745E; }
+  body[data-theme="e"] nav button.on { background: rgba(88,147,132,.18); color: #2C564A; }
+  body[data-theme="f"] nav button.on { background: rgba(216,207,187,.16); color: #E9E2D4; }
+  body[data-theme="g"] nav button.on { background: rgba(160,130,74,.18); color: #52452A; }
+
+  body[data-theme="e"] .sess-head { color: #46564E; border-bottom-color: rgba(34,48,42,.10); }
+  body[data-theme="f"] .sess-head { color: #B3AA96; border-bottom-color: rgba(233,226,212,.13); }
+  body[data-theme="g"] .sess-head { color: #5C5442; border-bottom-color: rgba(50,44,32,.12); }
+  body[data-theme="e"] .sess-item.on { background: rgba(88,147,132,.12); border-left-color: #589384; border-radius: 4px; }
+  body[data-theme="f"] .sess-item.on { background: rgba(216,207,187,.12); border-left-color: #C2955A; border-radius: 4px; }
+  body[data-theme="g"] .sess-item.on { background: rgba(160,130,74,.12); border-left-color: #A0824A; border-radius: 4px; }
+  body[data-theme="e"] .sess-title { color: #46564E; }
+  body[data-theme="f"] .sess-title { color: #B3AA96; }
+  body[data-theme="g"] .sess-title { color: #5C5442; }
+  body[data-theme="e"] .sess-item.on .sess-title { color: #22302A; }
+  body[data-theme="f"] .sess-item.on .sess-title { color: #E9E2D4; }
+  body[data-theme="g"] .sess-item.on .sess-title { color: #322C20; }
+  body[data-theme="e"] .sess-meta { color: #68776E; }
+  body[data-theme="f"] .sess-meta { color: #877E6B; }
+  body[data-theme="g"] .sess-meta { color: #7D745E; }
+
+  body[data-theme="e"] .msg.user .msg-mark { color: #589384; border-color: rgba(88,147,132,.40); background: rgba(88,147,132,.10); border-radius: 5px; }
+  body[data-theme="f"] .msg.user .msg-mark { color: #C2955A; border-color: rgba(194,149,90,.45); background: rgba(194,149,90,.12); border-radius: 5px; }
+  body[data-theme="g"] .msg.user .msg-mark { color: #A0824A; border-color: rgba(160,130,74,.42); background: rgba(160,130,74,.10); border-radius: 5px; }
+  body[data-theme="e"] .msg:not(.user) .msg-mark { color: #3A6B5C; border-color: rgba(58,107,92,.36); background: rgba(58,107,92,.08); border-radius: 5px; }
+  body[data-theme="f"] .msg:not(.user) .msg-mark { color: #D8CFBB; border-color: rgba(216,207,187,.34); background: rgba(216,207,187,.08); border-radius: 5px; }
+  body[data-theme="g"] .msg:not(.user) .msg-mark { color: #6B5B36; border-color: rgba(107,91,54,.36); background: rgba(107,91,54,.08); border-radius: 5px; }
+
+  body[data-theme="e"] .msg.user .bubble { background: rgba(88,147,132,.10); border-color: rgba(58,107,92,.30); color: #22302A; border-radius: 9px; }
+  body[data-theme="f"] .msg.user .bubble { background: rgba(194,149,90,.12); border-color: rgba(194,149,90,.35); color: #E9E2D4; border-radius: 9px; }
+  body[data-theme="g"] .msg.user .bubble { background: rgba(160,130,74,.10); border-color: rgba(107,91,54,.30); color: #322C20; border-radius: 9px; }
+  body[data-theme="e"] .msg:not(.user) .bubble { background: #DAE2DC; border-color: rgba(34,48,42,.14); color: #22302A; border-radius: 9px; }
+  body[data-theme="f"] .msg:not(.user) .bubble { background: #1E1B17; border-color: rgba(233,226,212,.16); color: #E9E2D4; border-radius: 9px; }
+  body[data-theme="g"] .msg:not(.user) .bubble { background: #E6DECB; border-color: rgba(50,44,32,.14); color: #322C20; border-radius: 9px; }
+
+  body[data-theme="e"] .input-bar { background: none; border-top-color: rgba(34,48,42,.10); }
+  body[data-theme="f"] .input-bar { background: none; border-top-color: rgba(233,226,212,.13); }
+  body[data-theme="g"] .input-bar { background: none; border-top-color: rgba(50,44,32,.12); }
+  body[data-theme="e"] .composer textarea { border-color: rgba(34,48,42,.16); background: #DAE2DC; color: #22302A; border-radius: 6px; }
+  body[data-theme="f"] .composer textarea { border-color: rgba(233,226,212,.20); background: #1E1B17; color: #E9E2D4; border-radius: 6px; }
+  body[data-theme="g"] .composer textarea { border-color: rgba(50,44,32,.18); background: #E6DECB; color: #322C20; border-radius: 6px; }
+  body[data-theme="e"] .composer textarea::placeholder { color: #68776E; }
+  body[data-theme="f"] .composer textarea::placeholder { color: #877E6B; }
+  body[data-theme="g"] .composer textarea::placeholder { color: #7D745E; }
+  body[data-theme="e"] .composer .attach { border-color: rgba(34,48,42,.16); background: rgba(34,48,42,.03); color: #46564E; border-radius: 6px; }
+  body[data-theme="f"] .composer .attach { border-color: rgba(233,226,212,.20); background: rgba(233,226,212,.04); color: #B3AA96; border-radius: 6px; }
+  body[data-theme="g"] .composer .attach { border-color: rgba(50,44,32,.18); background: rgba(50,44,32,.03); color: #5C5442; border-radius: 6px; }
+  body[data-theme="e"] .input-hint { color: #68776E; }
+  body[data-theme="f"] .input-hint { color: #877E6B; }
+  body[data-theme="g"] .input-hint { color: #7D745E; }
+
+  body[data-theme="e"] .assets-head { color: #3A6B5C; border-bottom-color: rgba(34,48,42,.10); }
+  body[data-theme="f"] .assets-head { color: #D8CFBB; border-bottom-color: rgba(233,226,212,.13); }
+  body[data-theme="g"] .assets-head { color: #6B5B36; border-bottom-color: rgba(50,44,32,.12); }
+  body[data-theme="e"] .asset-row { color: #46564E; background: rgba(34,48,42,.03); border-color: rgba(34,48,42,.08); border-radius: 6px; }
+  body[data-theme="f"] .asset-row { color: #B3AA96; background: rgba(233,226,212,.04); border-color: rgba(233,226,212,.10); border-radius: 6px; }
+  body[data-theme="g"] .asset-row { color: #5C5442; background: rgba(50,44,32,.03); border-color: rgba(50,44,32,.08); border-radius: 6px; }
+  body[data-theme="e"] .asset-row .tag { background: rgba(88,147,132,.18); color: #2C564A; border-radius: 3px; }
+  body[data-theme="f"] .asset-row .tag { background: rgba(194,149,90,.22); color: #E9E2D4; border-radius: 3px; }
+  body[data-theme="g"] .asset-row .tag { background: rgba(160,130,74,.18); color: #52452A; border-radius: 3px; }
+  body[data-theme="e"] .asset-row .del { color: #68776E; }
+  body[data-theme="f"] .asset-row .del { color: #877E6B; }
+  body[data-theme="g"] .asset-row .del { color: #7D745E; }
+
+  /* --- header / footer 控件随主题 --- */
+  body[data-theme="e"] h1 .ver-tag { background: #E3E9E5; color: #22302A; }
+  body[data-theme="f"] h1 .ver-tag { background: #171512; color: #E9E2D4; }
+  body[data-theme="g"] h1 .ver-tag { background: #EFE8D9; color: #322C20; }
+  body[data-theme="e"] header p { color: #68776E; }
+  body[data-theme="f"] header p { color: #877E6B; }
+  body[data-theme="g"] header p { color: #7D745E; }
+  body[data-theme="e"] .theme-tabs { background: #DAE2DC; border-color: rgba(34,48,42,.12); }
+  body[data-theme="f"] .theme-tabs { background: #1E1B17; border-color: rgba(233,226,212,.16); }
+  body[data-theme="g"] .theme-tabs { background: #E6DECB; border-color: rgba(50,44,32,.14); }
+  body[data-theme="e"] .theme-tabs button { color: #46564E; }
+  body[data-theme="f"] .theme-tabs button { color: #877E6B; }
+  body[data-theme="g"] .theme-tabs button { color: #5C5442; }
+  body[data-theme="e"] .theme-tabs button.on { background: rgba(88,147,132,.18); color: #2C564A; }
+  body[data-theme="f"] .theme-tabs button.on { background: rgba(216,207,187,.16); color: #E9E2D4; }
+  body[data-theme="g"] .theme-tabs button.on { background: rgba(160,130,74,.18); color: #52452A; }
+  body[data-theme="e"] footer { color: #68776E; }
+  body[data-theme="f"] footer { color: #877E6B; }
+  body[data-theme="g"] footer { color: #7D745E; }
+  body[data-theme="e"] input[type=range] { accent-color: #589384; }
+  body[data-theme="f"] input[type=range] { accent-color: #C2955A; }
+  body[data-theme="g"] input[type=range] { accent-color: #A0824A; }
+  body[data-theme="e"] .presets button.on { background: #589384; border-color: #589384; }
+  body[data-theme="g"] .presets button.on { background: #A0824A; border-color: #A0824A; }
+  body[data-theme="f"] .presets button.on { background: #C2955A; border-color: #C2955A; color: #171512; }
+  body[data-theme="e"] .kb-presets button.on { background: #589384; color: #17222B; border-color: #589384; }
+  body[data-theme="f"] .kb-presets button.on { background: #C2955A; color: #171512; border-color: #C2955A; }
+  body[data-theme="g"] .kb-presets button.on { background: #A0824A; color: #17222B; border-color: #A0824A; }
+
+/* =========================================================
+   v12 追平 · B 主题翻转「水墨留白 → 黑白瑞士」（Swiss Black Outline）
+   与主应用 styles.css ROUND11 段同源：#FFFFFF 底 + #000 纯黑 + 1.5px 黑线
+   + 直角 + Helvetica；无背景图 / 无中缝 / 无木轴 / 无装饰。
+   本段为追加覆盖（同特异性后者胜出），不改上方 B 旧规则。
+   ========================================================= */
+  body[data-theme="b"] .stage { background: #FFFFFF; color: #000000;
+    font-family: "Helvetica Neue", Helvetica, Arial, "Microsoft YaHei", sans-serif; }
+  body[data-theme="b"] .ink-photo,
+  body[data-theme="b"] .ink-veil,
+  body[data-theme="b"] .ink-blob,
+  body[data-theme="b"] .ink-divider,
+  body[data-theme="b"] .ink-stamp,
+  body[data-theme="b"] .wood-roll { display: none; }
+  body[data-theme="b"] .topbar::after { background: #000; opacity: 1; height: 1px; }
+  body[data-theme="b"] .brand { font-family: "Helvetica Neue", Helvetica, Arial, "Microsoft YaHei", sans-serif; letter-spacing: .14em; font-weight: 500; }
+  body[data-theme="b"] .brand small { color: #333; }
+  body[data-theme="b"] h1 .ver-tag { background: #000; color: #FFF; border-radius: 3px; }
+  body[data-theme="b"] header p { color: #555; }
+  body[data-theme="b"] .theme-tabs { background: #FFF; border: 1.5px solid #000; border-radius: 6px; }
+  body[data-theme="b"] .theme-tabs button { color: #000; border-radius: 4px; }
+  body[data-theme="b"] .theme-tabs button.on { background: #000; color: #FFF; }
+  body[data-theme="b"] .btn { border: 1.5px solid #000; background: #FFF; color: #000; border-radius: 4px; font-weight: 400; }
+  body[data-theme="b"] .btn.gold { background: #000; color: #FFF; border-color: #000; border-radius: 4px; }
+  body[data-theme="b"] .btn.on { background: #FFF; border-color: #000; color: #000; box-shadow: inset 0 0 0 1px #000; }
+  body[data-theme="b"] .kb-switcher { background: #FFF; border: 1.5px solid #000; border-radius: 4px; }
+  body[data-theme="b"] .kb-switcher button { color: #000; border-radius: 3px; }
+  body[data-theme="b"] .kb-switcher button.on { background: #000; color: #FFF; }
+  body[data-theme="b"] .kb-state { border: 1.5px solid #000; background: #FFF; color: #000; border-radius: 4px; }
+  body[data-theme="b"] .kb-state .dot { background: #000; }
+  body[data-theme="b"] .kb-state.empty .dot { background: #FFF; border: 1.5px solid #000; box-sizing: border-box; }
+  body[data-theme="b"] .upload-btn { border: 1.5px dashed #000; color: #000; border-radius: 4px; }
+  body[data-theme="b"] .console-badge { background: #FFF; border: 1.5px solid #000; color: #000; border-radius: 4px; }
+  body[data-theme="b"] nav { background: #FFF; border: 1.5px solid #000; border-radius: 4px; }
+  body[data-theme="b"] nav button { color: #000; border-radius: 3px; }
+  body[data-theme="b"] nav button.on { background: #000; color: #FFF; }
+  body[data-theme="b"] .col { background: #FFF; border: 1.5px solid #000; border-radius: 6px; box-shadow: none; }
+  body[data-theme="b"] .sess-head { color: #000; border-bottom-color: #000; font-family: "Helvetica Neue", Helvetica, Arial, "Microsoft YaHei", sans-serif; }
+  body[data-theme="b"] .sess-item.on { background: #F2F2F2; border-left: 2px solid #000; border-radius: 0; }
+  body[data-theme="b"] .sess-title { color: #333; }
+  body[data-theme="b"] .sess-item.on .sess-title { color: #000; }
+  body[data-theme="b"] .sess-meta { color: #666; }
+  body[data-theme="b"] .msg.user .msg-mark,
+  body[data-theme="b"] .msg:not(.user) .msg-mark { color: #000; border: 1.5px solid #000; background: #FFF; border-radius: 2px; }
+  body[data-theme="b"] .msg.user .bubble { background: #FFF; border: 1.5px solid #000; color: #000; border-radius: 4px; border-top-right-radius: 0; }
+  body[data-theme="b"] .msg:not(.user) .bubble { background: #FFF; border: 1.5px solid #000; color: #000; border-radius: 4px; border-top-left-radius: 0; }
+  body[data-theme="b"] .input-bar { background: none; border-top: 1.5px solid #000; }
+  body[data-theme="b"] .composer textarea { border: 1.5px solid #000; background: #FFF; color: #000; border-radius: 4px; }
+  body[data-theme="b"] .composer textarea::placeholder { color: #666; }
+  body[data-theme="b"] .composer .attach { border: 1.5px solid #000; background: #FFF; color: #000; border-radius: 4px; }
+  body[data-theme="b"] .input-hint { color: #555; }
+  body[data-theme="b"] .assets-head { color: #000; border-bottom-color: #000; }
+  body[data-theme="b"] .asset-row { color: #000; background: #FFF; border: 1px solid #000; border-radius: 3px; }
+  body[data-theme="b"] .asset-row .tag { background: #000; color: #FFF; border-radius: 2px; }
+  body[data-theme="b"] .asset-row .del { color: #555; }
+  body[data-theme="b"] input[type=range] { accent-color: #000; }
+  body[data-theme="b"] .presets button.on,
+  body[data-theme="b"] .kb-presets button.on { background: #000; color: #FFF; border-color: #000; }
+  body[data-theme="b"] footer { color: #555; }
+
+/* =========================================================
+   v15 · H/I/J/K 四主题（现代艺术方向 · 无背景图实色主题）
+   预览级还原：stage/面板/气泡/按钮/tab；纹理由 stage 底色近似表达
+   ========================================================= */
+  body[data-theme="h"] .ink-photo,
+  body[data-theme="i"] .ink-photo,
+  body[data-theme="j"] .ink-photo,
+  body[data-theme="k"] .ink-photo,
+  body[data-theme="h"] .ink-veil,
+  body[data-theme="i"] .ink-veil,
+  body[data-theme="j"] .ink-veil,
+  body[data-theme="k"] .ink-veil,
+  body[data-theme="h"] .ink-blob,
+  body[data-theme="i"] .ink-blob,
+  body[data-theme="j"] .ink-blob,
+  body[data-theme="k"] .ink-blob,
+  body[data-theme="h"] .ink-divider,
+  body[data-theme="i"] .ink-divider,
+  body[data-theme="j"] .ink-divider,
+  body[data-theme="k"] .ink-divider,
+  body[data-theme="h"] .ink-stamp,
+  body[data-theme="i"] .ink-stamp,
+  body[data-theme="j"] .ink-stamp,
+  body[data-theme="k"] .ink-stamp,
+  body[data-theme="h"] .wood-roll,
+  body[data-theme="i"] .wood-roll,
+  body[data-theme="j"] .wood-roll,
+  body[data-theme="k"] .wood-roll { display: none; }
+  /* H 墨格编辑部：纸白 + 墨黑 + 朱红，衬线标题，近直角 */
+  body[data-theme="h"] .stage { background: #FAF8F3; color: #1A1815;
+    font-family: "Noto Serif SC","Songti SC",SimSun,serif; box-shadow: 0 8px 24px rgba(26,24,21,.10); }
+  body[data-theme="h"] .col { background: #FFFFFF; backdrop-filter: none; border: 1px solid rgba(26,24,21,.14); border-radius: 3px; box-shadow: none; }
+  body[data-theme="h"] .topbar::after { background: #1A1815; opacity: 1; height: 1.5px; }
+  body[data-theme="h"] .brand { font-family: "Noto Serif SC","Songti SC",SimSun,serif; font-weight: 900; }
+  body[data-theme="h"] .brand small { color: #6E6A5E; }
+  body[data-theme="h"] .btn { border-color: rgba(26,24,21,.24); background: rgba(26,24,21,.03); color: #57534A; border-radius: 3px; }
+  body[data-theme="h"] .btn.gold { background: #1A1815; color: #FAF8F3; }
+  body[data-theme="h"] .btn.on { background: rgba(200,52,31,.10); border-color: rgba(200,52,31,.55); color: #A32A18; }
+  body[data-theme="h"] nav { background: rgba(26,24,21,.06); border-radius: 3px; }
+  body[data-theme="h"] nav button.on { background: rgba(200,52,31,.12); color: #A32A18; }
+  body[data-theme="h"] .msg.user .bubble { background: rgba(200,52,31,.06); border-color: rgba(200,52,31,.30); color: #1A1815; border-radius: 3px; }
+  body[data-theme="h"] .msg:not(.user) .bubble { background: #FFFFFF; border-color: rgba(26,24,21,.18); color: #1A1815; border-radius: 3px; }
+  body[data-theme="h"] .msg .msg-mark { border-radius: 2px; font-weight: 700; }
+  body[data-theme="h"] .composer textarea { border-color: rgba(26,24,21,.24); background: #FFFFFF; color: #1A1815; border-radius: 3px; }
+  body[data-theme="h"] .theme-tabs button.on { background: rgba(200,52,31,.12); color: #A32A18; }
+  body[data-theme="h"] h1 .ver-tag { background: #FAF8F3; color: #1A1815; }
+  /* I 新构成主义：米白 + 蓝红黄，全直角 + 硬阴影 */
+  body[data-theme="i"] .stage { background: #F4F1EA; color: #141310;
+    box-shadow: 8px 8px 0 rgba(43,75,199,.9); }
+  body[data-theme="i"] .col { background: #FDFCF9; backdrop-filter: none; border: 2.5px solid #141310; border-radius: 0; box-shadow: 4px 4px 0 rgba(20,19,16,.9); }
+  body[data-theme="i"] .topbar::after { background: #141310; opacity: 1; height: 2.5px; }
+  body[data-theme="i"] .btn { border: 2px solid #141310; background: #FDFCF9; color: #141310; border-radius: 0; }
+  body[data-theme="i"] .btn.gold { background: #D9402A; color: #FDFCF9; }
+  body[data-theme="i"] .btn.on { background: #2B4BC7; color: #FDFCF9; }
+  body[data-theme="i"] nav { background: #FDFCF9; border: 2px solid #141310; border-radius: 0; }
+  body[data-theme="i"] nav button.on { background: #2B4BC7; color: #FDFCF9; }
+  body[data-theme="i"] .msg.user .bubble { background: #2B4BC7; border: 2px solid #141310; color: #FDFCF9; border-radius: 0; }
+  body[data-theme="i"] .msg:not(.user) .bubble { background: #FDFCF9; border: 2px solid #141310; color: #141310; border-radius: 0; }
+  body[data-theme="i"] .msg .msg-mark { border-radius: 0; border: 2px solid #141310; font-weight: 700; }
+  body[data-theme="i"] .composer textarea { border: 2px solid #141310; background: #FDFCF9; color: #141310; border-radius: 0; }
+  body[data-theme="i"] .theme-tabs button.on { background: #2B4BC7; color: #FDFCF9; }
+  body[data-theme="i"] h1 .ver-tag { background: #DFA51E; color: #141310; border-radius: 0; }
+  /* J 夜航诗意：近黑 + 荧光青 + mono */
+  body[data-theme="j"] .stage { background: #0B0C10; color: #E8EAED;
+    font-family: "IBM Plex Mono",Consolas,monospace; box-shadow: 0 18px 44px rgba(0,0,0,.55); }
+  body[data-theme="j"] .col { background: #12141A; backdrop-filter: none; border: 1px solid rgba(232,234,237,.18); border-radius: 5px; box-shadow: none; }
+  body[data-theme="j"] .brand { font-family: "IBM Plex Mono",Consolas,monospace; letter-spacing: .16em; }
+  body[data-theme="j"] .btn { border-color: rgba(232,234,237,.18); background: rgba(232,234,237,.04); color: #9BA3AD; border-radius: 3px; }
+  body[data-theme="j"] .btn.gold { background: #4FE3C1; color: #0B0C10; }
+  body[data-theme="j"] .btn.on { background: rgba(79,227,193,.14); border-color: rgba(79,227,193,.50); color: #4FE3C1; }
+  body[data-theme="j"] nav { background: rgba(0,0,0,.35); border-radius: 3px; }
+  body[data-theme="j"] nav button.on { background: rgba(79,227,193,.16); color: #4FE3C1; }
+  body[data-theme="j"] .msg.user .bubble { background: rgba(79,227,193,.08); border-color: rgba(79,227,193,.35); color: #E8EAED; border-radius: 4px; }
+  body[data-theme="j"] .msg:not(.user) .bubble { background: #12141A; border-color: rgba(232,234,237,.16); color: #E8EAED; border-radius: 4px; }
+  body[data-theme="j"] .msg .msg-mark { border-radius: 2px; font-family: "IBM Plex Mono",Consolas,monospace; }
+  body[data-theme="j"] .composer textarea { border-color: rgba(232,234,237,.18); background: #12141A; color: #E8EAED; border-radius: 4px; }
+  body[data-theme="j"] .theme-tabs button.on { background: rgba(79,227,193,.14); color: #4FE3C1; }
+  body[data-theme="j"] h1 .ver-tag { background: #0B0C10; color: #4FE3C1; }
+  /* K 拓印套色：网点纸 + 粉/靛 + 衬线 900 */
+  body[data-theme="k"] .stage { background: #FBF6EC; color: #26241E;
+    font-family: "Noto Serif SC","Songti SC",SimSun,serif;
+    background-image: radial-gradient(rgba(43,58,171,.05) 1px, transparent 1.4px), radial-gradient(rgba(255,72,176,.04) 1px, transparent 1.4px);
+    background-size: 9px 9px, 13px 13px; background-position: 0 0, 4px 6px;
+    box-shadow: 8px 8px 0 rgba(255,72,176,.30); }
+  body[data-theme="k"] .col { background: #FFFFFF; backdrop-filter: none; border: 2px solid #26241E; border-radius: 3px; box-shadow: 4px 4px 0 rgba(255,72,176,.30); }
+  body[data-theme="k"] .brand { font-weight: 900; }
+  body[data-theme="k"] .brand small { color: #8A846F; }
+  body[data-theme="k"] .btn { border-color: rgba(38,36,30,.26); background: rgba(38,36,30,.03); color: #6E6A5C; border-radius: 3px; }
+  body[data-theme="k"] .btn.gold { background: #FF48B0; color: #26241E; }
+  body[data-theme="k"] .btn.on { background: rgba(255,72,176,.14); border-color: rgba(255,72,176,.55); color: #D6258F; }
+  body[data-theme="k"] nav { background: rgba(38,36,30,.06); border-radius: 3px; }
+  body[data-theme="k"] nav button.on { background: rgba(255,72,176,.16); color: #D6258F; }
+  body[data-theme="k"] .msg.user .bubble { background: rgba(255,72,176,.08); border-color: rgba(255,72,176,.35); color: #26241E; border-radius: 3px; }
+  body[data-theme="k"] .msg:not(.user) .bubble { background: #FFFFFF; border-color: rgba(38,36,30,.20); color: #26241E; border-radius: 3px; }
+  body[data-theme="k"] .msg .msg-mark { border-radius: 3px; font-weight: 900; }
+  body[data-theme="k"] .composer textarea { border-color: rgba(38,36,30,.26); background: #FFFFFF; color: #26241E; border-radius: 3px; }
+  body[data-theme="k"] .theme-tabs button.on { background: rgba(255,72,176,.14); color: #D6258F; }
+  body[data-theme="k"] h1 .ver-tag { background: #FBF6EC; color: #26241E; }
+  body[data-theme="k"] footer { color: #8A846F; }
 </style>
 </head>
 <body data-theme="a">
 
 <header>
-  <h1>四主题透明度调参台 <span class="ver-tag" id="verTag">v11 控制台 · 柔雾青绿</span></h1>
-  <p>左侧为真实界面 1:1 预览。顶栏主题切换器在 A 柔雾青绿 / B 水墨留白 / C 暗墨夜山 / D 青绿金碧 间平滑过渡；下方实时测算随之重算。</p>
+  <h1>十一主题透明度调参台 <span class="ver-tag" id="verTag">v15 控制台 · 柔雾青绿</span></h1>
+  <p>左侧为真实界面 1:1 预览。顶栏主题切换器在 A-K 十一主题（经典七版 + v15 现代艺术四版：H 墨格编辑部 / I 新构成主义 / J 夜航诗意 / K 拓印套色）间平滑过渡；下方实时测算随之重算。E/F/G 为无背景图实色主题，透明度滑杆对其不生效。</p>
 
   <div class="theme-tabs" role="tablist" aria-label="主题切换">
     <button data-theme="a" class="on" role="tab" title="A 柔雾青绿 · 冷蓝绿柔雾">
       <span class="chip" style="background:#C5DBE8;border-color:rgba(74,139,171,.5)"></span>A 柔雾青绿
     </button>
-    <button data-theme="b" role="tab" title="B 水墨留白 · 墨黑 · 楷体中缝">
-      <span class="chip" style="background:#ECE6D6;border-color:#999"></span>B 水墨留白
+    <button data-theme="b" role="tab" title="B 黑白瑞士 · 墨黑 · 直角黑线（ROUND11 翻转）">
+      <span class="chip" style="background:#FFFFFF;border-color:#666"></span>B 黑白瑞士
     </button>
     <button data-theme="c" role="tab" title="C 暗墨夜山 · 月光 · 钤印银线">
       <span class="chip" style="background:#0A1424;border-color:rgba(242,235,208,.4)"></span>C 暗墨夜山
     </button>
     <button data-theme="d" role="tab" title="D 青绿金碧 · 古绢黄底 + 宝石蓝/石绿/金泥">
       <span class="chip" style="background:#C9B58A;border-color:rgba(184,144,72,.6)"></span>D 青绿金碧
+    </button>
+    <button data-theme="e" role="tab" title="E 雨过天青 · 汝窑釉色 · 黛青单强调（无背景图）">
+      <span class="chip" style="background:#E3E9E5;border-color:rgba(58,107,92,.5)"></span>E 雨过天青
+    </button>
+    <button data-theme="f" role="tab" title="F 玄墨赭金 · 暖炭黑底 + 赭金单强调（无背景图）">
+      <span class="chip" style="background:#171512;border-color:rgba(194,149,90,.5)"></span>F 玄墨赭金
+    </button>
+    <button data-theme="g" role="tab" title="G 秋香宣纸 · 暖米纸底 + 秋香褐单强调（无背景图）">
+      <span class="chip" style="background:#EFE8D9;border-color:rgba(160,130,74,.5)"></span>G 秋香宣纸
+    </button>
+    <button data-theme="h" role="tab" title="H 墨格编辑部 · 纸白墨黑朱红 · 衬线 900（v15 现代艺术）">
+      <span class="chip" style="background:#FAF8F3;border-color:rgba(200,52,31,.6)"></span>H 墨格编辑部
+    </button>
+    <button data-theme="i" role="tab" title="I 新构成主义 · 米白 + 克莱因蓝/镉红/芥末 · 全直角硬阴影（v15）">
+      <span class="chip" style="background:#2B4BC7;border-color:rgba(20,19,16,.6)"></span>I 新构成主义
+    </button>
+    <button data-theme="j" role="tab" title="J 夜航诗意 · 近黑 + 荧光青/琥珀橙 · mono（v15）">
+      <span class="chip" style="background:#0B0C10;border-color:rgba(79,227,193,.6)"></span>J 夜航诗意
+    </button>
+    <button data-theme="k" role="tab" title="K 拓印套色 · 网点纸 + 荧光粉/靛蓝 · 衬线 900（v15）">
+      <span class="chip" style="background:#FF48B0;border-color:rgba(43,58,171,.6)"></span>K 拓印套色
     </button>
   </div>
 </header>
@@ -580,21 +943,39 @@
   </div>
 </main>
 
-<footer id="footCaption">v11 · 四主题切换 · 知识库切换 / 上传 / 控制台入口 · 资料清单 · <code>bg/Soft_misty / Ink_wash / Chinese_ink / Blue_green</code> 四套图各用其主图</footer>
+<footer id="footCaption">v15 · 十一主题切换（A-K）· 知识库切换 / 上传 / 控制台入口 · 资料清单 · <code>bg/Soft_misty / Ink_wash / Chinese_ink / Blue_green</code> 四套图各用其主图；E/F/G 为无背景图实色主题（不占 bg 资产）</footer>
 
 <script>
-/* v11：四个主题的底色 + 图色预设（青绿金碧 D 主题加石青 + 金碧两组强调色） */
+/* v13：七个主题的底色 + 图色 + 正文色（text = 主应用 --ink-hi）预设。
+   E/F/G 为无背景图实色主题（img 与 bg 同值 → 合成恒等于纯底色，op 滑杆对其无效）；
+   B 为 v12 黑白瑞士（白底黑字无图）。 */
 const THEMES = {
-  a: { name: 'A 柔雾青绿', bg:[232,239,243],    img:[200,210,221],
+  a: { name: 'A 柔雾青绿', bg:[232,239,243],    img:[200,210,221],    text:[31,58,77],
        presetOp:.14, presetTop:.20, presetMid:.62, presetWash:1.0, presetGrain:.04, presetKb:.65 },
-  b: { name: 'B 水墨留白', bg:[236,230,214], img:[170,168,160],
-       presetOp:.10, presetTop:.18, presetMid:.55, presetWash:.4,  presetGrain:.06, presetKb:.55 },
-  c: { name: 'C 暗墨夜山', bg:[10,20,36],    img:[195,180,150],
+  b: { name: 'B 黑白瑞士', bg:[255,255,255], img:[255,255,255],    text:[0,0,0],
+       presetOp:0,   presetTop:0,   presetMid:0,   presetWash:0,   presetGrain:0,   presetKb:.55 },
+  c: { name: 'C 暗墨夜山', bg:[10,20,36],    img:[195,180,150],    text:[232,226,200],
        presetOp:.16, presetTop:.16, presetMid:.55, presetWash:1.0, presetGrain:.04, presetKb:.65 },
-  d: { name: 'D 青绿金碧', bg:[201,181,138],    img:[135,120, 90],
+  d: { name: 'D 青绿金碧', bg:[201,181,138],    img:[135,120, 90],    text:[44,36,24],
        presetOp:.14, presetTop:.16, presetMid:.50, presetWash:.9,  presetGrain:.05, presetKb:.60 },
+  e: { name: 'E 雨过天青', bg:[227,233,229], img:[227,233,229],    text:[34,48,42],
+       presetOp:0,   presetTop:0,   presetMid:0,   presetWash:0,   presetGrain:.04, presetKb:.65 },
+  f: { name: 'F 玄墨赭金', bg:[23,21,18],   img:[23,21,18],       text:[233,226,212],
+       presetOp:0,   presetTop:0,   presetMid:0,   presetWash:0,   presetGrain:.04, presetKb:.60 },
+  g: { name: 'G 秋香宣纸', bg:[239,232,217], img:[239,232,217],    text:[50,44,32],
+       presetOp:0,   presetTop:0,   presetMid:0,   presetWash:0,   presetGrain:.04, presetKb:.65 },
+  /* v15 · 现代艺术四主题：无背景图实色主题（img=bg → 合成恒为纯底色） */
+  h: { name: 'H 墨格编辑部', bg:[250,248,243], img:[250,248,243],    text:[26,24,21],
+       presetOp:0,   presetTop:0,   presetMid:0,   presetWash:0,   presetGrain:.04, presetKb:.65 },
+  i: { name: 'I 新构成主义', bg:[244,241,234], img:[244,241,234],    text:[20,19,16],
+       presetOp:0,   presetTop:0,   presetMid:0,   presetWash:0,   presetGrain:0,   presetKb:.65 },
+  j: { name: 'J 夜航诗意', bg:[11,12,16],     img:[11,12,16],       text:[232,234,237],
+       presetOp:0,   presetTop:0,   presetMid:0,   presetWash:0,   presetGrain:.04, presetKb:.65 },
+  k: { name: 'K 拓印套色', bg:[251,246,236], img:[251,246,236],    text:[38,36,30],
+       presetOp:0,   presetTop:0,   presetMid:0,   presetWash:0,   presetGrain:.04, presetKb:.65 },
 };
-const TEXT_COLOR = [228, 225, 214];   // #E4E1D6
+/* 各主题背景图映射：B（v12 黑白瑞士）与 E/F/G 无图（null → 代码片段输出 none） */
+const BG_MAP = { a:'bg-a-soft', b:null, c:'bg-c-nightgold', d:'bg-d-jinbi', e:null, f:null, g:null, h:null, i:null, j:null, k:null };
 const BODY = document.body;
 
 const stage = document.querySelector('.stage');
@@ -617,8 +998,11 @@ function apply() {
   stage.style.setProperty('--v-mid', mid);
   stage.style.setProperty('--wash', S.wash.value);
   stage.style.setProperty('--grain', S.grain.value);
-  // AI 底图不透明度同步主应用（主应用 ink-tuner 读 localStorage.lj_ink_op）
-  try { localStorage.setItem('lj_ink_op', String(op)); } catch {}
+  // AI 底图不透明度同步主应用（主应用 ink-tuner 读 localStorage.lj_ink_op）。
+  // E/F/G 无背景图：跳过写入，避免把主应用浓度污染为 0（显式 0 在主应用是合法持久值）。
+  if (BG_MAP[current]) {
+    try { localStorage.setItem('lj_ink_op', String(op)); } catch {}
+  }
 
   document.getElementById('v-op').textContent    = op.toFixed(2);
   document.getElementById('v-top').textContent   = top.toFixed(2);
@@ -629,7 +1013,7 @@ function apply() {
   const effTop = op * (1 - top);
   const eff    = op * (1 - mid);
   const bg     = over(eff, T.bg, T.img);
-  const cr     = contrast(TEXT_COLOR, bg);
+  const cr     = contrast(T.text, bg);   // 正文色随主题（--ink-hi），不再用全局常量
 
   document.getElementById('m-top').textContent = effTop.toFixed(3);
   document.getElementById('m-eff').textContent = eff.toFixed(3);
@@ -653,7 +1037,7 @@ function apply() {
   /* 主题：${T.name}（当前） */
   opacity: ${op.toFixed(2)};
   filter: saturate(0.9);
-  background-image: url('../bg/${current === 'a' ? 'bg-a-soft' : current === 'b' ? 'bg-b-inkwash' : current === 'c' ? 'bg-c-nightgold' : 'bg-d-jinbi'}.webp');
+  background-image: ${BG_MAP[current] ? `url('../bg/${BG_MAP[current]}.webp')` : 'none; /* 实色主题：无背景图 */'};
 }
 .ink-veil {
   background: linear-gradient(180deg,
@@ -685,7 +1069,7 @@ function applyTheme(theme) {
   document.getElementById('v-kb').textContent = T.presetKb.toFixed(2);
 
   // 文案同步
-  document.getElementById('verTag').textContent = 'v11 控制台 · ' + T.name;
+  document.getElementById('verTag').textContent = 'v15 控制台 · ' + T.name;
   document.getElementById('presetTheme').textContent = T.name;
   document.getElementById('kbTheme').textContent = theme.toUpperCase();
   document.getElementById('mTheme').textContent = T.name;
@@ -753,10 +1137,11 @@ document.getElementById('code').addEventListener('click', () => {
   setTimeout(() => c.textContent = '', 1800);
 });
 
-/* 还原上次状态：主题读主应用的 localStorage.lj_theme；AI 底图浓度读主应用 lj_ink_op；知识库模式仍会话级 */
+/* 还原上次状态：主题读主应用的 localStorage.lj_theme；AI 底图浓度读主应用 lj_ink_op；知识库模式仍会话级。
+   lj_theme 若为 tuner 未登记的主题（理论上不会，防御一下）回落 'a'。 */
 try {
   const savedTheme = localStorage.getItem('lj_theme') || sessionStorage.getItem('lj_tuner_theme') || 'a';
-  applyTheme(savedTheme);
+  applyTheme(THEMES[savedTheme] ? savedTheme : 'a');
   const savedMode  = sessionStorage.getItem('lj_kb_mode') || 'project';
   applyKbMode(savedMode);
   // 若主应用已调过山水浓度，用它覆盖 A 主题预设的 op（仅当用户主动设置过）

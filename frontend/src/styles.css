@@ -1565,3 +1565,472 @@ body[data-theme="d"] .theme-tabs button.on {
   .theme-tabs button .chip { width: 14px; height: 14px; }
 }
 .theme-tabs button { white-space: nowrap; }
+
+/* ---------- 18. 落地页跨页过渡（v15 · View Transitions） ----------
+   纯追加：声明跨文档过渡，老浏览器自动忽略；不影响任何既有样式。 */
+@view-transition {
+  navigation: auto;
+}
+
+/* ---------- 19. v14 · 顶栏容量修复 + 交互可辨性 ----------
+   7 主题 tab + 项目双按钮 + 山水滑杆 + 调参台入口后，1440px 顶栏已挤爆
+   （nav「对话/可观测」被压缩成竖排圆形）。分档做减法，全部为追加规则，
+   不改 §7 基础规则；960px 以下沿用 §15 的 wrap 全宽布局。 */
+.topbar nav button,
+.topbar .btn,
+.ink-tuner,
+.who { white-space: nowrap; flex-shrink: 0; }
+.topbar select { min-width: 130px; }
+/* 「项目设置 / 新建项目」ghost 按钮从 ink-low 提到 ink-mid（浅底主题下 ink-low 过淡） */
+.topbar .btn-ghost { color: var(--ink-mid); }
+.topbar .btn-ghost:hover:not(:disabled) { color: var(--ink-hi); }
+
+/* ≤1760px：砍品牌副标题（约 130px 大头）+ 收滑杆 + 收角色徽章 */
+@media (max-width: 1760px) {
+  .topbar .brand small { display: none; }
+  .ink-tuner input[type='range'] { width: 64px; }
+  .who em { display: none; }
+}
+/* ≤1500px：滑杆收「山水」标签；各按钮收紧 padding */
+@media (max-width: 1500px) {
+  .ink-tuner .lab { display: none; }
+  .topbar .btn-sm { padding: 5px 10px; }
+  .topbar nav button { padding: 6px 14px; }
+}
+/* ≤1366px：隐藏用户名（退出按钮保留，角色信息非关键路径） */
+@media (max-width: 1366px) {
+  .who { display: none; }
+}
+/* ≤1240px：隐藏山水滑杆（调参台内仍可调，写入同一 localStorage 键） */
+@media (max-width: 1240px) {
+  .ink-tuner { display: none; }
+}
+/* ≤1140px：隐藏调参台入口（开发工具，非关键路径）；项目选择器收窄 */
+@media (max-width: 1140px) {
+  .console-entry { display: none; }
+  .topbar select { max-width: 150px; }
+}
+
+/* 主行动按钮 disabled 态可辨：从「雾金」改为明确的中性浅底 */
+.btn-ink:disabled {
+  background: rgba(228, 225, 214, 0.12);
+  color: var(--ink-low);
+  box-shadow: none;
+  border-color: var(--line);
+}
+
+/* E/F/G · composer 输入框边界补强（v13 只覆盖了面板与 CTA，漏了输入框；
+   浅底主题下 line-mid 16% 透明度边界感不足） */
+body[data-theme='e'] .composer textarea,
+body[data-theme='g'] .composer textarea {
+  border: 1.5px solid var(--line-hi);
+  background: var(--bg-panel);
+}
+body[data-theme='f'] .composer textarea {
+  border: 1.5px solid var(--line-hi);
+  background: var(--bg-raise);
+}
+
+/* ---------- 20. v14 · 登录页可辨性 + 会话列表键盘可达 ---------- */
+/* 品牌区副题与「登录以继续使用」从 ink-low 提到 ink-mid（浅雾底上 ink-low 过淡） */
+.auth-brand .brand-en,
+.auth-card > .muted { color: var(--ink-mid); }
+/* 登录按钮 disabled：与 .btn-ink:disabled 同一中性浅底方案，去掉雾化渐变 */
+.auth-card > button:disabled {
+  background: rgba(228, 225, 214, 0.12);
+  color: var(--ink-low);
+  box-shadow: none;
+}
+/* 会话列表项获得键盘焦点时的焦点环（配合 App.jsx role=button + tabIndex=0） */
+.sess-item:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+}
+/* ========== v15 · 现代艺术四主题（H 墨格编辑部 / I 新构成主义 / J 夜航诗意 / K 拓印套色） ==========
+   接入方式与 A-G 完全一致：body[data-theme] 覆盖 :root 令牌 + 个性覆盖选择器，旧 7 版零改动。
+   设计约束（反 AI 味延续 + 艺术方向差异化）：
+   1. 每主题一条主强调轴 + 一条副轴，实色面板、无毛玻璃（backdrop-filter: none）；
+   2. 无背景图（--ink-bg-url: none），主题气质纹理由 .ink-bg::after 内联 CSS 承载（网点/网格/星点），零图片资产；
+   3. 字体：H/K 标题走 Noto Serif SC（app.html 引入 CDN，离线回退系统宋体栈）；J 标题走 IBM Plex Mono；
+   4. 木轴隐藏（--wood-* 保留定义但不渲染，视觉语言由边框/纹理承担）；
+   5. 本节全部为「新增选择器 / 新增令牌」，不修改 A-G 共用的任何既有规则。 */
+
+/* ---- H 墨格编辑部：纸白 #FAF8F3 + 墨黑 #1A1815 + 朱红 #C8341F 单强调 ---- */
+body[data-theme="h"] {
+  --bg-deep:       #FAF8F3;
+  --bg-panel:      #FFFFFF;
+  --bg-raise:      #F1EDE3;
+
+  --ink-hi:        #1A1815;
+  --ink-mid:       #57534A;
+  --ink-low:       #6E6A5E;
+
+  --jade:          #C8341F;
+  --jade-deep:     #A32A18;
+  --pine:          #16A97C;
+
+  --gold:          #C8341F;
+  --gold-hi:       #A32A18;
+
+  --seal:          #C8341F;
+
+  --line:          rgba(26, 24, 21, 0.14);
+  --line-mid:      rgba(26, 24, 21, 0.24);
+  --line-hi:       rgba(26, 24, 21, 0.42);
+  --line-gold:     rgba(200, 52, 31, 0.42);
+  --line-jade:     rgba(200, 52, 31, 0.42);
+
+  --bg-rgb:        250, 248, 243;
+  --bg-panel-rgb:  255, 255, 255;
+  --bg-raise-rgb:  241, 237, 227;
+
+  --ink-bg-url:    none;
+  --ink-bg-pos:    center;
+  --ink-bg-size:   cover;
+  --ink-veil-top: 0;
+  --ink-veil-mid: 0;
+  --ink-veil-bot: 0;
+
+  --wood-top: #1A1815;
+  --wood-mid: #1A1815;
+  --wood-bot: #1A1815;
+
+  /* 编辑部近直角 */
+  --r-sm: 2px; --r-md: 3px; --r-lg: 4px; --r-xl: 6px; --r-pill: 3px;
+  --sh-soft: 0 1px 0 rgba(26, 24, 21, 0.07);
+  --sh-lift: 0 14px 34px rgba(26, 24, 21, 0.10);
+}
+/* H · 实色面板去毛玻璃 */
+body[data-theme="h"] .chat-col,
+body[data-theme="h"] .side-col,
+body[data-theme="h"] .trace-panel,
+body[data-theme="h"] .sessions,
+body[data-theme="h"] .auth-card { background: var(--bg-panel); backdrop-filter: none; }
+body[data-theme="h"] .modal-mask { backdrop-filter: none; }
+/* H · 背景层全静：无图无晕染，仅保留纸感 grain；木轴隐藏（顶栏实线承担分界） */
+body[data-theme="h"] .ink-photo,
+body[data-theme="h"] .ink-veil,
+body[data-theme="h"] .ink-blob,
+body[data-theme="h"] .ink-divider,
+body[data-theme="h"] .ink-stamp,
+body[data-theme="h"] .wood-roll { display: none; }
+/* H · 顶栏分隔改编辑部实墨线（1.5px） */
+body[data-theme="h"] .topbar::after {
+  background: var(--ink-hi); opacity: 1; height: 1.5px;
+}
+/* H · 标题衬线化：品牌 / 空态标题 / 弹窗标题 / 侧栏标题走 Noto Serif SC 重字重 */
+body[data-theme="h"] {
+  --font-kai: "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
+}
+body[data-theme="h"] .topbar .brand,
+body[data-theme="h"] .empty-state h2,
+body[data-theme="h"] .modal-card h3,
+body[data-theme="h"] .panel-head h3,
+body[data-theme="h"] .sess-head .t { font-weight: 900; letter-spacing: 0.18em; }
+/* H · CTA 改墨黑实底 + 纸白字（编辑部黑块按钮） */
+body[data-theme="h"] .btn-ink,
+body[data-theme="h"] .auth-card > button {
+  background: var(--ink-hi);
+  color: #FAF8F3;
+  box-shadow: none;
+}
+body[data-theme="h"] .btn-ink:hover:not(:disabled),
+body[data-theme="h"] .auth-card > button:hover:not(:disabled) {
+  background: var(--jade); color: #FAF8F3; box-shadow: none;
+}
+body[data-theme="h"] .btn-ink:disabled { background: rgba(26, 24, 21, 0.08); color: var(--ink-low); }
+/* H · 消息印记方章化（直角 + 衬线） */
+body[data-theme="h"] .msg .msg-mark { border-radius: 2px; font-family: "Noto Serif SC", "Songti SC", SimSun, serif; font-weight: 900; }
+body[data-theme="h"] :focus-visible { outline-color: rgba(200, 52, 31, 0.60); }
+/* H · 主题切换 tab 选中态（朱红） */
+body[data-theme="h"] .theme-tabs button.on {
+  background: rgba(200, 52, 31, 0.12); color: #A32A18;
+  box-shadow: inset 0 0 0 1.5px rgba(200, 52, 31, 0.55);
+}
+
+/* ---- I 新构成主义：米白 #F4F1EA + 克莱因蓝 #2B4BC7 + 镉红 #D9402A + 芥末 #DFA51E ---- */
+body[data-theme="i"] {
+  --bg-deep:       #F4F1EA;
+  --bg-panel:      #FDFCF9;
+  --bg-raise:      #ECE8DD;
+
+  --ink-hi:        #141310;
+  --ink-mid:       #3E3B33;
+  --ink-low:       #6E6A5E;
+
+  --jade:          #2B4BC7;
+  --jade-deep:     #1E3699;
+  --pine:          #16A97C;
+
+  --gold:          #D9402A;
+  --gold-hi:       #B93322;
+
+  --seal:          #D9402A;
+
+  --line:          rgba(20, 19, 16, 0.24);
+  --line-mid:      rgba(20, 19, 16, 0.60);
+  --line-hi:       #141310;
+  --line-gold:     rgba(43, 75, 199, 0.55);
+  --line-jade:     rgba(43, 75, 199, 0.55);
+
+  --bg-rgb:        244, 241, 234;
+  --bg-panel-rgb:  253, 252, 249;
+  --bg-raise-rgb:  236, 232, 221;
+
+  --ink-bg-url:    none;
+  --ink-veil-top: 0;
+  --ink-veil-mid: 0;
+  --ink-veil-bot: 0;
+
+  --wood-top: #141310;
+  --wood-mid: #141310;
+  --wood-bot: #141310;
+
+  /* 构成主义全直角 + 硬阴影 */
+  --r-sm: 0px; --r-md: 0px; --r-lg: 0px; --r-xl: 0px; --r-pill: 0px;
+  --sh-soft: 3px 3px 0 rgba(20, 19, 16, 0.9);
+  --sh-lift: 6px 6px 0 rgba(20, 19, 16, 0.9);
+}
+/* I · 实色面板去毛玻璃 */
+body[data-theme="i"] .chat-col,
+body[data-theme="i"] .side-col,
+body[data-theme="i"] .trace-panel,
+body[data-theme="i"] .sessions,
+body[data-theme="i"] .auth-card { background: var(--bg-panel); backdrop-filter: none; }
+body[data-theme="i"] .modal-mask { backdrop-filter: none; }
+/* I · 背景层全静 + 网格纸纹理（48px 方格，极淡） */
+body[data-theme="i"] .ink-photo,
+body[data-theme="i"] .ink-veil,
+body[data-theme="i"] .ink-blob,
+body[data-theme="i"] .ink-divider,
+body[data-theme="i"] .ink-stamp,
+body[data-theme="i"] .wood-roll { display: none; }
+body[data-theme="i"] .ink-bg::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(20, 19, 16, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(20, 19, 16, 0.045) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+/* I · 顶栏分隔改 2.5px 实黑粗线 */
+body[data-theme="i"] .topbar::after { background: #141310; opacity: 1; height: 2.5px; }
+/* I · 按钮直角 + hover 硬阴影位移（构成主义签名交互） */
+body[data-theme="i"] .btn,
+body[data-theme="i"] .composer .send,
+body[data-theme="i"] .auth-card > button { border-radius: 0; }
+body[data-theme="i"] .btn:hover:not(:disabled) { transform: translate(-2px, -2px); }
+body[data-theme="i"] .btn-ink,
+body[data-theme="i"] .auth-card > button {
+  background: var(--gold); box-shadow: none;
+}
+body[data-theme="i"] .btn-ink:hover:not(:disabled),
+body[data-theme="i"] .auth-card > button:hover:not(:disabled) {
+  background: var(--gold-hi); box-shadow: 4px 4px 0 #141310; transform: translate(-2px, -2px);
+}
+body[data-theme="i"] .btn-ink:disabled { background: rgba(20, 19, 16, 0.08); color: var(--ink-low); transform: none; box-shadow: none; }
+/* I · 消息气泡直角 + 印记色块化 */
+body[data-theme="i"] .msg .bubble { border-radius: 0; }
+body[data-theme="i"] .msg.user .bubble { border: 2px solid #141310; }
+body[data-theme="i"] .msg:not(.user) .bubble { border: 2px solid #141310; }
+body[data-theme="i"] .msg .msg-mark { border-radius: 0; border: 2px solid #141310; font-weight: 700; }
+body[data-theme="i"] :focus-visible { outline-color: rgba(43, 75, 199, 0.70); }
+/* I · 主题切换 tab 选中态（克莱因蓝） */
+body[data-theme="i"] .theme-tabs button.on {
+  background: #2B4BC7; color: #FDFCF9;
+  box-shadow: inset 0 0 0 2px #141310;
+}
+
+/* ---- J 夜航诗意：近黑 #0B0C10 + 冷白 #E8EAED + 荧光青 #4FE3C1 + 琥珀橙 #FF7A45 ---- */
+body[data-theme="j"] {
+  --bg-deep:       #0B0C10;
+  --bg-panel:      #12141A;
+  --bg-raise:      #181B22;
+
+  --ink-hi:        #E8EAED;
+  --ink-mid:       #9BA3AD;
+  --ink-low:       #76808B;
+
+  --jade:          #4FE3C1;
+  --jade-deep:     #2CB99A;
+  --pine:          #4FE3C1;
+
+  --gold:          #4FE3C1;
+  --gold-hi:       #7FF0D6;
+
+  --seal:          #FF7A45;
+
+  --line:          rgba(232, 234, 237, 0.09);
+  --line-mid:      rgba(232, 234, 237, 0.18);
+  --line-hi:      rgba(232, 234, 237, 0.32);
+  --line-gold:     rgba(79, 227, 193, 0.45);
+  --line-jade:     rgba(79, 227, 193, 0.45);
+
+  --bg-rgb:        11, 12, 16;
+  --bg-panel-rgb:  18, 20, 26;
+  --bg-raise-rgb:  24, 27, 34;
+
+  --ink-bg-url:    none;
+  --ink-veil-top: 0;
+  --ink-veil-mid: 0;
+  --ink-veil-bot: 0;
+
+  --wood-top: #4FE3C1;
+  --wood-mid: #2CB99A;
+  --wood-bot: #1A1815;
+
+  --r-sm: 2px; --r-md: 4px; --r-lg: 6px; --r-xl: 8px; --r-pill: 4px;
+  --sh-soft: 0 1px 3px rgba(0, 0, 0, 0.50);
+  --sh-lift: 0 18px 44px rgba(0, 0, 0, 0.55);
+}
+/* J · 实色面板去毛玻璃 */
+body[data-theme="j"] .chat-col,
+body[data-theme="j"] .side-col,
+body[data-theme="j"] .trace-panel,
+body[data-theme="j"] .sessions,
+body[data-theme="j"] .auth-card { background: var(--bg-panel); backdrop-filter: none; }
+body[data-theme="j"] .modal-mask { backdrop-filter: none; }
+/* J · 背景层全静 + 星点层（六组 radial 星点，青/橙/白三色） */
+body[data-theme="j"] .ink-photo,
+body[data-theme="j"] .ink-veil,
+body[data-theme="j"] .ink-blob,
+body[data-theme="j"] .ink-divider,
+body[data-theme="j"] .ink-stamp,
+body[data-theme="j"] .wood-roll { display: none; }
+body[data-theme="j"] .ink-bg::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 12% 22%, rgba(232, 234, 237, 0.45), transparent 100%),
+    radial-gradient(1px 1px at 68% 12%, rgba(232, 234, 237, 0.30), transparent 100%),
+    radial-gradient(1.5px 1.5px at 84% 42%, rgba(79, 227, 193, 0.45), transparent 100%),
+    radial-gradient(1px 1px at 32% 68%, rgba(232, 234, 237, 0.25), transparent 100%),
+    radial-gradient(1px 1px at 52% 86%, rgba(255, 122, 69, 0.35), transparent 100%),
+    radial-gradient(1.5px 1.5px at 8% 82%, rgba(232, 234, 237, 0.22), transparent 100%);
+}
+/* J · 标题 mono 化：品牌 / 空态标题走 IBM Plex Mono（夜航仪表气质） */
+body[data-theme="j"] {
+  --font-kai: "IBM Plex Mono", Consolas, monospace;
+}
+body[data-theme="j"] .topbar .brand,
+body[data-theme="j"] .empty-state h2,
+body[data-theme="j"] .panel-head h3 { font-weight: 400; letter-spacing: 0.16em; }
+/* J · CTA 青底黑字 + hover 琥珀（信号切换） */
+body[data-theme="j"] .btn-ink,
+body[data-theme="j"] .auth-card > button {
+  background: var(--gold); box-shadow: none;
+}
+body[data-theme="j"] .btn-ink:hover:not(:disabled),
+body[data-theme="j"] .auth-card > button:hover:not(:disabled) {
+  background: var(--seal); color: #0B0C10; box-shadow: 0 0 26px rgba(255, 122, 69, 0.30);
+}
+body[data-theme="j"] .btn-ink:disabled { background: rgba(232, 234, 237, 0.08); color: var(--ink-low); }
+/* J · 会话选中项：青色内嵌线（导航日志） */
+body[data-theme="j"] .sess-item.on { box-shadow: inset 2px 0 0 var(--jade); }
+/* J · 消息印记：细线方章 */
+body[data-theme="j"] .msg .msg-mark { border-radius: 2px; font-family: "IBM Plex Mono", Consolas, monospace; }
+body[data-theme="j"] :focus-visible { outline-color: rgba(79, 227, 193, 0.65); }
+/* J · 主题切换 tab 选中态（荧光青） */
+body[data-theme="j"] .theme-tabs button.on {
+  background: rgba(79, 227, 193, 0.14); color: #4FE3C1;
+  box-shadow: inset 0 0 0 1px rgba(79, 227, 193, 0.50);
+}
+
+/* ---- K 拓印套色：纸白 #FBF6EC + 靛蓝 #2B3AAB + 荧光粉 #FF48B0 + 薄荷 #16A97C ---- */
+body[data-theme="k"] {
+  --bg-deep:       #FBF6EC;
+  --bg-panel:      #FFFFFF;
+  --bg-raise:      #F3EDDF;
+
+  --ink-hi:        #26241E;
+  --ink-mid:       #6E6A5C;
+  --ink-low:       #8A846F;
+
+  --jade:          #2B3AAB;
+  --jade-deep:     #1F2B85;
+  --pine:          #16A97C;
+
+  --gold:          #FF48B0;
+  --gold-hi:       #E9379E;
+
+  --seal:          #D9402A;
+
+  --line:          rgba(38, 36, 30, 0.16);
+  --line-mid:      rgba(38, 36, 30, 0.26);
+  --line-hi:       rgba(38, 36, 30, 0.40);
+  --line-gold:     rgba(255, 72, 176, 0.50);
+  --line-jade:     rgba(43, 58, 171, 0.50);
+
+  --bg-rgb:        251, 246, 236;
+  --bg-panel-rgb:  255, 255, 255;
+  --bg-raise-rgb:  243, 237, 223;
+
+  --ink-bg-url:    none;
+  --ink-veil-top: 0;
+  --ink-veil-mid: 0;
+  --ink-veil-bot: 0;
+
+  --wood-top: #2B3AAB;
+  --wood-mid: #FF48B0;
+  --wood-bot: #26241E;
+
+  --r-sm: 2px; --r-md: 3px; --r-lg: 5px; --r-xl: 8px; --r-pill: 4px;
+  --sh-soft: 0 1px 3px rgba(38, 36, 30, 0.10);
+  --sh-lift: 0 14px 34px rgba(38, 36, 30, 0.14);
+}
+/* K · 实色面板去毛玻璃 + 关键容器套色错位阴影（签名） */
+body[data-theme="k"] .chat-col,
+body[data-theme="k"] .side-col,
+body[data-theme="k"] .trace-panel,
+body[data-theme="k"] .sessions,
+body[data-theme="k"] .auth-card { background: var(--bg-panel); backdrop-filter: none; }
+body[data-theme="k"] .modal-mask { backdrop-filter: none; }
+body[data-theme="k"] .chat-col,
+body[data-theme="k"] .sessions,
+body[data-theme="k"] .side-col { box-shadow: 4px 4px 0 rgba(255, 72, 176, 0.30); }
+/* K · 背景层全静 + 双色网点纸（粉/靛细网点） */
+body[data-theme="k"] .ink-photo,
+body[data-theme="k"] .ink-veil,
+body[data-theme="k"] .ink-blob,
+body[data-theme="k"] .ink-divider,
+body[data-theme="k"] .ink-stamp,
+body[data-theme="k"] .wood-roll { display: none; }
+body[data-theme="k"] .ink-bg::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    radial-gradient(rgba(43, 58, 171, 0.05) 1px, transparent 1.4px),
+    radial-gradient(rgba(255, 72, 176, 0.04) 1px, transparent 1.4px);
+  background-size: 9px 9px, 13px 13px;
+  background-position: 0 0, 4px 6px;
+}
+/* K · 标题衬线 900（印刷海报气质） */
+body[data-theme="k"] {
+  --font-kai: "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
+}
+body[data-theme="k"] .topbar .brand,
+body[data-theme="k"] .empty-state h2,
+body[data-theme="k"] .modal-card h3 { font-weight: 900; letter-spacing: 0.14em; }
+/* K · CTA 荧光粉实底（深字继承 #17222B，对比 4.66:1） */
+body[data-theme="k"] .btn-ink,
+body[data-theme="k"] .auth-card > button {
+  background: var(--gold); box-shadow: 3px 3px 0 rgba(43, 58, 171, 0.85);
+}
+body[data-theme="k"] .btn-ink:hover:not(:disabled),
+body[data-theme="k"] .auth-card > button:hover:not(:disabled) {
+  background: var(--gold-hi); transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 rgba(43, 58, 171, 0.85);
+}
+body[data-theme="k"] .btn-ink:disabled { background: rgba(38, 36, 30, 0.08); color: var(--ink-low); box-shadow: none; }
+/* K · 会话选中项：靛蓝内嵌线 + 粉底 */
+body[data-theme="k"] .sess-item.on {
+  background: rgba(255, 72, 176, 0.10);
+  box-shadow: inset 3px 0 0 var(--jade);
+}
+/* K · 消息印记：套色方章 */
+body[data-theme="k"] .msg .msg-mark { border-radius: 3px; font-family: "Noto Serif SC", "Songti SC", SimSun, serif; font-weight: 900; }
+body[data-theme="k"] :focus-visible { outline-color: rgba(43, 58, 171, 0.65); }
+/* K · 主题切换 tab 选中态（荧光粉） */
+body[data-theme="k"] .theme-tabs button.on {
+  background: rgba(255, 72, 176, 0.14); color: #D6258F;
+  box-shadow: inset 0 0 0 1.5px rgba(255, 72, 176, 0.55);
+}
+
+/* v15 · 四主题全局微过渡（沿用既有 body * transition 令牌，无需追加） */

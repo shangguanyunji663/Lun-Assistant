@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>样图 C · 夜航诗意 — 论匠</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&family=Noto+Sans+SC:wght@300;400;700&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   样图 C · 夜航诗意（Night Flight）
+   深空暗色：近黑底 / 冷白字 / 荧光青+橙双强调
+   等高线与星图细纹 / 打字机标题 / 信号灯节点
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --void: #0B0C10;
+  --panel: #12141A;
+  --raise: #181B22;
+  --ice: #E8EAED;
+  --mid: #9BA3AD;
+  --low: #5E6670;
+  --cyan: #4FE3C1;
+  --amber: #FF7A45;
+  --line: rgba(232, 234, 237, 0.10);
+  --line-mid: rgba(232, 234, 237, 0.20);
+  --mono: "IBM Plex Mono", Consolas, monospace;
+  --sans: "Noto Sans SC", -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+}
+html { scroll-behavior: smooth; }
+body { background: var(--void); color: var(--ice); font-family: var(--sans); font-size: 15px; line-height: 1.75; }
+::selection { background: var(--cyan); color: var(--void); }
+
+/* 星点层 */
+.stars { position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    radial-gradient(1px 1px at 12% 22%, rgba(232,234,237,0.5), transparent 100%),
+    radial-gradient(1px 1px at 68% 12%, rgba(232,234,237,0.35), transparent 100%),
+    radial-gradient(1.5px 1.5px at 84% 42%, rgba(79,227,193,0.5), transparent 100%),
+    radial-gradient(1px 1px at 32% 68%, rgba(232,234,237,0.3), transparent 100%),
+    radial-gradient(1px 1px at 52% 86%, rgba(255,122,69,0.4), transparent 100%),
+    radial-gradient(1.5px 1.5px at 8% 82%, rgba(232,234,237,0.25), transparent 100%);
+}
+main { position: relative; z-index: 1; }
+
+/* ---- 顶栏 ---- */
+.nf-header {
+  display: flex; align-items: center; gap: 18px;
+  padding: 0 5vw; height: 62px;
+  border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; background: rgba(11, 12, 16, 0.82); backdrop-filter: blur(14px); z-index: 10;
+  font-family: var(--mono);
+}
+.nf-header .sig { display: flex; align-items: center; gap: 9px; font-size: 14px; letter-spacing: 0.3em; font-weight: 500; }
+.nf-header .sig i { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); box-shadow: 0 0 10px var(--cyan); animation: pulse 2.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0.45; } }
+.nf-header nav { margin-left: auto; display: flex; gap: 30px; }
+.nf-header nav a { color: var(--mid); text-decoration: none; font-size: 12.5px; letter-spacing: 0.14em; transition: color 0.25s var(--ease); }
+.nf-header nav a:hover { color: var(--cyan); }
+.nf-header .cta {
+  font-size: 12px; letter-spacing: 0.1em; color: var(--void);
+  background: var(--cyan); text-decoration: none; padding: 9px 20px; font-weight: 500;
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  transition: background 0.25s var(--ease);
+}
+.nf-header .cta:hover { background: var(--amber); }
+
+/* ---- Hero：夜航 ---- */
+.nf-hero { position: relative; padding: 13vh 5vw 10vh; overflow: hidden; }
+.contours { position: absolute; right: -6vw; top: 4vh; opacity: 0.5; pointer-events: none; }
+.nf-hero .coords {
+  font-family: var(--mono); font-size: 11px; color: var(--low); letter-spacing: 0.3em; margin-bottom: 30px;
+  display: flex; align-items: center; gap: 14px;
+}
+.nf-hero .coords::before { content: ''; width: 52px; height: 1px; background: var(--cyan); }
+.nf-hero h1 {
+  font-family: var(--mono); font-weight: 300;
+  font-size: clamp(34px, 6vw, 78px); line-height: 1.22; letter-spacing: 0.04em;
+  min-height: 3.6em;
+}
+.nf-hero h1 .accent { color: var(--cyan); }
+.nf-hero h1 .warm { color: var(--amber); }
+.nf-hero h1 .caret { display: inline-block; width: 0.55em; height: 1.05em; background: var(--cyan); vertical-align: -0.12em; animation: blink 1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.nf-hero .sub { margin-top: 32px; max-width: 36em; color: var(--mid); font-size: 15.5px; font-weight: 300; line-height: 2.05; }
+.nf-hero .sub b { color: var(--ice); font-weight: 400; }
+.nf-hero .cta-row { margin-top: 40px; display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+.btn-nf {
+  font-family: var(--mono); font-size: 13px; letter-spacing: 0.12em; text-decoration: none;
+  padding: 14px 32px; transition: all 0.25s var(--ease);
+}
+.btn-nf.solid {
+  background: var(--cyan); color: var(--void); font-weight: 500;
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+.btn-nf.solid:hover { background: var(--amber); box-shadow: 0 0 34px rgba(255, 122, 69, 0.35); }
+.btn-nf.ghost { color: var(--mid); border: 1px solid var(--line-mid); }
+.btn-nf.ghost:hover { color: var(--cyan); border-color: var(--cyan); }
+
+/* ---- 数据带 ---- */
+.readout { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); display: grid; grid-template-columns: repeat(4, 1fr); }
+.ro { padding: 34px 5vw; border-left: 1px solid var(--line); transition: background 0.3s var(--ease); }
+.ro:first-child { border-left: none; }
+.ro:hover { background: rgba(79, 227, 193, 0.04); }
+.ro .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.3em; color: var(--low); margin-bottom: 12px; }
+.ro .v { font-family: var(--mono); font-size: clamp(26px, 3.4vw, 40px); font-weight: 300; }
+.ro .v i { font-style: normal; font-size: 0.5em; color: var(--low); margin-left: 4px; }
+.ro:nth-child(1) .v { color: var(--cyan); }
+.ro:nth-child(2) .v { color: var(--ice); }
+.ro:nth-child(3) .v { color: var(--amber); }
+.ro:nth-child(4) .v { color: var(--ice); }
+.ro .d { font-size: 11.5px; color: var(--low); margin-top: 10px; line-height: 1.7; }
+
+/* ---- 能力：航段 ---- */
+.legs { padding: 10vh 5vw; }
+.legs .head { font-family: var(--mono); font-size: 11px; letter-spacing: 0.4em; color: var(--low); margin-bottom: 7vh; display: flex; align-items: center; gap: 16px; }
+.legs .head::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+.leg {
+  display: grid; grid-template-columns: 92px 1fr auto; gap: 28px; align-items: baseline;
+  padding: 30px 4px; border-bottom: 1px solid var(--line);
+  transition: background 0.3s var(--ease), padding 0.3s var(--ease);
+  cursor: pointer;
+}
+.leg:first-of-type { border-top: 1px solid var(--line); }
+.leg:hover { background: rgba(79, 227, 193, 0.035); padding-left: 20px; }
+.leg .code { font-family: var(--mono); font-size: 13px; color: var(--low); letter-spacing: 0.12em; }
+.leg:hover .code { color: var(--cyan); }
+.leg .t { font-size: clamp(17px, 2.2vw, 24px); font-weight: 400; letter-spacing: 0.06em; }
+.leg .t small { display: block; font-size: 12.5px; color: var(--low); font-weight: 300; margin-top: 7px; letter-spacing: 0.02em; }
+.leg .st { font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.16em; color: var(--low); display: flex; align-items: center; gap: 8px; }
+.leg .st i { width: 7px; height: 7px; border-radius: 50%; background: var(--low); }
+.leg:hover .st i { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+
+/* ---- 工作台一角：夜航舱 ---- */
+.cockpit-sec { padding: 10vh 5vw 12vh; }
+.cockpit-sec .en { font-family: var(--mono); font-size: 11px; letter-spacing: 0.4em; color: var(--low); margin-bottom: 16px; }
+.cockpit-sec h2 { font-size: clamp(26px, 4vw, 42px); font-weight: 300; letter-spacing: 0.04em; margin-bottom: 10px; }
+.cockpit-sec h2 b { color: var(--cyan); font-weight: 300; }
+.cockpit-sec .sub { color: var(--mid); font-size: 13.5px; font-weight: 300; margin-bottom: 6vh; }
+.cockpit {
+  border: 1px solid var(--line-mid);
+  background: linear-gradient(180deg, rgba(18, 20, 26, 0.92), rgba(11, 12, 16, 0.92));
+  display: grid; grid-template-columns: 216px 1fr 262px;
+  min-height: 470px;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
+}
+.cockpit .p + .p { border-left: 1px solid var(--line); }
+.cockpit .p-h {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.3em;
+  color: var(--low); padding: 14px 16px 12px; border-bottom: 1px solid var(--line);
+  display: flex; justify-content: space-between;
+}
+.cockpit .p-h b { color: var(--cyan); font-weight: 400; }
+.navlog .it { padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--mid); cursor: pointer; transition: all 0.25s var(--ease); position: relative; }
+.navlog .it:hover { color: var(--ice); background: rgba(79, 227, 193, 0.04); }
+.navlog .it.on { color: var(--ice); background: rgba(79, 227, 193, 0.06); box-shadow: inset 2px 0 0 var(--cyan); }
+.navlog .it small { display: block; font-family: var(--mono); font-size: 9.5px; color: var(--low); margin-top: 3px; }
+.beam { padding: 24px 26px; }
+.beam .status { display: flex; gap: 10px; align-items: center; margin-bottom: 20px; }
+.beam .status .lamp { font-family: var(--mono); font-size: 10px; letter-spacing: 0.2em; color: var(--amber); border: 1px solid rgba(255, 122, 69, 0.45); padding: 4px 11px; }
+.beam .status h3 { font-size: 16px; font-weight: 400; letter-spacing: 0.04em; }
+.beam p { font-size: 14px; font-weight: 300; line-height: 2.1; color: #C6CBD2; margin-bottom: 15px; }
+.beam p .ck { color: var(--cyan); }
+.beam p .am { color: var(--amber); }
+.beam .caret { display: inline-block; width: 8px; height: 15px; background: var(--cyan); vertical-align: -2px; animation: blink 1.05s steps(1) infinite; }
+.gauges { border-top: 1px solid var(--line); padding: 16px; }
+.gauge { margin-bottom: 15px; }
+.gauge .row { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 10px; color: var(--low); letter-spacing: 0.14em; margin-bottom: 7px; }
+.gauge .row b { color: var(--cyan); font-weight: 400; }
+.gauge .track { height: 3px; background: var(--raise); position: relative; overflow: hidden; }
+.gauge .fill { position: absolute; inset: 0; right: auto; background: linear-gradient(90deg, var(--cyan), rgba(79,227,193,0.25)); }
+.gauge:nth-child(2) .fill { width: 92%; }
+.gauge:nth-child(3) .fill { width: 67%; background: linear-gradient(90deg, var(--amber), rgba(255,122,69,0.25)); }
+.gauge:nth-child(4) .fill { width: 100%; }
+.telemetry { padding: 14px 16px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 10.5px; color: var(--low); }
+.tl { display: flex; gap: 10px; padding: 5px 0; align-items: baseline; letter-spacing: 0.06em; }
+.tl i { width: 6px; height: 6px; border-radius: 50%; background: #3A3F48; align-self: center; flex-shrink: 0; }
+.tl.ok i { background: var(--cyan); }
+.tl.run i { background: var(--amber); box-shadow: 0 0 7px var(--amber); }
+.tl.run { color: var(--ice); }
+.tl .ms { margin-left: auto; color: #3E4450; }
+.tl.run .ms { color: var(--amber); }
+
+/* ---- 页脚 ---- */
+.nf-foot { border-top: 1px solid var(--line); padding: 7vh 5vw; display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 20px; }
+.nf-foot .sig2 { font-family: var(--mono); font-size: clamp(22px, 3.4vw, 36px); font-weight: 300; letter-spacing: 0.3em; color: var(--ice); }
+.nf-foot .sig2 b { color: var(--cyan); font-weight: 300; }
+.nf-foot .meta { font-family: var(--mono); font-size: 10.5px; color: var(--low); letter-spacing: 0.14em; text-align: right; line-height: 2.1; }
+
+@media (max-width: 900px) {
+  .nf-header nav { display: none; }
+  .contours { opacity: 0.25; }
+  .readout { grid-template-columns: 1fr 1fr; }
+  .ro:nth-child(3) { border-left: none; }
+  .ro { border-top: 1px solid var(--line); }
+  .ro:nth-child(-n+2) { border-top: none; }
+  .cockpit { grid-template-columns: 1fr; }
+  .cockpit .p + .p { border-left: none; border-top: 1px solid var(--line); }
+  .leg { grid-template-columns: 64px 1fr; }
+  .leg .st { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="stars" aria-hidden="true"></div>
+
+<header class="nf-header">
+  <span class="sig"><i></i>论匠 · NIGHT FLIGHT</span>
+  <nav>
+    <a href="#legs">航段</a>
+    <a href="#cockpit">工作台</a>
+    <a href="#">遥测</a>
+  </nav>
+  <a class="cta" href="#">进入工作台 →</a>
+</header>
+
+<main>
+<section class="nf-hero">
+  <svg class="contours" width="560" height="560" viewBox="0 0 560 560" aria-hidden="true">
+    <g fill="none" stroke="rgba(232,234,237,0.10)" stroke-width="1">
+      <path d="M40 300 Q140 180 280 240 T540 200"/>
+      <path d="M20 350 Q150 230 290 290 T550 250"/>
+      <path d="M0 400 Q160 280 300 340 T560 300"/>
+      <path d="M60 250 Q170 140 300 190 T540 150"/>
+      <path d="M90 200 Q190 100 310 140 T520 100"/>
+    </g>
+  </svg>
+  <p class="coords">N 31°48′ · E 119°57′ — 2026 秋季版</p>
+  <h1><span id="type"></span><span class="caret"></span></h1>
+  <p class="sub">六个环节，一支<b>智能体编队</b>。主控识别意图、拆解任务、按环节路由给专项角色；<b>每一次产出都经你确认</b>，像夜航——机器读仪表，人握方向。</p>
+  <div class="cta-row">
+    <a class="btn-nf solid" href="#">进入工作台 →</a>
+    <a class="btn-nf ghost" href="#">GitHub 源码</a>
+  </div>
+</section>
+
+<section class="readout">
+  <div class="ro"><div class="k">INTENT / 意图分类</div><div class="v">100<i>%</i></div><div class="d">Top-1 · 50 条意图集 · 56ms/条</div></div>
+  <div class="ro"><div class="k">RECALL@5 / 检索</div><div class="v">100<i>%</i></div><div class="d">20 条简单集 · 目标 ≥90%</div></div>
+  <div class="ro"><div class="k">REGRESSION / 回归</div><div class="v">16<i>/16</i></div><div class="d">S1–S7 七大必测场景</div></div>
+  <div class="ro"><div class="k">OFFLINE TESTS / 离线</div><div class="v">89<i>项</i></div><div class="d">治理 / 模型 / 改写 / API 集成</div></div>
+</section>
+
+<section class="legs" id="legs">
+  <div class="head">FLIGHT LEGS · 六个航段</div>
+  <div class="leg"><span class="code">LEG-01</span><span class="t">选题立项<small>可行性评估 · 创新点定位 · 开题报告</small></span><span class="st"><i></i>AUTO</span></div>
+  <div class="leg"><span class="code">LEG-02</span><span class="t">文献综述<small>混合检索 · RRF 融合 · 引用核对</small></span><span class="st"><i></i>AUTO</span></div>
+  <div class="leg"><span class="code">LEG-03</span><span class="t">方法与写作<small>章节规划 · 初稿起草 · 逐段改写</small></span><span class="st"><i></i>CO-PILOT</span></div>
+  <div class="leg"><span class="code">LEG-04</span><span class="t">格式规范<small>GB/T 7714 · 图表编号 · 样式套版</small></span><span class="st"><i></i>AUTO</span></div>
+  <div class="leg"><span class="code">LEG-05</span><span class="t">查重降重<small>语义改写 · 引用边界 · 风险标注</small></span><span class="st"><i></i>CO-PILOT</span></div>
+  <div class="leg"><span class="code">LEG-06</span><span class="t">答辩准备<small>讲稿生成 · 预演问答 · 材料清单</small></span><span class="st"><i></i>MANUAL</span></div>
+</section>
+
+<section class="cockpit-sec" id="cockpit">
+  <p class="en">COCKPIT · 工作台样张</p>
+  <h2>仪表在左，<b>方向在你</b>。</h2>
+  <p class="sub">左：导航日志 · 中：生成舱（青色为已确认、橙色为待确认）· 右：遥测与管线信号灯。</p>
+  <div class="cockpit">
+    <div class="p navlog">
+      <div class="p-h"><span>NAV LOG</span><b>04</b></div>
+      <div class="it on">选题方向探索<small>FLT-001 · 4 msgs</small></div>
+      <div class="it">文献检索<small>FLT-002 · 12 msgs</small></div>
+      <div class="it">方法论初稿<small>FLT-003 · 8 msgs</small></div>
+      <div class="it">开题报告<small>FLT-004 · 21 msgs</small></div>
+    </div>
+    <div class="p beam">
+      <div class="p-h"><span>GENERATION BAY · 第三章 3.2</span><span>AUTOSAVE</span></div>
+      <div class="status"><span class="lamp">● DRAFT PENDING</span><h3>3.2 混合检索的召回策略</h3></div>
+      <p>本项目采用<span class="ck">向量与关键词多路召回、RRF 融合</span>的策略：bge-m3 负责语义向量召回，PostgreSQL 全文检索负责关键词路。</p>
+      <p>相比单一向量召回，该策略在学术刁钻查询集上<span class="am">显著降低漏检率</span><span class="caret"></span></p>
+      <div class="gauges">
+        <div class="gauge"><div class="row"><span>RETRIEVAL COVERAGE</span><b>92%</b></div><div class="track"><span class="fill"></span></div></div>
+        <div class="gauge"><div class="row"><span>DRAFT COMPLETION</span><b>67%</b></div><div class="track"><span class="fill"></span></div></div>
+        <div class="gauge"><div class="row"><span>CITATION CHECK</span><b>100%</b></div><div class="track"><span class="fill"></span></div></div>
+      </div>
+    </div>
+    <div class="p telemetry">
+      <div class="p-h"><span>TELEMETRY</span><span>LIVE</span></div>
+      <div class="tl ok"><i></i>route · 意图分类<span class="ms">56ms</span></div>
+      <div class="tl ok"><i></i>plan · 规划 3 步<span class="ms">ok</span></div>
+      <div class="tl run"><i></i>retrieve · 混合检索<span class="ms">412ms</span></div>
+      <div class="tl"><i></i>generate · 流式生成<span class="ms">—</span></div>
+      <div class="tl"><i></i>guard · 治理校验<span class="ms">—</span></div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="nf-foot">
+  <span class="sig2">论匠 <b>·</b> NIGHT FLIGHT</span>
+  <span class="meta">样图 C · 夜航诗意<br/>IBM Plex Mono + Noto Sans SC Light · 近黑/冷白/荧光青/琥珀橙<br/>POETIC DARK — SAMPLE</span>
+</footer>
+
+<script>
+/* 打字机标题（样图演示；reduced-motion 下 CSS 已禁闪烁，此处仍会打字，
+   落地版将做能力探测——样图从简） */
+(function () {
+  var lines = [
+    { t: '论匠，把论文写完。', cls: '' },
+    { t: '机器读仪表，', cls: 'accent' },
+    { t: '方向握在你手里。', cls: 'warm' },
+  ];
+  var el = document.getElementById('type');
+  var li = 0, ci = 0, out = [];
+  function step() {
+    if (li >= lines.length) return;
+    var cur = lines[li];
+    ci++;
+    out[li] = '<span class="' + cur.cls + '">' + cur.t.slice(0, ci) + '</span>';
+    el.innerHTML = out.filter(Boolean).join('<br/>');
+    if (ci >= cur.t.length) { li++; ci = 0; setTimeout(step, 420); }
+    else { setTimeout(step, 105); }
+  }
+  step();
+})();
+</script>
+
+</body>
+</html>

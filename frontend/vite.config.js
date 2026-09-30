@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -8,6 +9,14 @@ const REPO_NAME = 'Lun-Assistant'
 export default defineConfig({
   base: process.env.NODE_ENV === 'production' ? `/${REPO_NAME}/` : '/',
   plugins: [react()],
+  build: {
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        app: fileURLToPath(new URL('./app.html', import.meta.url)),
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {
