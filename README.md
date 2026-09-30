@@ -329,7 +329,7 @@ envs\lunjiang\python.exe -m ruff check .               # 静态检查
 <details>
 <summary><strong>5.2 <code>configs/settings.yaml</code> —— 主配置</strong></summary>
 
-- **对话 / 嵌入双底座解耦**：默认 `llm.default_provider=ollama`（本地 `qwen3:4b-ctx4096`，离线可用）、`llm.embedding_provider=ollama`（本地 `bge-m3`，1024 维）；`default_provider` 可切换 `deepseek` / `zhipu` / `qwen` / `agnes`。切换底座与 embedding 维度变更的后果见 [学习指南第 6 课](docs/LEARNING_GUIDE.md)。
+- **对话 / 嵌入双底座解耦**：默认 `llm.default_provider=ollama`（本地 `qwen3:4b-ctx4096`，离线可用）、`llm.embedding_provider=ollama`（本地 `bge-m3`，1024 维）；`default_provider` 可切换 `deepseek` / `zhipu` / `qwen` / `agnes`。切换底座与 embedding 维度变更的后果见 [学习指南第 9 课](论匠学习指南.md)。
 - **向量维度动态化**：pgvector 向量列维度由 `llm.providers.<底座>.embedding_dim` 动态决定（`infrastructure/config.get_embedding_dim()`），维度不符时运行时报错；已引入 Alembic 迁移骨架（`alembic/`），开发期沿用 `create_all` 兜底。
 - **RAG 参数**：`rag.rewrite_enabled`（改写总开关）、`rag.rewrite_mode`（`off/auto/on`，默认 `auto`：短句跳过 LLM 仅走规则，口语化长尾才调 LLM）、`rag.sibling_window`（相邻窗口引擎半径，`0` = 关闭）、`rag.max_upload_size_mb`、`rag.knowledge.upload_dir`（默认 `data/uploads/`，已 gitignore）、`rag.knowledge.min_text_chars`（低于该字数视为扫描件拒绝）。
 
@@ -363,7 +363,7 @@ DELETE /api/projects/{id}/knowledge/{doc_id} # 删除
 POST /api/projects/{id}/knowledge/search     # 检索：mode=project（仅库内）| hybrid（公共语料 + 库内融合）
 ```
 
-上传后自动完成解析 → 分块 → 向量化入库。详细调用示例见 [学习指南第 16 课](docs/LEARNING_GUIDE.md)。
+上传后自动完成解析 → 分块 → 向量化入库。详细调用示例见 [学习指南第 20 课](论匠学习指南.md)。
 
 > **已知边界**：扫描版 PDF（无可提取文本）本期不支持 OCR，接口返回 `status=failed` 并附错误说明。请上传含文本层的 PDF 或 DOCX/TXT/MD。
 
@@ -464,7 +464,7 @@ Lun-Assistant/
 
 | 文档 | 用途 |
 | :--- | :--- |
-| [📖 学习指南](docs/LEARNING_GUIDE.md) | **推荐首选**。三部分：设计推演（第 0–16 课）/ 八大能力模块解剖（含最小可复现骨架）/ 从零复现（第 26–28 课）+ 四附录（调用链 / 依赖矩阵 / FAQ / 设计决策回溯） |
+| [📖 学习指南（合并版）](论匠学习指南.md) | **唯一学习主文档**（2026-09-30 由《学习指南》+《学习路径》合并）。第零部分总览（简介 / 术语 / 目录 / 模块地图）→ 第一部分设计认知 → 第二部分五阶段进阶（第 4~28 课，设计课+实现课配对）→ 第三部分复现收尾 → 七附录（含 FAQ / 知识映射 / 自检 / 知识缺口自评） |
 | [📊 冒烟与评测基线](docs/EVALUATION_REPORT.md) | 复现命令、通过特征与实测基线，排障与面试演示对照 |
 | [🚀 部署指南](docs/DEPLOY.md) | GitHub Pages 自动部署（前端视觉预览） |
 
