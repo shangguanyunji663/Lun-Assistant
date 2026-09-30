@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<!--
+  ─────────────────────────────────────────────────────────────────────────────
+  论匠 LunJiang · 方向④ 学术期刊（Academic Press）
+  v16 全站重构提案样张（未实现），浏览器直接打开即可查看。
+
+  这是四份候选视觉语言样张之一，用于横向对比后敲定全站新设计语言。
+  本文件是「静态提案样张」，不接入现有项目、不 import 任何模块、
+  不依赖任何本地资源；所有纹样均由 CSS 渐变 / SVG 绘制，无外链位图、无 emoji。
+  ─────────────────────────────────────────────────────────────────────────────
+-->
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>论匠 LunJiang · 方向④ 学术期刊 — 全站重构提案样张</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Noto+Serif+SC:wght@400;600;700;900&display=swap" rel="stylesheet" />
+<style>
+/* ===========================================================================
+   01 · 设计令牌（单一设计语言 · 亮/暗双态）
+   =========================================================================== */
+:root{
+  --paper:#FAF7F0;
+  --paper-2:#FFFDF8;
+  --paper-sunk:#F3EFE5;
+  --ink:#1A1720;
+  --ink-2:#5A544C;
+  --ink-3:#8A8278;
+  --line:#DAD3C5;
+  --line-strong:#C4BBA9;
+  --rubric:#A32E24;
+  --rubric-soft:rgba(163,46,36,.13);
+  --serif-latin:"EB Garamond",Georgia,"Times New Roman",serif;
+  --serif-cn:"Noto Serif SC","STSong","PingFang SC","Microsoft YaHei",serif;
+  --max:1240px;
+  --gut:clamp(20px,4vw,40px);
+}
+html[data-theme="dark"]{
+  --paper:#141217;
+  --paper-2:#1B1820;
+  --paper-sunk:#0F0D12;
+  --ink:#EDE9E0;
+  --ink-2:#A49C8F;
+  --ink-3:#6E675C;
+  --line:#332F3A;
+  --line-strong:#463F4D;
+  --rubric:#C7615A;
+  --rubric-soft:rgba(199,97,90,.16);
+}
+
+/* ===========================================================================
+   02 · 基线
+   =========================================================================== */
+*,*::before,*::after{box-sizing:border-box;}
+html{-webkit-text-size-adjust:100%;}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--serif-cn);
+  font-weight:400;
+  font-size:16px;
+  line-height:1.75;
+  padding-bottom:132px;
+  transition:background-color .45s ease,color .45s ease;
+  background-image:
+    radial-gradient(circle at 12% 8%, var(--rubric-soft) 0%, transparent 42%),
+    linear-gradient(180deg, rgba(0,0,0,.012), transparent 22%);
+}
+html[data-theme="dark"] body{
+  background-image:
+    radial-gradient(circle at 12% 8%, var(--rubric-soft) 0%, transparent 46%),
+    linear-gradient(180deg, rgba(255,255,255,.014), transparent 22%);
+}
+a{color:inherit;text-decoration:none;}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;}
+::selection{background:var(--rubric-soft);color:var(--ink);}
+
+.wrap{max-width:var(--max);margin:0 auto;padding:0 var(--gut);}
+
+/* 拉丁/数字专用 */
+.la{font-family:var(--serif-latin);}
+
+/* 微标签：EB Garamond 大写 + 小字距 */
+.micro{
+  font-family:var(--serif-latin);
+  text-transform:uppercase;
+  letter-spacing:.22em;
+  font-size:11px;
+  font-weight:500;
+  color:var(--ink-3);
+}
+.secno{
+  font-family:var(--serif-latin);
+  font-variant-numeric:oldstyle-nums;
+  letter-spacing:.1em;
+  font-size:11px;
+  color:var(--rubric);
+}
+
+/* 文字链：1px 底边线 → hover 加粗变红 */
+.tlink{
+  text-decoration:underline;
+  text-decoration-thickness:1px;
+  text-underline-offset:4px;
+  text-decoration-color:var(--line-strong);
+  transition:text-decoration-color .22s ease,text-decoration-thickness .18s ease,color .22s ease;
+}
+.tlink:hover{
+  text-decoration-thickness:2px;
+  text-decoration-color:var(--rubric);
+  color:var(--rubric);
+}
+
+/* 唯一实心按钮：墨色实底 + 纸色字，无圆角 */
+.solid{
+  display:inline-flex;align-items:center;gap:.5em;
+  background:var(--ink);color:var(--paper);
+  padding:11px 20px 12px;
+  font-size:14px;font-weight:600;letter-spacing:.04em;
+  border-radius:0;
+  transition:background-color .25s ease,transform .25s ease,letter-spacing .25s ease;
+}
+.solid:hover{background:var(--rubric);letter-spacing:.06em;}
+.solid:active{transform:translateY(1px);}
+
+/* 描边按钮 */
+.ghost{
+  display:inline-flex;align-items:center;gap:.5em;
+  border:1px solid var(--line-strong);
+  padding:10px 19px 11px;
+  font-size:14px;color:var(--ink-2);
+  border-radius:0;
+  transition:border-color .25s ease,color .25s ease,background-color .25s ease;
+}
+.ghost:hover{border-color:var(--ink);color:var(--ink);background:var(--paper-2);}
+
+/* 印章图记（极简朱红小方印 · 纯 SVG） */
+.seal{display:inline-block;flex:none;vertical-align:middle;}
+.seal svg{display:block;}
+
+/* 分隔细线 */
+.rule{height:1px;background:var(--line);border:0;margin:0;}
+
+/* 入场：克制分段淡入 */
+@keyframes rise{from{opacity:0;transform:translateY(9px);}to{opacity:1;transform:none;}}
+.rise{animation:rise .62s cubic-bezier(.22,.61,.36,1) both;}
+.d1{animation-delay:.04s}.d2{animation-delay:.10s}.d3{animation-delay:.16s}
+.d4{animation-delay:.22s}.d5{animation-delay:.28s}.d6{animation-delay:.34s}
+.d7{animation-delay:.40s}.d8{animation-delay:.46s}
+@media (prefers-reduced-motion:reduce){
+  .rise{animation:none;}
+  *{transition-duration:.01ms !important;}
+}
+
+/* ===========================================================================
+   03 · 落地页顶栏
+   =========================================================================== */
+.topbar{
+  position:sticky;top:0;z-index:40;
+  background:color-mix(in srgb,var(--paper) 88%,transparent);
+  backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);
+}
+.topbar .wrap{
+  display:flex;align-items:center;gap:34px;
+  height:74px;
+}
+.brand{display:flex;align-items:center;gap:11px;}
+.brand .name{
+  font-size:19px;font-weight:700;letter-spacing:.06em;
+}
+.brand .name .la{font-style:italic;font-weight:500;font-size:17px;margin-left:6px;color:var(--ink-2);}
+.navlinks{display:flex;align-items:center;gap:28px;margin-left:14px;}
+.navlinks a{font-size:14px;color:var(--ink-2);letter-spacing:.02em;}
+.navlinks a:hover{color:var(--ink);}
+.topbar .spacer{flex:1;}
+.topbar .right{display:flex;align-items:center;gap:18px;}
+
+/* 亮暗切换示意按钮 */
+.themebtn{
+  display:inline-flex;align-items:center;gap:8px;
+  border:1px solid var(--line);padding:7px 12px;
+  color:var(--ink-2);font-size:12px;letter-spacing:.06em;
+  transition:border-color .25s ease,color .25s ease;
+}
+.themebtn:hover{border-color:var(--ink);color:var(--ink);}
+.themebtn svg{display:block;}
+.themebtn .ico-paper{display:none;}
+html[data-theme="dark"] .themebtn .ico-ink{display:none;}
+html[data-theme="dark"] .themebtn .ico-paper{display:block;}
+
+/* ===========================================================================
+   04 · Hero
+   =========================================================================== */
+.hero{padding:74px 0 0;}
+.hero .head{
+  display:flex;align-items:baseline;gap:16px;
+  border-bottom:1px solid var(--line);
+  padding-bottom:14px;
+}
+.hero .head .fill{flex:1;}
+.kicker{
+  margin:38px 0 22px;
+  font-family:var(--serif-latin);
+  text-transform:uppercase;
+  letter-spacing:.3em;
+  font-size:12px;
+  color:var(--ink-3);
+}
+.titlerow{display:flex;align-items:flex-end;gap:clamp(16px,3vw,34px);flex-wrap:wrap;}
+.hero h1{
+  font-family:var(--serif-cn);
+  font-weight:900;
+  font-size:clamp(40px,5.4vw,66px);
+  line-height:1.16;
+  letter-spacing:.005em;
+  margin:0;
+  max-width:16em;
+}
+/* 标题侧 · EB Garamond 斜体拉丁点缀 */
+.titlela{
+  font-family:var(--serif-latin);
+  font-style:italic;
+  font-weight:400;
+  font-size:clamp(18px,2vw,24px);
+  letter-spacing:.03em;
+  color:var(--ink-3);
+  padding-bottom:.62em;
+  white-space:nowrap;
+}
+.hero .sub{
+  margin:26px 0 0;
+  max-width:44em;
+  font-size:17px;
+  line-height:2;
+  color:var(--ink-2);
+  text-align:justify;
+}
+.hero .sub .fn{color:var(--rubric);font-family:var(--serif-latin);font-size:.78em;vertical-align:super;}
+.cta{display:flex;align-items:center;gap:22px;margin:36px 0 0;flex-wrap:wrap;}
+.metrics{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border-top:1px solid var(--line);
+  border-bottom:1px solid var(--line);
+  margin:56px 0 0;
+}
+.metrics .m{padding:24px 26px 26px;border-left:1px solid var(--line);}
+.metrics .m:first-child{border-left:0;}
+.metrics .num{
+  font-family:var(--serif-latin);
+  font-size:30px;font-weight:600;line-height:1;
+  letter-spacing:.01em;
+}
+.metrics .num b{font-weight:600;}
+.metrics .cap{margin-top:10px;font-size:13px;color:var(--ink-2);letter-spacing:.02em;}
+
+/* ===========================================================================
+   05 · 分区标题
+   =========================================================================== */
+.section{padding:78px 0 0;}
+.sechead{
+  display:flex;align-items:baseline;gap:14px;
+  border-bottom:1px solid var(--line);
+  padding-bottom:12px;margin-bottom:26px;
+}
+.sechead h2{
+  margin:0;font-size:22px;font-weight:700;letter-spacing:.06em;
+}
+.sechead .la-title{
+  font-family:var(--serif-latin);font-style:italic;font-weight:400;
+  font-size:15px;color:var(--ink-3);letter-spacing:.02em;
+}
+.sechead .fill{flex:1;}
+
+/* ===========================================================================
+   06 · 工作台样张
+   =========================================================================== */
+.sheet{
+  border:1px solid var(--line);
+  background:var(--paper-2);
+  transition:background-color .45s ease,border-color .45s ease;
+}
+html[data-theme="dark"] .sheet{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.016), transparent 30%),
+    var(--paper-2);
+}
+
+/* 应用顶栏 */
+.appbar{
+  display:flex;align-items:center;gap:18px;
+  padding:13px 18px;
+  border-bottom:1px solid var(--line);
+}
+.appbrand{display:flex;align-items:center;gap:9px;}
+.appbrand .nm{font-size:15px;font-weight:700;letter-spacing:.08em;}
+.projsel{
+  display:inline-flex;align-items:center;gap:9px;
+  border:1px solid var(--line);padding:7px 12px;
+  font-size:13px;color:var(--ink-2);max-width:430px;
+  transition:border-color .25s ease,color .25s ease;
+}
+.projsel:hover{border-color:var(--line-strong);color:var(--ink);}
+.projsel .txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.projsel .caret{font-family:var(--serif-latin);color:var(--ink-3);}
+.appbar .fill{flex:1;}
+
+/* 页签 */
+.tabs{display:flex;align-items:center;gap:22px;}
+.tab{
+  font-size:13.5px;color:var(--ink-3);letter-spacing:.04em;
+  padding-bottom:3px;border-bottom:1px solid transparent;
+  transition:color .22s ease,border-color .22s ease;
+}
+.tab:hover{color:var(--ink);}
+.tab.on{color:var(--ink);border-bottom-color:var(--rubric);}
+
+.userchip{
+  display:inline-flex;align-items:center;gap:9px;
+  font-size:13px;color:var(--ink-2);
+  padding-left:18px;border-left:1px solid var(--line);
+}
+.userchip .av{
+  width:22px;height:22px;border:1px solid var(--line-strong);
+  display:grid;place-items:center;
+  font-family:var(--serif-latin);font-size:11px;color:var(--ink-2);
+}
+
+/* 三栏 */
+.cols{display:grid;grid-template-columns:246px minmax(0,1fr) 296px;}
+.col{min-width:0;}
+.col + .col{border-left:1px solid var(--line);}
+.colhead{
+  display:flex;align-items:baseline;gap:10px;
+  padding:14px 16px 11px;border-bottom:1px solid var(--line);
+}
+.colhead .fill{flex:1;}
+
+/* 左栏 · 会话卷册 */
+.leftbody{padding:12px 12px 18px;}
+.newbtn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;border:1px solid var(--line-strong);
+  padding:9px 0;font-size:13px;color:var(--ink-2);letter-spacing:.06em;
+  transition:border-color .25s ease,color .25s ease,background-color .25s ease;
+}
+.newbtn:hover{border-color:var(--ink);color:var(--ink);background:var(--paper-sunk);}
+.slist{list-style:none;margin:16px 0 0;padding:0;}
+.sitem{
+  display:block;padding:11px 12px 12px;border:1px solid transparent;
+  border-left:2px solid transparent;
+  transition:border-color .22s ease,background-color .22s ease;
+}
+.sitem + .sitem{margin-top:2px;}
+.sitem:hover{background:var(--paper-sunk);border-left-color:var(--line-strong);}
+.sitem .t{font-size:14px;color:var(--ink-2);line-height:1.5;}
+.sitem .meta{
+  margin-top:6px;display:flex;gap:9px;align-items:baseline;
+  font-family:var(--serif-latin);font-size:11px;letter-spacing:.06em;color:var(--ink-3);
+}
+.sitem.on{border-left-color:var(--rubric);background:var(--paper-sunk);}
+.sitem.on .t{color:var(--ink);font-weight:600;}
+.sitem.on .meta{color:var(--rubric);}
+
+/* 中栏 · 手稿版面 */
+.manuscript{padding:26px 22px 22px;}
+.msg + .msg{margin-top:30px;}
+.msg .who{
+  display:flex;align-items:center;gap:10px;
+  font-family:var(--serif-latin);font-size:11.5px;
+  letter-spacing:.13em;text-transform:uppercase;color:var(--ink-3);
+  padding-bottom:9px;border-bottom:1px solid var(--line);
+}
+.msg .who .role{color:var(--ink-2);}
+.msg .who .dash{flex:1;height:1px;background:var(--line);}
+
+/* 用户消息：手稿提问（缩进 + 左侧细线） */
+.msg.user .q{
+  margin:14px 0 0;padding-left:16px;border-left:1px solid var(--line-strong);
+  font-size:15.5px;line-height:1.95;color:var(--ink);
+}
+.msg.user .q .lbl{
+  font-family:var(--serif-latin);font-style:italic;color:var(--ink-3);
+  font-size:.86em;margin-right:6px;
+}
+
+/* 助手消息：正文 + 页边校勘批注 */
+.msg.ai .body{display:grid;grid-template-columns:minmax(0,1fr) 118px;gap:22px;margin-top:14px;}
+.msg.ai .text{font-size:15.5px;line-height:2.02;text-align:justify;text-justify:inter-ideograph;color:var(--ink);}
+.msg.ai .text p{margin:0 0 12px;}
+.msg.ai .text p:last-child{margin-bottom:0;}
+.msg.ai .text .rq{color:var(--rubric);font-weight:600;}
+.msg.ai .text .term{
+  font-family:var(--serif-latin);font-style:italic;font-size:1.02em;letter-spacing:.01em;
+}
+.msg.ai .text ol{margin:10px 0 12px;padding-left:1.5em;}
+.msg.ai .text li{margin:5px 0;}
+.msg.ai .text li::marker{font-family:var(--serif-latin);color:var(--rubric);}
+
+/* 首字下沉：仅第一条助手消息 */
+.dropcap::first-letter{
+  float:left;
+  font-family:var(--serif-cn);
+  font-weight:900;
+  font-size:3.15em;
+  line-height:.86;
+  padding:.06em .12em 0 0;
+  color:var(--ink);
+}
+
+/* 页边批注 */
+.margin{border-left:1px solid var(--line);padding-left:14px;}
+.margin .gloss{margin:0 0 16px;}
+.margin .mk{
+  display:block;font-family:var(--serif-latin);font-style:italic;
+  font-size:11.5px;letter-spacing:.04em;color:var(--ink-3);margin-bottom:4px;
+}
+.margin .gloss .m{
+  font-family:var(--serif-latin);font-style:italic;
+  font-size:12.5px;line-height:1.6;color:var(--ink-2);
+}
+.margin .gloss.hot .mk{color:var(--rubric);}
+.margin .gloss.hot .m{color:var(--rubric);}
+
+/* 流式光标 */
+.cursor{
+  display:inline-block;width:.52em;height:1.02em;
+  background:var(--rubric);vertical-align:-.16em;margin-left:3px;
+  animation:blink 1.05s steps(1,end) infinite;
+}
+@keyframes blink{0%,49%{opacity:1;}50%,100%{opacity:0;}}
+
+/* 中断确认条 = 编辑部质询 */
+.query{
+  margin-top:30px;border:1px solid var(--line-strong);
+  border-left:2px solid var(--rubric);
+  background:var(--paper-sunk);
+  padding:16px 18px 17px;
+}
+.query .hd{display:flex;align-items:baseline;gap:12px;}
+.query .hd .q-no{
+  font-family:var(--serif-latin);font-style:italic;font-size:12px;color:var(--rubric);
+  letter-spacing:.06em;
+}
+.query .hd .fill{flex:1;}
+.query .ask{
+  margin:12px 0 0;font-size:15.5px;line-height:1.8;color:var(--ink);
+}
+.query .acts{display:flex;align-items:center;gap:24px;margin-top:14px;}
+.query .inp{
+  flex:1;border:0;border-bottom:1px solid var(--line-strong);
+  background:transparent;padding:6px 2px;
+  font-family:var(--serif-cn);font-size:13.5px;color:var(--ink);
+  transition:border-color .25s ease;
+}
+.query .inp::placeholder{color:var(--ink-3);}
+.query .inp:focus{outline:none;border-bottom-color:var(--rubric);}
+
+/* 输入区 */
+.composer{margin-top:26px;padding-top:18px;border-top:1px solid var(--line);}
+.composer .box{
+  display:flex;align-items:center;gap:14px;
+}
+.composer .field{
+  flex:1;border:1px solid var(--line);background:var(--paper);
+  padding:13px 15px;font-size:14.5px;color:var(--ink);
+  transition:border-color .25s ease;
+}
+.composer .field::placeholder{color:var(--ink-3);}
+.composer .field:focus{outline:none;border-color:var(--line-strong);}
+.composer .hint{
+  margin-top:11px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;
+  font-family:var(--serif-latin);font-size:11.5px;letter-spacing:.05em;color:var(--ink-3);
+}
+.composer .hint .dot{color:var(--line-strong);}
+.composer .hint .proj{color:var(--ink-2);}
+
+/* 右栏 · 脚注器物 */
+.rightbody{padding:14px 16px 20px;}
+.fnlist{list-style:none;margin:0;padding:0;}
+.fn{
+  display:grid;grid-template-columns:16px 1fr;gap:10px;
+  padding:12px 0;border-bottom:1px solid var(--line);
+  transition:background-color .2s ease;
+}
+.fn:hover{background:var(--paper-sunk);}
+.fn .n{
+  font-family:var(--serif-latin);font-size:12px;color:var(--rubric);
+  line-height:1.5;
+}
+.fn .d .t{font-size:13.5px;color:var(--ink);line-height:1.55;}
+.fn .d .t .la{font-style:italic;color:var(--ink-2);font-size:12.5px;}
+.fn .d .s{
+  margin-top:4px;font-family:var(--serif-latin);font-variant-numeric:tabular-nums;
+  font-size:11.5px;letter-spacing:.05em;color:var(--ink-3);
+}
+.fn .d .s .dash{color:var(--line-strong);}
+.fn.live .d .t{color:var(--rubric);}
+.fn.live .d .s{color:var(--rubric);}
+.fn .dotlive{
+  display:inline-block;width:5px;height:5px;background:var(--rubric);
+  margin-left:7px;vertical-align:1px;
+  animation:pulse 1.5s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.18;}}
+
+.files{margin-top:22px;border-top:1px solid var(--line-strong);padding-top:14px;}
+.files .fh{margin-bottom:11px;}
+.fitem{
+  display:flex;align-items:flex-start;gap:10px;padding:9px 0;
+  transition:background-color .2s ease;
+}
+.fitem:hover{background:var(--paper-sunk);}
+.fitem .ic{
+  width:16px;height:19px;border:1px solid var(--line-strong);flex:none;margin-top:2px;
+  position:relative;
+}
+.fitem .ic::after{
+  content:"";position:absolute;top:-1px;right:-1px;
+  border-left:5px solid transparent;border-bottom:5px solid transparent;
+  border-top:5px solid var(--line-strong);border-right:5px solid transparent;
+}
+.fitem .meta{min-width:0;}
+.fitem .fn-name{
+  font-size:13px;color:var(--ink);font-family:var(--serif-latin);
+  letter-spacing:.01em;word-break:break-all;
+}
+.fitem .fn-state{margin-top:3px;font-size:11.5px;color:var(--ink-3);letter-spacing:.02em;}
+.fitem .fn-state.ok{color:var(--ink-2);}
+.fitem .fn-state.busy{color:var(--rubric);}
+
+/* ===========================================================================
+   07 · 页脚 + folio
+   =========================================================================== */
+.footer{margin-top:62px;border-top:1px solid var(--line);padding:26px 0 0;}
+.footrow{
+  display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;
+  font-size:12.5px;color:var(--ink-3);letter-spacing:.03em;
+}
+.footrow .la{font-family:var(--serif-latin);letter-spacing:.06em;}
+.footrow .sep{color:var(--line-strong);}
+.footnotes{
+  margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:8px 40px;
+  font-size:12.5px;color:var(--ink-2);
+}
+.footnotes div{display:flex;gap:10px;}
+.footnotes .k{
+  font-family:var(--serif-latin);font-size:12px;color:var(--rubric);flex:none;width:14px;
+}
+.folio{
+  margin-top:44px;padding-top:18px;border-top:1px solid var(--line);
+  text-align:center;
+  font-family:var(--serif-latin);font-size:13px;letter-spacing:.34em;
+  color:var(--ink-3);
+}
+
+/* ===========================================================================
+   08 · 提案导航丸（十项通用 · 固定底部居中 · 胶囊容器 + 圆形编号 chips）
+   =========================================================================== */
+.pillwrap{position:fixed;left:0;right:0;bottom:20px;z-index:60;display:flex;justify-content:center;pointer-events:none;}
+.pill{
+  pointer-events:auto;
+  display:flex;align-items:center;gap:6px;
+  background:color-mix(in srgb,var(--paper-2) 92%,transparent);
+  backdrop-filter:blur(10px);
+  border:1px solid var(--line-strong);
+  padding:8px 12px;border-radius:999px;
+  box-shadow:0 12px 34px -22px rgba(0,0,0,.5);
+}
+.pill .plabel{
+  font-family:var(--serif-latin);font-size:10.5px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--ink-3);padding:0 14px 0 6px;
+  border-right:1px solid var(--line);margin-right:6px;
+}
+.pill a.chip{
+  width:29px;height:29px;border-radius:50%;
+  display:grid;place-items:center;
+  font-family:var(--serif-latin);font-size:11px;font-variant-numeric:tabular-nums;
+  color:var(--ink-2);border:1px solid var(--line);
+  transition:color .22s ease,border-color .22s ease,background-color .22s ease,transform .22s ease;
+}
+.pill a.chip:hover{color:var(--ink);border-color:var(--ink);background:var(--paper-sunk);transform:translateY(-2px);}
+.pill a.chip.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+
+/* ===========================================================================
+   09 · 窄屏兜底（桌面 1440 为主要参考）
+   =========================================================================== */
+@media (max-width:1080px){
+  .cols{grid-template-columns:206px minmax(0,1fr);}
+  .col.right{display:none;}
+  .msg.ai .body{grid-template-columns:minmax(0,1fr);}
+  .margin{border-left:0;border-top:1px solid var(--line);padding:14px 0 0;}
+}
+@media (max-width:820px){
+  .navlinks{display:none;}
+  .metrics{grid-template-columns:1fr 1fr;}
+  .metrics .m:nth-child(3){border-left:0;}
+  .cols{grid-template-columns:minmax(0,1fr);}
+  .col.left{display:none;}
+  .projsel{max-width:220px;}
+  .pill a.chip{width:26px;height:26px;font-size:10px;}
+  .pill .plabel{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- ==========================================================================
+     （1）落地页顶栏
+     ========================================================================== -->
+<header class="topbar">
+  <div class="wrap">
+    <div class="brand">
+      <span class="seal" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 26 26">
+          <rect x="1.5" y="1.5" width="23" height="23" fill="var(--rubric)"/>
+          <rect x="4.6" y="4.6" width="16.8" height="16.8" fill="none" stroke="var(--paper)" stroke-width="0.9"/>
+          <text x="13" y="17.6" text-anchor="middle" fill="var(--paper)"
+                font-family="'Noto Serif SC',Georgia,serif" font-size="11" font-weight="700">论</text>
+        </svg>
+      </span>
+      <span class="name">论匠<span class="la">LunJiang</span></span>
+    </div>
+
+    <nav class="navlinks">
+      <a class="tlink" href="#capabilities">能力</a>
+      <a class="tlink" href="#bench">架构与评测</a>
+      <a class="tlink" href="#collab">人机协同</a>
+      <a class="tlink" href="#workbench">开始</a>
+    </nav>
+
+    <span class="spacer"></span>
+
+    <div class="right">
+      <button class="themebtn" type="button" id="themeToggle" aria-label="切换亮/暗态">
+        <svg class="ico-ink" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+          <circle cx="7" cy="7" r="3.1" fill="none" stroke="currentColor" stroke-width="1"/>
+          <path d="M7 0.4V2M7 12V13.6M0.4 7H2M12 7H13.6M2.3 2.3L3.5 3.5M10.5 10.5L11.7 11.7M11.7 2.3L10.5 3.5M3.5 10.5L2.3 11.7"
+                stroke="currentColor" stroke-width="1" stroke-linecap="round"/>
+        </svg>
+        <svg class="ico-paper" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+          <path d="M11.6 8.6A5.1 5.1 0 0 1 5.4 2.4a5.2 5.2 0 1 0 6.2 6.2z"
+                fill="none" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>
+        </svg>
+        <span class="la" id="themeLabel">INK</span>
+      </button>
+      <a class="solid" href="#workbench">进入工作台</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ========================================================================
+       （2）Hero
+       ======================================================================== -->
+  <section class="hero" id="capabilities">
+    <div class="head rise d1">
+      <span class="micro">Prospectus</span>
+      <span class="fill"></span>
+      <span class="secno">§ 01</span>
+    </div>
+
+    <p class="kicker rise d2">LunJiang · 多智能体论文全流程工作台</p>
+
+    <div class="titlerow rise d3">
+      <h1>论匠，帮你把论文写完。</h1>
+      <span class="titlela" aria-hidden="true">LunJiang</span>
+    </div>
+
+    <p class="sub rise d4">
+      选题、文献、写作、格式、查重、答辩——六个环节一支编队，主控智能体全程调度，
+      每一次产出都经你确认后落进稿纸。<span class="fn la" aria-hidden="true">*</span>
+    </p>
+
+    <div class="cta rise d5">
+      <a class="solid" href="#workbench">进入工作台</a>
+      <a class="tlink" href="#collab">GitHub 源码</a>
+    </div>
+
+    <div class="metrics rise d6" id="bench">
+      <div class="m">
+        <div class="num la">100%</div>
+        <div class="cap">意图分类 Top-1</div>
+      </div>
+      <div class="m">
+        <div class="num la">100%</div>
+        <div class="cap">检索 Recall@5</div>
+      </div>
+      <div class="m">
+        <div class="num la">16/16</div>
+        <div class="cap">回归场景通过</div>
+      </div>
+      <div class="m">
+        <div class="num la">89</div>
+        <div class="cap">项离线测试用例</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       （3）工作台样张
+       ======================================================================== -->
+  <section class="section" id="workbench">
+    <div class="sechead rise d1">
+      <span class="secno">§ 02</span>
+      <h2>工作台</h2>
+      <span class="la-title">The Reader's Desk</span>
+      <span class="fill"></span>
+      <span class="micro">Workbench · 平铺还原</span>
+    </div>
+
+    <div class="sheet rise d2">
+
+      <!-- 应用顶栏 -->
+      <div class="appbar">
+        <div class="appbrand">
+          <span class="seal" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 26 26">
+              <rect x="1.5" y="1.5" width="23" height="23" fill="var(--rubric)"/>
+              <rect x="4.6" y="4.6" width="16.8" height="16.8" fill="none" stroke="var(--paper)" stroke-width="0.9"/>
+              <text x="13" y="17.6" text-anchor="middle" fill="var(--paper)"
+                    font-family="'Noto Serif SC',Georgia,serif" font-size="11" font-weight="700">论</text>
+            </svg>
+          </span>
+          <span class="nm">论匠</span>
+        </div>
+
+        <button class="projsel" type="button">
+          <span class="la" style="color:var(--rubric)">#12</span>
+          <span class="txt">大模型辅助的文献综述自动化研究</span>
+          <span class="caret">▾</span>
+        </button>
+
+        <span class="fill"></span>
+
+        <nav class="tabs">
+          <a class="tab on" href="#workbench">对话</a>
+          <a class="tab" href="#workbench">可观测</a>
+        </nav>
+
+        <div class="userchip">
+          <span class="av la">L</span>
+          <span>吕江 · <span class="la" style="color:var(--ink-3)">admin</span></span>
+        </div>
+      </div>
+
+      <!-- 三栏 -->
+      <div class="cols">
+
+        <!-- 左栏：会话卷册 -->
+        <section class="col left">
+          <div class="colhead">
+            <span class="micro">Volumes</span>
+            <span class="fill"></span>
+            <span class="secno">§ 02 · i</span>
+          </div>
+          <div class="leftbody">
+            <button class="newbtn" type="button">
+              <span class="la" style="font-size:15px;line-height:1">+</span>
+              <span>新建</span>
+            </button>
+
+            <ul class="slist">
+              <li>
+                <a class="sitem on" href="#workbench">
+                  <span class="t">选题方向探索</span>
+                  <span class="meta">
+                    <span>当前</span><span>·</span><span>刚刚</span><span>·</span>
+                    <span>4 条</span>
+                  </span>
+                </a>
+              </li>
+              <li>
+                <a class="sitem" href="#workbench">
+                  <span class="t">文献检索</span>
+                  <span class="meta">
+                    <span>昨天</span><span>·</span><span>12 条</span>
+                  </span>
+                </a>
+              </li>
+              <li>
+                <a class="sitem" href="#workbench">
+                  <span class="t">方法论初稿</span>
+                  <span class="meta">
+                    <span>周一</span><span>·</span><span>8 条</span>
+                  </span>
+                </a>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        <!-- 中栏：对话（学术手稿版面） -->
+        <section class="col center">
+          <div class="manuscript">
+
+            <!-- 用户消息 -->
+            <article class="msg user">
+              <div class="who">
+                <span class="role">作者</span>
+                <span class="la">Author</span>
+                <span class="dash"></span>
+                <span class="la">2026-10-01 · 09:41</span>
+              </div>
+              <p class="q"><span class="lbl">Q.</span>帮我确定一个可行的论文选题，大模型方向，要能做出实验。</p>
+            </article>
+
+            <!-- 助手消息 -->
+            <article class="msg ai">
+              <div class="who">
+                <span class="role">匠 · AI 草拟</span>
+                <span class="la">Drafted</span>
+                <span class="dash"></span>
+                <span class="la">2026-10-01</span>
+              </div>
+
+              <div class="body">
+                <div class="text">
+                  <p class="dropcap">建议从「<span class="term">RAG 评测鲁棒性</span>」切入。理由有三：</p>
+                  <ol>
+                    <li>数据可控、实验可复现；</li>
+                    <li>三类扰动清晰可测——对抗查询、检索失败、引用幻觉；</li>
+                    <li>近三年基准论文充足。</li>
+                  </ol>
+                  <p>
+                    已调度文献 Agent 拉取 <span class="rq">50 篇</span>核心论文，需要我把选题结论写进项目档案吗？
+                    <span class="cursor" aria-hidden="true"></span>
+                  </p>
+                </div>
+
+                <!-- 页边校勘批注 -->
+                <aside class="margin" aria-label="页边校勘批注">
+                  <p class="gloss">
+                    <span class="mk">¶ §2.1</span>
+                    <span class="m">scope narrowed to robustness</span>
+                  </p>
+                  <p class="gloss hot">
+                    <span class="mk">⌀ note</span>
+                    <span class="m">三类扰动 ← 需与导师确认边界</span>
+                  </p>
+                  <p class="gloss">
+                    <span class="mk">§ ref. 3</span>
+                    <span class="m">50 refs queued</span>
+                  </p>
+                </aside>
+              </div>
+            </article>
+
+            <!-- 中断确认条：编辑部质询 -->
+            <div class="query">
+              <div class="hd">
+                <span class="q-no">Query to Author</span>
+                <span class="micro">编辑部质询</span>
+                <span class="fill"></span>
+                <span class="secno">§ 02 · ⅱ</span>
+              </div>
+              <p class="ask">第三章方法论初稿已生成，是否采纳？</p>
+              <div class="acts">
+                <a class="tlink" href="#workbench" style="font-size:14px">采纳</a>
+                <a class="tlink" href="#workbench" style="font-size:14px">修改后采纳</a>
+                <input class="inp" type="text" placeholder="输入你的反馈…" />
+              </div>
+            </div>
+
+            <!-- 输入区 -->
+            <div class="composer">
+              <div class="box">
+                <input class="field" type="text" placeholder="输入论文相关请求…" />
+                <button class="solid" type="button">发送</button>
+              </div>
+              <p class="hint">
+                <span>Enter 发送</span><span class="dot">·</span>
+                <span>Shift+Enter 换行</span><span class="dot">·</span>
+                <span class="proj">已关联项目 #12</span>
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+        <!-- 右栏：脚注器物 -->
+        <aside class="col right">
+          <div class="colhead">
+            <span class="micro">Marginalia</span>
+            <span class="fill"></span>
+            <span class="secno">§ 02 · ⅲ</span>
+          </div>
+
+          <div class="rightbody">
+            <nav class="tabs" style="gap:16px;margin-bottom:14px">
+              <a class="tab on" href="#workbench">执行时间线</a>
+              <a class="tab" href="#workbench">项目知识库</a>
+              <a class="tab" href="#workbench">项目档案</a>
+            </nav>
+
+            <ul class="fnlist">
+              <li class="fn">
+                <span class="n">1</span>
+                <span class="d">
+                  <span class="t">意图识别 · 选题咨询</span>
+                  <span class="s">conf 0.96 <span class="dash">—</span> 56ms</span>
+                </span>
+              </li>
+              <li class="fn">
+                <span class="n">2</span>
+                <span class="d">
+                  <span class="t">Planner 规划 · 3 步</span>
+                  <span class="s">plan <span class="dash">—</span> settled</span>
+                </span>
+              </li>
+              <li class="fn live">
+                <span class="n">3</span>
+                <span class="d">
+                  <span class="t">混合检索 · RRF 融合<span class="dotlive"></span></span>
+                  <span class="s">412ms <span class="dash">—</span> 进行中</span>
+                </span>
+              </li>
+              <li class="fn">
+                <span class="n">4</span>
+                <span class="d">
+                  <span class="t">流式生成</span>
+                  <span class="s">待触发 <span class="dash">—</span> idle</span>
+                </span>
+              </li>
+            </ul>
+
+            <div class="files">
+              <div class="fh micro">资料清单 · Sources</div>
+
+              <div class="fitem">
+                <span class="ic" aria-hidden="true"></span>
+                <span class="meta">
+                  <span class="fn-name">综述_2024.pdf</span>
+                  <span class="fn-state ok la">已入库 · 128 分块</span>
+                </span>
+              </div>
+
+              <div class="fitem">
+                <span class="ic" aria-hidden="true"></span>
+                <span class="meta">
+                  <span class="fn-name">实验记录.md</span>
+                  <span class="fn-state busy la">解析中</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ========================================================================
+       （4）页脚
+       ======================================================================== -->
+  <footer class="footer" id="collab">
+    <div class="footrow">
+      <span>论匠 LUNJIANG</span>
+      <span class="sep">·</span>
+      <span>方向④ 学术期刊</span>
+      <span class="sep">·</span>
+      <span class="la">PROPOSAL — NOT IMPLEMENTED</span>
+    </div>
+
+    <div class="footnotes rise d1">
+      <div><span class="k">¹</span><span>字体：EB Garamond（英文标题 / 数字 / 微标签 / 斜体注）+ Noto Serif SC（中文正文与标题，正文 400 长文阅读）。</span></div>
+      <div><span class="k">²</span><span>配色：纸 <span class="la">#FAF7F0</span> · 墨 <span class="la">#1A1720</span> · 次级墨 <span class="la">#5A544C</span> · 细线 <span class="la">#DAD3C5</span> · 校勘朱红 <span class="la">#A32E24</span>。</span></div>
+    </div>
+
+    <div class="folio">— 3 —</div>
+  </footer>
+
+</main>
+
+<!-- ==========================================================================
+     提案导航丸（十项通用 · 当前项 04 高亮）
+     ========================================================================== -->
+<div class="pillwrap">
+  <nav class="pill" aria-label="提案导航">
+    <span class="plabel">Proposals</span>
+    <a class="chip" href="proposal-1-ops-console.html" title="01 暗色指挥舱">01</a>
+    <a class="chip" href="proposal-2-blueprint.html" title="02 蓝图工程">02</a>
+    <a class="chip" href="proposal-3-lab-notebook.html" title="03 实验记录本">03</a>
+    <a class="chip on" href="proposal-4-academic-press.html" title="04 学术期刊" aria-current="page">04</a>
+    <a class="chip" href="proposal-5-ops-console-soft.html" title="05 暗色指挥舱 · 柔">05</a>
+    <a class="chip" href="proposal-6-blueprint-soft.html" title="06 蓝图工程 · 柔">06</a>
+    <a class="chip" href="proposal-7-lab-notebook-soft.html" title="07 实验记录本 · 柔">07</a>
+    <a class="chip" href="proposal-8-academic-press-soft.html" title="08 学术期刊 · 柔">08</a>
+    <a class="chip" href="proposal-9-cream-round.html" title="09 暖云手稿">09</a>
+    <a class="chip" href="proposal-10-organic-wave.html" title="10 晨雾有机">10</a>
+  </nav>
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById('themeToggle');
+    var label = document.getElementById('themeLabel');
+    function sync() {
+      var dark = root.getAttribute('data-theme') === 'dark';
+      label.textContent = dark ? 'PAPER' : 'INK';
+    }
+    btn.addEventListener('click', function () {
+      var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      sync();
+    });
+    sync();
+  })();
+</script>
+
+</body>
+</html>

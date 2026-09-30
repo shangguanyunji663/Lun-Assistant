@@ -2,37 +2,21 @@ import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
-/* 朱砂钤印：可复用视觉标识（极小面积强调色，不用作常规按钮色） */
+/* 印章 / 图记：可复用品牌标识。
+   颜色走 CSS 变量（--accent / --accent-ink），随主题与柔化态自动变化；
+   形状由 .seal 的 border-radius 控制（柔主题下接近圆形，锐主题下为方形）。 */
 export function Seal({ size = 28, char = '论' }) {
   return (
-    <svg className="seal" width={size} height={size} viewBox="0 0 40 40" aria-hidden="true">
-      <rect x="2" y="2" width="36" height="36" rx="3" fill="#9E3B2C" />
-      <rect x="5" y="5" width="30" height="30" rx="2" fill="none" stroke="#F6F3EC" strokeWidth="1.2" opacity="0.72" />
-      <text x="20" y="27" textAnchor="middle" fill="#F6F3EC" fontSize="20"
-            fontFamily="STKaiti, KaiTi, 楷体, serif" fontWeight="600">{char}</text>
-    </svg>
+    <span className="seal" style={{ width: size, height: size, fontSize: Math.round(size * 0.52) }}
+          aria-hidden="true">
+      <span className="seal-char">{char}</span>
+    </span>
   )
 }
 
-/* 毛笔一撇：标题下的墨迹分隔 */
-export function BrushRule({ width = 96 }) {
-  return (
-    <svg className="brush-rule" width={width} height="6" viewBox="0 0 96 6" aria-hidden="true">
-      <path d="M1 4.2 C 22 1.6 44 1.4 62 2.4 C 76 3.1 88 4.0 95 4.8"
-            stroke="currentColor" strokeWidth="2.4" fill="none"
-            strokeLinecap="round" opacity="0.5" />
-    </svg>
-  )
-}
-
-/* 卷轴木轴：上下两道赭石金，营造装裱感（固定在视口上下沿） */
-export function WoodRoll() {
-  return (
-    <>
-      <div className="wood-roll top" />
-      <div className="wood-roll bot" />
-    </>
-  )
+/* 细分隔线：标题下的轻量装饰（取代旧毛笔撇） */
+export function Rule({ width = 96 }) {
+  return <span className="rule" style={{ width }} aria-hidden="true" />
 }
 
 /* markdown 渲染：助手消息支持标题/列表/表格/代码块 */

@@ -1,0 +1,893 @@
+<!doctype html>
+<!--
+  ============================================================
+  论匠 LunJiang — v16 全站重构提案样张（未实现），浏览器直接打开即可查看
+  方向⑦ 实验记录本 · 柔版 · Lab Notebook (Soft) · proposal-7-lab-notebook-soft.html
+  ------------------------------------------------------------
+  · 本文件为“提案样张”，不是生产代码：不接入现有 React 工程、不 import 任何模块。
+  · 与 proposal-3-lab-notebook.html 内容 / 结构 / 文案完全一致，
+    仅调整视觉材质与几何：更暖的纸底、20px 圆角、更大更柔的阴影、
+    胶囊按钮、更弱的横格线、暖光斑背景、统一缓动与更松的间距。
+  · 索引卡 / 胶带 / 便利贴 / 勾选框 / 印章的性格保留，只软化材质。
+  ============================================================
+-->
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>样张 ⑦ · 实验记录本 · 柔版 — 论匠 LunJiang</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Caveat:wght@500;700&family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   00 · 设计令牌（柔版：更暖、更圆、更柔）
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* 纸与墨 */
+  --paper:        #FBF7EE;
+  --paper-deep:   #F5EFE1;
+  --card:         #FFFDF8;
+  --ink:          #2B3450;
+  --ink-soft:     #555E76;
+  --pencil:       #8B8878;
+  --ink-mute:     var(--pencil);
+  /* 记录纸（对比整体降约 30%） */
+  --rule:         rgba(91,124,166,.105);
+  --rule-faint:   rgba(91,124,166,.056);
+  --margin-line:  rgba(201,86,66,.245);
+  --edge:         rgba(43,52,80,.10);
+  --edge-strong:  rgba(43,52,80,.22);
+  /* 笔色 */
+  --red:          #D9543F;
+  --red-soft:     rgba(217,84,63,.12);
+  --blue:         #3B6EA5;
+  --blue-soft:    rgba(59,110,165,.12);
+  --highlight:    #FFE066;
+  --brown:        #9A6B3F;
+  --brown-soft:   rgba(154,107,63,.14);
+  /* 和纸胶带（半透明） */
+  --tape-pink:    rgba(243,198,198,.86);
+  --tape-green:   rgba(191,216,194,.86);
+  --tape-blue:    rgba(201,214,239,.86);
+  /* 几何 */
+  --r-card:       20px;
+  --r-soft:       16px;
+  --r-pill:       999px;
+  /* 阴影（更大更柔） */
+  --shadow:       0 10px 30px rgba(120,100,60,.10);
+  --shadow-lift:  0 18px 44px rgba(120,100,60,.16);
+  --sheen:        inset 0 1px 0 #FFFFFF;
+  /* 反色按钮前景 */
+  --btn-fg:       #FFFDF8;
+  /* 字体 */
+  --typewriter:   "Special Elite", "Courier New", monospace;
+  --hand:         "Caveat", "Segoe Script", cursive;
+  --hand-cn:      "Ma Shan Zheng", "STKaiti", "PingFang SC", cursive;
+  --serif:        "Noto Serif SC", "PingFang SC", "Microsoft YaHei", serif;
+  /* 动效（统一缓动 200–280ms） */
+  --ease:         cubic-bezier(.22,1,.36,1);
+  --t:            240ms;
+  --t-slow:       280ms;
+}
+
+[data-theme="dark"] {
+  --paper:        #23252F;
+  --paper-deep:   #1D1F28;
+  --card:         #2B2E3A;
+  --ink:          #EDE7D8;
+  --ink-soft:     #BDB8AA;
+  --pencil:       #8E8B7E;
+  --rule:         rgba(120,152,194,.11);
+  --rule-faint:   rgba(120,152,194,.06);
+  --margin-line:  rgba(217,84,63,.26);
+  --edge:         rgba(237,231,216,.09);
+  --edge-strong:  rgba(237,231,216,.18);
+  --red:          #E3715C;
+  --red-soft:     rgba(227,113,92,.14);
+  --blue:         #84AEDC;
+  --blue-soft:    rgba(132,174,220,.14);
+  --highlight:    rgba(255,224,102,.32);
+  --brown:        #C9A070;
+  --brown-soft:   rgba(201,160,112,.16);
+  --tape-pink:    rgba(243,198,198,.30);
+  --tape-green:   rgba(191,216,194,.28);
+  --tape-blue:    rgba(201,214,239,.30);
+  --shadow:       0 10px 30px rgba(0,0,0,.34);
+  --shadow-lift:  0 18px 44px rgba(0,0,0,.50);
+  --sheen:        inset 0 1px 0 rgba(255,255,255,.05);
+  --btn-fg:       #23252F;
+}
+
+/* ============================================================
+   01 · 基座 + 暖光斑背景
+   ============================================================ */
+html { scroll-behavior: smooth; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.72;
+  -webkit-font-smoothing: antialiased;
+  transition: background var(--t-slow) var(--ease), color var(--t-slow) var(--ease);
+  padding-bottom: 108px;
+}
+/* 两团低透明暖光斑：杏 / 薄绿 */
+body::before, body::after {
+  content: ''; position: fixed; z-index: -1; pointer-events: none;
+  border-radius: 50%; filter: blur(80px);
+}
+body::before { width: 520px; height: 520px; top: -150px; left: -130px; background: rgba(246,206,150,.08); }
+body::after  { width: 580px; height: 580px; bottom: -190px; right: -150px; background: rgba(186,214,186,.08); }
+.wrap { max-width: 1240px; margin: 0 auto; padding: 0 32px; }
+.tw { font-family: var(--typewriter); letter-spacing: .07em; }
+a { color: inherit; }
+::selection { background: var(--highlight); color: #2B3450; }
+
+/* 通用按钮（胶囊化） */
+.btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--serif); font-size: 13.5px; line-height: 1;
+  padding: 11px 20px; border-radius: var(--r-pill);
+  border: 1px solid var(--edge-strong);
+  background: var(--card); color: var(--ink);
+  box-shadow: var(--sheen);
+  text-decoration: none; cursor: pointer; white-space: nowrap;
+  transition: transform var(--t) var(--ease), box-shadow var(--t) var(--ease), background var(--t) var(--ease), border-color var(--t) var(--ease), color var(--t) var(--ease);
+}
+.btn:hover { transform: translateY(-2px); box-shadow: var(--sheen), var(--shadow); border-color: var(--blue); }
+.btn:active { transform: translateY(0) scale(.985); }
+.btn--primary { background: var(--ink); border-color: var(--ink); color: var(--btn-fg); box-shadow: none; }
+.btn--primary:hover { background: var(--red); border-color: var(--red); box-shadow: 0 12px 26px -10px rgba(217,84,63,.55); }
+.btn--ghost { background: transparent; border-style: dashed; box-shadow: none; }
+.btn--ghost:hover { background: var(--card); box-shadow: var(--sheen), var(--shadow); }
+.btn--lg { font-size: 15px; padding: 14px 28px; }
+.btn--sm { font-size: 12.5px; padding: 8px 15px; }
+
+/* 椭圆橡皮章（CSS/SVG 绘制，双线边框、半透明油墨） */
+.stamp { color: var(--red); opacity: .9; display: block; }
+.stamp text { font-family: var(--hand-cn); fill: currentColor; }
+.stamp--brand { width: 62px; height: 42px; animation: press .6s var(--ease) both; }
+.stamp--app   { width: 40px; height: 28px; transform: rotate(-8deg); }
+.stamp--in {
+  position: absolute; right: 10px; top: -9px;
+  width: 78px; height: 42px; opacity: .78; transform: rotate(-8deg);
+  animation: press .7s var(--ease) both; animation-delay: .5s;
+}
+
+/* 和纸胶带（倾斜矩形 + 半透明色 + 毛边） */
+.tape {
+  position: absolute; width: 78px; height: 25px; z-index: 3;
+  background: var(--tape-pink);
+  transform: rotate(-6deg);
+  box-shadow: 0 2px 6px rgba(120,100,60,.14);
+  clip-path: polygon(0 7%, 5% 0, 14% 6%, 25% 0, 36% 7%, 47% 0, 58% 6%, 69% 0, 80% 7%, 90% 0, 100% 8%, 100% 93%, 91% 100%, 80% 94%, 68% 100%, 56% 93%, 44% 100%, 32% 94%, 21% 100%, 11% 93%, 4% 100%, 0 92%);
+  transition: filter var(--t) var(--ease), box-shadow var(--t) var(--ease);
+}
+.tape--green { background: var(--tape-green); }
+.tape--blue  { background: var(--tape-blue); }
+.tape:hover { filter: brightness(1.06) saturate(1.08); box-shadow: 0 4px 14px rgba(120,100,60,.22), 0 0 16px rgba(255,255,255,.4); }
+
+/* 褐色小标签 */
+.tag {
+  display: inline-block; font-family: var(--typewriter); font-size: 10.5px;
+  letter-spacing: .1em; padding: 3px 10px; border-radius: var(--r-pill);
+  background: var(--brown-soft); color: var(--brown);
+  border: 1px dashed rgba(154,107,63,.45);
+}
+
+/* ============================================================
+   02 · 落地页顶栏
+   ============================================================ */
+.topbar {
+  position: sticky; top: 0; z-index: 40;
+  background: var(--paper);
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(10px) saturate(1.1);
+  border-bottom: 1px solid var(--edge);
+}
+.topbar__in { display: flex; align-items: center; gap: 40px; height: 72px; }
+.brand { display: flex; align-items: center; gap: 6px; text-decoration: none; }
+.brand__cn { font-family: var(--hand-cn); font-size: 25px; line-height: 1; color: var(--ink); }
+.brand:hover .brand__cn { color: var(--red); }
+.brand__cn { transition: color var(--t) var(--ease); }
+.brand__en { font-family: var(--typewriter); font-size: 12px; letter-spacing: .22em; color: var(--ink-mute); margin-left: 8px; }
+.nav { display: flex; gap: 30px; }
+.nav a {
+  position: relative; font-size: 13.5px; color: var(--ink-soft);
+  text-decoration: none; letter-spacing: .04em; padding: 4px 0;
+  transition: color var(--t) var(--ease);
+}
+.nav a::after {
+  content: ''; position: absolute; left: 0; bottom: -2px; height: 7px; width: 100%;
+  background: var(--highlight); border-radius: var(--r-pill); transform: scaleX(0); transform-origin: left;
+  transition: transform var(--t-slow) var(--ease); z-index: -1;
+}
+.nav a:hover { color: var(--ink); }
+.nav a:hover::after { transform: scaleX(1); }
+.topbar__act { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+
+/* 亮暗切换示意 */
+.theme-btn {
+  display: flex; align-items: center; gap: 0; cursor: pointer;
+  border: 1px solid var(--edge-strong); background: var(--card); border-radius: var(--r-pill);
+  padding: 3px; position: relative; font-family: var(--typewriter); font-size: 11px;
+  letter-spacing: .06em; color: var(--ink-mute);
+  box-shadow: var(--sheen);
+  transition: border-color var(--t) var(--ease), box-shadow var(--t) var(--ease);
+}
+.theme-btn:hover { border-color: var(--blue); box-shadow: var(--sheen), var(--shadow); }
+.theme-btn span { width: 30px; text-align: center; z-index: 1; transition: color var(--t) var(--ease); }
+.theme-btn__knob {
+  position: absolute; top: 3px; left: 3px; width: 30px; height: calc(100% - 6px);
+  border-radius: var(--r-pill); background: var(--paper-deep); border: 1px solid var(--edge);
+  transition: transform var(--t-slow) var(--ease), background var(--t-slow) var(--ease);
+}
+.theme-btn[data-mode="dark"] .theme-btn__knob { transform: translateX(30px); }
+
+/* ============================================================
+   03 · Hero
+   ============================================================ */
+.hero {
+  padding: 82px 0 60px;
+  border-bottom: 1px solid var(--edge);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 33px, var(--rule-faint) 33px 34px);
+}
+.kicker {
+  font-size: 12px; letter-spacing: .3em; color: var(--red);
+  text-transform: uppercase; margin-bottom: 34px;
+}
+.hero h1 {
+  font-size: clamp(44px, 6.1vw, 82px);
+  font-weight: 700; line-height: 1.18; letter-spacing: .008em;
+  margin-bottom: 34px;
+}
+.hl {
+  font-style: normal;
+  background-image: linear-gradient(transparent 12%, var(--highlight) 12%, var(--highlight) 86%, transparent 86%);
+  border-radius: 9px; padding: 0 .12em; margin: 0 -.02em;
+  box-decoration-break: clone; -webkit-box-decoration-break: clone;
+}
+.deck {
+  max-width: 34em; font-size: 16px; line-height: 2.05; color: var(--ink-soft);
+}
+.cta-row { display: flex; gap: 16px; margin: 36px 0 54px; }
+
+.metrics {
+  list-style: none; display: flex; flex-wrap: wrap; gap: 0;
+  background: var(--card); border: 1px solid var(--edge);
+  border-radius: var(--r-card); box-shadow: var(--sheen), var(--shadow);
+  overflow: hidden;
+}
+.metrics li {
+  flex: 1 1 200px; padding: 22px 24px 20px;
+  border-right: 1px dashed var(--edge);
+  transition: background var(--t) var(--ease);
+}
+.metrics li:last-child { border-right: 0; }
+.metrics li:hover { background: rgba(255,224,102,.16); }
+.metrics b { display: block; font-size: 22px; letter-spacing: .04em; color: var(--ink); }
+.metrics span { display: block; margin-top: 6px; font-family: var(--serif); font-size: 12.5px; letter-spacing: .08em; color: var(--ink-mute); }
+
+/* ============================================================
+   04 · 工作台：记录头卡
+   ============================================================ */
+.workspace { padding: 54px 0 48px; }
+.rec-head {
+  position: relative; display: flex; align-items: center; gap: 16px;
+  padding: 21px 28px; margin-bottom: 24px;
+  background: var(--card); border: 1px dashed var(--edge-strong); border-radius: var(--r-card);
+  box-shadow: var(--sheen), var(--shadow);
+}
+.rec-head .tape { top: -13px; left: 40px; width: 70px; height: 22px; }
+.rec-head__id { font-size: 13px; color: var(--red); }
+.rec-head__sep { width: 1px; height: 16px; background: var(--edge-strong); }
+.rec-head__hint { margin-left: auto; font-size: 11px; letter-spacing: .16em; color: var(--ink-mute); }
+
+/* ============================================================
+   05 · 工作台：应用外壳
+   ============================================================ */
+.app {
+  background: var(--card); border: 1px solid var(--edge); border-radius: 24px;
+  box-shadow: var(--sheen), var(--shadow-lift); overflow: hidden;
+}
+.app__bar {
+  display: flex; align-items: center; gap: 20px;
+  padding: 14px 22px; border-bottom: 1px solid var(--edge);
+  background: linear-gradient(to bottom, var(--paper-deep), var(--card));
+}
+.app__brand { display: flex; align-items: center; gap: 5px; }
+.app__brand .brand__cn { font-size: 19px; }
+.app__brand .brand__en { font-size: 10px; letter-spacing: .2em; margin-left: 5px; }
+.proj {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  padding: 9px 18px; border: 1px solid var(--edge); border-radius: var(--r-pill);
+  background: var(--paper); font-size: 13px;
+  transition: border-color var(--t) var(--ease), box-shadow var(--t) var(--ease);
+}
+.proj:hover { border-color: var(--blue); box-shadow: var(--shadow); }
+.proj__idx { font-family: var(--typewriter); font-size: 11px; color: var(--red); letter-spacing: .08em; }
+.proj__caret { color: var(--ink-mute); font-size: 10px; }
+.app__bar .topbar__act { gap: 12px; }
+.user {
+  display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--ink-soft);
+  padding-left: 14px; border-left: 1px dashed var(--edge-strong);
+}
+.user__dot {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--blue-soft); color: var(--blue);
+  font-family: var(--hand-cn); font-size: 13px; border: 1px solid var(--blue);
+}
+.user__role { font-family: var(--typewriter); font-size: 10.5px; color: var(--ink-mute); }
+
+/* 页签（胶囊化） */
+.tabs { display: flex; gap: 5px; background: var(--paper-deep); border: 1px solid var(--edge); border-radius: var(--r-pill); padding: 4px; }
+.tabs a {
+  padding: 7px 15px; border-radius: var(--r-pill); font-size: 13px; text-decoration: none;
+  color: var(--ink-soft); transition: background var(--t) var(--ease), color var(--t) var(--ease), box-shadow var(--t) var(--ease);
+}
+.tabs a:hover { color: var(--ink); background: color-mix(in srgb, var(--card) 70%, transparent); }
+.tabs a.is-on {
+  background: var(--card); color: var(--ink);
+  box-shadow: var(--sheen), 0 4px 12px rgba(120,100,60,.14);
+}
+
+.app__body {
+  display: grid; grid-template-columns: 248px minmax(0,1fr) 316px;
+  gap: 0; align-items: stretch; min-height: 640px;
+}
+.col { padding: 24px; min-width: 0; }
+.col--left  { border-right: 1px solid var(--edge); background: transparent; }
+.col--mid   { background: var(--paper-deep); }
+.col--right { border-left: 1px solid var(--edge); background: transparent; display: flex; flex-direction: column; }
+
+.col__head {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 22px;
+  padding-bottom: 12px; border-bottom: 1px dashed var(--edge);
+}
+.col__title { font-size: 13.5px; letter-spacing: .16em; font-weight: 600; }
+.col__num { font-family: var(--typewriter); font-size: 10.5px; color: var(--ink-mute); letter-spacing: .12em; }
+
+/* ---- 左栏：会话卷册（索引卡） ---- */
+.sessions { display: flex; flex-direction: column; gap: 22px; }
+.index-card {
+  position: relative; background: var(--card);
+  border: 1px solid var(--edge); border-radius: var(--r-card);
+  padding: 20px 22px 21px 36px;
+  box-shadow: var(--sheen), var(--shadow), inset 3px 0 0 var(--accent, transparent);
+  cursor: pointer;
+  transform: rotate(-0.3deg);
+  transition: transform var(--t) var(--ease), box-shadow var(--t) var(--ease), border-color var(--t) var(--ease);
+}
+.index-card:nth-child(even) { transform: rotate(0.2deg); }
+.index-card:hover { --accent: var(--blue-soft); transform: rotate(0deg) translateY(-4px); box-shadow: var(--sheen), var(--shadow-lift), inset 3px 0 0 var(--accent); }
+.index-card::before, .index-card::after {
+  content: ''; position: absolute; left: 12px; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--paper); border: 1px solid var(--edge-strong);
+  box-shadow: inset 0 1px 2px rgba(120,100,60,.2);
+}
+.index-card::before { top: 20px; }
+.index-card::after  { top: 42px; }
+.index-card .tape { top: -12px; left: 18px; width: 58px; height: 19px; }
+.index-card.is-current { --accent: rgba(217,84,63,.30); background: linear-gradient(to right, var(--red-soft), var(--card) 46%); }
+.ic__t { font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.ic__m { display: flex; align-items: center; gap: 8px; font-family: var(--typewriter); font-size: 10.5px; color: var(--ink-mute); letter-spacing: .08em; }
+.ic__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--blue); }
+.is-current .ic__dot { background: var(--red); animation: pulse 2s var(--ease) infinite; }
+.ic__page { position: absolute; right: 12px; bottom: 5px; font-family: var(--hand); font-size: 17px; color: var(--pencil); }
+
+/* ---- 中栏：记录页 ---- */
+.record {
+  position: relative; height: 100%;
+  background: var(--card);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 27px, var(--rule) 27px 28px);
+  border: 1px solid var(--edge); border-radius: var(--r-card);
+  box-shadow: var(--sheen), var(--shadow);
+  padding: 28px 34px 34px 78px;
+  display: flex; flex-direction: column;
+}
+.record::before {
+  content: ''; position: absolute; left: 56px; top: 20px; bottom: 20px; width: 1.4px;
+  background: var(--margin-line); border-radius: var(--r-pill);
+}
+.record__meta {
+  position: absolute; left: 16px; top: 34px; width: 40px;
+  font-family: var(--typewriter); font-size: 10px; line-height: 1.9;
+  color: var(--ink-mute); letter-spacing: .06em; writing-mode: vertical-rl;
+}
+.msg { position: relative; padding-left: 34px; margin-bottom: 28px; }
+.msg__tick {
+  position: absolute; left: 0; top: 1px; width: 22px; text-align: center;
+  font-family: var(--typewriter); font-size: 14px; color: var(--pencil);
+}
+.msg--user .msg__tick { color: var(--blue); }
+.msg__who {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+  font-family: var(--typewriter); font-size: 10.5px; letter-spacing: .14em; color: var(--ink-mute);
+}
+.badge-j {
+  width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center;
+  border: 1.4px solid var(--blue); color: var(--blue); background: var(--blue-soft);
+  font-family: var(--hand-cn); font-size: 13px; line-height: 1;
+}
+.msg__body { font-size: 14.5px; line-height: 28px; color: var(--ink); }
+.msg--user .msg__body { color: var(--ink); }
+.msg__body strong { font-weight: 700; }
+.msg__body .u { border-bottom: 2px solid var(--highlight); padding-bottom: 1px; }
+.pencil-line { display: block; width: 100%; max-width: 330px; height: 8px; margin-top: 8px; color: var(--pencil); opacity: .68; }
+.cursor {
+  display: inline-block; width: .58em; height: 1.02em; margin-left: 3px;
+  background: var(--blue); border-radius: 2px; vertical-align: -.16em;
+  animation: blink 1.05s steps(1) infinite;
+}
+
+/* 中断确认条 */
+.confirm {
+  position: relative; margin: 6px 0 28px; padding: 18px 20px 18px 22px;
+  background: linear-gradient(to right, rgba(255,224,102,.40), rgba(255,224,102,.12));
+  border: 1px dashed rgba(154,107,63,.50); border-radius: var(--r-soft);
+}
+[data-theme="dark"] .confirm { background: linear-gradient(to right, rgba(255,224,102,.16), rgba(255,224,102,.05)); }
+.confirm__t { font-size: 13.5px; margin-bottom: 14px; }
+.confirm__t b { font-weight: 700; }
+.confirm__row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.confirm__input {
+  flex: 1 1 180px; min-width: 0; font-family: var(--serif); font-size: 13px;
+  padding: 10px 16px; border: 1px solid var(--edge-strong); border-radius: var(--r-pill);
+  background: var(--card); color: var(--ink);
+  transition: border-color var(--t) var(--ease), box-shadow var(--t) var(--ease);
+}
+.confirm__input::placeholder { color: var(--pencil); }
+.confirm__input:hover, .confirm__input:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 4px var(--blue-soft); }
+
+/* 输入区 */
+.composer { margin-top: auto; padding-top: 12px; }
+.composer__box {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--card); border: 1px solid var(--edge-strong); border-radius: var(--r-pill);
+  padding: 12px 12px 12px 20px; box-shadow: var(--sheen), var(--shadow);
+  transition: border-color var(--t) var(--ease), box-shadow var(--t) var(--ease);
+}
+.composer__box:hover, .composer__box:focus-within { border-color: var(--blue); box-shadow: var(--sheen), 0 0 0 4px var(--blue-soft), var(--shadow); }
+.composer__ph { flex: 1; color: var(--pencil); font-size: 14px; }
+.composer__hint {
+  display: flex; gap: 8px; align-items: center; margin-top: 12px;
+  font-family: var(--typewriter); font-size: 10.5px; letter-spacing: .1em; color: var(--ink-mute);
+}
+.composer__hint .tag { margin-left: auto; }
+
+/* ---- 右栏 ---- */
+.right-tabs { margin-bottom: 20px; }
+.right-tabs a { font-size: 12px; padding: 7px 11px; }
+.log { display: flex; flex-direction: column; gap: 20px; }
+.log__row {
+  position: relative; display: flex; gap: 12px; padding: 14px 16px;
+  background: var(--card); border: 1px solid var(--edge); border-radius: var(--r-soft);
+  box-shadow: var(--sheen);
+  transition: transform var(--t) var(--ease), box-shadow var(--t) var(--ease), border-color var(--t) var(--ease);
+}
+.log__row:hover { transform: translateY(-3px); box-shadow: var(--sheen), var(--shadow); border-color: var(--edge-strong); }
+.log__no { font-family: var(--typewriter); font-size: 10px; color: var(--pencil); letter-spacing: .06em; padding-top: 3px; }
+.log__tick { font-family: var(--typewriter); font-size: 14px; color: var(--blue); line-height: 1.4; }
+.log__row.is-pending .log__tick { color: var(--pencil); }
+.log__row.is-running .log__tick { color: var(--red); }
+.log__main { flex: 1; min-width: 0; }
+.log__t { font-size: 13px; line-height: 1.5; }
+.log__t em { font-style: normal; font-family: var(--typewriter); font-size: 11px; color: var(--ink-mute); }
+.log__m { font-family: var(--typewriter); font-size: 10.5px; color: var(--ink-mute); letter-spacing: .06em; margin-top: 4px; }
+.log__m .ok { color: var(--blue); }
+.log__m .run { color: var(--red); }
+.log__bar { height: 4px; margin-top: 10px; border-radius: var(--r-pill); background: var(--paper-deep); overflow: hidden; }
+.log__bar i { display: block; height: 100%; width: 46%; background: linear-gradient(to right, var(--blue), var(--red)); animation: slide 2.4s var(--ease) infinite; }
+
+/* 便利贴 */
+.note {
+  position: relative; margin: 24px 0; padding: 20px 20px 18px;
+  background: linear-gradient(160deg, #FFE98A, #FFDE6B);
+  color: #4A3E1E; border-radius: 12px;
+  transform: rotate(-1.2deg); box-shadow: 0 12px 28px -14px rgba(120,100,60,.55);
+  transition: transform var(--t-slow) var(--ease), box-shadow var(--t-slow) var(--ease);
+}
+.note:hover { transform: rotate(0deg) translateY(-3px); box-shadow: 0 20px 38px -18px rgba(120,100,60,.6); }
+.note::after {
+  content: ''; position: absolute; right: 0; bottom: 0;
+  width: 0; height: 0; border-style: solid; border-width: 0 0 20px 20px;
+  border-color: transparent transparent rgba(154,107,63,.18) transparent;
+}
+.note__t { font-family: var(--hand-cn); font-size: 19px; line-height: 1.55; }
+.note__t .en { font-family: var(--hand); font-size: 21px; }
+.note__s { font-family: var(--hand); font-size: 16px; color: rgba(74,62,30,.72); margin-top: 3px; }
+
+/* 资料清单 */
+.docs { margin-top: auto; }
+.docs__head { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; font-size: 12.5px; letter-spacing: .12em; color: var(--ink-soft); }
+.docs__list { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+.doc {
+  position: relative; display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border: 1px solid var(--edge); border-radius: var(--r-soft);
+  background: var(--paper-deep); box-shadow: var(--sheen);
+  transition: border-color var(--t) var(--ease), background var(--t) var(--ease), transform var(--t) var(--ease);
+}
+.doc:hover { border-color: var(--edge-strong); background: var(--card); transform: translateX(3px); }
+.doc__ic { font-family: var(--typewriter); font-size: 10px; color: var(--ink-mute); border: 1px solid var(--edge-strong); border-radius: 7px; padding: 3px 6px; letter-spacing: .04em; }
+.doc__n { flex: 1; min-width: 0; font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.doc__m { font-family: var(--typewriter); font-size: 10px; color: var(--ink-mute); letter-spacing: .06em; }
+
+/* ============================================================
+   06 · 页脚
+   ============================================================ */
+.foot { border-top: 1px solid var(--edge); margin-top: 28px; padding: 34px 0 38px; background: var(--paper-deep); }
+.foot__line { font-size: 12px; letter-spacing: .16em; color: var(--ink); }
+.foot__meta { display: flex; flex-wrap: wrap; gap: 10px 34px; margin-top: 16px; font-size: 12px; color: var(--ink-mute); }
+.foot__k { font-family: var(--typewriter); font-size: 10.5px; letter-spacing: .12em; color: var(--red); margin-right: 8px; }
+
+/* ============================================================
+   07 · 提案导航丸（十项通用）
+   ============================================================ */
+.pill {
+  position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); z-index: 60;
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 14px 8px 18px; border-radius: var(--r-pill);
+  background: var(--card);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  border: 1px solid var(--edge-strong);
+  box-shadow: var(--sheen), var(--shadow-lift);
+  backdrop-filter: blur(10px);
+}
+.pill__label { font-size: 10px; letter-spacing: .22em; color: var(--ink-mute); padding-right: 12px; border-right: 1px dashed var(--edge-strong); }
+.chip {
+  display: grid; place-items: center;
+  width: 30px; height: 30px; border-radius: 50%;
+  font-family: var(--typewriter); font-size: 11px; letter-spacing: .02em;
+  text-decoration: none; color: var(--ink-soft); background: var(--paper-deep);
+  border: 1px solid transparent;
+  transition: background var(--t) var(--ease), color var(--t) var(--ease), transform var(--t) var(--ease), border-color var(--t) var(--ease), box-shadow var(--t) var(--ease);
+}
+.chip:hover { color: var(--ink); background: var(--card); border-color: var(--blue); transform: translateY(-3px); box-shadow: var(--shadow); }
+.chip.is-current { color: var(--btn-fg); background: var(--red); border-color: var(--red); box-shadow: 0 6px 16px -6px rgba(217,84,63,.6); }
+.chip.is-current:hover { color: var(--btn-fg); background: var(--red); border-color: var(--red); transform: translateY(-3px); }
+
+/* ============================================================
+   08 · 动效
+   ============================================================ */
+@keyframes press { from { transform: rotate(-8deg) scale(1.25); opacity: 0; } to { transform: rotate(-8deg) scale(1); opacity: .9; } }
+@keyframes blink { 0%,49% { opacity: 1; } 50%,100% { opacity: 0; } }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes slide { 0% { transform: translateX(-30%); } 100% { transform: translateX(230%); } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* ============================================================
+   09 · 窄屏兜底（设计基准为 1440 桌面）
+   ============================================================ */
+@media (max-width: 1080px) {
+  .app__body { grid-template-columns: 1fr; }
+  .col--left, .col--right { border: 0; border-bottom: 1px solid var(--edge); }
+  .nav, .rec-head__hint { display: none; }
+}
+@media (max-width: 760px) {
+  .pill { gap: 5px; padding: 7px 10px; }
+  .pill__label { display: none; }
+  .chip { width: 26px; height: 26px; font-size: 10px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ （1）落地页顶栏 ============ -->
+<header class="topbar">
+  <div class="wrap topbar__in">
+    <a class="brand" href="#top">
+      <span class="brand__cn">论</span>
+      <svg class="stamp stamp--brand" viewBox="0 0 64 44" aria-hidden="true">
+        <ellipse cx="32" cy="22" rx="29.4" ry="18.6" fill="none" stroke="currentColor" stroke-width="2.6" />
+        <ellipse cx="32" cy="22" rx="24.8" ry="14.2" fill="none" stroke="currentColor" stroke-width="1" />
+        <text x="32" y="28" text-anchor="middle" font-size="17" letter-spacing="1">论匠</text>
+      </svg>
+      <span class="brand__cn">匠</span>
+      <span class="brand__en">LunJiang</span>
+    </a>
+    <nav class="nav">
+      <a href="#capability">能力</a>
+      <a href="#arch">架构与评测</a>
+      <a href="#collab">人机协同</a>
+      <a href="#start">开始</a>
+    </nav>
+    <div class="topbar__act">
+      <button class="theme-btn" type="button" data-theme-toggle aria-label="切换亮暗主题">
+        <span class="theme-btn__knob" aria-hidden="true"></span>
+        <span>亮</span><span>暗</span>
+      </button>
+      <a class="btn btn--primary" href="#workspace">进入工作台</a>
+    </div>
+  </div>
+</header>
+
+<!-- ============ （2）Hero ============ -->
+<section class="hero" id="top">
+  <div class="wrap">
+    <p class="kicker tw">LUNJIANG · 多智能体论文全流程工作台</p>
+    <h1>论匠，帮你把论文<em class="hl">写完</em>。</h1>
+    <p class="deck">选题、文献、写作、格式、查重、答辩——六个环节一支编队，主控智能体全程调度，每一次产出都经你确认后落进稿纸。</p>
+    <div class="cta-row">
+      <a class="btn btn--primary btn--lg" href="#workspace">进入工作台</a>
+      <a class="btn btn--ghost btn--lg" href="#source">GitHub 源码</a>
+    </div>
+    <ul class="metrics tw">
+      <li><b>100%</b><span>意图分类 Top-1</span></li>
+      <li><b>100%</b><span>检索 Recall@5</span></li>
+      <li><b>16/16</b><span>回归场景通过</span></li>
+      <li><b>89</b><span>项离线测试用例</span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============ （3）工作台样张 ============ -->
+<section class="workspace" id="workspace">
+  <div class="wrap">
+
+    <!-- 记录头卡 -->
+    <div class="rec-head">
+      <span class="tape tape--green" aria-hidden="true"></span>
+      <span class="tw rec-head__id">REC-#012</span>
+      <span class="rec-head__sep"></span>
+      <span class="tw">日期 2026-10-01</span>
+      <span class="rec-head__sep"></span>
+      <span class="tw">记录人 吕江</span>
+      <span class="tw rec-head__hint">LUNJIANG · LAB NOTEBOOK / 工作台样张</span>
+    </div>
+
+    <!-- 应用外壳 -->
+    <div class="app">
+
+      <!-- 应用顶栏 -->
+      <div class="app__bar">
+        <div class="app__brand">
+          <svg class="stamp stamp--app" viewBox="0 0 64 44" aria-hidden="true">
+            <ellipse cx="32" cy="22" rx="29" ry="18.4" fill="none" stroke="currentColor" stroke-width="3" />
+            <ellipse cx="32" cy="22" rx="24" ry="13.6" fill="none" stroke="currentColor" stroke-width="1.1" />
+            <text x="32" y="28" text-anchor="middle" font-size="18">论匠</text>
+          </svg>
+          <span class="brand__en">LunJiang</span>
+        </div>
+
+        <div class="proj" role="button" tabindex="0">
+          <span class="proj__idx">#12</span>
+          <span>大模型辅助的文献综述自动化研究</span>
+          <span class="proj__caret" aria-hidden="true">▾</span>
+        </div>
+
+        <div class="tabs">
+          <a href="#conversation" class="is-on">对话</a>
+          <a href="#observable">可观测</a>
+        </div>
+
+        <div class="topbar__act">
+          <button class="theme-btn" type="button" data-theme-toggle aria-label="切换亮暗主题">
+            <span class="theme-btn__knob" aria-hidden="true"></span>
+            <span>亮</span><span>暗</span>
+          </button>
+          <div class="user">
+            <span class="user__dot" aria-hidden="true">吕</span>
+            <span>吕江</span>
+            <span class="user__role">admin</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 三栏工作区 -->
+      <div class="app__body">
+
+        <!-- 左栏：会话卷册 -->
+        <aside class="col col--left">
+          <div class="col__head">
+            <span class="col__title">会话卷册</span>
+            <span class="col__num">VOL.03</span>
+            <button class="btn btn--sm" type="button" style="margin-left:auto">新建</button>
+          </div>
+
+          <div class="sessions">
+            <article class="index-card is-current">
+              <span class="tape tape--pink" aria-hidden="true"></span>
+              <h3 class="ic__t">选题方向探索</h3>
+              <p class="ic__m"><span class="ic__dot" aria-hidden="true"></span>当前 · 刚刚 · 4 条</p>
+              <span class="ic__page">p.01</span>
+            </article>
+
+            <article class="index-card">
+              <span class="tape tape--blue" aria-hidden="true"></span>
+              <h3 class="ic__t">文献检索</h3>
+              <p class="ic__m"><span class="ic__dot" aria-hidden="true"></span>昨天 · 12 条</p>
+              <span class="ic__page">p.02</span>
+            </article>
+
+            <article class="index-card">
+              <span class="tape tape--green" aria-hidden="true"></span>
+              <h3 class="ic__t">方法论初稿</h3>
+              <p class="ic__m"><span class="ic__dot" aria-hidden="true"></span>周一 · 8 条</p>
+              <span class="ic__page">p.03</span>
+            </article>
+          </div>
+        </aside>
+
+        <!-- 中栏：记录页对话 -->
+        <main class="col col--mid" id="conversation">
+          <div class="record">
+            <div class="record__meta" aria-hidden="true">REC-012 / 选题</div>
+
+            <!-- 用户消息 -->
+            <div class="msg msg--user">
+              <span class="msg__tick" aria-hidden="true">☑</span>
+              <div class="msg__who"><span>吕江 · 12:04</span></div>
+              <div class="msg__body">帮我确定一个可行的论文选题，大模型方向，要能做出实验。</div>
+            </div>
+
+            <!-- 助手流式消息 -->
+            <div class="msg">
+              <span class="msg__tick" aria-hidden="true">☐</span>
+              <div class="msg__who">
+                <span class="badge-j" aria-hidden="true">匠</span>
+                <span>主控智能体 · 流式生成中</span>
+              </div>
+              <div class="msg__body">
+                建议从「<span class="u">RAG 评测鲁棒性</span>」切入。理由有三：① 数据可控、实验可复现；② 三类扰动清晰可测——对抗查询、检索失败、引用幻觉；③ 近三年基准论文充足。已调度文献 Agent 拉取 50 篇核心论文，需要我把选题结论写进项目档案吗？<span class="cursor" aria-hidden="true"></span>
+              </div>
+              <svg class="pencil-line" viewBox="0 0 300 8" preserveAspectRatio="none" aria-hidden="true">
+                <path d="M2 5 C 58 2, 116 7.4, 176 4 S 266 6.4, 298 2.6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              </svg>
+            </div>
+
+            <!-- 中断确认条 -->
+            <div class="confirm">
+              <p class="confirm__t">第三章方法论初稿已生成，是否采纳？</p>
+              <div class="confirm__row">
+                <button class="btn btn--primary btn--sm" type="button">采纳</button>
+                <button class="btn btn--sm" type="button">修改后采纳</button>
+                <input class="confirm__input" type="text" placeholder="输入你的反馈…" />
+              </div>
+            </div>
+
+            <!-- 输入区 -->
+            <div class="composer">
+              <div class="composer__box">
+                <span class="composer__ph">输入论文相关请求…</span>
+                <button class="btn btn--primary" type="button">发送</button>
+              </div>
+              <p class="composer__hint">
+                <span>Enter 发送</span><span>·</span><span>Shift+Enter 换行</span>
+                <span class="tag">已关联项目 #12</span>
+              </p>
+            </div>
+          </div>
+        </main>
+
+        <!-- 右栏：执行时间线 -->
+        <aside class="col col--right" id="observable">
+          <div class="col__head right-tabs-wrap" style="border-bottom:0;padding-bottom:0;margin-bottom:14px">
+            <div class="tabs right-tabs">
+              <a href="#timeline" class="is-on">执行时间线</a>
+              <a href="#kb">项目知识库</a>
+              <a href="#archive">项目档案</a>
+            </div>
+          </div>
+
+          <div class="log" id="timeline">
+            <div class="log__row">
+              <span class="log__no tw">01</span>
+              <span class="log__tick" aria-hidden="true">☑</span>
+              <div class="log__main">
+                <p class="log__t">意图识别 · 选题咨询 <em>conf 0.96</em></p>
+                <p class="log__m"><span class="ok">完成</span> · 56ms</p>
+              </div>
+            </div>
+
+            <div class="log__row">
+              <span class="log__no tw">02</span>
+              <span class="log__tick" aria-hidden="true">☑</span>
+              <div class="log__main">
+                <p class="log__t">Planner 规划 · 3 步</p>
+                <p class="log__m"><span class="ok">完成</span> · 210ms</p>
+              </div>
+            </div>
+
+            <div class="log__row is-running">
+              <span class="log__no tw">03</span>
+              <span class="log__tick" aria-hidden="true">☐</span>
+              <div class="log__main">
+                <p class="log__t">混合检索 · RRF 融合</p>
+                <p class="log__m"><span class="run">进行中</span> · 412ms</p>
+                <div class="log__bar" aria-hidden="true"><i></i></div>
+              </div>
+            </div>
+
+            <div class="log__row is-pending">
+              <span class="log__no tw">04</span>
+              <span class="log__tick" aria-hidden="true">☐</span>
+              <div class="log__main">
+                <p class="log__t">流式生成</p>
+                <p class="log__m">待触发</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 便利贴 -->
+          <div class="note">
+            <p class="note__t">记得补两篇 <span class="en">RAG</span> 评测文献</p>
+            <p class="note__s">before chapter 3 —</p>
+          </div>
+
+          <!-- 资料清单 -->
+          <div class="docs">
+            <p class="docs__head"><span class="tw">资料清单</span><span class="col__num" style="margin-left:auto">2 / 8</span></p>
+            <ul class="docs__list">
+              <li class="doc">
+                <span class="doc__ic tw" aria-hidden="true">PDF</span>
+                <span class="doc__n">综述_2024.pdf</span>
+                <span class="doc__m">已入库 · 128 分块</span>
+                <svg class="stamp stamp--in" viewBox="0 0 78 42" aria-hidden="true">
+                  <ellipse cx="39" cy="21" rx="36.4" ry="17.6" fill="none" stroke="currentColor" stroke-width="2.4" />
+                  <ellipse cx="39" cy="21" rx="31.4" ry="13.2" fill="none" stroke="currentColor" stroke-width="1" />
+                  <text x="39" y="26" text-anchor="middle" font-size="13.5" letter-spacing="0.6">已入库</text>
+                </svg>
+              </li>
+              <li class="doc">
+                <span class="doc__ic tw" aria-hidden="true">MD</span>
+                <span class="doc__n">实验记录.md</span>
+                <span class="tag">解析中</span>
+              </li>
+            </ul>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ （4）页脚 ============ -->
+<footer class="foot">
+  <div class="wrap">
+    <p class="foot__line tw">论匠 LUNJIANG · 方向⑦ 实验记录本 · 柔版 · PROPOSAL — NOT IMPLEMENTED</p>
+    <div class="foot__meta">
+      <p><span class="foot__k">字体</span>Special Elite / Caveat / Ma Shan Zheng / Noto Serif SC 400·600·700</p>
+      <p><span class="foot__k">配色</span>纸底 #FBF7EE · 卡片 #FFFDF8 · 墨蓝黑 #2B3450 · 红笔 #D9543F · 蓝墨水 #3B6EA5 · 荧光黄 #FFE066 · 铅笔灰 #8B8878</p>
+    </div>
+  </div>
+</footer>
+
+<!-- ============ 提案导航丸（十项通用） ============ -->
+<nav class="pill" aria-label="提案导航">
+  <span class="pill__label tw">PROPOSALS</span>
+  <a class="chip" href="proposal-1-ops-console.html" title="01 · 暗色指挥舱">01</a>
+  <a class="chip" href="proposal-2-blueprint.html" title="02 · 蓝图工程">02</a>
+  <a class="chip" href="proposal-3-lab-notebook.html" title="03 · 实验记录本">03</a>
+  <a class="chip" href="proposal-4-academic-press.html" title="04 · 学术期刊">04</a>
+  <a class="chip" href="proposal-5-ops-console-soft.html" title="05 · 暗色指挥舱·柔">05</a>
+  <a class="chip" href="proposal-6-blueprint-soft.html" title="06 · 蓝图工程·柔">06</a>
+  <a class="chip is-current" href="proposal-7-lab-notebook-soft.html" title="07 · 实验记录本·柔" aria-current="page">07</a>
+  <a class="chip" href="proposal-8-academic-press-soft.html" title="08 · 学术期刊·柔">08</a>
+  <a class="chip" href="proposal-9-cream-round.html" title="09 · 暖云手稿">09</a>
+  <a class="chip" href="proposal-10-organic-wave.html" title="10 · 晨雾有机">10</a>
+</nav>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var toggles = Array.prototype.slice.call(document.querySelectorAll('[data-theme-toggle]'));
+    function apply(mode) {
+      root.setAttribute('data-theme', mode);
+      toggles.forEach(function (t) { t.setAttribute('data-mode', mode); });
+    }
+    apply('light');
+    toggles.forEach(function (t) {
+      t.addEventListener('click', function () {
+        apply(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

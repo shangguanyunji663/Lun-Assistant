@@ -1,443 +1,594 @@
 <!doctype html>
-<html lang="zh-CN">
+<!-- v16 落地页：与工作台共用 tokens.css 主题令牌。
+     主题挂 <html data-theme>（ops|blueprint|lab|press|soft-cream|soft-mist），
+     柔化挂 <html data-soft>（on|off）；默认 soft-cream + on，读写 localStorage.lj_theme / lj_soft。 -->
+<html lang="zh-CN" data-theme="soft-cream" data-soft="on">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="论匠 LunJiang —— 多智能体论文全流程工作台。选题、文献、写作、格式、查重、答辩，六个环节一支编队，产出经你确认后落进稿纸。" />
-    <meta name="theme-color" content="#F4F6F3" />
+    <meta
+      name="description"
+      content="论匠 LunJiang —— 多智能体论文全流程工作台。选题、文献、写作、格式、查重、答辩，六个环节一支编队，产出经你确认后落进稿纸。"
+    />
+    <meta name="theme-color" content="#FBF5EC" />
     <title>论匠 LunJiang · 多智能体论文全流程工作台</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <!-- 令牌层（唯一真源）必须先于落地页样式加载 -->
+    <link rel="stylesheet" href="/src/tokens.css" />
     <link rel="stylesheet" href="/src/landing.css" />
+    <link rel="stylesheet" href="/src/landing-themes.css" />
+    <!-- 入场动画的渐进增强开关：尽早置上 lj-js，避免首帧闪烁；脚本被禁用时内容照常可见 -->
+    <script>document.documentElement.classList.add('lj-js')</script>
   </head>
-  <body data-theme="light">
-  <div id="ln-site">
-    <nav class="ln-nav">
-      <a class="ln-brand" href="#top">
-        <span class="ln-seal" aria-hidden="true">论</span>
-        <span class="ln-brand-name">论匠</span>
-        <span class="ln-brand-en">LunJiang</span>
-      </a>
-      <div class="ln-nav-links">
-        <a href="#capabilities">能力</a>
-        <a href="#architecture">架构与评测</a>
-        <a href="#synergy">人机协同</a>
-        <a href="#start">开始</a>
-      </div>
-      <div class="ln-nav-actions">
-        <button id="ln-theme" class="ln-theme-btn" type="button" aria-label="切换亮暗主题">
-          <svg class="ln-ico-sun" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
-          <svg class="ln-ico-moon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
-          <span class="ln-theme-label">暗色</span>
-        </button>
-        <a class="ln-btn ln-btn-solid" href="./app.html">进入工作台</a>
-      </div>
-    </nav>
+  <body>
+    <!-- 装饰层：方格底纹 / 横格纸 / 有机光斑 / 波浪，全部走 tokens 变量，非对应主题下自动隐去 -->
+    <div class="lj-bg" aria-hidden="true">
+      <i class="blob blob-1"></i>
+      <i class="blob blob-2"></i>
+      <i class="blob blob-3"></i>
+      <i class="wave"></i>
+    </div>
 
-    <header class="ln-hero" id="top">
-      <p class="ln-kicker ln-reveal">LunJiang · 多智能体论文全流程工作台</p>
-      <h1 class="ln-hero-title ln-reveal" style="transition-delay:.06s">论匠，帮你把论文写完。</h1>
-      <p class="ln-hero-sub ln-reveal" style="transition-delay:.12s">选题、文献、写作、格式、查重、答辩——六个环节一支编队，主控智能体全程调度，每一次产出都经你确认后落进稿纸。</p>
-      <div class="ln-hero-cta ln-reveal" style="transition-delay:.18s">
-        <a class="ln-btn ln-btn-solid ln-btn-lg" href="./app.html">进入工作台</a>
-        <a class="ln-btn ln-btn-ghost ln-btn-lg" href="https://github.com/shangguanyunji663/Lun-Assistant" target="_blank" rel="noreferrer">GitHub 源码</a>
-      </div>
-      <figure class="ln-shot ln-reveal" style="transition-delay:.24s">
-        <div class="ln-win lm">
-          <div class="ln-win-bar"><i></i><i></i><i></i><span>论匠 · 工作台 — 大模型辅助的文献综述自动化研究</span></div>
-          <div class="lm-app" aria-hidden="true">
-            <div class="lm-top">
-              <span class="lm-tseal">论</span>
-              <span class="lm-tbrand">论匠</span>
-              <span class="lm-tchips"><i></i><i></i><i></i><i></i></span>
-              <span class="lm-tsp"></span>
-              <span class="lm-tnav"><b class="on">对话</b><b>可观测</b></span>
-            </div>
-            <div class="lm-body">
-              <aside class="lm-pane">
-                <div class="lm-pane-h">会话卷册</div>
-                <div class="lm-si on"><em>选题方向探索</em><em>刚刚 · 4 条</em></div>
-                <div class="lm-si"><em>文献检索</em><em>昨天 · 12 条</em></div>
-                <div class="lm-si"><em>方法论初稿</em><em>周一 · 8 条</em></div>
-              </aside>
-              <section class="lm-pane lm-chat">
-                <div class="lm-msg user"><span class="lm-mark">言</span><p>帮我确定一个可行的论文选题，大模型方向。</p></div>
-                <div class="lm-msg"><span class="lm-mark">匠</span><p>建议从「RAG 评测鲁棒性」切入：对抗查询、检索失败、引用幻觉三类扰动下的指标波动。已调度文献 Agent 拉近三年 50 篇核心论文。<span class="lm-caret"></span></p></div>
-                <div class="lm-input"><span>输入论文相关请求…</span><b>发送</b></div>
-              </section>
-              <aside class="lm-pane">
-                <div class="lm-pane-h">执行时间线</div>
-                <div class="lm-node"><b></b>意图识别 <em>56ms</em></div>
-                <div class="lm-node"><b></b>Planner 规划 <em>3 步</em></div>
-                <div class="lm-node run"><b></b>混合检索 <em>进行中</em></div>
-                <div class="lm-node"><b></b>流式生成 <em>待触发</em></div>
-              </aside>
+    <!-- ====================================================================
+         顶栏
+         ==================================================================== -->
+    <header class="tb">
+      <div class="wrap tb-in">
+        <a class="brand" href="#top">
+          <span class="brand-seal" aria-hidden="true">
+            <svg width="30" height="30" viewBox="0 0 30 30">
+              <rect x="2" y="2" width="26" height="26" rx="9" fill="var(--accent)" />
+              <rect
+                x="6.4" y="6.4" width="17.2" height="17.2" rx="6"
+                fill="none" stroke="var(--accent-ink)" stroke-opacity=".62" stroke-width="1.1"
+              />
+              <text
+                x="15" y="20" text-anchor="middle" fill="var(--accent-ink)"
+                font-family="var(--font-display)" font-size="12.5" font-weight="900"
+              >论</text>
+            </svg>
+          </span>
+          <span class="brand-name">论匠<span class="brand-en">LunJiang</span></span>
+        </a>
+
+        <nav class="nav" aria-label="主导航">
+          <a class="tlink" href="#capabilities">能力</a>
+          <a class="tlink" href="#architecture">架构与评测</a>
+          <a class="tlink" href="#synergy">人机协同</a>
+          <a class="tlink" href="#start">开始</a>
+        </nav>
+
+        <span class="fill"></span>
+
+        <div class="tb-right">
+          <!-- 主题选择器：6 主题 + 柔化开关（条目由 landing.js 注入，色点取各主题强调色） -->
+          <div class="theme-picker" id="theme-picker">
+            <button
+              class="tp-trigger" id="theme-trigger" type="button"
+              aria-haspopup="true" aria-expanded="false" title="切换主题 / 柔化"
+            >
+              <span class="tp-chip" id="tp-chip" aria-hidden="true"></span>
+              <span class="tp-label" id="tp-label">暖云手稿</span>
+              <span class="tp-caret" aria-hidden="true"></span>
+            </button>
+
+            <div class="tp-pop" id="tp-pop" role="menu" aria-label="主题选择">
+              <div class="tp-head">
+                <span class="tp-title">主题</span>
+                <span class="tp-hint">只换配色与材质</span>
+              </div>
+              <div class="tp-grid" id="tp-grid"></div>
+              <div class="tp-sep" aria-hidden="true"></div>
+              <button class="tp-soft" id="tp-soft" type="button" aria-pressed="true">
+                <span class="tp-soft-track" aria-hidden="true"><i></i></span>
+                <span class="tp-soft-text">柔化材质<em id="tp-soft-note">已开启</em></span>
+              </button>
             </div>
           </div>
+
+          <a class="btn btn-solid btn-sm" href="./app.html">进入工作台</a>
         </div>
-        <figcaption>工作台实景 —— 左：会话卷册 · 中：对话区 · 右：执行时间线；共七套可切换主题</figcaption>
-      </figure>
+      </div>
     </header>
 
-    <main>
-      <section class="ln-section" id="capabilities">
-        <p class="ln-kicker ln-reveal">Capabilities · 核心能力</p>
-        <h2 class="ln-h2 ln-reveal" style="transition-delay:.06s">六个环节，一支智能体编队</h2>
-        <p class="ln-lead ln-reveal" style="transition-delay:.12s">不是一个大模型硬扛所有问题：主控智能体识别意图、拆解任务、按环节路由给专项角色，人的确认卡在关键节点上。</p>
-        <div class="ln-grid ln-grid-3">
-          <article class="ln-card ln-reveal">
-            <span class="ln-num-badge">01</span>
+    <main class="wrap" id="top">
+      <!-- ==================================================================
+           Hero
+           ================================================================== -->
+      <section class="hero">
+        <p class="kicker lj-reveal">
+          <span class="dot"></span><b>LUNJIANG</b> · 多智能体论文全流程工作台
+        </p>
+
+        <h1 class="lj-reveal">论匠，帮你把<em>论文</em>写完。</h1>
+
+        <p class="hero-sub lj-reveal">
+          选题、文献、写作、格式、查重、答辩——<span class="hl">六个环节一支编队</span>，
+          主控智能体全程调度，每一次产出都经你确认后落进稿纸。
+        </p>
+
+        <div class="hero-cta lj-reveal">
+          <a class="btn btn-solid btn-lg" href="./app.html">进入工作台</a>
+          <a
+            class="btn btn-ghost btn-lg"
+            href="https://github.com/shangguanyunji663/Lun-Assistant"
+            target="_blank" rel="noreferrer"
+          >GitHub 源码</a>
+        </div>
+
+        <div class="metrics lj-reveal">
+          <div class="metric">
+            <div class="num"><span class="num-v" data-count="100">100</span><span class="num-u">%</span></div>
+            <div class="cap"><span class="tick"></span>意图分类 Top-1</div>
+          </div>
+          <div class="metric">
+            <div class="num"><span class="num-v" data-count="100">100</span><span class="num-u">%</span></div>
+            <div class="cap"><span class="tick"></span>检索 Recall@5</div>
+          </div>
+          <div class="metric">
+            <div class="num"><span class="num-v" data-count="16">16</span><span class="num-u">/16</span></div>
+            <div class="cap"><span class="tick"></span>回归场景通过</div>
+          </div>
+          <div class="metric">
+            <div class="num"><span class="num-v" data-count="89">89</span><span class="num-u">项</span></div>
+            <div class="cap"><span class="tick"></span>离线测试用例</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           工作台预览（纯 HTML/CSS 平铺还原，不加窗口装饰）
+           ================================================================== -->
+      <section class="section" id="workbench">
+        <div class="sechead lj-reveal">
+          <h2>工作台</h2>
+          <span class="sechead-la">The Writing Desk</span>
+          <span class="fill"></span>
+          <span class="micro">平铺还原 · 无窗口装饰</span>
+        </div>
+
+        <div class="sheet lj-reveal">
+          <!-- 应用顶栏 -->
+          <div class="appbar">
+            <div class="appbrand">
+              <span class="brand-seal sm" aria-hidden="true">
+                <svg width="24" height="24" viewBox="0 0 30 30">
+                  <rect x="2" y="2" width="26" height="26" rx="9" fill="var(--accent)" />
+                  <rect
+                    x="6.4" y="6.4" width="17.2" height="17.2" rx="6"
+                    fill="none" stroke="var(--accent-ink)" stroke-opacity=".62" stroke-width="1.1"
+                  />
+                  <text
+                    x="15" y="20" text-anchor="middle" fill="var(--accent-ink)"
+                    font-family="var(--font-display)" font-size="12.5" font-weight="900"
+                  >论</text>
+                </svg>
+              </span>
+              <span class="appbrand-nm">论匠</span>
+            </div>
+
+            <span class="projsel">
+              <span class="ps-id">#12</span>
+              <span class="ps-txt">大模型辅助的文献综述自动化研究</span>
+              <span class="ps-caret" aria-hidden="true"></span>
+            </span>
+
+            <span class="fill"></span>
+
+            <nav class="tabs" aria-hidden="true">
+              <span class="tab on">对话</span>
+              <span class="tab">可观测</span>
+            </nav>
+
+            <span class="userchip">
+              <span class="uc-av">吕</span>
+              <span>吕江 · <span class="uc-role">admin</span></span>
+            </span>
+          </div>
+
+          <!-- 三栏 -->
+          <div class="cols">
+            <!-- 左栏 · 会话卷册 -->
+            <section class="col left">
+              <div class="colhead">
+                <span class="micro">Volumes</span>
+                <span class="fill"></span>
+                <span class="micro">会话卷册</span>
+              </div>
+
+              <span class="newbtn"><span class="plus">+</span><span>新建</span></span>
+
+              <ul class="slist">
+                <li>
+                  <span class="sitem on">
+                    <span class="s-t">选题方向探索</span>
+                    <span class="s-meta">
+                      <span>当前</span><span class="sep">·</span><span>刚刚</span>
+                      <span class="cnt">4 条</span>
+                    </span>
+                  </span>
+                </li>
+                <li>
+                  <span class="sitem">
+                    <span class="s-t">文献检索</span>
+                    <span class="s-meta">
+                      <span>昨天</span><span class="sep">·</span>
+                      <span class="cnt">12 条</span>
+                    </span>
+                  </span>
+                </li>
+                <li>
+                  <span class="sitem">
+                    <span class="s-t">方法论初稿</span>
+                    <span class="s-meta">
+                      <span>周一</span><span class="sep">·</span>
+                      <span class="cnt">8 条</span>
+                    </span>
+                  </span>
+                </li>
+              </ul>
+            </section>
+
+            <!-- 中栏 · 对话 -->
+            <section class="col center">
+              <div class="chat">
+                <article class="msg user">
+                  <div class="row">
+                    <span class="av" aria-hidden="true">吕</span>
+                    <div class="msg-main">
+                      <div class="who">
+                        <span class="who-nm">吕江</span>
+                        <span class="who-tm">09:41</span>
+                      </div>
+                      <div class="bubble">帮我确定一个可行的论文选题，大模型方向，要能做出实验。</div>
+                    </div>
+                  </div>
+                </article>
+
+                <article class="msg ai">
+                  <div class="row">
+                    <span class="av" aria-hidden="true">匠</span>
+                    <div class="msg-main">
+                      <div class="who">
+                        <span class="who-nm">匠</span>
+                        <span class="who-la">Main Agent</span>
+                        <span class="who-tm">09:41 · 流式输出中</span>
+                      </div>
+                      <div class="bubble">
+                        <p class="lead">建议从「<span class="term">RAG 评测鲁棒性</span>」切入。理由有三：</p>
+                        <ol>
+                          <li>数据可控、实验可复现；</li>
+                          <li>三类扰动清晰可测——对抗查询、检索失败、引用幻觉；</li>
+                          <li>近三年基准论文充足。</li>
+                        </ol>
+                        <p>
+                          已调度文献 Agent 拉取 50 篇核心论文，
+                          <span class="ask">需要我把选题结论写进项目档案吗？</span>
+                          <span class="cursor" aria-hidden="true"></span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+
+                <!-- 中断确认条 -->
+                <div class="confirm">
+                  <div class="cf-hd">
+                    <span class="cf-badge">待确认</span>
+                    <span class="micro">Human-in-the-loop</span>
+                    <span class="fill"></span>
+                  </div>
+                  <p class="cf-ask">第三章方法论初稿已生成，是否采纳？</p>
+                  <div class="cf-acts">
+                    <span class="mini solid">采纳</span>
+                    <span class="mini line">修改后采纳</span>
+                    <span class="cf-inp">输入你的反馈…</span>
+                  </div>
+                </div>
+
+                <div class="composer">
+                  <div class="box">
+                    <span class="field">输入论文相关请求…</span>
+                    <span class="send">发送</span>
+                  </div>
+                  <p class="hint">
+                    <span><span class="kbd">Enter</span> 发送</span>
+                    <span class="dot"></span>
+                    <span><span class="kbd">Shift+Enter</span> 换行</span>
+                    <span class="dot"></span>
+                    <span class="proj">已关联项目 #12</span>
+                  </p>
+                </div>
+              </div>
+            </section>
+
+            <!-- 右栏 · 执行时间线 + 资料清单 -->
+            <aside class="col right">
+              <div class="colhead">
+                <span class="micro">Observability</span>
+                <span class="fill"></span>
+                <span class="micro">可观测</span>
+              </div>
+
+              <nav class="r-tabs" aria-hidden="true">
+                <span class="tab on">执行时间线</span>
+                <span class="tab">知识库</span>
+              </nav>
+
+              <ul class="timeline">
+                <li class="ev">
+                  <span class="glow" aria-hidden="true"></span>
+                  <span class="ev-d">
+                    <span class="ev-t">意图识别 · 选题咨询</span>
+                    <span class="ev-s"><b>conf 0.96</b> — 56ms</span>
+                  </span>
+                </li>
+                <li class="ev">
+                  <span class="glow" aria-hidden="true"></span>
+                  <span class="ev-d">
+                    <span class="ev-t">Planner 规划 · 3 步</span>
+                    <span class="ev-s">plan settled</span>
+                  </span>
+                </li>
+                <li class="ev live">
+                  <span class="glow" aria-hidden="true"></span>
+                  <span class="ev-d">
+                    <span class="ev-t">混合检索 · RRF 融合</span>
+                    <span class="ev-s">412ms — 进行中</span>
+                  </span>
+                </li>
+                <li class="ev idle">
+                  <span class="glow" aria-hidden="true"></span>
+                  <span class="ev-d">
+                    <span class="ev-t">流式生成</span>
+                    <span class="ev-s">待触发</span>
+                  </span>
+                </li>
+              </ul>
+
+              <div class="files">
+                <div class="fh micro">资料清单 · Sources</div>
+
+                <div class="fitem">
+                  <span class="ic" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 14 14">
+                      <path d="M3.2 1.4h5l2.6 2.6v8.6H3.2z" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round" />
+                      <path d="M8.2 1.4v2.6h2.6" fill="none" stroke="currentColor" stroke-width="1.1" />
+                    </svg>
+                  </span>
+                  <span class="fmeta">
+                    <span class="fn">综述_2024.pdf</span>
+                    <span class="fst ok">已入库 · 128 分块</span>
+                  </span>
+                </div>
+
+                <div class="fitem">
+                  <span class="ic" aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 14 14">
+                      <path d="M3.2 1.4h5l2.6 2.6v8.6H3.2z" fill="none" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round" />
+                      <path d="M8.2 1.4v2.6h2.6" fill="none" stroke="currentColor" stroke-width="1.1" />
+                    </svg>
+                  </span>
+                  <span class="fmeta">
+                    <span class="fn">实验记录.md</span>
+                    <span class="fst busy"><span class="pulse"></span>解析中</span>
+                  </span>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           能力 · 六个环节
+           ================================================================== -->
+      <section class="section" id="capabilities">
+        <div class="sechead lj-reveal">
+          <h2>六个环节，一支智能体编队</h2>
+          <span class="sechead-la">Capabilities</span>
+        </div>
+        <p class="lead lj-reveal">
+          不是一个大模型硬扛所有问题：主控智能体识别意图、拆解任务、按环节路由给专项角色，人的确认卡在关键节点上。
+        </p>
+
+        <div class="grid grid-3">
+          <article class="card lj-reveal">
+            <span class="card-no">01</span>
             <h3>选题立项</h3>
             <p>把专业方向与写作要求交给选题环节，产出选题结论与理由，自动沉淀为项目档案的选题记录。</p>
           </article>
-          <article class="ln-card ln-reveal" style="transition-delay:.06s">
-            <span class="ln-num-badge">02</span>
-            <h3>文献检索</h3>
+          <article class="card lj-reveal">
+            <span class="card-no">02</span>
+            <h3>文献综述</h3>
             <p>pgvector 向量检索与关键词多路召回，RRF 融合后精排；引用的每一段都可以溯源到原文。</p>
           </article>
-          <article class="ln-card ln-reveal" style="transition-delay:.12s">
-            <span class="ln-num-badge">03</span>
-            <h3>分章写作</h3>
+          <article class="card lj-reveal">
+            <span class="card-no">03</span>
+            <h3>方法与写作</h3>
             <p>复杂任务由 Planner 拆成步骤序列，以「规划 — 执行 — 校验」循环推进，逐章成稿。</p>
           </article>
-          <article class="ln-card ln-reveal" style="transition-delay:.18s">
-            <span class="ln-num-badge">04</span>
-            <h3>格式约束</h3>
+          <article class="card lj-reveal">
+            <span class="card-no">04</span>
+            <h3>格式规范</h3>
             <p>字数、引用格式与交付节点写入结构化记忆，在写作全程作为硬约束参与校验。</p>
           </article>
-          <article class="ln-card ln-reveal" style="transition-delay:.24s">
-            <span class="ln-num-badge">05</span>
-            <h3>引用核查</h3>
-            <p>校验环节核对引用完整性与出处一致性，标记出需要人工确认的段落，而不是静默放行。</p>
+          <article class="card lj-reveal">
+            <span class="card-no">05</span>
+            <h3>查重降重</h3>
+            <p>语义改写与引用边界核对，逐段标注风险，可疑段落交给人工确认，而不是静默放行。</p>
           </article>
-          <article class="ln-card ln-reveal" style="transition-delay:.3s">
-            <span class="ln-num-badge">06</span>
+          <article class="card lj-reveal">
+            <span class="card-no">06</span>
             <h3>答辩准备</h3>
             <p>汇总研究过程与阶段性产出，整理答辩所需的陈述要点与支撑材料。</p>
           </article>
         </div>
       </section>
 
-      <section class="ln-section ln-dark" id="architecture">
-        <p class="ln-kicker ln-reveal">Architecture &amp; Evaluation · 架构与评测</p>
-        <h2 class="ln-h2 ln-reveal" style="transition-delay:.06s">架构是公开的，数字也是</h2>
-        <div class="ln-arch">
-          <div class="ln-arch-list ln-reveal">
-            <div class="ln-arch-item"><span class="ln-arch-k">编排</span><span>LangGraph 主从编排：主控智能体调度专项角色，规划 — 执行 — 校验闭环</span></div>
-            <div class="ln-arch-item"><span class="ln-arch-k">检索</span><span>PostgreSQL 16 + pgvector：向量与关键词多路召回，RRF 融合后精排</span></div>
-            <div class="ln-arch-item"><span class="ln-arch-k">会话</span><span>Redis：会话检查点、限流与分布式锁，执行状态可恢复</span></div>
-            <div class="ln-arch-item"><span class="ln-arch-k">底座</span><span>Ollama 本地推理：对话模型 + bge-m3 向量化 + bge-reranker 精排，全程可离线</span></div>
+      <!-- ==================================================================
+           架构与评测
+           ================================================================== -->
+      <section class="section" id="architecture">
+        <div class="sechead lj-reveal">
+          <h2>架构是公开的，数字也是</h2>
+          <span class="sechead-la">Architecture &amp; Evaluation</span>
+        </div>
+
+        <div class="arch lj-reveal">
+          <div class="arch-list">
+            <div class="arch-item">
+              <span class="arch-k">编排</span>
+              <span>LangGraph 主从编排：主控智能体调度专项角色，规划 — 执行 — 校验闭环</span>
+            </div>
+            <div class="arch-item">
+              <span class="arch-k">检索</span>
+              <span>PostgreSQL 16 + pgvector：向量与关键词多路召回，RRF 融合后精排</span>
+            </div>
+            <div class="arch-item">
+              <span class="arch-k">会话</span>
+              <span>Redis：会话检查点、限流与分布式锁，执行状态可恢复</span>
+            </div>
+            <div class="arch-item">
+              <span class="arch-k">底座</span>
+              <span>Ollama 本地推理：对话模型 + bge-m3 向量化 + bge-reranker 精排，全程可离线</span>
+            </div>
           </div>
-          <div class="ln-metrics ln-reveal" style="transition-delay:.1s">
-            <div class="ln-metric">
-              <span class="ln-num" data-count="100">0</span><span class="ln-unit">%</span>
-              <span class="ln-metric-label">意图分类 Top-1 准确率<br><em>50 条意图集 · 平均 56ms/条</em></span>
+
+          <div class="readout">
+            <div class="ro">
+              <div class="ro-k">INTENT / 意图分类</div>
+              <div class="ro-v"><span class="num-v" data-count="100">100</span><span class="num-u">%</span></div>
+              <div class="ro-d">Top-1 · 50 条意图集 · 56ms/条</div>
             </div>
-            <div class="ln-metric">
-              <span class="ln-num" data-count="100">0</span><span class="ln-unit">%</span>
-              <span class="ln-metric-label">检索 Recall@5<br><em>20 条简单集 · 目标 ≥90%</em></span>
+            <div class="ro">
+              <div class="ro-k">RECALL@5 / 检索</div>
+              <div class="ro-v"><span class="num-v" data-count="100">100</span><span class="num-u">%</span></div>
+              <div class="ro-d">20 条简单集 · 目标 ≥90%</div>
             </div>
-            <div class="ln-metric">
-              <span class="ln-num" data-count="16">0</span><span class="ln-unit">/16</span>
-              <span class="ln-metric-label">回归场景通过<br><em>S1–S7 七大必测场景</em></span>
+            <div class="ro">
+              <div class="ro-k">REGRESSION / 回归</div>
+              <div class="ro-v"><span class="num-v" data-count="16">16</span><span class="num-u">/16</span></div>
+              <div class="ro-d">S1–S7 七大必测场景</div>
             </div>
-            <div class="ln-metric">
-              <span class="ln-num" data-count="89">0</span><span class="ln-unit">项</span>
-              <span class="ln-metric-label">离线测试用例<br><em>治理 / 模型 / 改写 / API 集成</em></span>
+            <div class="ro">
+              <div class="ro-k">OFFLINE / 离线用例</div>
+              <div class="ro-v"><span class="num-v" data-count="89">89</span><span class="num-u">项</span></div>
+              <div class="ro-d">治理 / 模型 / 改写 / API 集成</div>
             </div>
           </div>
         </div>
-        <p class="ln-honesty ln-reveal">水位如实标注：口语长尾集 80% · 学术刁钻集 95% · hold-out 泛化 75%（6/8）。全部数字来自 2026-09-04 全本地底座一次完整实测，复现命令见仓库 <code>docs/EVALUATION_REPORT.md</code>。</p>
-        <figure class="ln-shot ln-shot-dark ln-reveal" style="transition-delay:.1s">
-          <div class="ln-win lm">
-            <div class="ln-win-bar"><i></i><i></i><i></i><span>论匠 · 可观测 — Trace S7-0412 · 文献综述</span></div>
-            <div class="lm-app" aria-hidden="true">
-              <div class="lm-trace-body">
-                <div>
-                  <div class="lm-ti2 on"><em>S7-0412 · 文献综述</em><em>2.8s · 12 nodes</em></div>
-                  <div class="lm-ti2"><em>S7-0411 · 方法论初稿</em><em>4.1s · 18 nodes</em></div>
-                  <div class="lm-ti2"><em>S7-0410 · 选题评估</em><em>1.2s · 7 nodes</em></div>
-                </div>
-                <div class="lm-seq">
-                  <div class="lm-step"><span class="lm-k">route</span>意图分类<span class="lm-lat">56ms</span></div>
-                  <div class="lm-step"><span class="lm-k">plan</span>Planner 规划<span class="lm-lat">3 步</span></div>
-                  <div class="lm-step"><span class="lm-k">retrieve</span>混合检索 · RRF 融合<span class="lm-lat">412ms</span></div>
-                  <div class="lm-step ok"><span class="lm-k">generate</span>流式生成<span class="lm-lat">已完成</span></div>
-                  <div class="lm-step"><span class="lm-k">guard</span>治理校验<span class="lm-lat">通过</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <figcaption>Trace 面板实景 —— 每次执行的调度与耗时逐条落库，可回放、有据可查</figcaption>
-        </figure>
+
+        <p class="honesty lj-reveal">
+          水位如实标注：口语长尾集 80% · 学术刁钻集 95% · hold-out 泛化 75%（6/8）。
+          全部数字来自 2026-09-04 全本地底座一次完整实测，复现命令见仓库 <code>docs/EVALUATION_REPORT.md</code>。
+        </p>
       </section>
 
-      <section class="ln-section" id="synergy">
-        <p class="ln-kicker ln-reveal">Human in the Loop · 人机协同</p>
-        <h2 class="ln-h2 ln-reveal" style="transition-delay:.06s">机器起草，人来定稿</h2>
-        <p class="ln-lead ln-reveal" style="transition-delay:.12s">多智能体系统最容易失控的地方是「自作主张」。论匠把确认权留给写作的人：关键节点主动发问，产出必须经你采纳。</p>
-        <div class="ln-grid ln-grid-3">
-          <article class="ln-card ln-reveal">
+      <!-- ==================================================================
+           人机协同
+           ================================================================== -->
+      <section class="section" id="synergy">
+        <div class="sechead lj-reveal">
+          <h2>机器起草，人来定稿</h2>
+          <span class="sechead-la">Human in the Loop</span>
+        </div>
+        <p class="lead lj-reveal">
+          多智能体系统最容易失控的地方是「自作主张」。论匠把确认权留给写作的人：关键节点主动发问，产出必须经你采纳。
+        </p>
+
+        <div class="grid grid-3">
+          <article class="card lj-reveal">
             <h3>产出需确认</h3>
             <p>智能体在关键节点主动发起确认（interrupt），生成内容以「待采纳」状态呈现——采纳才落稿，不满意就重生成。</p>
           </article>
-          <article class="ln-card ln-reveal" style="transition-delay:.08s">
+          <article class="card lj-reveal">
             <h3>全链路留痕</h3>
             <p>每次执行的意图识别、路由决策、工具调用与耗时完整落库，Trace 面板可逐条回放，出了问题有据可查。</p>
           </article>
-          <article class="ln-card ln-reveal" style="transition-delay:.16s">
+          <article class="card lj-reveal">
             <h3>记忆沉淀</h3>
             <p>选题结论、论文大纲、写作约束与章节进度沉淀为结构化项目档案，跨会话延续，不靠聊天记录捞 context。</p>
           </article>
         </div>
-        <div class="ln-win lm lm-confirm ln-reveal" style="transition-delay:.2s" aria-hidden="true">
-          <div class="lm-crow">
-            <span class="lm-cq">第三章方法论初稿已生成，是否采纳？</span>
-            <span class="lm-cbtn">采纳</span>
-            <span class="lm-cbtn alt">修改后采纳</span>
-            <span class="lm-cin">输入你的反馈…</span>
-          </div>
-        </div>
       </section>
 
-      <section class="ln-section ln-section-tight" id="start">
-        <p class="ln-kicker ln-reveal">Get Started · 开始</p>
-        <h2 class="ln-h2 ln-reveal" style="transition-delay:.06s">三种方式，开始使用</h2>
-        <div class="ln-grid ln-grid-3">
-          <article class="ln-card ln-card-start ln-reveal">
+      <!-- ==================================================================
+           开始
+           ================================================================== -->
+      <section class="section section-tight" id="start">
+        <div class="sechead lj-reveal">
+          <h2>三种方式，开始使用</h2>
+          <span class="sechead-la">Get Started</span>
+        </div>
+
+        <div class="grid grid-3">
+          <article class="card lj-reveal">
             <h3>在线试用</h3>
             <p>无需安装，浏览器打开即用。注册一个账号，选一个课题，看着编队开工。</p>
-            <a class="ln-btn ln-btn-solid" href="./app.html">进入工作台</a>
+            <a class="btn btn-solid" href="./app.html">进入工作台</a>
           </article>
-          <article class="ln-card ln-reveal" style="transition-delay:.08s">
+          <article class="card lj-reveal">
             <h3>源码仓库</h3>
             <p>FastAPI · LangGraph · PostgreSQL + pgvector · Redis · React 18，MIT License，含部署与评测文档。</p>
-            <a class="ln-btn ln-btn-ghost" href="https://github.com/shangguanyunji663/Lun-Assistant" target="_blank" rel="noreferrer">前往 GitHub</a>
+            <a
+              class="btn btn-ghost"
+              href="https://github.com/shangguanyunji663/Lun-Assistant"
+              target="_blank" rel="noreferrer"
+            >前往 GitHub</a>
           </article>
-          <article class="ln-card ln-reveal" style="transition-delay:.16s">
+          <article class="card lj-reveal">
             <h3>学习指南</h3>
             <p>31 课从零复现多智能体架构：设计认知、八大模块解剖、动手实现与评测，附可运行骨架。</p>
-            <a class="ln-btn ln-btn-ghost" href="https://github.com/shangguanyunji663/Lun-Assistant/blob/main/%E8%AE%BA%E5%8C%A0%E5%AD%A6%E4%B9%A0%E6%8C%87%E5%8D%97.md" target="_blank" rel="noreferrer">阅读指南</a>
+            <a
+              class="btn btn-ghost"
+              href="https://github.com/shangguanyunji663/Lun-Assistant/blob/main/%E8%AE%BA%E5%8C%A0%E5%AD%A6%E4%B9%A0%E6%8C%87%E5%8D%97.md"
+              target="_blank" rel="noreferrer"
+            >阅读指南</a>
           </article>
         </div>
       </section>
     </main>
 
-    <footer class="ln-foot">
-      <div class="ln-foot-outline" aria-hidden="true">LUNJIANG&gt;_</div>
-      <div class="ln-foot-meta">
-        <span>论匠 LunJiang — 多智能体论文全流程工作台</span>
-        <span>FastAPI · LangGraph · PostgreSQL + pgvector · Redis · React 18</span>
-        <span>MIT License · © <span id="ln-year">2026</span></span>
-        <span class="egg-hint">页边三则 · 手快者当主控 · 细读者见风险 · 落笔者得题款<span class="egg-progress"></span></span>
+    <!-- ====================================================================
+         页脚
+         ==================================================================== -->
+    <footer class="lj-foot">
+      <div class="wrap">
+        <div class="footline">
+          <span class="foot-brand">论匠 LUNJIANG</span>
+          <span class="foot-sep" aria-hidden="true"></span>
+          <span class="foot-stack">FastAPI · LangGraph · PostgreSQL + pgvector · Redis · React 18</span>
+          <span class="fill"></span>
+          <span class="foot-lic">MIT License · © <span id="lj-year">2026</span></span>
+        </div>
+        <p class="foot-egg egg-hint">
+          页边三则 · 手快者当主控 · 细读者见风险 · 落笔者得题款<span class="egg-progress"></span>
+        </p>
       </div>
     </footer>
+
+    <!-- 彩蛋机关 · 落笔处（书写门：仅在此区域运笔留墨，写成一个字即可触发；landing.js 控制） -->
+    <div class="ink-pad" id="ink-pad" title="一处小小砚纸——试试写个字？">
+      <i class="ip-g h" aria-hidden="true"></i>
+      <i class="ip-g v" aria-hidden="true"></i>
+      <span class="ip-label">落笔处</span>
+      <canvas id="ip-canvas"></canvas>
+    </div>
+
+    <!-- 彩蛋机关 · 触发确认层（landing.js 控制：三门手势共用） -->
+    <div class="egg-veil hide" id="egg-veil" aria-hidden="true">
+      <div class="egg-ink" aria-hidden="true"></div>
+      <div class="egg-card">
+        <span class="egg-seal" aria-hidden="true">匠</span>
+        <p class="egg-line" id="egg-line"></p>
+        <p class="egg-sub" id="egg-sub"></p>
+        <div class="egg-actions">
+          <button class="egg-go" id="egg-go" type="button">进去看看</button>
+          <button class="egg-later" id="egg-later" type="button">先不急着进</button>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="/src/landing.js"></script>
-  </div>
-
-  <!-- 彩蛋机关 · 落笔处（书写门：仅在此区域运笔留墨，写成一个字即可触发；landing.js 控制） -->
-  <div class="ink-pad" id="ink-pad" title="一处小小砚纸——试试写个字？">
-    <i class="ip-g h" aria-hidden="true"></i>
-    <i class="ip-g v" aria-hidden="true"></i>
-    <span class="ip-label">落笔处</span>
-    <canvas id="ip-canvas"></canvas>
-  </div>
-
-  <!-- 彩蛋机关 · 触发确认层（landing.js 控制：三门手势共用） -->
-  <div class="egg-veil hide" id="egg-veil" aria-hidden="true">
-    <div class="egg-ink" aria-hidden="true"></div>
-    <div class="egg-card">
-      <span class="egg-seal" aria-hidden="true">匠</span>
-      <p class="egg-line" id="egg-line"></p>
-      <p class="egg-sub" id="egg-sub"></p>
-      <div class="egg-actions">
-        <button class="egg-go" id="egg-go" type="button">进去看看</button>
-        <button class="egg-later" id="egg-later" type="button">先不急着进</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- v15 · 编辑部结构（h/i/j/k 主题显示；内容与 ln-site 六段同源） -->
-  <div id="ed-site">
-    <header class="ed-masthead">
-      <span class="vol">VOL.01 — 2026</span>
-      <span class="name">论 匠</span>
-      <nav>
-        <a href="#ed-toc">能力</a>
-        <a href="#ed-readout">架构与评测</a>
-        <a href="#ed-synergy">人机协同</a>
-        <a href="#ed-start">开始</a>
-      </nav>
-      <button id="ed-theme" class="ln-theme-btn" type="button" aria-label="切换主题">
-        <span class="ln-theme-label">构成</span>
-      </button>
-      <a class="cta" href="./app.html">进入工作台 →</a>
-    </header>
-
-    <section class="ed-hero">
-      <i class="geo geo-1" aria-hidden="true"></i>
-      <i class="geo geo-2" aria-hidden="true"></i>
-      <p class="kicker ln-reveal">多智能体论文全流程工作台 · 创刊号</p>
-      <h1>
-        <span class="ln"><span>论匠，</span></span>
-        <span class="ln"><span>帮你把论文</span></span>
-        <span class="ln"><span><em>写完</em>。</span></span>
-      </h1>
-      <p class="deck ln-reveal" style="transition-delay:.3s">六个环节，一支编队。主控智能体识别意图、拆解任务、按环节路由给专项角色——每一次产出都经你确认后，落进稿纸。</p>
-      <div class="byline ln-reveal" style="transition-delay:.36s">
-        <span class="rule"></span>
-        <span>主控调度 / 混合检索 / 人机协同 — 全链路留痕</span>
-      </div>
-      <div class="ed-hero-cta ln-reveal" style="transition-delay:.42s">
-        <a class="ln-btn ln-btn-solid ln-btn-lg" href="./app.html">进入工作台</a>
-        <a class="ln-btn ln-btn-ghost ln-btn-lg" href="https://github.com/shangguanyunji663/Lun-Assistant" target="_blank" rel="noreferrer">GitHub 源码</a>
-      </div>
-    </section>
-
-    <div class="ed-marquee" aria-hidden="true">
-      <div class="track">
-        <span>选题立项<i>◆</i>文献综述<i>◆</i>方法论<i>◆</i>格式规范<i>◆</i>查重降重<i>◆</i>答辩准备<i>◆</i></span>
-        <span>选题立项<i>◆</i>文献综述<i>◆</i>方法论<i>◆</i>格式规范<i>◆</i>查重降重<i>◆</i>答辩准备<i>◆</i></span>
-      </div>
-    </div>
-
-    <section class="ed-toc" id="ed-toc">
-      <div class="ed-toc-head">
-        <h2>目次 · 六个环节</h2>
-        <span class="en">CONTENTS / 01—06</span>
-      </div>
-      <ol>
-        <li class="ln-reveal"><span class="no">01</span><span class="t">选题立项<small>可行性评估 · 创新点定位 · 开题报告</small></span><span class="pg">P.01</span></li>
-        <li class="ln-reveal" style="transition-delay:.05s"><span class="no">02</span><span class="t">文献综述<small>混合检索 · RRF 融合 · 引用核对</small></span><span class="pg">P.08</span></li>
-        <li class="ln-reveal" style="transition-delay:.1s"><span class="no">03</span><span class="t">方法与写作<small>章节规划 · 初稿起草 · 逐段改写</small></span><span class="pg">P.16</span></li>
-        <li class="ln-reveal" style="transition-delay:.15s"><span class="no">04</span><span class="t">格式规范<small>GB/T 7714 · 图表编号 · 样式套版</small></span><span class="pg">P.24</span></li>
-        <li class="ln-reveal" style="transition-delay:.2s"><span class="no">05</span><span class="t">查重降重<small>语义改写 · 引用边界 · 风险标注</small></span><span class="pg">P.31</span></li>
-        <li class="ln-reveal" style="transition-delay:.25s"><span class="no">06</span><span class="t">答辩准备<small>讲稿生成 · 预演问答 · 材料清单</small></span><span class="pg">P.38</span></li>
-      </ol>
-    </section>
-
-    <section id="ed-readout">
-      <div class="ed-spec">
-        <div class="ed-toc-head">
-          <h2>架构是公开的，数字也是</h2>
-          <span class="en">ARCHITECTURE &amp; EVALUATION</span>
-        </div>
-        <dl class="ed-spec-list">
-          <div class="ed-spec-item"><dt>编排</dt><dd>LangGraph 主从编排：主控智能体调度专项角色，规划 — 执行 — 校验闭环</dd></div>
-          <div class="ed-spec-item"><dt>检索</dt><dd>PostgreSQL 16 + pgvector：向量与关键词多路召回，RRF 融合后精排</dd></div>
-          <div class="ed-spec-item"><dt>会话</dt><dd>Redis：会话检查点、限流与分布式锁，执行状态可恢复</dd></div>
-          <div class="ed-spec-item"><dt>底座</dt><dd>Ollama 本地推理：对话模型 + bge-m3 向量化 + bge-reranker 精排，全程可离线</dd></div>
-        </dl>
-      </div>
-      <div class="ed-readout">
-        <div class="ed-ro"><div class="k">INTENT / 意图分类</div><div class="v"><span class="ln-num" data-count="100">0</span><span class="ln-unit">%</span></div><div class="d">Top-1 · 50 条意图集 · 56ms/条</div></div>
-        <div class="ed-ro"><div class="k">RECALL@5 / 检索</div><div class="v"><span class="ln-num" data-count="100">0</span><span class="ln-unit">%</span></div><div class="d">20 条简单集 · 目标 ≥90%</div></div>
-        <div class="ed-ro"><div class="k">REGRESSION / 回归</div><div class="v"><span class="ln-num" data-count="16">0</span><span class="ln-unit">/16</span></div><div class="d">S1–S7 七大必测场景</div></div>
-        <div class="ed-ro"><div class="k">OFFLINE / 离线用例</div><div class="v"><span class="ln-num" data-count="89">0</span><span class="ln-unit">项</span></div><div class="d">治理 / 模型 / 改写 / API 集成</div></div>
-      </div>
-    </section>
-    <p class="ed-honesty">水位如实标注：口语长尾集 80% · 学术刁钻集 95% · hold-out 泛化 75%（6/8）。全部数字来自 2026-09-04 全本地底座一次完整实测，复现命令见仓库 <code>docs/EVALUATION_REPORT.md</code>。</p>
-
-    <section class="ed-tri" id="ed-synergy">
-      <div class="ed-toc-head">
-        <h2>机器起草，人来定稿</h2>
-        <span class="en">HUMAN IN THE LOOP / 01—03</span>
-      </div>
-      <p class="lead">多智能体系统最容易失控的地方是「自作主张」。论匠把确认权留给写作的人：关键节点主动发问，产出必须经你采纳。</p>
-      <div class="ed-tri-grid">
-        <article>
-          <span class="no">01</span>
-          <h3>产出需确认</h3>
-          <p>智能体在关键节点主动发起确认（interrupt），生成内容以「待采纳」状态呈现——采纳才落稿，不满意就重生成。</p>
-        </article>
-        <article>
-          <span class="no">02</span>
-          <h3>全链路留痕</h3>
-          <p>每次执行的意图识别、路由决策、工具调用与耗时完整落库，Trace 面板可逐条回放，出了问题有据可查。</p>
-        </article>
-        <article>
-          <span class="no">03</span>
-          <h3>记忆沉淀</h3>
-          <p>选题结论、论文大纲、写作约束与章节进度沉淀为结构化项目档案，跨会话延续，不靠聊天记录捞 context。</p>
-        </article>
-      </div>
-    </section>
-
-    <section class="ed-console-sec" id="ed-console">
-      <p class="sec-k ln-reveal">CONSOLE · 工作台实景</p>
-      <h2 class="ln-reveal" style="transition-delay:.06s">稿纸即仪表盘。</h2>
-      <p class="sub ln-reveal" style="transition-delay:.12s">左：会话卷册 · 中：对话区（AI 草拟中）· 右：执行时间线。切换主题只换令牌，不动组件。</p>
-      <figure class="ln-shot lm ln-reveal" style="transition-delay:.18s">
-        <div class="ln-win">
-          <div class="ln-win-bar"><i></i><i></i><i></i><span>论匠 · 工作台 — 大模型辅助的文献综述自动化研究</span></div>
-          <div class="lm-app" aria-hidden="true">
-            <div class="lm-top">
-              <span class="lm-tseal">论</span>
-              <span class="lm-tbrand">论匠</span>
-              <span class="lm-tchips"><i></i><i></i><i></i><i></i></span>
-              <span class="lm-tsp"></span>
-              <span class="lm-tnav"><b class="on">对话</b><b>可观测</b></span>
-            </div>
-            <div class="lm-body">
-              <aside class="lm-pane">
-                <div class="lm-pane-h">会话卷册</div>
-                <div class="lm-si on"><em>选题方向探索</em><em>刚刚 · 4 条</em></div>
-                <div class="lm-si"><em>文献检索</em><em>昨天 · 12 条</em></div>
-                <div class="lm-si"><em>方法论初稿</em><em>周一 · 8 条</em></div>
-              </aside>
-              <section class="lm-pane lm-chat">
-                <div class="lm-msg user"><span class="lm-mark">言</span><p>帮我确定一个可行的论文选题，大模型方向。</p></div>
-                <div class="lm-msg"><span class="lm-mark">匠</span><p>建议从「RAG 评测鲁棒性」切入：对抗查询、检索失败、引用幻觉三类扰动下的指标波动。已调度文献 Agent 拉近三年 50 篇核心论文。<span class="lm-caret"></span></p></div>
-                <div class="lm-input"><span>输入论文相关请求…</span><b>发送</b></div>
-              </section>
-              <aside class="lm-pane">
-                <div class="lm-pane-h">执行时间线</div>
-                <div class="lm-node"><b></b>意图识别 <em>56ms</em></div>
-                <div class="lm-node"><b></b>Planner 规划 <em>3 步</em></div>
-                <div class="lm-node run"><b></b>混合检索 <em>进行中</em></div>
-                <div class="lm-node"><b></b>流式生成 <em>待触发</em></div>
-              </aside>
-            </div>
-          </div>
-        </div>
-        <figcaption>工作台实景 —— 左：会话卷册 · 中：对话区 · 右：执行时间线；共十一套可切换主题</figcaption>
-      </figure>
-    </section>
-
-    <section class="ed-tri" id="ed-start">
-      <div class="ed-toc-head">
-        <h2>三种方式，开始使用</h2>
-        <span class="en">GET STARTED / 01—03</span>
-      </div>
-      <div class="ed-tri-grid">
-        <article>
-          <span class="no">01</span>
-          <h3>在线试用</h3>
-          <p>无需安装，浏览器打开即用。注册一个账号，选一个课题，看着编队开工。</p>
-          <a class="lk" href="./app.html">进入工作台 →</a>
-        </article>
-        <article>
-          <span class="no">02</span>
-          <h3>源码仓库</h3>
-          <p>FastAPI · LangGraph · PostgreSQL + pgvector · Redis · React 18，MIT License，含部署与评测文档。</p>
-          <a class="lk" href="https://github.com/shangguanyunji663/Lun-Assistant" target="_blank" rel="noreferrer">前往 GitHub →</a>
-        </article>
-        <article>
-          <span class="no">03</span>
-          <h3>学习指南</h3>
-          <p>31 课从零复现多智能体架构：设计认知、八大模块解剖、动手实现与评测，附可运行骨架。</p>
-          <a class="lk" href="https://github.com/shangguanyunji663/Lun-Assistant/blob/main/%E8%AE%BA%E5%8C%A0%E5%AD%A6%E4%B9%A0%E6%8C%87%E5%8D%97.md" target="_blank" rel="noreferrer">阅读指南 →</a>
-        </article>
-      </div>
-    </section>
-
-    <footer class="ed-colophon">
-      <div class="big">论匠 LUNJIANG</div>
-      <div class="meta">编辑部版式 · 四种现代艺术主题<br/>Noto Serif SC / IBM Plex Mono · 与经典七版共存切换<br/>EDITORIAL EDITION — v15<br/><span class="egg-hint">页边三则 · 手快者当主控 · 细读者见风险 · 落笔者得题款<span class="egg-progress"></span></span></div>
-    </footer>
-  </div>
-
-</body>
+  </body>
 </html>

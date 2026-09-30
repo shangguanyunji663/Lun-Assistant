@@ -1,68 +1,199 @@
-/* 论匠落地页 · 原生交互（v15 · ROUND15）
-   零依赖，总预算 <3KB：主题切换 / 入场动画 / 数字滚动 / 年份。
-   reduced-motion 的降级由 landing.css 的媒体查询兜底，这里不做能力探测。 */
+/* 论匠 LunJiang · v16 落地页：与工作台共用 tokens.css 主题令牌
+   ---------------------------------------------------------------------------
+   原生零依赖：主题选择器 / 柔化开关（写回 localStorage.lj_theme / lj_soft，
+   并即时改写 documentElement 的 data-theme / data-soft）/ 切换反馈音 /
+   入场动画 / 指标滚动 / 年份 / 三枚彩蛋。
+   reduced-motion 的降级由 landing.css 兜底，这里只做能力探测。 */
 (function () {
   'use strict'
-  /* 防重复执行：脚本若被二次挂载，监听器会叠加导致判定错乱 */
   if (window.__ljLandingInit) return
   window.__ljLandingInit = true
 
-  /* ---- 主题切换：v15 六主题（亮·天青 / 暗·玄墨 / 墨格编辑部 / 新构成主义 / 夜航诗意 / 拓印套色）
-         持久化到 localStorage（lj_landing_theme）。
-         light/dark 显示经典六段结构（#ln-site）；h/i/j/k 显示编辑部版式（#ed-site）。
-         循环切换：light → dark → h → i → j → k → light，按钮 label 显示「下一档」。
-         两套结构各有一个 .ln-theme-btn（经典导航 / 期刊头）：进入编辑部版式后
-         #ln-site 整体隐藏，若期刊头不带按钮，页面上将没有任何主题入口（曾导致
-         切进 h/i/j/k 后无法切回），故按钮必须成对存在。 ---- */
-  var KEY = 'lj_landing_theme'
-  var ORDER = ['light', 'dark', 'h', 'i', 'j', 'k']
-  var NEXT_LABEL = { light: '暗色', dark: '墨格', h: '构成', i: '夜航', j: '套色', k: '亮色' }
-  var apply = function (t) {
-    if (ORDER.indexOf(t) < 0) t = 'light'
-    document.body.dataset.theme = t
-    var modern = t !== 'light' && t !== 'dark'
-    var ed = document.getElementById('ed-site')
-    var ln = document.getElementById('ln-site')
-    if (ed) ed.style.display = modern ? '' : 'none'
-    if (ln) ln.style.display = modern ? 'none' : ''
-    var labels = document.querySelectorAll('.ln-theme-label')
-    for (var i = 0; i < labels.length; i++) labels[i].textContent = NEXT_LABEL[t] || ''
-    try { localStorage.setItem(KEY, t) } catch { /* 隐私模式忽略 */ }
+  var root = document.documentElement
+  root.classList.add('lj-js')
+
+  /* ============================================================
+     主题 / 柔化
+     · 主题挂 <html data-theme>，六选一；柔化挂 <html data-soft>（on|off）
+     · soft-cream / soft-mist 天生柔化：开关置灰并提示
+     ============================================================ */
+  var THEME_KEY = 'lj_theme'
+  var SOFT_KEY = 'lj_soft'
+  var THEMES = [
+    { id: 'ops',         label: '暗色指挥舱', chip: '#3EE08F', alwaysSoft: false },
+    { id: 'blueprint',   label: '蓝图工程',   chip: '#3E7FB8', alwaysSoft: false },
+    { id: 'lab',         label: '实验记录本', chip: '#3B6EA5', alwaysSoft: false },
+    { id: 'press',       label: '学术期刊',   chip: '#A32E24', alwaysSoft: false },
+    { id: 'soft-cream',  label: '暖云手稿',   chip: '#D97742', alwaysSoft: true },
+    { id: 'soft-mist',   label: '晨雾有机',   chip: '#6E93A8', alwaysSoft: true }
+  ]
+
+  var trigger = document.getElementById('theme-trigger')
+  var picker = document.getElementById('theme-picker')
+  var pop = document.getElementById('tp-pop')
+  var grid = document.getElementById('tp-grid')
+  var chipEl = document.getElementById('tp-chip')
+  var labelEl = document.getElementById('tp-label')
+  var softBtn = document.getElementById('tp-soft')
+  var softNote = document.getElementById('tp-soft-note')
+
+  function findTheme(id) {
+    for (var i = 0; i < THEMES.length; i++) if (THEMES[i].id === id) return THEMES[i]
+    return null
   }
-  var saved = null
-  try { saved = localStorage.getItem(KEY) } catch { /* 忽略 */ }
-  apply(ORDER.indexOf(saved) >= 0 ? saved : 'light')
-  var btns = document.querySelectorAll('.ln-theme-btn')
-  for (var b = 0; b < btns.length; b++) {
-    btns[b].addEventListener('click', function () {
-      var cur = ORDER.indexOf(document.body.dataset.theme)
-      apply(ORDER[(cur + 1) % ORDER.length])
+  function read(key) {
+    try { return localStorage.getItem(key) } catch (e) { return null }
+  }
+  function write(key, val) {
+    try { localStorage.setItem(key, val) } catch (e) { /* 隐私模式忽略 */ }
+  }
+
+  var curTheme = findTheme(read(THEME_KEY)) ? read(THEME_KEY) : 'soft-cream'
+  var softPref = read(SOFT_KEY) === 'off' ? 'off' : 'on'
+
+  /* 极轻的切换反馈音：程序化生成，约 0.15s，全程 try/catch 兜底 */
+  var audioCtx = null
+  function blip() {
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext
+      if (!AC) return
+      if (!audioCtx) audioCtx = new AC()
+      if (audioCtx.state === 'suspended') audioCtx.resume()
+      var t0 = audioCtx.currentTime
+      var osc = audioCtx.createOscillator()
+      var gain = audioCtx.createGain()
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(660, t0)
+      osc.frequency.exponentialRampToValueAtTime(880, t0 + 0.12)
+      gain.gain.setValueAtTime(0.0001, t0)
+      gain.gain.exponentialRampToValueAtTime(0.05, t0 + 0.02)
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.15)
+      osc.connect(gain)
+      gain.connect(audioCtx.destination)
+      osc.start(t0)
+      osc.stop(t0 + 0.16)
+    } catch (e) { /* 无音频能力时静默 */ }
+  }
+
+  /* 注入 6 个主题条目（色点为各主题强调色示例） */
+  var itemEls = []
+  if (grid) {
+    for (var ti = 0; ti < THEMES.length; ti++) {
+      ;(function (t) {
+        var btn = document.createElement('button')
+        btn.type = 'button'
+        btn.className = 'tp-item'
+        btn.setAttribute('role', 'menuitemradio')
+        btn.title = t.label
+        var chip = document.createElement('span')
+        chip.className = 'chip'
+        chip.style.background = t.chip
+        var nm = document.createElement('span')
+        nm.className = 'tp-name'
+        nm.textContent = t.label
+        var ck = document.createElement('span')
+        ck.className = 'tp-check'
+        ck.setAttribute('aria-hidden', 'true')
+        ck.textContent = '✓'
+        btn.appendChild(chip)
+        btn.appendChild(nm)
+        btn.appendChild(ck)
+        btn.addEventListener('click', function () { setTheme(t.id) })
+        grid.appendChild(btn)
+        itemEls.push({ id: t.id, el: btn })
+      })(THEMES[ti])
+    }
+  }
+
+  /* 渲染：把状态同步到 <html> 与选择器 UI */
+  function render() {
+    var t = findTheme(curTheme) || THEMES[4]
+    root.dataset.theme = t.id
+    root.dataset.soft = t.alwaysSoft ? 'on' : softPref
+
+    if (chipEl) chipEl.style.background = t.chip
+    if (labelEl) labelEl.textContent = t.label
+    for (var i = 0; i < itemEls.length; i++) {
+      var on = itemEls[i].id === t.id
+      itemEls[i].el.classList.toggle('on', on)
+      itemEls[i].el.setAttribute('aria-checked', on ? 'true' : 'false')
+    }
+    if (softBtn) {
+      softBtn.disabled = t.alwaysSoft
+      var softOn = t.alwaysSoft || softPref === 'on'
+      softBtn.classList.toggle('on', softOn)
+      softBtn.setAttribute('aria-pressed', softOn ? 'true' : 'false')
+    }
+    if (softNote) {
+      softNote.textContent = t.alwaysSoft ? '该主题天生柔化' : (softPref === 'on' ? '已开启' : '已关闭')
+    }
+  }
+
+  function setTheme(id) {
+    if (!findTheme(id) || id === curTheme) return
+    curTheme = id
+    write(THEME_KEY, id)
+    render()
+    blip()
+  }
+
+  function openPop(v) {
+    if (!pop || !trigger) return
+    pop.classList.toggle('open', v)
+    trigger.setAttribute('aria-expanded', v ? 'true' : 'false')
+  }
+
+  if (trigger && pop) {
+    trigger.addEventListener('click', function () {
+      openPop(!pop.classList.contains('open'))
+    })
+    document.addEventListener('mousedown', function (e) {
+      if (!pop.classList.contains('open')) return
+      if (picker && picker.contains(e.target)) return
+      openPop(false)
+    })
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && pop.classList.contains('open')) openPop(false)
     })
   }
 
-  /* ---- 入场动画：进入视口后加 .ln-in（CSS 侧带 stagger 延迟） ---- */
-  var reveals = document.querySelectorAll('.ln-reveal')
+  if (softBtn) {
+    softBtn.addEventListener('click', function () {
+      var t = findTheme(curTheme)
+      if (!t || t.alwaysSoft) return
+      softPref = softPref === 'on' ? 'off' : 'on'
+      write(SOFT_KEY, softPref)
+      render()
+      blip()
+    })
+  }
+
+  render()
+
+  /* ---- 入场动画：进入视口后加 .lj-in（CSS 侧控制位移与淡入） ---- */
+  var reveals = document.querySelectorAll('.lj-reveal')
   if ('IntersectionObserver' in window) {
     var io = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) {
         if (en.isIntersecting) {
-          en.target.classList.add('ln-in')
+          en.target.classList.add('lj-in')
           io.unobserve(en.target)
         }
       })
     }, { threshold: 0.15 })
-    reveals.forEach(function (el) { io.observe(el) })
+    for (var r = 0; r < reveals.length; r++) io.observe(reveals[r])
   } else {
-    reveals.forEach(function (el) { el.classList.add('ln-in') })
+    for (var r2 = 0; r2 < reveals.length; r2++) reveals[r2].classList.add('lj-in')
   }
 
-  /* ---- 数字滚动：评测指标进入视口后从 0 计数到目标 ---- */
-  var counters = document.querySelectorAll('.ln-num[data-count]')
-  var animate = function (el) {
+  /* ---- 指标滚动：进入视口后从 0 计数到目标（HTML 内置终值，无 JS 也可读） ---- */
+  var prefersReduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  var counters = document.querySelectorAll('.num-v[data-count]')
+  function countUp(el) {
     var target = parseFloat(el.getAttribute('data-count'))
-    var dur = 900
     var t0 = performance.now()
-    var step = function (now) {
+    var dur = 900
+    function step(now) {
       var p = Math.min((now - t0) / dur, 1)
       var eased = 1 - Math.pow(1 - p, 3)
       el.textContent = String(Math.round(target * eased))
@@ -70,30 +201,29 @@
     }
     requestAnimationFrame(step)
   }
-  if ('IntersectionObserver' in window) {
+  if (!prefersReduce && 'IntersectionObserver' in window && counters.length) {
+    for (var c = 0; c < counters.length; c++) counters[c].textContent = '0'
     var cio = new IntersectionObserver(function (entries) {
       entries.forEach(function (en) {
         if (en.isIntersecting) {
-          animate(en.target)
+          countUp(en.target)
           cio.unobserve(en.target)
         }
       })
     }, { threshold: 0.5 })
-    counters.forEach(function (el) { cio.observe(el) })
-  } else {
-    counters.forEach(function (el) { el.textContent = el.getAttribute('data-count') })
+    for (var c2 = 0; c2 < counters.length; c2++) cio.observe(counters[c2])
   }
 
   /* ---- 页脚年份 ---- */
-  var year = document.getElementById('ln-year')
-  if (year) year.textContent = String(new Date().getFullYear())
+  var yearEl = document.getElementById('lj-year')
+  if (yearEl) yearEl.textContent = String(new Date().getFullYear())
 
   /* ============================================================
      彩蛋机关（三门 · 语义化触发）
-     手速门：5 秒内连点主题按钮 ≥6 下       → 编队调度局（文案报出实际手速）
-     精读门：划选正文 ≥10 字并保持约 0.9s   → 查重捉虫（逐字读过，才看得见风险）
-     书写门：在「落笔处」写成一个字即可     → 临帖墨试（一/二/三式单薄横画不算）
-     命中后先弹俏皮话确认层，玩家自己决定进不进；解锁记录写 localStorage.lj_easter
+     手速门：主题按钮 5 秒内连点 ≥6 下        → 编队调度局
+     精读门：划选正文 ≥10 字并保持约 0.9s      → 查重捉虫
+     书写门：在「落笔处」写成一个字即可        → 临帖墨试
+     命中后先弹确认层，玩家自己决定进不进；解锁记录写 localStorage.lj_easter
      ============================================================ */
   var EGGS = {
     dispatch: { file: 'easter/dispatch.html', line: '手速这么快，别浪费——来当主控吧。', sub: '彩蛋其一 · 编队调度局 · 60 秒派单挑战' },
@@ -105,6 +235,7 @@
   var eggPending = null
   var eggVeil = document.getElementById('egg-veil')
   var eggAutoTimer = null
+  var eggSelTimer = null
 
   function eggsRead() {
     try { var v = localStorage.getItem(EGG_KEY); return v ? v.split(',') : [] } catch (e) { return [] }
@@ -136,8 +267,7 @@
     clearTimeout(eggAutoTimer)
     eggAutoTimer = setTimeout(function () { eggDismiss(1200) }, 10000)   /* 无人操作 10s 自动收层 */
   }
-  /* 收层即复位：出现弹窗后，无论用户下一步点击/按键是什么，
-     都自动刷新状态（清冷却、清选区计时），马上可以再次触发 */
+  /* 收层即复位：无论用户下一步点击/按键是什么，都自动刷新状态，马上可以再次触发 */
   function eggDismiss(coolMs) {
     clearTimeout(eggAutoTimer)
     if (!eggPending) return
@@ -170,9 +300,8 @@
      命中后留 260ms 缓冲，把用户正在连点的最后几下也数进去 */
   var eggClicks = []
   var eggFireTimer = null
-  var eggBtns = document.querySelectorAll('.ln-theme-btn')
-  for (var eb = 0; eb < eggBtns.length; eb++) {
-    eggBtns[eb].addEventListener('click', function () {
+  if (trigger) {
+    trigger.addEventListener('click', function () {
       var now = Date.now()
       var keep = []
       for (var i = 0; i < eggClicks.length; i++) if (now - eggClicks[i] < 5000) keep.push(eggClicks[i])
@@ -190,7 +319,6 @@
   }
 
   /* 精读门：划选正文 ≥10 字并保持 */
-  var eggSelTimer = null
   document.addEventListener('selectionchange', function () {
     if (eggPending) return
     clearTimeout(eggSelTimer)
@@ -268,8 +396,9 @@
       var r = padCanvas.getBoundingClientRect()
       return { x: e.clientX - r.left, y: e.clientY - r.top }
     }
+    /* 墨色取当前主题正文色（--text），随主题切换 */
     var padInk = function () {
-      try { return getComputedStyle(document.body).getPropertyValue('--ln-ink').trim() || '#1A1815' } catch (e) { return '#1A1815' }
+      try { return getComputedStyle(root).getPropertyValue('--text').trim() || '#2E2823' } catch (e) { return '#2E2823' }
     }
     /* 判定：像「一个字」就行，不看具体写了什么 */
     function padLooksLikeChar() {

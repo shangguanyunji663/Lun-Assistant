@@ -1,0 +1,396 @@
+/* ============================================================================
+   press 主题装饰层：严格对齐 proposal-4 / proposal-8 样张
+   —— 「学术期刊」招牌视觉的还原文件。只叠加装饰，不改结构、不改其它文件。
+
+   · 全部规则以 [data-theme="press"] 作用域收敛，不会污染其它主题。
+   · 锐 / 柔差异一律走 [data-soft="off"]（锐）/ [data-soft="on"]（柔）。
+   · 细线宽度一律用 var(--bw)（锐 1px / 柔 0px），禁止写死 1px，
+     从而「柔态细线自动消失」由 tokens.css 单点控制。
+   · 装饰层统一 pointer-events:none，不遮挡交互；无 !important。
+
+   本层的还原范围（对照样张）：
+     folio 页码 / § 编号 / 页边校勘批注栏 / 首字下沉 / 脚注式时间线 /
+     1px 细线体系 / 文字链式按钮 / 分段淡入 stagger。
+
+   建议新增标签（本文件用伪元素模拟，未改组件，若要 100% 还原可后续加）：
+     1. `.msg .bubble` 内首行角色micro标签（样张 `.msg .who`：Author / Drafted）——
+        现用 `.bubble::before` 的 content 模拟。
+     2. 助手气泡内的 `.margin` 批注容器（样张为 grid 第二列）——
+        现用 `.chat-col::after` 竖排伪元素模拟，位处对话区右侧预留栏。
+     3. 消息用 `.msg.assistant` 类名（App.jsx 输出的是 `.msg assistant`），
+        本文件两种写法都覆盖，无需改动。
+   ============================================================================ */
+
+/* ============================================================================
+   0 · press 私有变量（tokens 未提供，仅本主题作用域内使用）
+   ============================================================================ */
+[data-theme="press"] {
+  /* 校勘朱红记号色（= tokens 的 --accent-2，语义化别名） */
+  --pr-rubric: var(--accent-2);
+  /* 页边批注栏左细线：朱红极淡地与墨线混色，控制「极少量朱红」 */
+  --pr-line-hot: color-mix(in srgb, var(--accent-2) 32%, var(--line));
+  /* 细线宽度：锐 1px / 柔 0px（跟随 tokens） */
+  --pr-rule: var(--bw);
+  /* 页边批注栏宽度（右侧预留，避免压住气泡） */
+  --pr-margin-w: 118px;
+  /* folio 内容 */
+  --pr-folio: "— 3 —";
+  /* 入场位移：锐 9px，柔更轻 5px */
+  --pr-rise-y: 9px;
+}
+
+[data-theme="press"][data-soft="on"] {
+  --pr-rise-y: 5px;
+}
+
+/* ============================================================================
+   1 · § 编号（CSS 计数器 · 样张 .secno：#A32E24 拉丁小字）
+   ============================================================================ */
+
+/* 1.1 会话卷册标题：§ 01 */
+[data-theme="press"] .sess-head .t::before {
+  content: "§ 01";
+  margin-right: .72em;
+  font-family: var(--font-latin);
+  font-weight: 400;
+  font-size: .92em;
+  letter-spacing: .12em;
+  color: var(--pr-rubric);
+}
+
+/* 1.2 右栏三个页签：§01 / §02 / §03 */
+[data-theme="press"] .side-tabs {
+  counter-reset: pr-tab;
+}
+[data-theme="press"] .side-tabs > button {
+  counter-increment: pr-tab;
+}
+[data-theme="press"] .side-tabs > button::before {
+  content: "§" counter(pr-tab, decimal-leading-zero);
+  margin-right: .5em;
+  font-family: var(--font-latin);
+  font-size: .9em;
+  letter-spacing: .06em;
+  color: var(--pr-rubric);
+  opacity: .7;
+}
+[data-theme="press"] .side-tabs > button.on::before {
+  opacity: 1;
+}
+
+/* 1.3 面板小标题（Timeline / 知识库 / 档案 / Trace）：§ 计数器递增 */
+[data-theme="press"] .side-col,
+[data-theme="press"] .trace-panel {
+  counter-reset: pr-panel;
+}
+[data-theme="press"] .panel-head {
+  counter-increment: pr-panel;
+}
+[data-theme="press"] .panel-head h3::before {
+  content: "§ " counter(pr-panel, decimal-leading-zero);
+  margin-right: .7em;
+  font-family: var(--font-latin);
+  font-weight: 400;
+  font-size: .92em;
+  letter-spacing: .12em;
+  color: var(--pr-rubric);
+}
+
+/* ============================================================================
+   2 · folio 页码（固定底部居中 · 样张 .folio：EB Garamond · 字距 .34em）
+   ============================================================================ */
+[data-theme="press"] .app::after {
+  content: var(--pr-folio);
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 13px;
+  z-index: 5;
+  text-align: center;
+  font-family: var(--font-latin);
+  font-size: 13px;
+  letter-spacing: .34em;
+  text-indent: .34em; /* 抵掉末位字距造成的视觉偏移 */
+  color: var(--text-3);
+  pointer-events: none;
+}
+
+/* ============================================================================
+   3 · 页边校勘批注栏（竖排在对话区右侧 · 朱红极淡左线）
+   ============================================================================ */
+[data-theme="press"] .chat-col {
+  position: relative;
+}
+/* 右侧为批注栏预留栅格，避免竖排文字压住气泡 */
+[data-theme="press"] .msgs-inner {
+  padding-right: calc(var(--pr-margin-w) + var(--s-2));
+}
+
+/* 3.1 朱红 ¶ 记号（极少量朱红的落点之一） */
+[data-theme="press"] .chat-col::before {
+  content: "¶";
+  position: absolute;
+  top: calc(var(--pad-panel) + var(--s-6) - 1.35em);
+  right: var(--s-3);
+  z-index: 4;
+  font-family: var(--font-latin);
+  font-size: 15px;
+  line-height: 1;
+  color: var(--pr-rubric);
+  opacity: .8;
+  pointer-events: none;
+}
+
+/* 3.2 批注正文：竖排（writing-mode: vertical-rl），拉丁斜体 + 少量中文 */
+[data-theme="press"] .chat-col::after {
+  content: "¶ §2.1  scope narrowed to robustness\A⌀ note  三类扰动 ← 需与导师确认边界\A§ ref.3  50 refs queued";
+  position: absolute;
+  top: calc(var(--pad-panel) + var(--s-6));
+  right: var(--s-3);
+  z-index: 3;
+  width: calc(var(--pr-margin-w) - var(--s-5));
+  max-height: 58%;
+  overflow: hidden;
+  white-space: pre;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  padding-left: var(--s-3);
+  border-left: var(--pr-rule) solid var(--pr-line-hot);
+  font-family: var(--font-latin);
+  font-style: italic;
+  font-size: 11.5px;
+  line-height: 1.9;
+  letter-spacing: .04em;
+  color: var(--text-3);
+  pointer-events: none;
+}
+/* 柔态：线宽归零后改用柔影留痕，批注本身保留 */
+[data-theme="press"][data-soft="on"] .chat-col::after {
+  border-left-color: transparent;
+  box-shadow: inset 1px 0 0 var(--line-2);
+  border-radius: 0 var(--r-card) var(--r-card) 0;
+}
+
+/* ============================================================================
+   4 · 首字下沉（仅助手消息首段 · 样张 .dropcap 3.15em / line-height .86）
+   ============================================================================ */
+[data-theme="press"] .msg.assistant .bubble > p:first-child::first-letter,
+[data-theme="press"] .msg.ai .bubble > p:first-child::first-letter {
+  float: left;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 3.15em;
+  line-height: .86;
+  padding: .06em .12em 0 0;
+  color: var(--text);
+}
+
+/* ============================================================================
+   5 · 脚注式时间线（脚注编号 + 条目间短横线 · 样张 .footnotes / .fn）
+   ============================================================================ */
+[data-theme="press"] .timeline {
+  counter-reset: pr-fn;
+  padding-left: 30px;
+}
+/* 去掉原连续竖轴，改为脚注式编号 */
+[data-theme="press"] .timeline::before {
+  display: none;
+}
+[data-theme="press"] .tl-item {
+  counter-increment: pr-fn;
+  margin-top: 0;
+}
+/* 脚注编号（拉丁 · 老式数字），替代原圆点 */
+[data-theme="press"] .tl-item::before {
+  content: counter(pr-fn);
+  position: absolute;
+  left: -26px;
+  top: -1px;
+  width: auto;
+  height: auto;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-family: var(--font-latin);
+  font-size: 11.5px;
+  line-height: 1.5;
+  font-variant-numeric: oldstyle-nums;
+  color: var(--pr-rubric);
+}
+/* 条目之间用短横线分隔（锐 1px，柔 0 自动消失） */
+[data-theme="press"] .tl-item + .tl-item::after {
+  content: "";
+  position: absolute;
+  left: -26px;
+  right: 0;
+  top: -4px;
+  height: var(--pr-rule);
+  background: var(--line);
+}
+/* 锐态：脚注条目去胶囊化，回到纸面文字 */
+[data-theme="press"][data-soft="off"] .tl-tag {
+  padding: 3px 0;
+  border-color: transparent;
+  background: transparent;
+  border-radius: 0;
+  font-size: var(--fs-xs);
+}
+
+/* ============================================================================
+   6 · 1px 细线体系（锐态强调分隔；柔态由 --bw:0 自动消失）
+   ============================================================================ */
+/* 6.1 消息之间：细线分隔（样张 .msg + .msg 的版面节奏） */
+[data-theme="press"] .msg + .msg {
+  border-top: var(--pr-rule) solid var(--line);
+}
+
+/* 6.2 会话卷册条目之间 */
+[data-theme="press"] .sess-item + .sess-item {
+  border-top: var(--pr-rule) solid var(--line);
+}
+
+/* 6.3 用户提问：左细线（样张 .msg.user .q 的缩进手稿感） */
+[data-theme="press"] .msg.user .bubble {
+  border-left: var(--pr-rule) solid var(--line-2);
+}
+
+/* 6.4 中断确认条 = 编辑部质询：朱红左注记 */
+[data-theme="press"] .interrupt-bar {
+  border-left: var(--pr-rule) solid var(--pr-rubric);
+}
+[data-theme="press"][data-soft="on"] .interrupt-bar {
+  box-shadow: inset 4px 0 0 var(--pr-rubric), var(--shadow-card);
+}
+
+/* 6.5 助手气泡首行角色 micro 标签（样张 .msg .who：Author / Drafted） */
+[data-theme="press"] .msg .bubble::before {
+  display: block;
+  margin-bottom: var(--s-2);
+  font-family: var(--font-latin);
+  font-size: 11px;
+  font-style: italic;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+[data-theme="press"] .msg.assistant .bubble::before,
+[data-theme="press"] .msg.ai .bubble::before {
+  content: "Drafted — 匠";
+}
+[data-theme="press"] .msg.user .bubble::before {
+  content: "Author — 作者";
+}
+
+/* ============================================================================
+   7 · 按钮（锐：文字链 + 1px 底边线；柔：胶囊描边 · 样张 .tlink / .ghost / .solid）
+   ============================================================================ */
+/* 7.1 文字链式按钮（.btn-ghost）—— 锐态 */
+[data-theme="press"][data-soft="off"] .btn-ghost {
+  padding: 6px 1px 7px;
+  border: 0;
+  border-bottom: var(--bw) solid var(--line-2);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-2);
+}
+/* hover：底边转朱红、下划线加粗（样张 .tlink:hover 2px + #A32E24） */
+[data-theme="press"][data-soft="off"] .btn-ghost:hover:not(:disabled) {
+  transform: none;
+  background: transparent;
+  box-shadow: none;
+  border-bottom-color: var(--pr-rubric);
+  color: var(--pr-rubric);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--pr-rubric);
+}
+[data-theme="press"][data-soft="off"] .btn-ghost:disabled {
+  border-bottom-color: var(--line);
+}
+
+/* 7.2 文字链式按钮 —— 柔态：胶囊实底 + 柔影（样张 proposal-8 .ghost / .newbtn） */
+[data-theme="press"][data-soft="on"] .btn-ghost {
+  padding: 8px 18px;
+  border-style: solid;
+  border-width: var(--bw); /* 柔态 --bw:0 → 细线自动消失，靠柔影分层 */
+  border-color: var(--line-2);
+  border-radius: var(--r-btn);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-card);
+  color: var(--text-2);
+}
+[data-theme="press"][data-soft="on"] .btn-ghost:hover:not(:disabled) {
+  transform: none;
+  border-color: var(--line-2);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-pop);
+  color: var(--text);
+}
+
+/* 7.3 唯一实心按钮（.btn-ink）：墨底纸色、无圆角；hover 转朱红（样张 .solid） */
+[data-theme="press"] .btn-ink {
+  padding: 10px 20px 11px;
+  border: 0;
+  border-radius: var(--r-btn); /* 锐 0 / 柔 999px，token 单点控制 */
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+  letter-spacing: .04em;
+  box-shadow: none;
+}
+[data-theme="press"] .btn-ink:hover:not(:disabled) {
+  transform: none;
+  border-color: transparent;
+  background: var(--pr-rubric);
+  color: var(--accent-ink);
+  box-shadow: none;
+}
+[data-theme="press"] .btn-ink:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+/* ============================================================================
+   8 · 分段淡入（面板入场 stagger · 样张 .rise .d1~.d3）
+   ============================================================================ */
+@keyframes pr-rise {
+  from { opacity: 0; transform: translateY(var(--pr-rise-y)); }
+  to   { opacity: 1; transform: none; }
+}
+[data-theme="press"] .sessions,
+[data-theme="press"] .chat-col,
+[data-theme="press"] .side-col,
+[data-theme="press"] .trace-panel {
+  animation: pr-rise .62s var(--ease) both;
+}
+[data-theme="press"] .sessions   { animation-delay: .04s; }
+[data-theme="press"] .chat-col   { animation-delay: .10s; }
+[data-theme="press"] .side-col   { animation-delay: .16s; }
+[data-theme="press"] .trace-panel { animation-delay: .04s; }
+
+/* ============================================================================
+   9 · 窄屏兜底：收起页边批注栏与预留（桌面 1440 为主参考）
+   ============================================================================ */
+@media (max-width: 1080px) {
+  [data-theme="press"] .msgs-inner {
+    padding-right: var(--s-6);
+  }
+  [data-theme="press"] .chat-col::before,
+  [data-theme="press"] .chat-col::after {
+    display: none;
+  }
+}
+
+/* ============================================================================
+   10 · 弱动效偏好：关闭全部装饰动画
+   ============================================================================ */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="press"] .sessions,
+  [data-theme="press"] .chat-col,
+  [data-theme="press"] .side-col,
+  [data-theme="press"] .trace-panel {
+    animation: none;
+  }
+}

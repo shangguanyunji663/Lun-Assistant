@@ -1,21 +1,23 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { api } from './api.js'
-import InkBackground from './InkBackground.jsx'
-import { Seal, Markdown, WoodRoll } from './components/decor.jsx'
+import { Seal, Markdown } from './components/decor.jsx'
 import AuthPage from './components/AuthPage.jsx'
 import Timeline from './components/Timeline.jsx'
 import TracePanel from './components/TracePanel.jsx'
 import KnowledgePanel from './components/KnowledgePanel.jsx'
 import ProjectArchive from './components/ProjectArchive.jsx'
 import ProjectDialog from './components/ProjectDialog.jsx'
+import ThemePicker from './components/ThemePicker.jsx'
 import { useChat } from './hooks/useChat.js'
 import { useProjects } from './hooks/useProjects.js'
 import { useSessions } from './hooks/useSessions.js'
 import { useTheme } from './hooks/useTheme.js'
 
 /* ============================================================
-   主应用：卷轴木轴 + 会话卷册 + 对话主区 + 右栏三 tab
-   状态逻辑已拆分至 src/hooks/（主题 / 会话 / 项目 / 对话）
+   主应用 · v16
+     · 主题体系：6 主题 + 柔化开关（见 tokens.css / useTheme.js）
+     · 布局：会话卷册 + 对话主区 + 右栏三 tab；可观测为独立视图
+     · 状态逻辑在 src/hooks/（主题 / 会话 / 项目 / 对话）
    ============================================================ */
 
 export default function App() {
@@ -24,8 +26,8 @@ export default function App() {
   const [tab, setTab] = useState('chat')
   const [sideTab, setSideTab] = useState('timeline')
 
-  // ---- 主题 + 山水浓度 ----
-  const { theme, setTheme, inkOp, setInkOp, THEMES } = useTheme()
+  // ---- 主题 + 柔化 ----
+  const themeCtl = useTheme()
 
   // ---- 会话卷册 ----
   const {
@@ -86,16 +88,16 @@ export default function App() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, timeline])
 
-  if (booting) return <div className="center muted">加载中…</div>
-  if (!user) return <AuthPage onLogin={setUser} />
+  if (booting) return <div className="boot muted">加载中…</div>
+  if (!user) return <AuthPage onLogin={setUser} themeCtl={themeCtl} />
 
   return (
     <div className="app">
-      <InkBackground />
-      <WoodRoll />
-
       <header className="topbar">
-        <h1 className="brand"><Seal size={26} />论匠<small>多智能体论文全流程助手</small></h1>
+        <h1 className="brand">
+          <Seal size={26} />
+          <span className="brand-text">论匠<small>多智能体论文全流程助手</small></span>
+        </h1>
         <div className="spacer" />
 
         <div className="proj-picker">
@@ -109,37 +111,10 @@ export default function App() {
           <button className="btn btn-ghost btn-sm" onClick={() => setDialog({ mode: 'create' })}>新建项目</button>
         </div>
 
-        {/* 山水浓度：实时调 AI 底图不透明度 */}
-        <div className="ink-tuner" title="调节山水底图浓度">
-          <span className="lab">山水</span>
-          <input type="range" min="0" max="0.4" step="0.01" value={inkOp}
-                 onChange={e => setInkOp(Number(e.target.value))}
-                 aria-label="山水底图浓度" />
-          <span className="val">{inkOp.toFixed(2)}</span>
-        </div>
+        {/* 主题选择器：6 主题 + 柔化开关（只改材质与配色，不动结构） */}
+        <ThemePicker {...themeCtl} />
 
-        {/* 调参台入口：跳转生产版控制台（frontend/public/console/tuner.html）。
-            调参台改的主题 / 山水浓度会经 localStorage + storage 事件实时同步回主应用。 */}
-        <a className="btn btn-ghost btn-sm console-entry" href="console/tuner.html" target="_blank" rel="noreferrer"
-           title="打开调参台，改动实时同步回本页">调参台</a>
-
-        {/* v11 · 四主题切换（A 柔雾青绿 / B 水墨留白 / C 暗墨夜山 / D 青绿金碧）。
-            单击切换整套配色 + 背景图 + 卷轴语言；持久化到 localStorage.lj_theme。 */}
-        <div className="theme-tabs" role="tablist" aria-label="主题切换">
-          {THEMES.map(t => (
-            <button key={t.id}
-                    role="tab"
-                    aria-selected={theme === t.id}
-                    className={theme === t.id ? 'on' : ''}
-                    title={`${t.label}${theme === t.id ? '（当前）' : ''}`}
-                    onClick={() => setTheme(t.id)}>
-              <span className="chip" style={{ background: t.chip }} />
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        <nav>
+        <nav className="view-tabs">
           <button className={tab === 'chat' ? 'on' : ''} onClick={() => setTab('chat')}>对话</button>
           <button className={tab === 'trace' ? 'on' : ''} onClick={() => setTab('trace')}
                   title={user.role !== 'admin' ? '仅 admin 可见 Trace 数据' : ''}>可观测</button>
@@ -163,7 +138,7 @@ export default function App() {
       {tab === 'chat' ? (
         <main className="chat-layout">
           {/* 会话卷册 */}
-          <aside className="sessions">
+          <aside className="sessions card">
             <div className="sess-head">
               <span className="t">会话卷册</span>
               <button className="btn btn-ghost btn-sm" onClick={newSession}
@@ -189,7 +164,7 @@ export default function App() {
             </div>
           </aside>
 
-          <section className="chat-col">
+          <section className="chat-col card">
             <div className="messages">
               <div className="msgs-inner">
                 {messages.length === 0 && (
@@ -249,7 +224,7 @@ export default function App() {
             </div>
           </section>
 
-          <aside className="side-col">
+          <aside className="side-col card">
             <div className="side-tabs">
               <button className={sideTab === 'timeline' ? 'on' : ''} onClick={() => setSideTab('timeline')}>执行时间线</button>
               <button className={sideTab === 'knowledge' ? 'on' : ''} onClick={() => setSideTab('knowledge')}>项目知识库</button>

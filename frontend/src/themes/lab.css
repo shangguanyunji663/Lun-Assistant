@@ -1,0 +1,395 @@
+/* ============================================================================
+   论匠 LunJiang · lab 主题装饰层（src/themes/lab.css）
+   lab 主题装饰层：严格对齐 proposal-3 / proposal-7 样张（proposal-7 为基准）
+
+   —— 定位 ——
+   tokens.css 只给了颜色/圆角/阴影「令牌」，styles.css 只写结构。样张里真正的
+   性格（横格纸、索引卡、和纸胶带、打孔点、手写页码、勾选框、铅笔下划线、
+   荧光笔、便利贴、椭圆橡皮章、记录头卡）全靠本文件用伪元素 + CSS content 补回。
+
+   —— 生效方式（本文件不 import 任何东西，需被入口加载）——
+     在 frontend/src/main.jsx 中，于 './styles.css' 之后追加一行：
+         import './themes/lab.css'
+     本层所有规则均以 [data-theme="lab"] 前缀作用域，行数后置 → 天然覆盖
+     styles.css 的同名声明，不会影响其它 5 个主题。
+
+   —— 作用域约定 ——
+     · 锐态 [data-theme="lab"][data-soft="off"]；柔态 [data-theme="lab"][data-soft="on"]
+     · 装饰层统一 pointer-events: none（便利贴 / 胶带不挡点击）
+     · 不用 !important 覆盖交互态；交互反馈由本层显式重写（:hover / .on）
+
+   ---------------------------------------------------------------------------
+   纯 CSS 已 100% 还原（本文件实现，无需改 JSX）：
+     横格纸 / 记录页红边线 / 索引卡 / 和纸胶带（毛边）/ 打孔圆点 / 手写页码 /
+     勾选框 / 铅笔下划线 / 荧光笔 / 便利贴 / 椭圆橡皮章 / 记录头卡 / 印章按下动画
+
+   建议新增标签（仅这 3 处，纯 CSS 只能近似；当前均已用伪元素兜底）：
+     1) 记录头卡 → 在 <section className="chat-col"> 内、.messages 之前插入
+        <div className="rec-head">REC-#012 · 日期 2026-10-01 · 记录人 吕江</div>
+        （现用 .chat-col::before 浮层 + .msgs-inner 顶部留白近似）
+     2) 便利贴 → 在 .side-scroll 内、Timeline / KnowledgePanel 之后插入
+        <div className="note">记得补两篇 RAG 评测文献<br/>before chapter 3 —</div>
+        （现用 .side-col::after 单行文案近似，承载不了第二行小字与折角）
+     3) 橡皮章（可选）→ KnowledgePanel 的 .kb-doc 内插入双椭圆 <svg className="stamp">，
+        与样张的双线 SVG 完全一致；现用 .kb-status-ready 的 border + outline 椭圆近似。
+   ============================================================================ */
+
+/* ============================================================ 0. 私有变量
+   tokens.css 已有的（--rule-c / --rule-sz / --tape-1~3 / --ink-pencil /
+   --highlight / --font-hand / --font-mono / --r-pill）一律直接复用；
+   下面只补 tokens 未覆盖、且仅本主题装饰层需要的 --lab-* 私有变量。 */
+[data-theme="lab"] {
+  /* 红笔 / 橡皮章 / 记录页左缘线 */
+  --lab-red: #D9543F;
+  --lab-margin: rgba(201, 86, 66, .35);      /* 锐态红边线 */
+  /* 褐色油墨（解析中标签 / 便利贴折角） */
+  --lab-brown: #9A6B3F;
+  --lab-brown-soft: rgba(154, 107, 63, .14);
+  /* 便利贴黄 */
+  --lab-note-1: #FFE98A;
+  --lab-note-2: #FFDE6B;
+  --lab-note-ink: #4A3E1E;
+  /* 材质投影 */
+  --lab-tape-shadow: 0 1px 2px rgba(43, 52, 80, .10);
+  --lab-note-shadow: 0 6px 16px -10px rgba(43, 52, 80, .50);
+  --lab-note-shadow-lift: 0 12px 24px -14px rgba(43, 52, 80, .55);
+  /* 打孔圆点（radial-gradient 背景） */
+  --lab-punch-ring: rgba(43, 52, 80, .30);
+  --lab-punch:
+    radial-gradient(circle at 9px 16px, var(--bg) 0 4.4px, var(--lab-punch-ring) 4.4px 5.4px, transparent 5.4px),
+    radial-gradient(circle at 9px 36px, var(--bg) 0 4.4px, var(--lab-punch-ring) 4.4px 5.4px, transparent 5.4px);
+  /* 卡片微旋转（柔态减半） */
+  --lab-tilt-a: -0.6deg;
+  --lab-tilt-b: 0.4deg;
+  /* 和纸胶带毛边（与样张 .tape 的 clip-path 完全一致） */
+  --lab-tape-edge: polygon(0 7%, 5% 0, 14% 6%, 25% 0, 36% 7%, 47% 0, 58% 6%, 69% 0, 80% 7%, 90% 0, 100% 8%, 100% 93%, 91% 100%, 80% 94%, 68% 100%, 56% 93%, 44% 100%, 32% 94%, 21% 100%, 11% 93%, 4% 100%, 0 92%);
+  /* 铅笔手写下划线（用作 mask，颜色仍取 --ink-pencil） */
+  --lab-pencil-line: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 8' preserveAspectRatio='none'%3E%3Cpath d='M2 5 C 58 2, 116 7.4, 176 4 S 266 6.4, 298 2.6' fill='none' stroke='%23fff' stroke-width='1.7' stroke-linecap='round'/%3E%3C/svg%3E");
+}
+
+/* 柔态：红边线对比降约 30%，投影更大更柔，微旋转幅度减半（材质/圆角由 tokens 负责） */
+[data-theme="lab"][data-soft="on"] {
+  --lab-margin: rgba(201, 86, 66, .245);
+  --lab-tape-shadow: 0 2px 6px rgba(120, 100, 60, .14);
+  --lab-note-shadow: 0 12px 28px -14px rgba(120, 100, 60, .55);
+  --lab-note-shadow-lift: 0 20px 38px -18px rgba(120, 100, 60, .60);
+  --lab-punch-ring: rgba(120, 100, 60, .22);
+  --lab-tilt-a: -0.3deg;
+  --lab-tilt-b: 0.2deg;
+}
+
+/* ============================================================ 1. 横格纸
+   记录纸横格铺满三个滚动区；--rule-c 取色、--rule-sz 取行距（柔态令牌已降对比）。 */
+[data-theme="lab"] .sess-list,
+[data-theme="lab"] .side-scroll {
+  background-image: repeating-linear-gradient(180deg,
+    transparent 0, transparent calc(var(--rule-sz) - 1px),
+    var(--rule-c) calc(var(--rule-sz) - 1px), var(--rule-c) var(--rule-sz));
+  background-position: 0 var(--s-3);
+}
+
+/* 记录页：横格 + 左缘一条红边线（16px 处，1.4px 宽） */
+[data-theme="lab"] .messages {
+  background-image:
+    linear-gradient(to right, var(--lab-margin) 0 1.4px, transparent 1.4px),
+    repeating-linear-gradient(180deg,
+      transparent 0, transparent calc(var(--rule-sz) - 1px),
+      var(--rule-c) calc(var(--rule-sz) - 1px), var(--rule-c) var(--rule-sz));
+  background-position: 16px 0, 0 0;
+  background-repeat: no-repeat, repeat;
+}
+/* 让正文避开红边线，并为顶部记录头卡留出空间 */
+[data-theme="lab"] .msgs-inner {
+  padding-left: 44px;
+  padding-top: calc(var(--pad-panel) + 26px);
+}
+
+/* ============================================================ 2. 记录头卡
+   content 形如「REC-#012 · 日期 2026-10-01 · 记录人 吕江」，字体走 --font-mono。 */
+[data-theme="lab"] .chat-col { position: relative; }
+[data-theme="lab"] .chat-col::before {
+  content: "REC-#012 · 日期 2026-10-01 · 记录人 吕江";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  z-index: 3;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--s-6);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: .14em;
+  color: var(--lab-red);
+  background: linear-gradient(to bottom,
+    color-mix(in srgb, var(--surface) 92%, transparent),
+    color-mix(in srgb, var(--surface) 74%, transparent));
+  border-bottom: 1.4px dashed var(--line-2);
+  pointer-events: none;
+}
+/* 记录头卡右上角贴一截绿和纸胶带（贴住卡沿，不遮挡左侧 REC 编号文字） */
+[data-theme="lab"] .chat-col::after {
+  content: "";
+  position: absolute;
+  top: -8px; right: 40px;
+  z-index: 4;
+  width: 64px; height: 20px;
+  background: var(--tape-2);
+  transform: rotate(-6deg);
+  box-shadow: var(--lab-tape-shadow);
+  clip-path: var(--lab-tape-edge);
+  pointer-events: none;
+}
+
+/* ============================================================ 3. 索引卡与胶带
+   .sess-item 做成索引卡：实底纸卡 + 左缘书脊 + 微旋转 + 左上角和纸胶带。
+   注：styles.css 的 .sess-item.on::before 是「选中竖条」，本层用胶带接管该伪元素，
+       选中态改由 border-left-color 表达，故需同时重写 .on::before。 */
+[data-theme="lab"] .sess-item,
+[data-theme="lab"] .sess-item.on {
+  position: relative;
+  padding: var(--s-3) var(--s-4) var(--s-3) 30px;
+  padding-right: 36px;
+  background-color: var(--surface);
+  border: 1.2px solid var(--line);
+  border-left: 3px solid var(--line-2);
+  /* 索引卡用较小的圆角（不跟随 --r-card 的大圆角），避免退化成胶囊 */
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+  transform: rotate(var(--lab-tilt-a));
+  transition:
+    transform var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease),
+    border-color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
+}
+[data-theme="lab"] .sess-item:nth-child(even) { transform: rotate(var(--lab-tilt-b)); }
+[data-theme="lab"] .sess-item:hover {
+  transform: rotate(0deg) translateY(-3px);
+  box-shadow: var(--shadow-pop);
+  border-left-color: var(--accent);
+  background-color: var(--surface-2);
+}
+[data-theme="lab"] .sess-item.on {
+  border-left-color: var(--lab-red);
+  background-color: color-mix(in srgb, var(--lab-red) 8%, var(--surface));
+}
+
+/* 和纸胶带：倾斜矩形 + 半透明色 + clip-path 毛边 */
+[data-theme="lab"] .sess-item::before,
+[data-theme="lab"] .sess-item.on::before {
+  content: "";
+  position: absolute;
+  top: -11px; left: 14px;
+  z-index: 2;
+  width: 58px; height: 19px;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--tape-1);
+  transform: rotate(-6deg);
+  box-shadow: var(--lab-tape-shadow);
+  clip-path: var(--lab-tape-edge);
+  pointer-events: none;
+  transition: filter var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+/* 胶带三色按条目轮换 */
+[data-theme="lab"] .sess-item:nth-child(3n+1)::before { background: var(--tape-1); }
+[data-theme="lab"] .sess-item:nth-child(3n+2)::before { background: var(--tape-2); }
+[data-theme="lab"] .sess-item:nth-child(3n)::before   { background: var(--tape-3); }
+[data-theme="lab"] .sess-item:hover::before {
+  filter: brightness(1.06) saturate(1.08);
+  box-shadow: var(--lab-tape-shadow), 0 0 14px rgba(255, 255, 255, .35);
+}
+
+/* ============================================================ 4. 打孔与页码
+   左缘两个打孔圆点用 radial-gradient 背景；右下角手写页码用 CSS 计数器。 */
+[data-theme="lab"] .sess-item,
+[data-theme="lab"] .sess-item.on {
+  background-image: var(--lab-punch);
+  background-repeat: no-repeat;
+  counter-increment: labpage;
+}
+[data-theme="lab"] .sess-list { counter-reset: labpage; }
+
+[data-theme="lab"] .sess-item::after {
+  content: "p." counter(labpage, decimal-leading-zero);
+  position: absolute;
+  right: 10px; bottom: 3px;
+  font-family: var(--font-hand);
+  font-size: 16px;
+  line-height: 1;
+  color: var(--ink-pencil);
+  opacity: .85;
+  pointer-events: none;
+}
+
+/* ============================================================ 5. 勾选框
+   对话消息与时间线条目：☑ / ☐，字体走 --font-mono。 */
+[data-theme="lab"] .msg {
+  position: relative;
+  padding-left: 20px;
+}
+[data-theme="lab"] .msg::before {
+  content: "☐";
+  position: absolute;
+  left: 0; top: 4px;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 1;
+  color: var(--ink-pencil);
+  pointer-events: none;
+}
+[data-theme="lab"] .msg.user::before { content: "☑"; color: var(--accent); }
+
+/* 时间线条目：原样式里的圆点改为勾选框（连接线 .timeline::before 保留） */
+[data-theme="lab"] .tl-item::before {
+  content: "☐";
+  position: absolute;
+  left: -19px; top: 3px;
+  width: auto; height: auto;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1;
+  color: var(--ink-pencil);
+  pointer-events: none;
+}
+[data-theme="lab"] .tl-item.tl-node_start::before,
+[data-theme="lab"] .tl-item.tl-node_end::before { content: "☑"; color: var(--accent); }
+[data-theme="lab"] .tl-item.tl-intent::before { content: "☑"; color: var(--accent-2); }
+[data-theme="lab"] .tl-item.tl-plan::before { content: "☑"; color: var(--ok); }
+[data-theme="lab"] .tl-item.tl-interrupt::before { content: "☐"; color: var(--warn); }
+[data-theme="lab"] .tl-item.tl-error::before { content: "☒"; color: var(--danger); }
+
+/* ============================================================ 6. 铅笔手写下划线
+   助手气泡下缘一条不规则下划线（mask + 背景色，颜色仍取 --ink-pencil）。 */
+[data-theme="lab"] .bubble { position: relative; }
+[data-theme="lab"] .msg.assistant .bubble::after {
+  content: "";
+  position: absolute;
+  left: 16px; right: 16px; bottom: 6px;
+  height: 8px;
+  background-color: var(--ink-pencil);
+  -webkit-mask-image: var(--lab-pencil-line);
+  mask-image: var(--lab-pencil-line);
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  opacity: .68;
+  transform: rotate(-.4deg);
+  pointer-events: none;
+}
+
+/* ============================================================ 7. 荧光笔高亮
+   气泡内加粗文字铺一层荧光黄（12% → 86% 的横向带状渐变）。 */
+[data-theme="lab"] .bubble strong {
+  background-image: linear-gradient(transparent 12%, var(--highlight) 12%, var(--highlight) 86%, transparent 86%);
+  border-radius: var(--r-pill);
+  padding: 0 .1em;
+  margin: 0 -.02em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* ============================================================ 8. 便利贴
+   右栏右下角贴一张微旋转黄色便利贴；hover 右栏时微微抬起。
+   纯 CSS 单行文案近似（见文件头建议新增标签）。 */
+[data-theme="lab"] .side-col { position: relative; }
+[data-theme="lab"] .side-col::after {
+  content: "记得补两篇 RAG 评测文献\A before chapter 3 —";
+  position: absolute;
+  right: 12px; bottom: 14px;
+  z-index: 2;
+  width: 204px;
+  padding: 14px 14px 16px;
+  white-space: pre-line;
+  font-family: var(--font-hand);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--lab-note-ink);
+  background-image:
+    linear-gradient(135deg, transparent 0 86%, rgba(154, 107, 63, .22) 86% 100%),
+    linear-gradient(160deg, var(--lab-note-1), var(--lab-note-2));
+  border-radius: 2px;
+  box-shadow: var(--lab-note-shadow);
+  transform: rotate(-1.4deg);
+  pointer-events: none;
+  transition: transform var(--dur-slow) var(--ease), box-shadow var(--dur-slow) var(--ease);
+}
+[data-theme="lab"] .side-col:hover::after {
+  transform: rotate(0deg) translateY(-3px);
+  box-shadow: var(--lab-note-shadow-lift);
+}
+
+/* ============================================================ 9. 橡皮章与褐色标签
+   知识库「已入库」= 椭圆红章（双线边框 = border + outline，半透明油墨）；「解析中」= 褐色小标签。 */
+[data-theme="lab"] .kb-status-ready {
+  display: inline-block;
+  padding: 2px 12px;
+  font-family: var(--font-hand);
+  font-size: var(--fs-xs);
+  line-height: 1.25;
+  letter-spacing: .06em;
+  color: var(--lab-red);
+  background: transparent;
+  border: 1.6px solid var(--lab-red);
+  border-radius: 50%;
+  outline: 1px solid color-mix(in srgb, var(--lab-red) 85%, transparent);
+  outline-offset: 2.5px;
+  opacity: .82;
+  mix-blend-mode: multiply;
+  transform: rotate(-8deg);
+  animation: lab-press .6s var(--ease) both;
+}
+[data-theme="lab"] .kb-status-parsing {
+  display: inline-block;
+  padding: 2px 9px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  letter-spacing: .1em;
+  color: var(--lab-brown);
+  background: var(--lab-brown-soft);
+  border: 1px dashed color-mix(in srgb, var(--lab-brown) 50%, transparent);
+  border-radius: var(--r-chip);
+}
+
+/* ============================================================ 10. 柔态微调
+   柔态专属：材质更软（褶皱更淡）、印章更浅、胶带投影更柔；其余差异已由上面的私有变量控制。 */
+[data-theme="lab"][data-soft="on"] .kb-status-ready {
+  border-width: 1.4px;
+  opacity: .78;
+  transform: rotate(-6deg);
+}
+[data-theme="lab"][data-soft="on"] .sess-item.on {
+  background-color: color-mix(in srgb, var(--lab-red) 7%, var(--surface));
+}
+[data-theme="lab"][data-soft="on"] .chat-col::before {
+  height: 36px;
+  border-bottom-style: solid;
+  border-bottom-color: var(--line);
+}
+
+/* ============================================================ 11. 动效
+   印章按下：scale(1.25 → 1) + 透明度，约 .6s。 */
+@keyframes lab-press {
+  from { transform: rotate(-8deg) scale(1.25); opacity: 0; }
+  to   { transform: rotate(-8deg) scale(1); opacity: .82; }
+}
+
+/* 弱动效偏好：关闭本层全部动画与位移 */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme="lab"] .kb-status-ready { animation: none; }
+  [data-theme="lab"] .sess-item,
+  [data-theme="lab"] .sess-item:hover,
+  [data-theme="lab"] .sess-item:nth-child(even),
+  [data-theme="lab"] .side-col::after,
+  [data-theme="lab"] .side-col:hover::after,
+  [data-theme="lab"] .msg.assistant .bubble::after {
+    transform: none;
+    transition: none;
+  }
+}

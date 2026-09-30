@@ -1,0 +1,319 @@
+/* ============================================================================
+   论匠 LunJiang · v16 主题令牌（tokens.css）
+   —— 落地页（index.html）与工作台（app.html）共用；组件只从本文件取色与材质，
+      不在组件样式里硬编码主题色。
+
+   主题（属性挂在 <html> 上：document.documentElement.dataset.theme）
+     ops         暗色指挥舱   深色 · 有「锐 / 柔」两态
+     blueprint   蓝图工程     深蓝 · 有「锐 / 柔」两态
+     lab         实验记录本   暖亮 · 有「锐 / 柔」两态
+     press       学术期刊     纸亮 · 有「锐 / 柔」两态
+     soft-cream  暖云手稿     天生柔（暖云焦糖配色）
+     soft-mist   晨雾有机     天生柔（晨雾蓝绿配色）
+
+   柔化开关（document.documentElement.dataset.soft）：on = 柔 / off = 锐；
+   soft-* 两个主题天生即柔，JS 恒置 on（开关 UI 置灰）。
+
+   可用令牌清单（组件全部从这里取）：
+     · 底色      --bg --bg-2
+     · 面板      --surface --surface-2 --surface-3
+     · 文字      --text --text-2 --text-3
+     · 强调      --accent --accent-ink --accent-2 --ok --warn --danger
+     · 线        --line --line-2 --bw（边框宽度，柔态为 0，用阴影分层）
+     · 选中/焦点 --sel --focus
+     · 圆角      --r-panel --r-card --r-btn --r-input --r-chip（--r-pill 恒 999px）
+     · 间距      --pad-panel --pad-card --gap
+     · 阴影      --shadow-card --shadow-pop --shadow-glow
+     · 字体      --font-display --font-body --font-latin --font-mono --font-hand
+     · 标签字距  --label-tracking
+     · 装饰      --grid-c --grid-c2 --grid-sz --grid-sz2（方格底纹）
+                 --rule-c --rule-sz（横格纸）
+                 --blob-1/-2/-3 --wave-c（有机光斑 / 波浪）
+                 --tape-1/-2/-3 --ink-pencil --highlight（记录本胶带 / 铅笔 / 荧光笔）
+   ============================================================================ */
+
+/* ---------------------------------------------------------------- 基础刻度 */
+:root {
+  /* 动效 */
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --dur-fast: 180ms;
+  --dur: 240ms;
+  --dur-slow: 420ms;
+
+  /* 间距刻度 */
+  --s-1: 4px;  --s-2: 8px;  --s-3: 12px; --s-4: 16px; --s-5: 20px;
+  --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px; --s-16: 64px;
+
+  /* 字号刻度 */
+  --fs-micro: 11px; --fs-xs: 12px; --fs-sm: 13px; --fs-base: 15px; --fs-md: 16px;
+  --fs-lg: 20px; --fs-xl: 26px; --fs-2xl: 34px; --fs-3xl: 46px; --fs-hero: 60px;
+
+  /* 版式常量 */
+  --content-w: 1240px;
+  --topbar-h: 60px;
+  --r-pill: 999px;
+
+  /* 装饰兜底（防 var() 未定义） */
+  --grid-c: transparent; --grid-c2: transparent; --grid-sz: 32px; --grid-sz2: 160px;
+  --rule-c: transparent; --rule-sz: 28px;
+  --blob-1: transparent; --blob-2: transparent; --blob-3: transparent;
+  --wave-c: transparent;
+  --tape-1: transparent; --tape-2: transparent; --tape-3: transparent;
+  --ink-pencil: #8B8878; --highlight: #FFE066;
+
+  /* 兜底主题（等同 soft-cream，属性缺失时页面也不崩） */
+  --font-display: "Noto Serif SC", Georgia, serif;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-latin: "Fraunces", Georgia, serif;
+  --font-mono: "Quicksand", "Noto Sans SC", sans-serif;
+  --font-hand: "Noto Sans SC", sans-serif;
+  --label-tracking: .06em;
+
+  --bg: #FBF5EC; --bg-2: #F8F0E3;
+  --surface: #FFFDF9; --surface-2: #FFF8F0; --surface-3: #F7EBDD;
+  --text: #2E2823; --text-2: #7C7267; --text-3: #A89C8D;
+  --accent: #D97742; --accent-ink: #FFF9F2; --accent-2: #7FA596;
+  --ok: #7FA05F; --warn: #D9A140; --danger: #C25E4A;
+  --line: rgba(70,50,20,.08); --line-2: rgba(70,50,20,.14); --bw: 0px;
+  --sel: rgba(217,119,66,.22); --focus: rgba(217,119,66,.45);
+  --r-panel: 26px; --r-card: 24px; --r-btn: 999px; --r-input: 999px; --r-chip: 999px;
+  --pad-panel: 26px; --pad-card: 22px; --gap: 26px;
+  --shadow-card: 0 1px 2px rgba(70,50,20,.04), 0 14px 36px rgba(70,50,20,.08);
+  --shadow-pop: 0 24px 56px rgba(70,50,20,.14);
+  --shadow-glow: 0 0 40px rgba(217,119,66,.18);
+}
+
+/* ============================================================================
+   ① 暗色指挥舱 · ops（JetBrains Mono + Noto Sans SC）
+   锐 = 原版（方角细线 + 网格 + 状态灯）；柔 = 暖石墨黑 + 大圆角 + 柔影
+   ============================================================================ */
+[data-theme="ops"] {
+  --font-display: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-latin: "JetBrains Mono", Consolas, monospace;
+  --font-mono: "JetBrains Mono", Consolas, monospace;
+  --font-hand: "Noto Sans SC", sans-serif;
+  --label-tracking: .18em;
+}
+
+[data-theme="ops"][data-soft="off"] {
+  --bg: #080B0D; --bg-2: #0B0F12;
+  --surface: #0E1317; --surface-2: #131A1F; --surface-3: #182026;
+  --text: #D9E3E9; --text-2: #8B9BA6; --text-3: #5A6771;
+  --accent: #3EE08F; --accent-ink: #062015; --accent-2: #FFB454;
+  --ok: #3EE08F; --warn: #FFB454; --danger: #FF5F56;
+  --line: rgba(216,226,232,.10); --line-2: rgba(216,226,232,.18); --bw: 1px;
+  --sel: rgba(62,224,143,.28); --focus: rgba(62,224,143,.55);
+  --grid-c: rgba(255,255,255,.03); --grid-c2: rgba(255,255,255,.05);
+  --grid-sz: 32px; --grid-sz2: 160px;
+  --r-panel: 2px; --r-card: 2px; --r-btn: 2px; --r-input: 2px; --r-chip: 2px;
+  --pad-panel: 18px; --pad-card: 14px; --gap: 16px;
+  --shadow-card: none;
+  --shadow-pop: 0 18px 48px rgba(0,0,0,.55);
+  --shadow-glow: 0 0 24px rgba(62,224,143,.22);
+}
+
+[data-theme="ops"][data-soft="on"] {
+  --bg: #101418; --bg-2: #12171C;
+  --surface: #171E24; --surface-2: #1C242B; --surface-3: #222B33;
+  --text: #DDE6EC; --text-2: #93A3AE; --text-3: #616F79;
+  --accent: #46D695; --accent-ink: #04231A; --accent-2: #F2AE58;
+  --ok: #46D695; --warn: #F2AE58; --danger: #F2655E;
+  --line: rgba(216,226,232,.06); --line-2: rgba(216,226,232,.10); --bw: 0px;
+  --sel: rgba(70,214,149,.25); --focus: rgba(70,214,149,.50);
+  --grid-c: rgba(255,255,255,.015); --grid-c2: rgba(255,255,255,.03);
+  --grid-sz: 32px; --grid-sz2: 160px;
+  --r-panel: 20px; --r-card: 18px; --r-btn: 999px; --r-input: 999px; --r-chip: 999px;
+  --pad-panel: 24px; --pad-card: 20px; --gap: 24px;
+  --shadow-card: inset 0 1px 0 rgba(255,255,255,.05), 0 1px 2px rgba(0,0,0,.35), 0 14px 36px rgba(0,0,0,.45);
+  --shadow-pop: 0 24px 64px rgba(0,0,0,.60);
+  --shadow-glow: 0 0 32px rgba(70,214,149,.20);
+}
+
+/* ============================================================================
+   ② 蓝图工程 · blueprint（Architects Daughter + IBM Plex Mono + Noto Sans SC）
+   锐 = 原版（蓝晒底 + 双线图纸框）；柔 = 蓝调提亮 + 单线圆角 + 浮影
+   ============================================================================ */
+[data-theme="blueprint"] {
+  --font-display: "Architects Daughter", "Noto Sans SC", sans-serif;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-latin: "Architects Daughter", "IBM Plex Mono", monospace;
+  --font-mono: "IBM Plex Mono", Consolas, monospace;
+  --font-hand: "Architects Daughter", "Ma Shan Zheng", cursive;
+  --label-tracking: .12em;
+}
+
+[data-theme="blueprint"][data-soft="off"] {
+  --bg: #0E3556; --bg-2: #113A5D;
+  --surface: #124064; --surface-2: #164A70; --surface-3: #1A537E;
+  --text: #E9F2FB; --text-2: rgba(233,242,251,.62); --text-3: rgba(233,242,251,.40);
+  --accent: #FFFFFF; --accent-ink: #123F63; --accent-2: #FFD166;
+  --ok: #9FE0A8; --warn: #FFD166; --danger: #FF6B5E;
+  --line: rgba(233,242,251,.30); --line-2: rgba(233,242,251,.55); --bw: 1px;
+  --sel: rgba(255,255,255,.28); --focus: rgba(255,255,255,.60);
+  --grid-c: rgba(233,242,251,.06); --grid-c2: rgba(233,242,251,.13);
+  --grid-sz: 24px; --grid-sz2: 120px;
+  --r-panel: 2px; --r-card: 2px; --r-btn: 2px; --r-input: 2px; --r-chip: 2px;
+  --pad-panel: 18px; --pad-card: 14px; --gap: 16px;
+  --shadow-card: none;
+  --shadow-pop: 0 24px 60px rgba(6,20,36,.50);
+  --shadow-glow: 0 0 26px rgba(255,209,102,.18);
+}
+
+[data-theme="blueprint"][data-soft="on"] {
+  --bg: #234E78; --bg-2: #27537E;
+  --surface: #2B5A85; --surface-2: #31628F; --surface-3: #38699A;
+  --text: #EDF5FD; --text-2: rgba(237,245,253,.66); --text-3: rgba(237,245,253,.44);
+  --accent: #FFFFFF; --accent-ink: #1E4A73; --accent-2: #FFD166;
+  --ok: #A6E4AE; --warn: #FFD166; --danger: #FF7B6F;
+  --line: rgba(233,242,251,.16); --line-2: rgba(233,242,251,.30); --bw: 0px;
+  --sel: rgba(255,255,255,.24); --focus: rgba(255,255,255,.55);
+  --grid-c: rgba(233,242,251,.035); --grid-c2: rgba(233,242,251,.075);
+  --grid-sz: 24px; --grid-sz2: 120px;
+  --r-panel: 16px; --r-card: 14px; --r-btn: 999px; --r-input: 999px; --r-chip: 999px;
+  --pad-panel: 24px; --pad-card: 20px; --gap: 24px;
+  --shadow-card: inset 0 1px 0 rgba(255,255,255,.10), 0 18px 40px rgba(8,25,45,.35);
+  --shadow-pop: 0 28px 64px rgba(8,25,45,.45);
+  --shadow-glow: 0 0 30px rgba(255,209,102,.15);
+}
+
+/* ============================================================================
+   ③ 实验记录本 · lab（Special Elite + Caveat + Ma Shan Zheng + Noto Serif SC）
+   锐 = 原版（格纸 + 索引卡 + 胶带）；柔 = 更暖更圆 + 大柔影
+   ============================================================================ */
+[data-theme="lab"] {
+  --font-display: "Noto Serif SC", "STSong", Georgia, serif;
+  --font-body: "Noto Serif SC", "STSong", Georgia, serif;
+  --font-latin: "Special Elite", "Courier New", monospace;
+  --font-mono: "Special Elite", "Courier New", monospace;
+  --font-hand: "Caveat", "Ma Shan Zheng", cursive;
+  --label-tracking: .14em;
+}
+
+[data-theme="lab"][data-soft="off"] {
+  --bg: #F8F2E4; --bg-2: #F5EEDD;
+  --surface: #FFFDF8; --surface-2: #FFFFFF; --surface-3: #FFF7E8;
+  --text: #2B3450; --text-2: #6E6759; --text-3: #9B9484;
+  --accent: #3B6EA5; --accent-ink: #FFFFFF; --accent-2: #D9543F;
+  --ok: #5E8C5A; --warn: #D98032; --danger: #C94F3D;
+  --line: rgba(43,52,80,.16); --line-2: rgba(43,52,80,.28); --bw: 1px;
+  --sel: rgba(255,224,102,.65); --focus: rgba(59,110,165,.45);
+  --rule-c: rgba(91,124,166,.15); --rule-sz: 28px;
+  --tape-1: #F3C6C6; --tape-2: #BFD8C2; --tape-3: #C9D6EF;
+  --ink-pencil: #8B8878; --highlight: #FFE066;
+  --r-panel: 6px; --r-card: 6px; --r-btn: 6px; --r-input: 6px; --r-chip: 8px;
+  --pad-panel: 18px; --pad-card: 14px; --gap: 16px;
+  --shadow-card: 0 4px 14px rgba(120,100,60,.08);
+  --shadow-pop: 0 16px 40px rgba(120,100,60,.16);
+  --shadow-glow: 0 0 22px rgba(59,110,165,.12);
+}
+
+[data-theme="lab"][data-soft="on"] {
+  --bg: #FBF7EE; --bg-2: #F9F3E4;
+  --surface: #FFFEFB; --surface-2: #FFFFFF; --surface-3: #FDF6E7;
+  --text: #2B3450; --text-2: #71695B; --text-3: #A29B8B;
+  --accent: #3B6EA5; --accent-ink: #FFFFFF; --accent-2: #D9543F;
+  --ok: #5E8C5A; --warn: #D98032; --danger: #C94F3D;
+  --line: rgba(43,52,80,.10); --line-2: rgba(43,52,80,.18); --bw: 0px;
+  --sel: rgba(255,224,102,.55); --focus: rgba(59,110,165,.40);
+  --rule-c: rgba(91,124,166,.105); --rule-sz: 28px;
+  --tape-1: #F6D3D3; --tape-2: #CCE1CE; --tape-3: #D5E0F2;
+  --ink-pencil: #8B8878; --highlight: #FFE066;
+  --r-panel: 24px; --r-card: 20px; --r-btn: 999px; --r-input: 999px; --r-chip: 999px;
+  --pad-panel: 24px; --pad-card: 20px; --gap: 24px;
+  --shadow-card: inset 0 1px 0 #FFFFFF, 0 10px 30px rgba(120,100,60,.10);
+  --shadow-pop: 0 18px 44px rgba(120,100,60,.14);
+  --shadow-glow: 0 0 26px rgba(59,110,165,.14);
+}
+
+/* ============================================================================
+   ④ 学术期刊 · press（EB Garamond + Noto Serif SC）
+   锐 = 原版（纸面细线 + folio + 页边批注）；柔 = 去线圆角 + 柔影
+   ============================================================================ */
+[data-theme="press"] {
+  --font-display: "Noto Serif SC", "STSong", Georgia, serif;
+  --font-body: "Noto Serif SC", "STSong", Georgia, serif;
+  --font-latin: "EB Garamond", Georgia, serif;
+  --font-mono: "EB Garamond", Georgia, serif;
+  --font-hand: "Noto Serif SC", serif;
+  --label-tracking: .10em;
+}
+
+[data-theme="press"][data-soft="off"] {
+  --bg: #FAF7F0; --bg-2: #F6F2E8;
+  --surface: #FFFDF8; --surface-2: #FAF7F0; --surface-3: #F3EEE1;
+  --text: #1A1720; --text-2: #5A544C; --text-3: #8B8478;
+  --accent: #1A1720; --accent-ink: #FAF7F0; --accent-2: #A32E24;
+  --ok: #4F7A4C; --warn: #A8742C; --danger: #A32E24;
+  --line: #DAD3C5; --line-2: #C9C0AE; --bw: 1px;
+  --sel: rgba(163,46,36,.16); --focus: rgba(26,23,32,.35);
+  --r-panel: 0px; --r-card: 0px; --r-btn: 0px; --r-input: 0px; --r-chip: 0px;
+  --pad-panel: 18px; --pad-card: 14px; --gap: 16px;
+  --shadow-card: none;
+  --shadow-pop: 0 20px 50px rgba(60,45,25,.12);
+  --shadow-glow: 0 0 20px rgba(163,46,36,.10);
+}
+
+[data-theme="press"][data-soft="on"] {
+  --bg: #FBF7F0; --bg-2: #F8F3E8;
+  --surface: #FFFDF9; --surface-2: #FCF9F2; --surface-3: #F6F0E2;
+  --text: #1A1720; --text-2: #5F5950; --text-3: #8F887B;
+  --accent: #1A1720; --accent-ink: #FBF7F0; --accent-2: #A32E24;
+  --ok: #4F7A4C; --warn: #A8742C; --danger: #A32E24;
+  --line: rgba(201,192,176,.35); --line-2: rgba(201,192,176,.60); --bw: 0px;
+  --sel: rgba(163,46,36,.14); --focus: rgba(26,23,32,.30);
+  --r-panel: 20px; --r-card: 16px; --r-btn: 999px; --r-input: 999px; --r-chip: 999px;
+  --pad-panel: 24px; --pad-card: 20px; --gap: 24px;
+  --shadow-card: inset 0 1px 0 #FFFFFF, 0 10px 30px rgba(90,70,40,.08);
+  --shadow-pop: 0 22px 54px rgba(90,70,40,.14);
+  --shadow-glow: 0 0 24px rgba(163,46,36,.12);
+}
+
+/* ============================================================================
+   ⑤⑥ 柔主题 · 暖云手稿（soft-cream）/ 晨雾有机（soft-mist）
+   同一套柔版式（大圆角、无硬线、柔影、波浪与有机光斑），仅配色不同。
+   ============================================================================ */
+[data-theme^="soft"] {
+  --font-display: "Noto Serif SC", "STSong", Georgia, serif;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-latin: "Fraunces", Georgia, serif;
+  --font-mono: "Quicksand", "Noto Sans SC", sans-serif;
+  --font-hand: "Ma Shan Zheng", "Caveat", cursive;
+  --label-tracking: .06em;
+
+  --bw: 0px;
+  --r-panel: 26px; --r-card: 24px; --r-btn: 999px; --r-input: 999px; --r-chip: 999px;
+  --pad-panel: 26px; --pad-card: 22px; --gap: 26px;
+  --grid-c: transparent; --grid-c2: transparent;
+  --rule-c: transparent;
+}
+
+[data-theme="soft-cream"] {
+  --bg: #FBF5EC; --bg-2: #F8F0E3;
+  --surface: #FFFDF9; --surface-2: #FFF8F0; --surface-3: #F7EBDD;
+  --text: #2E2823; --text-2: #7C7267; --text-3: #A89C8D;
+  --accent: #D97742; --accent-ink: #FFF9F2; --accent-2: #7FA596;
+  --ok: #7FA05F; --warn: #D9A140; --danger: #C25E4A;
+  --line: rgba(70,50,20,.08); --line-2: rgba(70,50,20,.14);
+  --sel: rgba(217,119,66,.22); --focus: rgba(217,119,66,.45);
+  --blob-1: rgba(243,201,168,.50); --blob-2: rgba(191,216,205,.45); --blob-3: rgba(255,241,224,.55);
+  --wave-c: rgba(217,119,66,.08);
+  --shadow-card: 0 1px 2px rgba(70,50,20,.04), 0 14px 36px rgba(70,50,20,.08);
+  --shadow-pop: 0 24px 56px rgba(70,50,20,.14);
+  --shadow-glow: 0 0 40px rgba(217,119,66,.18);
+}
+
+[data-theme="soft-mist"] {
+  --bg: #F6F7F3; --bg-2: #F1F4EF;
+  --surface: #FFFFFF; --surface-2: #FBFCFA; --surface-3: #EFF3EF;
+  --text: #2F3A36; --text-2: #75837C; --text-3: #A3AFA8;
+  --accent: #6E93A8; --accent-ink: #FFFFFF; --accent-2: #8FA98A;
+  --ok: #7FA05F; --warn: #D9A460; --danger: #C96B5B;
+  --line: rgba(47,58,54,.08); --line-2: rgba(47,58,54,.14);
+  --sel: rgba(110,147,168,.22); --focus: rgba(110,147,168,.45);
+  --blob-1: rgba(110,147,168,.22); --blob-2: rgba(143,169,138,.28); --blob-3: rgba(231,183,127,.30);
+  --wave-c: rgba(110,147,168,.10);
+  --shadow-card: 0 1px 2px rgba(40,60,50,.04), 0 16px 40px rgba(40,60,50,.08);
+  --shadow-pop: 0 26px 60px rgba(40,60,50,.12);
+  --shadow-glow: 0 0 40px rgba(110,147,168,.18);
+}

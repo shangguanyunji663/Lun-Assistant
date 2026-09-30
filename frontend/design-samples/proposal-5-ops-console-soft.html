@@ -1,0 +1,927 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>方向⑤ 暗色指挥舱 · 柔版 · 论匠 LUNJIANG — 提案样张</title>
+<!--
+  v16 全站重构提案样张（未实现），浏览器直接打开即可查看。
+  ============================================================
+  方向⑤ 暗色指挥舱 · 柔版 / OPS CONSOLE — SOFT
+  这是方向① 的「软化对照版」：内容、结构、文案与 proposal-1 完全一致，
+  只改视觉材质与几何 —— 圆角化、去硬线、柔影分层、胶囊按钮、低透明光斑。
+  保留"日志流 / 遥测 / 状态灯"的性格，不保留直角与扫描线。
+  本文件为静态视觉提案：不接入任何项目模块、不 import 任何依赖、无外链与位图。
+  四段结构（顶栏 / Hero / 工作台 / 页脚）与其余方向共用同一内容脚本，便于横向对比。
+  ============================================================
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   00 · 基础令牌（暖石墨黑 · 柔化色板 · 放松几何）
+   ============================================================ */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #101418;
+  --panel:   #171E24;
+  --raised:  #1C242B;
+  --line:    rgba(216, 226, 232, .05);
+  --line-hi: rgba(216, 226, 232, .09);
+  --text:    #C9D3D9;
+  --sub:     #88959F;
+  --faint:   #5D6970;
+  --signal:  #48DA91;
+  --amber:   #F9B55F;
+  --alarm:   #F0706A;
+
+  --mono: "JetBrains Mono", Consolas, "PingFang SC", "Microsoft YaHei", monospace;
+  --sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", -apple-system, sans-serif;
+
+  --ease: cubic-bezier(.22, 1, .36, 1);
+  --wrap: 1240px;
+
+  --r-panel: 20px;
+  --r-card:  18px;
+  --r-row:   15px;
+  --sheen:   inset 0 1px 0 rgba(255, 255, 255, .05);
+  --shadow:  0 14px 36px rgba(0, 0, 0, .50);
+  --shadow-hi: 0 22px 46px rgba(0, 0, 0, .58);
+}
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.7;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  padding-bottom: 108px;
+  position: relative;
+}
+
+/* 两团 blur(80px) 低透明光斑（绿 / 琥珀，不透明度 ≤ .07） */
+body::before,
+body::after {
+  content: ""; position: fixed; z-index: 0; pointer-events: none;
+  width: 660px; height: 660px; border-radius: 50%;
+  filter: blur(80px);
+}
+body::before {
+  top: -220px; left: -160px; opacity: .07;
+  background: radial-gradient(circle, var(--signal) 0%, rgba(72, 218, 145, .35) 42%, transparent 72%);
+}
+body::after {
+  top: 420px; right: -240px; opacity: .05;
+  background: radial-gradient(circle, var(--amber) 0%, rgba(249, 181, 95, .30) 42%, transparent 72%);
+}
+
+.wrap { width: min(100% - 48px, var(--wrap)); margin-inline: auto; }
+
+/* 微标签：全大写 + 字距 .18em */
+.micro {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--faint);
+}
+
+/* ============================================================
+   01 · 状态灯 / 光标 / 动效（柔光晕）
+   ============================================================ */
+.led {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--signal); flex: 0 0 auto;
+  box-shadow: 0 0 0 4px rgba(72, 218, 145, .09), 0 0 14px rgba(72, 218, 145, .45);
+  animation: ledPulse 2.8s var(--ease) infinite;
+}
+@keyframes ledPulse {
+  0%, 100% { opacity: .95; transform: scale(1); }
+  50%      { opacity: .55; transform: scale(.88); }
+}
+
+.led.amber {
+  background: var(--amber);
+  box-shadow: 0 0 0 4px rgba(249, 181, 95, .09), 0 0 14px rgba(249, 181, 95, .45);
+  animation: ledBreath 1.8s var(--ease) infinite;
+}
+@keyframes ledBreath {
+  0%, 100% { opacity: .38; }
+  50%      { opacity: 1; }
+}
+
+.led.off {
+  background: var(--faint); box-shadow: none; animation: none; opacity: .65;
+}
+
+/* 流式输出方块光标 */
+.cursor {
+  display: inline-block; width: 8px; height: 15px; margin-left: 4px;
+  background: var(--signal); border-radius: 2px; vertical-align: -2px;
+  box-shadow: 0 0 10px rgba(72, 218, 145, .55);
+  animation: blink 1.05s steps(1, end) infinite;
+}
+@keyframes blink {
+  0%, 49%   { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+/* ============================================================
+   02 · 按钮体系（胶囊 · 无硬描边 · hover 上浮）
+   ============================================================ */
+.btn {
+  display: inline-flex; align-items: center; gap: 9px;
+  font-family: var(--mono); font-size: 11.5px; font-weight: 500;
+  letter-spacing: .10em; text-transform: uppercase; line-height: 1;
+  color: var(--text); background: rgba(255, 255, 255, .045);
+  border: 0; border-radius: 999px;
+  padding: 12px 20px; cursor: pointer; white-space: nowrap;
+  box-shadow: var(--sheen);
+  transition: transform .24s var(--ease), box-shadow .24s var(--ease),
+              background-color .24s var(--ease), color .24s var(--ease);
+}
+.btn:hover {
+  color: var(--text); transform: translateY(-2px);
+  background: rgba(255, 255, 255, .075);
+  box-shadow: var(--sheen), 0 14px 30px rgba(0, 0, 0, .50), 0 0 0 1px rgba(72, 218, 145, .26);
+}
+.btn:focus-visible { outline: 2px solid rgba(72, 218, 145, .55); outline-offset: 3px; }
+
+.btn.sm { padding: 8px 14px; font-size: 10.5px; letter-spacing: .08em; }
+.btn.lg { padding: 15px 28px; font-size: 12.5px; }
+
+.btn.primary {
+  background: var(--signal); color: #08130D; font-weight: 700;
+  box-shadow: var(--sheen), 0 10px 24px rgba(72, 218, 145, .18);
+}
+.btn.primary:hover {
+  background: #5AE3A0; color: #08130D; transform: translateY(-2px);
+  box-shadow: var(--sheen), 0 16px 34px rgba(72, 218, 145, .30);
+}
+
+.btn.amber { color: var(--amber); background: rgba(249, 181, 95, .11); }
+.btn.amber:hover {
+  color: var(--amber); transform: translateY(-2px); background: rgba(249, 181, 95, .17);
+  box-shadow: var(--sheen), 0 14px 30px rgba(0, 0, 0, .50), 0 0 0 1px rgba(249, 181, 95, .32);
+}
+
+/* 亮暗切换示意：半明半暗圆盘（CSS 绘制） */
+.theme-ic {
+  width: 13px; height: 13px; border-radius: 50%; flex: 0 0 auto;
+  background: linear-gradient(90deg, currentColor 0 50%, rgba(255, 255, 255, .18) 50% 100%);
+}
+
+/* ============================================================
+   03 · 品牌图记（圆角柔化印章）
+   ============================================================ */
+.seal {
+  width: 26px; height: 26px; flex: 0 0 auto; position: relative;
+  border-radius: 9px; background: rgba(72, 218, 145, .14);
+  box-shadow: var(--sheen), 0 6px 16px rgba(72, 218, 145, .13);
+}
+.seal::before {
+  content: ""; position: absolute; inset: 6px; border-radius: 4px;
+  background: rgba(72, 218, 145, .16);
+}
+.seal::after {
+  content: ""; position: absolute; left: 50%; top: 50%;
+  width: 7px; height: 7px; border-radius: 2px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: var(--signal); box-shadow: 0 0 10px rgba(72, 218, 145, .55);
+}
+.seal.sm { width: 21px; height: 21px; border-radius: 7px; }
+.seal.sm::before { inset: 5px; border-radius: 3px; }
+.seal.sm::after { width: 6px; height: 6px; }
+
+/* ============================================================
+   04 · 落地页顶栏
+   ============================================================ */
+.topbar {
+  position: relative; z-index: 3;
+  background: linear-gradient(180deg, rgba(28, 36, 43, .78), rgba(16, 20, 24, 0));
+}
+.topbar-in { display: flex; align-items: center; gap: 28px; height: 72px; }
+
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--text); }
+.brand-cn {
+  font-family: var(--sans); font-weight: 700; font-size: 19px;
+  letter-spacing: .06em; line-height: 1;
+}
+.brand-latin {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: .30em; text-transform: uppercase; color: var(--faint);
+  height: 16px; display: flex; align-items: center; padding-inline: 8px;
+  transition: color .24s var(--ease);
+}
+.brand:hover .brand-latin { color: var(--signal); }
+
+.nav { display: flex; gap: 26px; margin-left: 16px; }
+.nav a {
+  position: relative; display: inline-flex; align-items: baseline; gap: 6px;
+  font-size: 13px; font-weight: 500; color: var(--sub); text-decoration: none;
+  padding: 7px 0; transition: color .24s var(--ease), transform .24s var(--ease);
+}
+.nav a i {
+  font-family: var(--mono); font-style: normal; font-size: 9.5px;
+  letter-spacing: .12em; color: var(--faint);
+  transition: color .24s var(--ease);
+}
+.nav a:hover { color: var(--text); transform: translateY(-1px); }
+.nav a:hover i { color: var(--signal); }
+
+.topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+
+/* ============================================================
+   05 · Hero
+   ============================================================ */
+.hero { position: relative; z-index: 2; padding: 92px 0 84px; }
+.kicker {
+  display: inline-flex; align-items: center; gap: 11px;
+  color: var(--sub); margin-bottom: 30px;
+}
+.kicker .led { width: 7px; height: 7px; }
+
+.hero h1 {
+  font-family: var(--sans); font-weight: 700;
+  font-size: clamp(40px, 5.4vw, 72px);
+  line-height: 1.08; letter-spacing: -.012em;
+  color: var(--text); max-width: 15ch;
+}
+.lede {
+  max-width: 62ch; margin-top: 26px;
+  font-size: 16px; line-height: 1.9; color: var(--sub);
+}
+
+.hero-cta { display: flex; gap: 14px; margin-top: 38px; }
+
+/* 指标读数带：四张柔光卡片 */
+.metrics {
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 16px; margin-top: 70px;
+}
+.metric {
+  position: relative; padding: 30px 30px 28px;
+  background: var(--panel); border-radius: var(--r-card);
+  box-shadow: var(--shadow), var(--sheen);
+  transition: transform .24s var(--ease), box-shadow .24s var(--ease);
+}
+.metric:hover { transform: translateY(-2px); box-shadow: var(--shadow-hi), var(--sheen); }
+.m-num {
+  font-family: var(--mono); font-weight: 700;
+  font-size: clamp(26px, 2.6vw, 38px); line-height: 1;
+  letter-spacing: -.01em; color: var(--text);
+}
+.m-num .m-unit { font-size: .48em; font-weight: 500; color: var(--signal); margin-left: 3px; }
+.m-num .m-slash { color: var(--faint); font-weight: 400; }
+.m-lab { margin-top: 14px; }
+
+/* ============================================================
+   06 · 工作台样张
+   ============================================================ */
+.bench-wrap { position: relative; z-index: 2; padding-bottom: 48px; }
+.bench-head {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 18px;
+}
+.bench-legend { display: flex; gap: 20px; }
+.bench-legend span { display: inline-flex; align-items: center; gap: 8px; }
+.bench-legend .led { width: 7px; height: 7px; }
+
+.bench {
+  position: relative; overflow: hidden;
+  border-radius: var(--r-panel); background: var(--panel);
+  box-shadow: 0 26px 64px rgba(0, 0, 0, .55), var(--sheen);
+}
+
+/* 应用顶栏 */
+.app-top {
+  display: flex; align-items: center; gap: 20px;
+  padding: 16px 22px; background: var(--raised);
+  box-shadow: 0 1px 0 rgba(216, 226, 232, .05);
+}
+.app-brand { display: flex; align-items: center; gap: 9px; }
+.app-name { font-family: var(--sans); font-weight: 700; font-size: 15px; letter-spacing: .05em; }
+.app-latin {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .24em;
+  text-transform: uppercase; color: var(--faint);
+}
+
+.proj-select {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 11.5px; color: var(--text);
+  background: rgba(255, 255, 255, .05); border: 0; border-radius: 999px;
+  padding: 9px 16px; cursor: pointer; max-width: 340px; box-shadow: var(--sheen);
+  transition: transform .24s var(--ease), box-shadow .24s var(--ease), background-color .24s var(--ease);
+}
+.proj-select .proj-lab { color: var(--faint); }
+.proj-select:hover {
+  transform: translateY(-1px); background: rgba(255, 255, 255, .08);
+  box-shadow: var(--sheen), 0 0 0 1px rgba(72, 218, 145, .26);
+}
+.proj-select .caret { color: var(--signal); font-size: 9px; }
+
+.tabs {
+  display: flex; gap: 4px; margin-left: 8px;
+  padding: 4px; background: rgba(255, 255, 255, .035); border-radius: 999px;
+}
+.tab {
+  position: relative; font-family: var(--sans); font-size: 12.5px; font-weight: 500;
+  color: var(--sub); background: transparent; border: 0;
+  border-radius: 999px; padding: 8px 16px; cursor: pointer;
+  transition: color .24s var(--ease), background-color .24s var(--ease);
+}
+.tab:hover { color: var(--text); background: rgba(255, 255, 255, .06); }
+.tab.active { color: var(--signal); background: rgba(72, 218, 145, .14); }
+
+.app-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.icon-btn {
+  display: inline-grid; place-items: center;
+  width: 34px; height: 34px; cursor: pointer;
+  background: rgba(255, 255, 255, .05); border: 0; border-radius: 999px;
+  color: var(--sub); box-shadow: var(--sheen);
+  transition: transform .24s var(--ease), color .24s var(--ease), background-color .24s var(--ease);
+}
+.icon-btn:hover { color: var(--signal); background: rgba(255, 255, 255, .08); transform: translateY(-2px); }
+
+.user {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: var(--mono); font-size: 11px; color: var(--sub);
+}
+.user-av {
+  display: grid; place-items: center; width: 26px; height: 26px;
+  font-family: var(--sans); font-size: 11px; font-weight: 700;
+  color: var(--signal); border-radius: 50%;
+  background: rgba(72, 218, 145, .14); box-shadow: var(--sheen);
+}
+
+/* 三栏 */
+.bench-body {
+  display: grid; grid-template-columns: 238px minmax(0, 1fr) 302px;
+  min-height: 640px;
+}
+.col { display: flex; flex-direction: column; min-width: 0; }
+.col-left { background: rgba(255, 255, 255, .014); box-shadow: 1px 0 0 rgba(216, 226, 232, .045); }
+.col-right { background: rgba(255, 255, 255, .014); box-shadow: -1px 0 0 rgba(216, 226, 232, .045); }
+
+.col-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 18px 18px 14px;
+}
+
+/* 会话卷册 */
+.sessions { display: flex; flex-direction: column; padding: 6px 12px 12px; gap: 6px; }
+.sess {
+  display: flex; flex-direction: column; gap: 8px;
+  text-align: left; cursor: pointer; border: 0; border-radius: var(--r-row);
+  padding: 14px 16px; background: transparent;
+  transition: background-color .24s var(--ease), transform .24s var(--ease), box-shadow .24s var(--ease);
+}
+.sess:hover {
+  background: rgba(255, 255, 255, .05); transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .32);
+}
+.sess.active {
+  background: rgba(72, 218, 145, .12);
+  box-shadow: var(--sheen), 0 8px 20px rgba(0, 0, 0, .26);
+}
+.sess-top { display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.sess-name { font-size: 13px; font-weight: 500; color: var(--sub); transition: color .24s var(--ease); }
+.sess.active .sess-name, .sess:hover .sess-name { color: var(--text); }
+.sess-meta { font-size: 9.5px; letter-spacing: .14em; }
+.tag {
+  font-family: var(--mono); font-size: 9px; letter-spacing: .14em; text-transform: uppercase;
+  color: var(--signal); background: rgba(72, 218, 145, .16);
+  border-radius: 999px; padding: 3px 9px;
+}
+.col-foot { padding: 14px 18px 18px; margin-top: auto; }
+
+/* 中栏 · 对话日志流 */
+.chat-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px 14px;
+}
+.live {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: .18em;
+  color: var(--signal);
+}
+
+.stream { flex: 1; padding: 10px 22px 12px; display: flex; flex-direction: column; gap: 24px; overflow: hidden; }
+
+.msg { display: flex; flex-direction: column; gap: 9px; }
+.msg-meta { display: flex; align-items: center; gap: 11px; }
+.ts { font-family: var(--mono); font-size: 10.5px; color: var(--faint); letter-spacing: .04em; }
+.call {
+  font-family: var(--mono); font-size: 10.5px; font-weight: 500;
+  letter-spacing: .10em; padding: 3px 10px; border-radius: 999px;
+}
+.msg.user .call { color: var(--sub); background: rgba(255, 255, 255, .06); }
+.msg.ai .call { color: var(--signal); background: rgba(72, 218, 145, .14); }
+.chip-jiang {
+  display: grid; place-items: center; width: 20px; height: 20px;
+  font-family: var(--sans); font-size: 10px; font-weight: 700;
+  color: var(--signal); background: rgba(72, 218, 145, .16); border-radius: 50%;
+}
+
+.msg-body {
+  font-size: 14px; line-height: 1.9; color: var(--sub);
+  padding: 18px 22px; border-radius: var(--r-card);
+  background: rgba(255, 255, 255, .035); box-shadow: var(--sheen);
+  display: flex; flex-direction: column; gap: 6px;
+}
+.msg.user .msg-body { color: var(--text); background: rgba(255, 255, 255, .05); }
+.msg.ai .msg-body {
+  color: var(--text);
+  background: linear-gradient(180deg, rgba(72, 218, 145, .11), rgba(72, 218, 145, .045));
+}
+.msg-body p { margin: 0; }
+.msg-body .hl { color: var(--signal); }
+
+/* 中断确认条 */
+.confirm {
+  margin: 4px 0; padding: 18px 20px; border-radius: var(--r-card);
+  background: linear-gradient(180deg, rgba(249, 181, 95, .13), rgba(249, 181, 95, .05));
+  box-shadow: var(--sheen), 0 12px 28px rgba(0, 0, 0, .26);
+}
+.confirm-top { display: flex; align-items: flex-start; gap: 13px; }
+.confirm-ic {
+  display: grid; place-items: center; flex: 0 0 auto;
+  width: 24px; height: 24px;
+  font-family: var(--mono); font-size: 11px; font-weight: 700;
+  color: var(--amber); background: rgba(249, 181, 95, .18); border-radius: 50%;
+}
+.confirm-title { font-size: 13.5px; font-weight: 500; color: var(--text); line-height: 1.55; }
+.confirm-sub { margin-top: 4px; color: rgba(249, 181, 95, .60); }
+.confirm-acts { margin-left: auto; display: flex; gap: 9px; flex: 0 0 auto; }
+.confirm-input {
+  width: 100%; margin-top: 14px;
+  background: rgba(0, 0, 0, .22); border: 0; border-radius: 999px;
+  color: var(--text); font-family: var(--sans); font-size: 13px;
+  padding: 12px 18px; outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .03);
+  transition: background-color .24s var(--ease), box-shadow .24s var(--ease);
+}
+.confirm-input::placeholder { color: var(--faint); }
+.confirm-input:focus { background: rgba(0, 0, 0, .32); box-shadow: inset 0 0 0 1px rgba(249, 181, 95, .32); }
+
+/* 输入区 */
+.composer { padding: 18px 22px 16px; background: rgba(255, 255, 255, .018); box-shadow: 0 -1px 0 rgba(216, 226, 232, .045); }
+.input-row { display: flex; gap: 12px; }
+.field {
+  flex: 1; min-width: 0;
+  background: rgba(0, 0, 0, .22); border: 0; border-radius: 999px;
+  color: var(--text); font-family: var(--sans); font-size: 13.5px;
+  padding: 13px 20px; outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .03);
+  transition: background-color .24s var(--ease), box-shadow .24s var(--ease);
+}
+.field::placeholder { color: var(--faint); }
+.field:focus { background: rgba(0, 0, 0, .32); box-shadow: inset 0 0 0 1px rgba(72, 218, 145, .32); }
+.hint { margin-top: 12px; font-size: 9.5px; letter-spacing: .13em; }
+
+/* 右栏 */
+.rtabs {
+  display: flex; gap: 4px; margin: 16px 14px 12px;
+  padding: 4px; background: rgba(255, 255, 255, .035); border-radius: 999px;
+}
+.rtab {
+  flex: 1; position: relative; cursor: pointer;
+  font-family: var(--sans); font-size: 11.5px; font-weight: 500; color: var(--faint);
+  background: transparent; border: 0; border-radius: 999px; padding: 9px 6px;
+  transition: color .24s var(--ease), background-color .24s var(--ease);
+}
+.rtab:hover { color: var(--text); background: rgba(255, 255, 255, .06); }
+.rtab.active { color: var(--signal); background: rgba(72, 218, 145, .14); }
+
+/* 遥测列表：柔光行卡片 */
+.tele { display: flex; flex-direction: column; gap: 6px; padding: 0 14px 8px; }
+.tele-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 15px 16px; border-radius: var(--r-row);
+  background: rgba(255, 255, 255, .028); box-shadow: var(--sheen);
+  transition: background-color .24s var(--ease), transform .24s var(--ease), box-shadow .24s var(--ease);
+}
+.tele-row:hover {
+  background: rgba(255, 255, 255, .05); transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .30);
+}
+.tele-row.running {
+  background: linear-gradient(180deg, rgba(249, 181, 95, .14), rgba(249, 181, 95, .05));
+  box-shadow: var(--sheen), 0 8px 20px rgba(0, 0, 0, .24);
+}
+.tele-main { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1; }
+.tele-name { font-size: 12.5px; font-weight: 500; color: var(--sub); }
+.tele-row.running .tele-name { color: var(--text); }
+.tele-row.done .tele-name { color: var(--text); }
+.tele-row.idle .tele-name { color: var(--faint); }
+.tele-sub { font-size: 9.5px; letter-spacing: .13em; }
+.tele-val {
+  font-family: var(--mono); font-size: 12px; font-weight: 700;
+  letter-spacing: .02em; flex: 0 0 auto;
+}
+.tele-val.v-ok { color: var(--signal); }
+.tele-val.v-run { color: var(--amber); animation: ledBreath 1.8s var(--ease) infinite; }
+.tele-val.v-idle { color: var(--faint); font-weight: 500; }
+.tele-val.plain { color: var(--sub); font-weight: 500; font-size: 11px; }
+
+/* 资料清单 */
+.files { padding: 18px 18px 22px; margin-top: auto; }
+.files-head { margin-bottom: 13px; }
+.file {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 13px; border-radius: var(--r-row); border: 0; cursor: pointer;
+  transition: background-color .24s var(--ease), transform .24s var(--ease), box-shadow .24s var(--ease);
+}
+.file + .file { margin-top: 5px; }
+.file:hover { background: rgba(255, 255, 255, .05); transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, .28); }
+.f-ic {
+  display: grid; place-items: center; flex: 0 0 auto;
+  width: 32px; height: 26px; font-family: var(--mono); font-size: 8.5px;
+  letter-spacing: .08em; color: var(--sub); border-radius: 9px;
+  background: rgba(255, 255, 255, .06); box-shadow: var(--sheen);
+}
+.file.parsing .f-ic { color: var(--amber); background: rgba(249, 181, 95, .14); }
+.f-name { font-size: 12.5px; color: var(--text); }
+.f-meta { font-size: 9.5px; letter-spacing: .12em; }
+.file.parsing .f-meta { color: rgba(249, 181, 95, .70); }
+
+/* ============================================================
+   07 · 页脚
+   ============================================================ */
+.foot { position: relative; z-index: 2; margin-top: 56px; }
+.foot-in {
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+  padding: 32px 0 40px;
+}
+.foot-line {
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--sub);
+}
+.foot-line .now { color: var(--signal); }
+.foot-spec { font-size: 9.5px; letter-spacing: .12em; text-align: right; }
+
+/* ============================================================
+   08 · 十项通用提案导航丸
+   ============================================================ */
+.pill {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  z-index: 60; display: flex; align-items: center; gap: 10px;
+  padding: 8px 16px 8px 20px;
+  background: var(--raised); border-radius: 999px;
+  box-shadow: 0 20px 46px rgba(0, 0, 0, .60), var(--sheen);
+}
+.pill-lab {
+  font-family: var(--mono); font-size: 9px; font-weight: 500;
+  letter-spacing: .22em; text-transform: uppercase; color: var(--faint);
+  transition: color .24s var(--ease);
+}
+.pill-chips { display: flex; align-items: center; gap: 4px; }
+.chip {
+  display: grid; place-items: center; width: 30px; height: 30px;
+  font-family: var(--mono); font-size: 11px; font-weight: 500;
+  letter-spacing: .02em; text-decoration: none;
+  color: var(--sub); background: transparent; border-radius: 50%;
+  transition: transform .24s var(--ease), color .24s var(--ease),
+              background-color .24s var(--ease), box-shadow .24s var(--ease);
+}
+.chip:hover {
+  color: var(--text); background: rgba(255, 255, 255, .07);
+  transform: translateY(-2px); box-shadow: 0 8px 18px rgba(0, 0, 0, .35);
+}
+.chip.current {
+  color: #08130D; background: var(--signal); font-weight: 700;
+  box-shadow: 0 8px 20px rgba(72, 218, 145, .30), var(--sheen);
+}
+
+/* ============================================================
+   09 · 窄屏兜底（设计参考为桌面 1440）
+   ============================================================ */
+@media (max-width: 1080px) {
+  .bench-body { grid-template-columns: 214px minmax(0, 1fr); }
+  .col-right { display: none; }
+  .nav { display: none; }
+}
+@media (max-width: 880px) {
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 760px) {
+  .bench-body { grid-template-columns: 1fr; }
+  .col-left { display: none; }
+  .metrics { grid-template-columns: repeat(2, 1fr); }
+  .pill-lab { display: none; }
+  .pill { padding: 8px 14px; }
+  .foot-in { flex-direction: column; align-items: flex-start; }
+  .foot-spec { text-align: left; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     （1）落地页顶栏
+     ============================================================ -->
+<header class="topbar">
+  <div class="wrap topbar-in">
+    <a class="brand" href="#top">
+      <span class="brand-cn">论</span>
+      <span class="seal" aria-hidden="true"></span>
+      <span class="brand-cn">匠</span>
+      <span class="brand-latin">LunJiang</span>
+    </a>
+
+    <nav class="nav" aria-label="主导航">
+      <a href="#capability"><i>01</i>能力</a>
+      <a href="#arch"><i>02</i>架构与评测</a>
+      <a href="#collab"><i>03</i>人机协同</a>
+      <a href="#start"><i>04</i>开始</a>
+    </nav>
+
+    <div class="topbar-actions">
+      <button class="btn sm" type="button" title="亮暗切换示意">
+        <span class="theme-ic" aria-hidden="true"></span>Dark
+      </button>
+      <button class="btn primary" type="button">进入工作台</button>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================
+     （2）Hero
+     ============================================================ -->
+<section class="hero" id="top">
+  <div class="wrap">
+    <div class="kicker micro"><i class="led" aria-hidden="true"></i>LUNJIANG · 多智能体论文全流程工作台</div>
+
+    <h1>论匠，帮你把论文写完。</h1>
+
+    <p class="lede">选题、文献、写作、格式、查重、答辩——六个环节一支编队，主控智能体全程调度，每一次产出都经你确认后落进稿纸。</p>
+
+    <div class="hero-cta">
+      <button class="btn primary lg" type="button">进入工作台</button>
+      <button class="btn lg" type="button">GitHub 源码</button>
+    </div>
+
+    <div class="metrics" id="capability">
+      <div class="metric">
+        <div class="m-num">100<span class="m-unit">%</span></div>
+        <div class="m-lab micro">意图分类 Top-1</div>
+      </div>
+      <div class="metric">
+        <div class="m-num">100<span class="m-unit">%</span></div>
+        <div class="m-lab micro">检索 Recall@5</div>
+      </div>
+      <div class="metric">
+        <div class="m-num">16<span class="m-slash">/</span>16</div>
+        <div class="m-lab micro">回归场景通过</div>
+      </div>
+      <div class="metric">
+        <div class="m-num">89<span class="m-unit">项</span></div>
+        <div class="m-lab micro">离线测试用例</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     （3）工作台样张 · 暗色指挥舱 · 柔版
+     ============================================================ -->
+<section class="bench-wrap" id="start">
+  <div class="wrap">
+
+    <div class="bench-head">
+      <div class="micro">03 · 工作台样张 — WORKBENCH / OPS CONSOLE · SOFT</div>
+      <div class="bench-legend micro">
+        <span><i class="led" aria-hidden="true"></i>完成</span>
+        <span><i class="led amber" aria-hidden="true"></i>进行中</span>
+        <span><i class="led off" aria-hidden="true"></i>待触发</span>
+      </div>
+    </div>
+
+    <div class="bench">
+
+      <!-- 应用顶栏 -->
+      <div class="app-top">
+        <div class="app-brand">
+          <span class="seal sm" aria-hidden="true"></span>
+          <span class="app-name">论匠</span>
+          <span class="app-latin">LunJiang</span>
+        </div>
+
+        <button class="proj-select" type="button">
+          <span class="proj-lab micro">项目</span>
+          #12 大模型辅助的文献综述自动化研究
+          <span class="caret" aria-hidden="true">▾</span>
+        </button>
+
+        <div class="tabs" role="tablist">
+          <button class="tab active" role="tab" type="button">对话</button>
+          <button class="tab" role="tab" type="button">可观测</button>
+        </div>
+
+        <div class="app-right">
+          <button class="icon-btn" type="button" title="亮暗切换示意">
+            <span class="theme-ic" aria-hidden="true"></span>
+          </button>
+          <div class="user">
+            <span class="user-av" aria-hidden="true">吕</span>
+            吕江 · admin
+          </div>
+        </div>
+      </div>
+
+      <!-- 三栏工作区 -->
+      <div class="bench-body">
+
+        <!-- 左栏 · 会话卷册 -->
+        <aside class="col col-left">
+          <div class="col-head">
+            <span class="micro">会话卷册</span>
+            <button class="btn sm" type="button">+ 新建</button>
+          </div>
+          <div class="sessions">
+            <button class="sess active" type="button">
+              <span class="sess-top">
+                <span class="sess-name">选题方向探索</span>
+                <span class="tag">当前</span>
+              </span>
+              <span class="sess-meta micro">刚刚 · 4 条</span>
+            </button>
+            <button class="sess" type="button">
+              <span class="sess-top"><span class="sess-name">文献检索</span></span>
+              <span class="sess-meta micro">昨天 · 12 条</span>
+            </button>
+            <button class="sess" type="button">
+              <span class="sess-top"><span class="sess-name">方法论初稿</span></span>
+              <span class="sess-meta micro">周一 · 8 条</span>
+            </button>
+          </div>
+          <div class="col-foot micro">SESSION LEDGER · 3 / 24</div>
+        </aside>
+
+        <!-- 中栏 · 对话日志流 -->
+        <main class="col col-chat">
+          <div class="chat-head">
+            <span class="micro">对话流 · Transcript</span>
+            <span class="live"><i class="led" aria-hidden="true"></i>Live</span>
+          </div>
+
+          <div class="stream">
+            <article class="msg user">
+              <div class="msg-meta">
+                <span class="ts">[14:32:07]</span>
+                <span class="call">[用户]</span>
+              </div>
+              <p class="msg-body">帮我确定一个可行的论文选题，大模型方向，要能做出实验。</p>
+            </article>
+
+            <article class="msg ai">
+              <div class="msg-meta">
+                <span class="ts">[14:32:09]</span>
+                <span class="call">[主控]</span>
+                <span class="chip-jiang" aria-hidden="true">匠</span>
+              </div>
+              <div class="msg-body">
+                <p>建议从<span class="hl">「RAG 评测鲁棒性」</span>切入。理由有三：</p>
+                <p>① 数据可控、实验可复现；</p>
+                <p>② 三类扰动清晰可测——对抗查询、检索失败、引用幻觉；</p>
+                <p>③ 近三年基准论文充足。</p>
+                <p>已调度文献 Agent 拉取 50 篇核心论文，需要我把选题结论写进项目档案吗？<span class="cursor" aria-hidden="true"></span></p>
+              </div>
+            </article>
+
+            <div class="confirm">
+              <div class="confirm-top">
+                <span class="confirm-ic" aria-hidden="true">!</span>
+                <div>
+                  <div class="confirm-title">第三章方法论初稿已生成，是否采纳？</div>
+                  <div class="confirm-sub micro">Interrupt · 等待人工确认</div>
+                </div>
+                <div class="confirm-acts">
+                  <button class="btn sm primary" type="button">采纳</button>
+                  <button class="btn sm amber" type="button">修改后采纳</button>
+                </div>
+              </div>
+              <input class="confirm-input" type="text" placeholder="输入你的反馈…" />
+            </div>
+          </div>
+
+          <div class="composer">
+            <div class="input-row">
+              <input class="field" type="text" placeholder="输入论文相关请求…" />
+              <button class="btn primary" type="button">发送</button>
+            </div>
+            <div class="hint micro">Enter 发送 · Shift+Enter 换行 · 已关联项目 #12</div>
+          </div>
+        </main>
+
+        <!-- 右栏 · 遥测 -->
+        <aside class="col col-right">
+          <div class="rtabs" role="tablist">
+            <button class="rtab active" role="tab" type="button">执行时间线</button>
+            <button class="rtab" role="tab" type="button">项目知识库</button>
+            <button class="rtab" role="tab" type="button">项目档案</button>
+          </div>
+
+          <div class="tele">
+            <div class="tele-row done">
+              <i class="led" aria-hidden="true"></i>
+              <div class="tele-main">
+                <span class="tele-name">意图识别 · 选题咨询</span>
+                <span class="tele-sub micro">conf 0.96</span>
+              </div>
+              <span class="tele-val v-ok">56ms</span>
+            </div>
+
+            <div class="tele-row done">
+              <i class="led" aria-hidden="true"></i>
+              <div class="tele-main">
+                <span class="tele-name">Planner 规划</span>
+                <span class="tele-sub micro">计划就绪</span>
+              </div>
+              <span class="tele-val plain">3 步</span>
+            </div>
+
+            <div class="tele-row running">
+              <i class="led amber" aria-hidden="true"></i>
+              <div class="tele-main">
+                <span class="tele-name">混合检索 · RRF 融合</span>
+                <span class="tele-sub micro">检索中</span>
+              </div>
+              <span class="tele-val v-run">412ms</span>
+            </div>
+
+            <div class="tele-row idle">
+              <i class="led off" aria-hidden="true"></i>
+              <div class="tele-main">
+                <span class="tele-name">流式生成</span>
+                <span class="tele-sub micro">等待上游</span>
+              </div>
+              <span class="tele-val v-idle">待触发</span>
+            </div>
+          </div>
+
+          <div class="files">
+            <div class="files-head micro">资料清单 · Sources</div>
+            <div class="file">
+              <span class="f-ic" aria-hidden="true">PDF</span>
+              <div>
+                <div class="f-name">综述_2024.pdf</div>
+                <div class="f-meta micro">已入库 · 128 分块</div>
+              </div>
+            </div>
+            <div class="file parsing">
+              <span class="f-ic" aria-hidden="true">MD</span>
+              <div>
+                <div class="f-name">实验记录.md</div>
+                <div class="f-meta micro">解析中…</div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     （4）页脚
+     ============================================================ -->
+<footer class="foot" id="arch">
+  <div class="wrap foot-in">
+    <div class="foot-line">
+      论匠 LUNJIANG · 方向⑤ <span class="now">暗色指挥舱 · 柔版</span> · PROPOSAL — NOT IMPLEMENTED
+    </div>
+    <div class="foot-spec micro">
+      字体 JetBrains Mono 400/500/700 · Noto Sans SC 400/500/700 ｜ 配色 #101418 / #171E24 / #48DA91 · #F9B55F
+    </div>
+  </div>
+</footer>
+
+<!-- 十项通用提案导航丸 -->
+<nav class="pill" aria-label="提案方向导航">
+  <span class="pill-lab">Proposals</span>
+  <div class="pill-chips">
+    <a class="chip" href="proposal-1-ops-console.html" title="01 暗色指挥舱">01</a>
+    <a class="chip" href="proposal-2-blueprint.html" title="02 蓝图工程">02</a>
+    <a class="chip" href="proposal-3-lab-notebook.html" title="03 实验记录本">03</a>
+    <a class="chip" href="proposal-4-academic-press.html" title="04 学术期刊">04</a>
+    <a class="chip current" href="proposal-5-ops-console-soft.html" title="05 暗色指挥舱·柔">05</a>
+    <a class="chip" href="proposal-6-blueprint-soft.html" title="06 蓝图工程·柔">06</a>
+    <a class="chip" href="proposal-7-lab-notebook-soft.html" title="07 实验记录本·柔">07</a>
+    <a class="chip" href="proposal-8-academic-press-soft.html" title="08 学术期刊·柔">08</a>
+    <a class="chip" href="proposal-9-cream-round.html" title="09 暖云手稿">09</a>
+    <a class="chip" href="proposal-10-organic-wave.html" title="10 晨雾有机">10</a>
+  </div>
+</nav>
+
+</body>
+</html>

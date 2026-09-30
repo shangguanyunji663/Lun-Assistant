@@ -1,0 +1,425 @@
+/* ============================================================================
+   论匠 LunJiang · v16 工作台「柔主题」装饰层 —— src/themes/soft.css
+   soft 主题装饰层：严格对齐 proposal-9 / proposal-10 样张
+
+   作用域（两主题天生柔化，data-soft 恒为 on，无需区分锐柔）：
+     [data-theme="soft-cream"]  暖云手稿 Cream Round · proposal-9-cream-round.html
+     [data-theme="soft-mist"]   晨雾有机 Organic Wave · proposal-10-organic-wave.html
+
+   本文件只在 styles.css 之上「叠加」装饰：不改其它文件、不改 JSX；
+   颜色 / 圆角 / 阴影一律优先取 tokens.css 变量（--blob-1/2/3、--wave-c、
+   大圆角、双层柔影），tokens 未提供者在对应选择器作用域内以 --sc-* / --sm-*
+   私有变量补声明（见各分区注释）。装饰层一律 pointer-events: none。
+
+   目录
+     01 · 共同柔化   无硬边框 / 大圆角与胶囊 / 软 pill 时间线 /
+                     圆角柔色徽章 / 聊天气泡收角 / 流式光标 / hover 上浮
+     02 · 暖云手稿   漂浮大光斑 / 衬线大标题 + 拉丁斜体 / 焦糖强调
+     03 · 晨雾有机   波浪分隔 ×3 / 有机 blob ×2 / 雾蓝强调 / 圆润几何微标签
+     04 · 弱动效
+
+   ── 需新增 JSX 标签才能 100% 还原的点（本文件只写样式，不动组件）─────────
+   1) 流式光标：App.jsx 助手气泡（.msg.assistant .bubble）内、Markdown 之后
+      插入 <span className="cursor" aria-hidden="true" />，仅在 streaming 时渲染。
+      本文件已按 .cursor / .stream-cursor 两种类名写好柔和圆点呼吸样式。
+   2) 时间线「进行中」：Timeline.jsx 建议给正在执行的节点加类 .tl-live；
+      暂无该标签时，本文件以 .tl-item:last-child 与 .tl-item.tl-interrupt 兜底呼吸。
+   3) 波浪分隔：proposal-10 用独立 .wavewrap 区块承载；本文件改用
+      .topbar::after / .input-bar::before / .auth-wrap::after 三处伪元素等效还原
+      （波形用 mask-image 承载，background-color 取 --wave-c，颜色仍走令牌）。
+   4) 编号徽章：样张 .metric .badge / .colhead .micro 的编号与拉丁小注来自独立标签；
+      DOM 无对应文本，故 .prog-item / .tl-item 用 ::before 柔色圆徽章与柔光圆点等效，
+      拉丁斜体点缀（LunJiang / The Writing Desk）用 ::after 生成内容补足。
+   ============================================================================ */
+
+/* ==========================================================================
+   01 · 共同柔化（soft-cream / soft-mist 共用）
+   ========================================================================== */
+
+/* 私有变量：柔化发丝线 / 柔光 / 上浮阴影（tokens 未定义，仅本文件作用域使用） */
+[data-theme="soft-cream"],
+[data-theme="soft-mist"] {
+  --soft-hair: color-mix(in srgb, var(--text) 7%, transparent);
+  --soft-hair-2: color-mix(in srgb, var(--text) 13%, transparent);
+  --soft-ring: color-mix(in srgb, var(--accent) 18%, transparent);
+  --soft-lift: 0 2px 4px color-mix(in srgb, var(--text) 5%, transparent),
+               0 20px 44px color-mix(in srgb, var(--text) 11%, transparent);
+}
+
+/* ---------- 01.1 无硬边框：1px 描边归零，层级只靠柔影 + 微色差 ---------- */
+[data-theme^="soft"] .card,
+[data-theme^="soft"] .sessions,
+[data-theme^="soft"] .chat-col,
+[data-theme^="soft"] .side-col,
+[data-theme^="soft"] .trace-list,
+[data-theme^="soft"] .trace-detail,
+[data-theme^="soft"] .modal-card,
+[data-theme^="soft"] .theme-pop,
+[data-theme^="soft"] .composer,
+[data-theme^="soft"] .interrupt-bar,
+[data-theme^="soft"] .input-bar,
+[data-theme^="soft"] .side-tabs { border-color: transparent; }
+
+/* styles.css 里写死的数处 1px 线（表头行 / trace 行 / seq 行）→ 内阴影发丝 */
+[data-theme^="soft"] .bubble th,
+[data-theme^="soft"] .bubble td,
+[data-theme^="soft"] .tree-row,
+[data-theme^="soft"] .seq-row { border-bottom-color: transparent; box-shadow: inset 0 -1px 0 var(--soft-hair); }
+
+[data-theme^="soft"] .tp-sep { height: 1px; background: linear-gradient(90deg, transparent, var(--soft-hair-2), transparent); }
+
+/* 拖拽上传区：交互元素需保留可点提示 → 极柔虚线 + 悬停雾色 */
+[data-theme^="soft"] .kb-drop { border-style: dashed; border-color: var(--soft-hair-2); border-radius: var(--r-card); }
+[data-theme^="soft"] .kb-drop:hover { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+
+/* 顶部横幅：去掉描边，改用左缘柔色内影表达轻重 */
+[data-theme^="soft"] .top-banner { border-color: transparent; box-shadow: inset 4px 0 0 var(--soft-ring), var(--shadow-card); }
+[data-theme^="soft"] .top-banner.err { box-shadow: inset 4px 0 0 color-mix(in srgb, var(--danger) 55%, transparent), var(--shadow-card); }
+[data-theme^="soft"] .top-banner.warn { box-shadow: inset 4px 0 0 color-mix(in srgb, var(--warn) 55%, transparent), var(--shadow-card); }
+
+/* ---------------------------- 01.2 大圆角与胶囊化 ---------------------------- */
+[data-theme^="soft"] .composer { border-radius: var(--r-input); }   /* 样张：输入区恒为胶囊 */
+[data-theme^="soft"] .proj-picker select {
+  padding: 9px 16px; border: 0; border-radius: var(--r-pill);
+  background: var(--surface-2); box-shadow: var(--shadow-card);
+}
+[data-theme^="soft"] .view-tabs { padding: 4px; border: 0; background: var(--surface-3); box-shadow: none; }
+[data-theme^="soft"] .view-tabs button.on { background: var(--surface); color: var(--accent); box-shadow: var(--shadow-card); }
+
+/* 右栏页签：由下划线改为胶囊分段（样张 .tabs / .r-tabs） */
+[data-theme^="soft"] .side-tabs {
+  gap: 4px; margin: var(--s-2) var(--s-2) 0; padding: 4px;
+  border-radius: var(--r-pill); background: var(--surface-2);
+}
+[data-theme^="soft"] .side-tabs button { padding: 8px 4px; border-bottom: 0; margin-bottom: 0; border-radius: var(--r-chip); }
+[data-theme^="soft"] .side-tabs button.on { color: var(--accent); background: var(--surface); box-shadow: var(--shadow-card); }
+
+/* 顶栏：半透明 + 背景模糊 + 极柔投影（样张 .topbar） */
+[data-theme^="soft"] .topbar {
+  border-bottom-color: transparent;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: 0 14px 32px -26px color-mix(in srgb, var(--text) 55%, transparent);
+}
+
+/* 左右栏下沉面：去阴影只留微色差，把层级留给中栏白卡（样张 .col.left/.right） */
+[data-theme^="soft"] .sessions,
+[data-theme^="soft"] .side-col { background: var(--surface-3); box-shadow: none; }
+
+/* 会话行：圆角软 pill + 激活态柔光竖棒 */
+[data-theme^="soft"] .sess-item { border-radius: var(--r-chip); padding: var(--s-3) var(--s-4); padding-right: 36px; }
+[data-theme^="soft"] .sess-item.on { background: var(--surface); box-shadow: var(--shadow-card); }
+[data-theme^="soft"] .sess-item.on::before {
+  left: 5px; top: 50%; bottom: auto; margin-top: -11px; width: 4px; height: 22px;
+  box-shadow: 0 0 4px var(--soft-ring), 0 0 12px var(--soft-ring);
+}
+
+/* ---------------------------- 01.3 软 pill 时间线 ---------------------------- */
+[data-theme^="soft"] .timeline { padding-left: 0; }
+
+/* 连接线：极柔发丝，只在 pill 间隙露出 */
+[data-theme^="soft"] .timeline::before {
+  left: 16px; top: 10px; bottom: 10px; width: 2px;
+  background: color-mix(in srgb, var(--accent-2) 20%, transparent);
+}
+
+/* .tl-item = 圆角软 pill 行（样张 .ev） */
+[data-theme^="soft"] .tl-item {
+  z-index: 1; padding: 11px 14px 11px 30px;
+  border-radius: var(--r-chip); background: var(--surface);
+  box-shadow: var(--shadow-card);
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+[data-theme^="soft"] .tl-item:hover { transform: translateY(-2px); box-shadow: var(--soft-lift); }
+
+/* 状态靠柔光圆点（::before），标签底色退场，类型色留给文字与圆点 */
+[data-theme^="soft"] .tl-item .tl-tag { padding: 0; background: transparent; border-color: transparent; border-radius: 0; }
+[data-theme^="soft"] .tl-item::before {
+  left: 13px; top: 50%; margin-top: -4.5px; width: 9px; height: 9px; border: 0;
+  background: color-mix(in srgb, var(--text-3) 45%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--text-3) 14%, transparent);
+}
+[data-theme^="soft"] .tl-item:is(.tl-node_start, .tl-intent, .tl-plan, .tl-node_end, .tl-interrupt, .tl-error)::before {
+  background: currentColor;
+  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 16%, transparent);
+}
+[data-theme^="soft"] .tl-item.tl-node_start::before { color: var(--accent); }
+[data-theme^="soft"] .tl-item.tl-intent::before { color: var(--accent-2); }
+[data-theme^="soft"] .tl-item.tl-plan::before { color: var(--ok); }
+[data-theme^="soft"] .tl-item.tl-node_end::before { color: var(--ok); }
+[data-theme^="soft"] .tl-item.tl-interrupt::before { color: var(--warn); }
+[data-theme^="soft"] .tl-item.tl-error::before { color: var(--danger); }
+
+/* 需人工介入 / 正在执行的项：柔光呼吸（样张 .ev.live） */
+[data-theme^="soft"] .tl-item.tl-interrupt,
+[data-theme^="soft"] .tl-item.tl-live,
+[data-theme^="soft"] .tl-item:last-child {
+  background: linear-gradient(135deg, var(--surface), color-mix(in srgb, var(--accent) 8%, var(--surface)));
+}
+[data-theme^="soft"] .tl-item.tl-error:last-child {
+  background: linear-gradient(135deg, var(--surface), color-mix(in srgb, var(--danger) 8%, var(--surface)));
+}
+[data-theme^="soft"] .tl-item.tl-interrupt::before,
+[data-theme^="soft"] .tl-item.tl-live::before,
+[data-theme^="soft"] .tl-item:last-child::before { animation: soft-breathe 2.4s var(--ease) infinite; }
+@keyframes soft-breathe {
+  0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 16%, transparent); }
+  50%      { box-shadow: 0 0 0 10px color-mix(in srgb, currentColor 3%, transparent); }
+}
+
+/* -------------------------- 01.4 圆角柔色徽章 -------------------------- */
+/* 读数卡：球形柔色徽章 + 上浮 */
+[data-theme^="soft"] .prog-item {
+  position: relative; padding-left: calc(var(--s-3) + 24px);
+  border-radius: var(--r-chip); background: var(--surface); box-shadow: var(--shadow-card);
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+[data-theme^="soft"] .prog-item:hover { transform: translateY(-2px); box-shadow: var(--soft-lift); }
+[data-theme^="soft"] .prog-item::before {
+  content: ""; position: absolute; left: var(--s-3); top: 50%; margin-top: -11px;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: radial-gradient(circle at 32% 28%, var(--surface), color-mix(in srgb, var(--accent) 22%, var(--surface)));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+[data-theme^="soft"] .prog-k { font-family: var(--font-mono); letter-spacing: .06em; }
+[data-theme^="soft"] .prog-v { font-family: var(--font-mono); font-weight: 600; color: var(--accent); }
+
+/* 消息头像 / 印章 / 文件图标：圆形或圆角柔色 */
+[data-theme^="soft"] .msg-mark {
+  width: 34px; height: 34px; border: 0; border-radius: 50%;
+  font-family: var(--font-display); font-size: var(--fs-sm); box-shadow: var(--shadow-card);
+}
+[data-theme^="soft"] .msg.assistant .msg-mark { background: var(--accent); color: var(--accent-ink); }
+[data-theme^="soft"] .msg.user .msg-mark {
+  color: color-mix(in srgb, var(--accent-2) 78%, var(--text));
+  background: color-mix(in srgb, var(--accent-2) 22%, var(--surface));
+}
+[data-theme^="soft"] .seal { box-shadow: var(--shadow-card); }
+[data-theme="soft-cream"] .seal { border-radius: 30%; }   /* 样张：暖色圆润小印 rx≈30% */
+[data-theme="soft-mist"] .seal { border-radius: 50%; }    /* 样张：圆形印 + 杏色小点 */
+[data-theme^="soft"] .kd-icon,
+[data-theme^="soft"] .tree-kind {
+  border: 0; font-family: var(--font-mono); color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+}
+[data-theme^="soft"] .kd-icon { width: 40px; height: 40px; border-radius: 50%; }
+
+/* ---------------------------- 01.5 聊天气泡 ---------------------------- */
+[data-theme^="soft"] .bubble { border: 0; padding: var(--s-4) var(--s-5); box-shadow: var(--shadow-card); }
+[data-theme^="soft"] .msg.assistant .bubble {                      /* 助手：白卡 + 左下收角 */
+  border: 0; border-radius: 24px 24px 24px 8px;
+  background: var(--surface); box-shadow: var(--shadow-card);
+}
+[data-theme^="soft"] .msg.user .bubble {                           /* 用户：强调浅底 + 右下收角 */
+  border: 0; border-radius: 24px 24px 8px 24px;
+  background: color-mix(in srgb, var(--accent) 15%, var(--surface));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--text) 5%, transparent);
+}
+[data-theme="soft-cream"] .msg.user .bubble { background: var(--sc-user-bubble); }
+[data-theme="soft-mist"] .msg.user .bubble { background: var(--sm-user-bubble); }
+[data-theme^="soft"] .bubble blockquote { border-left-width: 0; box-shadow: inset 3px 0 0 var(--accent); }
+
+/* --------------------- 01.6 流式光标（柔和圆点呼吸） ---------------------
+   需 JSX 插入 <span className="cursor" />（见文件头注释 1） */
+[data-theme^="soft"] .cursor,
+[data-theme^="soft"] .stream-cursor {
+  display: inline-block; width: 8px; height: 8px; margin-left: 6px;
+  border-radius: 50%; vertical-align: middle; background: var(--accent);
+  animation: soft-pulse 1.5s var(--ease) infinite;
+}
+@keyframes soft-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 22%, transparent); }
+  50%      { opacity: .45; transform: scale(.82); box-shadow: 0 0 0 6px transparent; }
+}
+
+/* ---------------------------- 01.7 hover 上浮 ---------------------------- */
+[data-theme^="soft"] .sess-item,
+[data-theme^="soft"] .trace-item,
+[data-theme^="soft"] .kb-doc,
+[data-theme^="soft"] .kb-hit {
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease),
+              background-color var(--dur-fast) var(--ease);
+}
+[data-theme^="soft"] .sess-item:hover,
+[data-theme^="soft"] .trace-item:hover,
+[data-theme^="soft"] .kb-doc:hover,
+[data-theme^="soft"] .kb-hit:hover,
+[data-theme^="soft"] .kb-drop:hover { transform: translateY(-2px); box-shadow: var(--soft-lift); }
+
+/* 主按钮：hover scale(1.02) + 柔光（样张 .btn-pri） */
+[data-theme^="soft"] .btn-ink {
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--accent) 22%, transparent),
+              0 12px 26px color-mix(in srgb, var(--accent) 26%, transparent);
+}
+[data-theme^="soft"] .btn-ink:hover:not(:disabled) { transform: scale(1.02); box-shadow: var(--shadow-glow), var(--soft-lift); }
+[data-theme^="soft"] .btn-ink:active:not(:disabled) { transform: scale(.99); }
+
+/* ==========================================================================
+   02 · 暖云手稿 soft-cream（proposal-9-cream-round.html）
+   ========================================================================== */
+[data-theme="soft-cream"] {
+  --sc-accent-deep: #C1632F;                                         /* 焦糖加深（样张 .btn-pri:hover） */
+  --sc-user-bubble: color-mix(in srgb, var(--accent) 15%, var(--surface));  /* 用户气泡浅底 */
+}
+
+/* 背景 2–3 团 blur(80px) 大光斑，26s+ 缓慢漂浮、幅度很小（样张 .aurora） */
+[data-theme="soft-cream"] .app::before,
+[data-theme="soft-cream"] .auth-wrap::before {
+  inset: -18vmax;
+  background:
+    radial-gradient(30vmax 26vmax at 8% 8%, var(--blob-1), transparent 62%),
+    radial-gradient(27vmax 24vmax at 94% 34%, var(--blob-2), transparent 62%),
+    radial-gradient(33vmax 28vmax at 46% 98%, var(--blob-3), transparent 64%);
+  filter: blur(80px);
+  animation: sc-drift 26s var(--ease) infinite alternate;
+}
+@keyframes sc-drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(.9vmax, .7vmax, 0) scale(1.03); }
+}
+
+/* 衬线大标题（--font-display）+ 拉丁斜体点缀（--font-latin） */
+[data-theme="soft-cream"] .brand-text,
+[data-theme="soft-cream"] .empty-state h2,
+[data-theme="soft-cream"] .arch-title,
+[data-theme="soft-cream"] .auth-card h2,
+[data-theme="soft-cream"] .modal-card h3 {
+  font-family: var(--font-display); font-weight: 900; letter-spacing: .08em;
+}
+[data-theme="soft-cream"] .empty-state h2::after {
+  content: "The Writing Desk"; display: block; margin-top: 8px;
+  font-family: var(--font-latin); font-style: italic; font-weight: 500;
+  font-size: var(--fs-sm); letter-spacing: .04em; color: var(--text-3);
+}
+[data-theme="soft-cream"] .sess-head .t,
+[data-theme="soft-cream"] .panel-head h3,
+[data-theme="soft-cream"] .arch-h { letter-spacing: .1em; }
+
+/* 焦糖强调：激活态与主按钮 */
+[data-theme="soft-cream"] .btn-ink { background: var(--accent); color: var(--accent-ink); }
+[data-theme="soft-cream"] .btn-ink:hover:not(:disabled) { background: var(--sc-accent-deep); }
+[data-theme="soft-cream"] .sess-item.on .sess-title { color: var(--accent); }
+[data-theme="soft-cream"] .who em,
+[data-theme="soft-cream"] .arch-status,
+[data-theme="soft-cream"] .kb-status { background: color-mix(in srgb, var(--accent) 12%, transparent); border-radius: var(--r-chip); }
+
+/* ==========================================================================
+   03 · 晨雾有机 soft-mist（proposal-10-organic-wave.html）
+   ========================================================================== */
+[data-theme="soft-mist"] {
+  --sm-accent-deep: #5C7F94;                                         /* 雾蓝加深（样张 .btn-pri:hover） */
+  --sm-wave: var(--wave-c);                                          /* 波浪色（tokens --wave-c） */
+  --sm-user-bubble: color-mix(in srgb, var(--accent) 13%, var(--surface));  /* 用户气泡浅底 */
+  --sm-blob: 42% 58% 55% 45% / 48% 44% 56% 52%;                      /* 有机 blob 不规则圆角 */
+}
+
+/* -------------------- 03.1 波浪分隔（≥2 处 · 极低对比） --------------------
+   波形由 mask-image 内联 SVG 承载，着色取 --wave-c，保证颜色仍走令牌 */
+[data-theme="soft-mist"] .topbar::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -22px; height: 22px;
+  pointer-events: none; background-color: var(--sm-wave);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 22' preserveAspectRatio='none'%3E%3Cpath d='M0,9 C240,17 480,2 720,8 C960,15 1200,3 1440,10 L1440,22 L0,22 Z' fill='%23fff'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 22' preserveAspectRatio='none'%3E%3Cpath d='M0,9 C240,17 480,2 720,8 C960,15 1200,3 1440,10 L1440,22 L0,22 Z' fill='%23fff'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+}
+
+/* ② 输入区上缘（对话卡片内）：顶部起波，压出一条弧形分隔 */
+[data-theme="soft-mist"] .input-bar { position: relative; }
+[data-theme="soft-mist"] .input-bar::before {
+  content: ""; position: absolute; left: 0; right: 0; top: -20px; height: 20px;
+  pointer-events: none; background-color: var(--sm-wave);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 20' preserveAspectRatio='none'%3E%3Cpath d='M0,12 C240,2 480,15 720,7 C960,0 1200,14 1440,5 L1440,20 L0,20 Z' fill='%23fff'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 20' preserveAspectRatio='none'%3E%3Cpath d='M0,12 C240,2 480,15 720,7 C960,0 1200,14 1440,5 L1440,20 L0,20 Z' fill='%23fff'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+}
+
+/* ③ 登录页页脚大弧 */
+[data-theme="soft-mist"] .auth-wrap::after {
+  content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: 26vh; z-index: -1;
+  pointer-events: none; background-color: var(--sm-wave);
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 240' preserveAspectRatio='none'%3E%3Cpath d='M0,132 C300,52 640,196 960,118 C1180,62 1330,138 1440,106 L1440,240 L0,240 Z' fill='%23fff'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 240' preserveAspectRatio='none'%3E%3Cpath d='M0,132 C300,52 640,196 960,118 C1180,62 1330,138 1440,106 L1440,240 L0,240 Z' fill='%23fff'/%3E%3C/svg%3E");
+  -webkit-mask-size: 100% 100%; mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+}
+
+/* ---------------------- 03.2 有机 blob 形体（2 个） ---------------------- */
+[data-theme="soft-mist"] .app::after {
+  content: ""; position: fixed; z-index: -1; top: -170px; left: -150px;
+  width: 540px; height: 560px; pointer-events: none;
+  border-radius: var(--sm-blob); background: var(--blob-1);
+  filter: blur(70px);
+  animation: sm-float-a 26s var(--ease) infinite alternate;
+}
+[data-theme="soft-mist"] .chat-layout { position: relative; }
+[data-theme="soft-mist"] .chat-layout::before {
+  content: ""; position: absolute; z-index: -1; right: -130px; bottom: -150px;
+  width: 460px; height: 460px; pointer-events: none;
+  border-radius: 48% 52% 42% 58% / 56% 46% 54% 44%;
+  background: var(--blob-3); filter: blur(70px);
+  animation: sm-float-b 40s var(--ease) infinite alternate-reverse;
+}
+@keyframes sm-float-a {
+  from { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); }
+  to   { transform: translate3d(44px, 34px, 0) scale(1.06) rotate(14deg); }
+}
+@keyframes sm-float-b {
+  from { transform: translate3d(0, 0, 0) scale(1.05) rotate(0deg); }
+  to   { transform: translate3d(-50px, -28px, 0) scale(1) rotate(-16deg); }
+}
+
+/* 有机形状：头像 / 文件图标（样张 42%~58% 不规则圆角） */
+[data-theme="soft-mist"] .msg-mark,
+[data-theme="soft-mist"] .kd-icon { border-radius: 44% 56% 58% 42% / 52% 46% 54% 48%; }
+[data-theme="soft-mist"] .msg.assistant .msg-mark {
+  background: linear-gradient(140deg, var(--accent), var(--accent-2));
+  color: var(--accent-ink);
+}
+
+/* 雾蓝强调：激活态与主按钮 */
+[data-theme="soft-mist"] .btn-ink { background: var(--accent); color: var(--accent-ink); }
+[data-theme="soft-mist"] .btn-ink:hover:not(:disabled) { background: var(--sm-accent-deep); }
+[data-theme="soft-mist"] .tl-item.tl-node_end::before { color: var(--accent-2); }   /* 样张：完成节点为苔绿 */
+
+/* 圆润几何字体用于微标签（--font-mono = Quicksand） */
+[data-theme="soft-mist"] .sess-head .t,
+[data-theme="soft-mist"] .panel-head h3,
+[data-theme="soft-mist"] .arch-h,
+[data-theme="soft-mist"] .brand-text small {
+  font-family: var(--font-mono); font-weight: 600; letter-spacing: .12em;
+}
+[data-theme="soft-mist"] .sess-meta,
+[data-theme="soft-mist"] .input-hint,
+[data-theme="soft-mist"] .lat,
+[data-theme="soft-mist"] .meta,
+[data-theme="soft-mist"] .tid,
+[data-theme="soft-mist"] .tree-kind,
+[data-theme="soft-mist"] .who em {
+  font-family: var(--font-mono); font-weight: 500; letter-spacing: .04em;
+}
+[data-theme="soft-mist"] .sess-head .t { font-size: var(--fs-micro); color: var(--text-3); }
+
+/* ==========================================================================
+   04 · 弱动效偏好：关闭动画
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  [data-theme^="soft"] .app::before,
+  [data-theme^="soft"] .auth-wrap::before,
+  [data-theme^="soft"] .app::after,
+  [data-theme^="soft"] .chat-layout::before,
+  [data-theme^="soft"] .cursor,
+  [data-theme^="soft"] .stream-cursor,
+  [data-theme^="soft"] .tl-item::before { animation: none; }
+
+  [data-theme^="soft"] .tl-item:hover,
+  [data-theme^="soft"] .prog-item:hover,
+  [data-theme^="soft"] .sess-item:hover,
+  [data-theme^="soft"] .trace-item:hover,
+  [data-theme^="soft"] .kb-doc:hover,
+  [data-theme^="soft"] .kb-hit:hover,
+  [data-theme^="soft"] .kb-drop:hover,
+  [data-theme^="soft"] .btn-ink:hover:not(:disabled) { transform: none; }
+}
