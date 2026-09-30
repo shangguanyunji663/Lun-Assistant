@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 
-/* v11 · 四主题切换（A 柔雾青绿 / B 水墨留白 / C 暗墨夜山 / D 青绿金碧） */
+/* v11 · 四主题切换（A 柔雾青绿 / B 黑白瑞士 / C 暗墨夜山 / D 青绿金碧）
+   v13 · 新增 E 雨过天青 / F 玄墨赭金 / G 秋香宣纸（注册与切换机制和四主题完全一致） */
 export const THEMES = [
   { id: 'a', label: '柔雾青绿', chip: '#C5DBE8' },
   { id: 'b', label: '黑白瑞士', chip: '#000000' },
   { id: 'c', label: '暗墨夜山', chip: '#0A1424' },
   { id: 'd', label: '青绿金碧', chip: '#C9B58A' },
+  // v13 · 新增三主题（样式见 styles.css「v13 · 新增三主题」节）
+  { id: 'e', label: '雨过天青', chip: '#C7D3CB' },
+  { id: 'f', label: '玄墨赭金', chip: '#171512' },
+  { id: 'g', label: '秋香宣纸', chip: '#E6DECB' },
 ]
 
-const VALID_THEMES = ['a', 'b', 'c', 'd']
+const VALID_THEMES = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
 const INK_MIN = 0
 const INK_MAX = 0.4
 const INK_DEFAULT = 0.16
@@ -19,7 +24,11 @@ const loadTheme = () => {
 }
 
 const loadInkOp = () => {
-  const v = Number(localStorage.getItem('lj_ink_op'))
+  // 缺失 / 空串 ≠ 显式 0：Number(null)=0、Number('')=0 会蒙混过 >=INK_MIN 校验，
+  // 曾导致新访客山水底图默认不显示；此处先回落默认，再做数值区间校验。
+  const raw = localStorage.getItem('lj_ink_op')
+  if (raw === null || raw.trim() === '') return INK_DEFAULT
+  const v = Number(raw)
   return Number.isFinite(v) && v >= INK_MIN && v <= INK_MAX ? v : INK_DEFAULT
 }
 
@@ -72,8 +81,11 @@ export function useTheme() {
       if (e.key === 'lj_theme' && VALID_THEMES.includes(e.newValue)) {
         setTheme(e.newValue)
       } else if (e.key === 'lj_ink_op') {
-        const v = Number(e.newValue)
-        if (Number.isFinite(v) && v >= INK_MIN && v <= INK_MAX) setInkOp(v)
+        // 他页删除该键时 newValue 为 null：回落默认（与 loadInkOp 缺失处理一致）
+        if (e.newValue === null) { setInkOp(INK_DEFAULT) } else {
+          const v = Number(e.newValue)
+          if (Number.isFinite(v) && v >= INK_MIN && v <= INK_MAX) setInkOp(v)
+        }
       }
     }
     window.addEventListener('storage', onStorage)

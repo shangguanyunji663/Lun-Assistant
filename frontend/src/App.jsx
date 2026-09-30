@@ -106,11 +106,11 @@ export default function App() {
           <button className="btn btn-ghost btn-sm" disabled={!projectId}
                   onClick={() => setDialog({ mode: 'edit', project: currentProject })}
                   title={projectId ? '编辑 / 删除当前项目' : '请先选择项目'}>项目设置</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setDialog({ mode: 'create' })}>＋ 新建</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => setDialog({ mode: 'create' })}>新建项目</button>
         </div>
 
         {/* 山水浓度：实时调 AI 底图不透明度 */}
-        <div className="ink-tuner" title="调节山水底图浓度。0 = 纯色底；超过 0.30 山形开始与文字争注意力">
+        <div className="ink-tuner" title="调节山水底图浓度">
           <span className="lab">山水</span>
           <input type="range" min="0" max="0.4" step="0.01" value={inkOp}
                  onChange={e => setInkOp(Number(e.target.value))}
@@ -121,7 +121,7 @@ export default function App() {
         {/* 调参台入口：跳转生产版控制台（frontend/public/console/tuner.html）。
             调参台改的主题 / 山水浓度会经 localStorage + storage 事件实时同步回主应用。 */}
         <a className="btn btn-ghost btn-sm console-entry" href="console/tuner.html" target="_blank" rel="noreferrer"
-           title="打开透明度调参台（多维度调节 + WCAG 实时测算，改动实时同步回本页）">🎛 控制台</a>
+           title="打开调参台，改动实时同步回本页">调参台</a>
 
         {/* v11 · 四主题切换（A 柔雾青绿 / B 水墨留白 / C 暗墨夜山 / D 青绿金碧）。
             单击切换整套配色 + 背景图 + 卷轴语言；持久化到 localStorage.lj_theme。 */}
@@ -167,7 +167,7 @@ export default function App() {
             <div className="sess-head">
               <span className="t">会话卷册</span>
               <button className="btn btn-ghost btn-sm" onClick={newSession}
-                      disabled={streaming} title="新建会话">＋</button>
+                      disabled={streaming} title="新建会话">新建</button>
             </div>
             <div className="sess-list">
               {sessions.length === 0 && <div className="sess-empty">尚无会话</div>}
@@ -193,7 +193,7 @@ export default function App() {
                   <div className="empty-state">
                     <Seal size={44} />
                     <h2>落笔之前</h2>
-                    <p>描述你的论文需求，主控 Agent 会调度选题、文献、写作、格式、查重与答辩六类专项 Agent 协同完成。</p>
+                    <p>写下你的论文需求：选题、文献、写作、格式、查重、答辩，各环节都有专项助手接手推进。</p>
                     <div className="prompts">
                       {['帮我确定一个可行的论文选题', '检索近三年大模型相关文献', '为第三章写一段方法论初稿']
                         .map(p => <button key={p} className="btn btn-ghost btn-sm" onClick={() => send(p)}>{p}</button>)}
@@ -216,7 +216,7 @@ export default function App() {
 
             {interrupt && (
               <div className="interrupt-bar">
-                <span className="ib-q">⏸ {interrupt.question || 'Agent 需要你的确认'}</span>
+                <span className="ib-q">{interrupt.question || '请确认下一步操作'}</span>
                 <div className="ib-opts">
                   {(interrupt.options || []).map(op => (
                     <button key={op} className="btn btn-ghost btn-sm" onClick={() => send(op, op)} disabled={streaming}>{op}</button>

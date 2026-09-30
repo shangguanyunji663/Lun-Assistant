@@ -478,7 +478,7 @@ Lun-Assistant/
 | [🛠 优化记录](docs/OPTIMIZATION_ROUND1.md) | Round 1–6：性能 / OOM / 前端排障 / RAG / 学术工具 / 工程化治理 |
 | [🛠 优化记录十二 / 十三](docs/OPTIMIZATION_ROUND12.md) | CI 静态检查 / 依赖锁定 / 前端 Hooks / 可移植性；审计合规 / 改写自适应 / 记忆排序 / 多实例部署 |
 
-**前端版本线**（[总索引](docs/frontend-versions/README.md) · v8 → v12）
+**前端版本线**（[总索引](docs/frontend-versions/README.md) · v8 → v13）
 
 | 版本 | 文档 | 内容 |
 | :--- | :--- | :--- |
@@ -487,6 +487,8 @@ Lun-Assistant/
 | v10 | [Round 8](docs/frontend-versions/OPTIMIZATION_ROUND8.md) · [9](docs/frontend-versions/OPTIMIZATION_ROUND9.md) · [10](docs/frontend-versions/OPTIMIZATION_ROUND10.md) | 三主题切换 · WebP 压缩 5.32→0.26 MB + Pages 部署 · 遗留项落地 |
 | v11 | [变更（设计稿侧）](docs/frontend-versions/CHANGELOG-v11-design.md) · [（生产侧）](docs/frontend-versions/CHANGELOG-v11-frontend.md) | 四主题 A / B / C / D |
 | v12 | [变更](docs/frontend-versions/CHANGELOG-v12.md) · [Round 11](docs/frontend-versions/OPTIMIZATION_ROUND11.md) | B 主题翻转为黑白瑞士（修复 B↔D 区分度） |
+| v13 | [变更](docs/frontend-versions/CHANGELOG-v13.md) | 新增三主题 E 雨过天青 / F 玄墨赭金 / G 秋香宣纸（反 AI 味设计 · 现有主题零改动） |
+| v13 | [变更](docs/frontend-versions/CHANGELOG-v13.md) | 新增三主题 E 雨过天青 / F 玄墨赭金 / G 秋香宣纸（反 AI 味设计 · 现有主题零改动） |
 
 ---
 

@@ -8,14 +8,14 @@ export default function Timeline({ events }) {
     <div className="timeline">
       {events.map((ev, i) => (
         <div key={i} className={`tl-item tl-${ev.type}`}>
-          {ev.type === 'node_start' && <span className="tl-tag start">▶ {ev.payload?.title || ev.payload?.agent || 'Agent'}</span>}
+          {ev.type === 'node_start' && <span className="tl-tag start">{ev.payload?.title || ev.payload?.agent || 'Agent'}</span>}
           {ev.type === 'intent' && <span className="tl-tag intent">意图 · {ev.payload?.label}（{ev.payload?.layer}，conf={ev.payload?.confidence}）</span>}
           {ev.type === 'route' && <span className="tl-tag route">→ 路由至 {ev.payload?.next}</span>}
           {ev.type === 'plan' && <span className="tl-tag plan">规划 · {ev.payload?.goal?.slice(0, 40) || ''} · {ev.payload?.steps?.length || 0} 步</span>}
-          {ev.type === 'step_event' && <span className="tl-tag step">步骤 {ev.payload?.step}/{ev.payload?.total} {ev.payload?.action}{ev.payload?.status === 'ok' ? ' ✓' : ' ⚠'}</span>}
-          {ev.type === 'node_end' && <span className="tl-tag end">✔ {ev.payload?.title || ev.payload?.agent || ev.node || ''} 完成{ev.payload?.stop_reason === 'max_hops' ? '（达到最大跳数）' : ''}</span>}
-          {ev.type === 'interrupt' && <span className="tl-tag interrupt">⏸ 待确认 · {ev.payload?.question || JSON.stringify(ev.payload)}</span>}
-          {ev.type === 'error' && <span className="tl-tag err">✖ {ev.payload?.message}</span>}
+          {ev.type === 'step_event' && <span className="tl-tag step">步骤 {ev.payload?.step}/{ev.payload?.total} {ev.payload?.action}{ev.payload?.status === 'ok' ? '（完成）' : '（异常）'}</span>}
+          {ev.type === 'node_end' && <span className="tl-tag end">{ev.payload?.title || ev.payload?.agent || ev.node || ''} 已完成{ev.payload?.stop_reason === 'max_hops' ? '（达到最大跳数）' : ''}</span>}
+          {ev.type === 'interrupt' && <span className="tl-tag interrupt">待确认 · {ev.payload?.question || JSON.stringify(ev.payload)}</span>}
+          {ev.type === 'error' && <span className="tl-tag err">错误 · {ev.payload?.message}</span>}
         </div>
       ))}
     </div>

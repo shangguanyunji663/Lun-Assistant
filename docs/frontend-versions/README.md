@@ -2,7 +2,7 @@
 
 > 文档域：frontend-versions
 > 文档类型：操作手册 / 指南
-> 主题版本：v8 → v12
+> 主题版本：v8 → v13
 > 轮次：—
 > 日期：2026-09-02
 > 状态：已落地
@@ -13,8 +13,8 @@
 
 ## 一、本目录作用
 
-1. **前端版本线单一真源**：v8 → v12 每个版本的提案 / 设计规范 / 变更档案 / 工程落档全部收敛于此，形成完整版本时间线。
-2. **后续版本扩展锚点**：新增版本（如 v13）时，复制 [`TEMPLATE.md`](./TEMPLATE.md) 起步，按 `CHANGELOG-v{N}.md` 命名，并在「三、版本索引」追加一行。
+1. **前端版本线单一真源**：v8 → v13 每个版本的提案 / 设计规范 / 变更档案 / 工程落档全部收敛于此，形成完整版本时间线。
+2. **后续版本扩展锚点**：新增版本（如 v14）时，复制 [`TEMPLATE.md`](./TEMPLATE.md) 起步，按 `CHANGELOG-v{N}.md` 命名，并在「三、版本索引」追加一行。
 
 ***
 
@@ -37,6 +37,9 @@ v11  四主题（A/B/C/D，4 张参考图） → CHANGELOG-v11-design.md（设�
    │
    ▼
 v12  B 主题黑白瑞士（ROUND11）     → CHANGELOG-v12.md（设计稿侧）+ OPTIMIZATION_ROUND11.md（生产侧落档）
+   │
+   ▼
+v13  新增三主题 E/F/G（ROUND14）   → CHANGELOG-v13.md（生产侧直改，无设计稿侧；含 7 主题截图）
 ```
 
 ***
@@ -56,6 +59,8 @@ v12  B 主题黑白瑞士（ROUND11）     → CHANGELOG-v12.md（设计稿侧�
 | v11      | [`CHANGELOG-v11-frontend.md`](./CHANGELOG-v11-frontend.md)           | 版本变更 | v11 四主题 · 生产侧（frontend/ 端到端改造）            |
 | v12      | [`CHANGELOG-v12.md`](./CHANGELOG-v12.md)                             | 版本变更 | v12 B 黑白瑞士 · 设计稿侧                         |
 | v12      | [`OPTIMIZATION_ROUND11.md`](./OPTIMIZATION_ROUND11.md)               | 轮次记录 | v12 B 黑白瑞士 · 生产侧落档                        |
+| v13      | [`CHANGELOG-v13.md`](./CHANGELOG-v13.md)                             | 版本变更 | v13 新增三主题 E/F/G · 生产侧（ROUND14）             |
+| v13      | [`CHANGELOG-v13.md`](./CHANGELOG-v13.md)                             | 版本变更 | v13 新增三主题 E/F/G · 生产侧（ROUND14）             |
 
 ***
 
@@ -71,7 +76,7 @@ v12  B 主题黑白瑞士（ROUND11）     → CHANGELOG-v12.md（设计稿侧�
 
 ## 五、新增版本操作指引
 
-新增前端版本（如 v13）时按以下步骤：
+新增前端版本（如 v14）时按以下步骤：
 
 1. 复制 [`TEMPLATE.md`](./TEMPLATE.md) → 重命名 `CHANGELOG-v13.md`（设计稿侧）与/或按需 `OPTIMIZATION_ROUND{N}.md`（生产侧落档）。
 2. 在「二、主题演进线」追加一行 v13。
@@ -82,7 +87,7 @@ v12  B 主题黑白瑞士（ROUND11）     → CHANGELOG-v12.md（设计稿侧�
 
 ***
 
-## 六、本目录文件清单（10 份正文 + 1 模板）
+## 六、本目录文件清单（11 份正文 + 1 模板 + v13 截图目录）
 
 ```
 docs/frontend-versions/
@@ -97,6 +102,8 @@ docs/frontend-versions/
 ├── CHANGELOG-v11-design.md      ← v11 设计稿侧
 ├── CHANGELOG-v11-frontend.md    ← v11 生产侧
 ├── CHANGELOG-v12.md             ← v12 设计稿侧
-└── OPTIMIZATION_ROUND11.md      ← v12 生产侧落档
+├── OPTIMIZATION_ROUND11.md      ← v12 生产侧落档
+├── CHANGELOG-v13.md             ← v13 新增三主题（E/F/G）
+└── v13-screenshots/             ← v13 七主题实拍截图（theme-a~g.png）
 ```
 

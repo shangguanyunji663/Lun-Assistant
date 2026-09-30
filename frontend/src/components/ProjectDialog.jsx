@@ -45,7 +45,7 @@ export default function ProjectDialog({ mode, initial, onClose, onCreate, onPatc
 
         <div className="field">
           <label>论文题目</label>
-          <input autoFocus placeholder="例如：基于 LangGraph 的多智能体论文助手" value={title}
+          <input autoFocus placeholder="例如：面向古籍整理的大模型辅助校勘研究" value={title}
                  onChange={e => setTitle(e.target.value)}
                  onKeyDown={e => { if (e.key === 'Enter' && title.trim()) submit() }} />
         </div>

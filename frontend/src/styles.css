@@ -285,6 +285,269 @@ body[data-theme="d"] {
   --ink-veil-bot: 0.66;
 }
 
+/* ========== v13 · 新增三主题（E 雨过天青 / F 玄墨赭金 / G 秋香宣纸） ==========
+   接入方式与 A-D 完全一致：body[data-theme] 覆盖 :root 令牌（单一真源），
+   注册于 src/hooks/useTheme.js 的 THEMES / VALID_THEMES，本文件为唯一样式落点。
+
+   设计约束（ROUND12 · 去 AI 味）：
+   1. 克制单强调色：无紫 / 蓝渐变，每主题仅一条强调色轴；
+   2. 无背景图（--ink-bg-url: none），实色面板，遮罩全零 —— 去玻璃拟态；
+   3. 圆角整体收紧（--r-pill 999px → 6px），阴影降为贴地细影，去彩色光晕；
+   4. 本节全部为「新增选择器 / 新增令牌」，不修改 A-D 共用的任何既有规则。 */
+
+/* ---- E 雨过天青：汝窑釉色 · 浅灰青底 + 黛青强调（宋体正文 + 楷体标题，继承 :root） ---- */
+body[data-theme="e"] {
+  /* 主色：雨过天青（低饱和灰青，与 A 柔雾青绿的蓝调拉开：E 偏灰绿釉色） */
+  --bg-deep:       #E3E9E5;
+  --bg-panel:      #DAE2DC;
+  --bg-raise:      #C7D3CB;
+
+  /* 文字：墨绿黑（浅底深字，对比度 ~11:1） */
+  --ink-hi:        #22302A;
+  --ink-mid:       #46564E;
+  --ink-low:       #68776E;
+
+  /* 强调：黛青单轴（链接 / 激活 / Agent 侧） */
+  --jade:          #3A6B5C;
+  --jade-deep:     #2C564A;
+  --pine:          #5E8266;
+
+  /* CTA：青瓷（同轴略亮，实色无渐变） */
+  --gold:          #589384;
+  --gold-hi:       #3F6D5C;
+
+  /* 朱砂（钤印 / 删除 / 错误，限量 ≤2%） */
+  --seal:          #A85B4E;
+
+  /* 描边（浅底深色半透明） */
+  --line:          rgba(34, 48, 42, 0.10);
+  --line-mid:      rgba(34, 48, 42, 0.16);
+  --line-hi:       rgba(34, 48, 42, 0.26);
+  --line-gold:     rgba(88, 147, 132, 0.34);
+  --line-jade:     rgba(58, 107, 92, 0.36);
+
+  /* E 主题 RGB（供 rgba 半透明用） */
+  --bg-rgb:        227, 233, 229;
+  --bg-panel-rgb:  218, 226, 220;
+  --bg-raise-rgb:  199, 211, 203;
+
+  /* 背景图：无（实色釉面） */
+  --ink-bg-url:    none;
+  --ink-bg-pos:    center;
+  --ink-bg-size:   cover;
+
+  /* 卷轴木轴：黛青三阶 */
+  --wood-top:      #6FA08F;
+  --wood-mid:      #589384;
+  --wood-bot:      #3A6B5C;
+
+  /* 遮罩：无背景图，全零 */
+  --ink-veil-top: 0;
+  --ink-veil-mid: 0;
+  --ink-veil-bot: 0;
+
+  /* 反 AI 味令牌覆写：收紧圆角 + 贴地细影（仅 E 主题生效） */
+  --r-sm: 5px; --r-md: 7px; --r-lg: 9px; --r-xl: 12px; --r-pill: 6px;
+  --sh-soft: 0 1px 3px rgba(34, 48, 42, 0.08);
+  --sh-lift: 0 8px 24px rgba(34, 48, 42, 0.14);
+}
+/* E · 实色面板去毛玻璃（新选择器，不改共用规则） */
+body[data-theme="e"] .chat-col,
+body[data-theme="e"] .side-col,
+body[data-theme="e"] .trace-panel,
+body[data-theme="e"] .sessions,
+body[data-theme="e"] .auth-card { background: var(--bg-panel); backdrop-filter: none; }
+body[data-theme="e"] .modal-mask { backdrop-filter: none; }
+/* E · 实色 CTA 去渐变与金色光晕 */
+body[data-theme="e"] .btn-ink,
+body[data-theme="e"] .auth-card > button {
+  background: var(--gold);
+  box-shadow: none;
+}
+body[data-theme="e"] .btn-ink:hover:not(:disabled),
+body[data-theme="e"] .auth-card > button:hover:not(:disabled) {
+  background: var(--gold-hi);
+  box-shadow: none;
+}
+body[data-theme="e"] .btn-ink:active:not(:disabled) { box-shadow: none; }
+/* E · 去装饰性墨滴晕染；焦点环改黛青 */
+body[data-theme="e"] .ink-blob { display: none; }
+body[data-theme="e"] :focus-visible { outline-color: rgba(58, 107, 92, 0.60); }
+/* E · 主题切换 tab 选中态（黛青） */
+body[data-theme="e"] .theme-tabs button.on {
+  background: rgba(88, 147, 132, 0.16); color: #2C564A;
+  box-shadow: inset 0 0 0 1px rgba(58, 107, 92, 0.36);
+}
+
+/* ---- F 玄墨赭金：暖炭黑底 + 象牙字 + 赭金单强调（与 C 暗墨夜山的蓝调拉开：F 中性偏暖） ---- */
+body[data-theme="f"] {
+  /* 主色：玄墨（暖炭黑） */
+  --bg-deep:       #171512;
+  --bg-panel:      #1E1B17;
+  --bg-raise:      #282320;
+
+  /* 文字：象牙 / 暖米（暗底浅字，对比度 ~14:1） */
+  --ink-hi:        #E9E2D4;
+  --ink-mid:       #B3AA96;
+  --ink-low:       #877E6B;
+
+  /* 强调：象牙（链接 / 激活 / Agent 侧，夜色米白） */
+  --jade:          #D8CFBB;
+  --jade-deep:     #B8AE95;
+  --pine:          #93A886;
+
+  /* CTA：赭金（暖陶金，实色） */
+  --gold:          #C2955A;
+  --gold-hi:       #D6AC72;
+
+  /* 朱砂（钤印保持） */
+  --seal:          #C0695A;
+
+  /* 描边（暗底用象牙半透明） */
+  --line:          rgba(233, 226, 212, 0.13);
+  --line-mid:      rgba(233, 226, 212, 0.20);
+  --line-hi:       rgba(233, 226, 212, 0.30);
+  --line-gold:     rgba(194, 149, 90, 0.42);
+  --line-jade:     rgba(216, 207, 187, 0.34);
+
+  /* F 主题 RGB */
+  --bg-rgb:        23, 21, 18;
+  --bg-panel-rgb:  30, 27, 23;
+  --bg-raise-rgb:  40, 35, 32;
+
+  /* 背景图：无（实色玄墨） */
+  --ink-bg-url:    none;
+  --ink-bg-pos:    center;
+  --ink-bg-size:   cover;
+
+  /* 卷轴木轴：赭金三阶 */
+  --wood-top:      #C2955A;
+  --wood-mid:      #9E7742;
+  --wood-bot:      #5E4726;
+
+  /* 遮罩：无背景图，全零 */
+  --ink-veil-top: 0;
+  --ink-veil-mid: 0;
+  --ink-veil-bot: 0;
+
+  /* 反 AI 味令牌覆写：收紧圆角 + 深底贴地影（仅 F 主题生效） */
+  --r-sm: 5px; --r-md: 7px; --r-lg: 9px; --r-xl: 12px; --r-pill: 6px;
+  --sh-soft: 0 1px 3px rgba(0, 0, 0, 0.40);
+  --sh-lift: 0 10px 28px rgba(0, 0, 0, 0.50);
+}
+/* F · 实色面板去毛玻璃 */
+body[data-theme="f"] .chat-col,
+body[data-theme="f"] .side-col,
+body[data-theme="f"] .trace-panel,
+body[data-theme="f"] .sessions,
+body[data-theme="f"] .auth-card { background: var(--bg-panel); backdrop-filter: none; }
+body[data-theme="f"] .modal-mask { backdrop-filter: none; }
+/* F · 实色 CTA 去渐变与金色光晕 */
+body[data-theme="f"] .btn-ink,
+body[data-theme="f"] .auth-card > button {
+  background: var(--gold);
+  box-shadow: none;
+}
+body[data-theme="f"] .btn-ink:hover:not(:disabled),
+body[data-theme="f"] .auth-card > button:hover:not(:disabled) {
+  background: var(--gold-hi);
+  box-shadow: none;
+}
+body[data-theme="f"] .btn-ink:active:not(:disabled) { box-shadow: none; }
+/* F · 去装饰性墨滴晕染；焦点环改象牙 */
+body[data-theme="f"] .ink-blob { display: none; }
+body[data-theme="f"] :focus-visible { outline-color: rgba(216, 207, 187, 0.55); }
+/* F · 主题切换 tab 选中态（象牙） */
+body[data-theme="f"] .theme-tabs button.on {
+  background: rgba(216, 207, 187, 0.14); color: #E9E2D4;
+  box-shadow: inset 0 0 0 1px rgba(216, 207, 187, 0.34);
+}
+
+/* ---- G 秋香宣纸：暖米纸底 + 茶褐单强调（低饱和秋香色，与 D 古绢黄的高饱和金绢拉开） ---- */
+body[data-theme="g"] {
+  /* 主色：秋香宣（低饱和暖米） */
+  --bg-deep:       #EFE8D9;
+  --bg-panel:      #E6DECB;
+  --bg-raise:      #D6CCB2;
+
+  /* 文字：深茶褐（浅底深字，对比度 ~11:1） */
+  --ink-hi:        #322C20;
+  --ink-mid:       #5C5442;
+  --ink-low:       #7D745E;
+
+  /* 强调：茶褐单轴（链接 / 激活 / Agent 侧） */
+  --jade:          #6B5B36;
+  --jade-deep:     #52452A;
+  --pine:          #7C8B5A;
+
+  /* CTA：秋香褐（实色） */
+  --gold:          #A0824A;
+  --gold-hi:       #86693A;
+
+  /* 朱砂（钤印，更贴宣纸底） */
+  --seal:          #A33E22;
+
+  /* 描边（浅底深色半透明） */
+  --line:          rgba(50, 44, 32, 0.12);
+  --line-mid:      rgba(50, 44, 32, 0.18);
+  --line-hi:       rgba(50, 44, 32, 0.28);
+  --line-gold:     rgba(160, 130, 74, 0.38);
+  --line-jade:     rgba(107, 91, 54, 0.36);
+
+  /* G 主题 RGB */
+  --bg-rgb:        239, 232, 217;
+  --bg-panel-rgb:  230, 222, 203;
+  --bg-raise-rgb:  214, 204, 178;
+
+  /* 背景图：无（实色宣纸） */
+  --ink-bg-url:    none;
+  --ink-bg-pos:    center;
+  --ink-bg-size:   cover;
+
+  /* 卷轴木轴：茶褐三阶 */
+  --wood-top:      #B99B62;
+  --wood-mid:      #A0824A;
+  --wood-bot:      #6E5A32;
+
+  /* 遮罩：无背景图，全零 */
+  --ink-veil-top: 0;
+  --ink-veil-mid: 0;
+  --ink-veil-bot: 0;
+
+  /* 反 AI 味令牌覆写：收紧圆角 + 贴地细影（仅 G 主题生效） */
+  --r-sm: 5px; --r-md: 7px; --r-lg: 9px; --r-xl: 12px; --r-pill: 6px;
+  --sh-soft: 0 1px 3px rgba(50, 44, 32, 0.08);
+  --sh-lift: 0 8px 24px rgba(50, 44, 32, 0.14);
+}
+/* G · 实色面板去毛玻璃 */
+body[data-theme="g"] .chat-col,
+body[data-theme="g"] .side-col,
+body[data-theme="g"] .trace-panel,
+body[data-theme="g"] .sessions,
+body[data-theme="g"] .auth-card { background: var(--bg-panel); backdrop-filter: none; }
+body[data-theme="g"] .modal-mask { backdrop-filter: none; }
+/* G · 实色 CTA 去渐变与金色光晕 */
+body[data-theme="g"] .btn-ink,
+body[data-theme="g"] .auth-card > button {
+  background: var(--gold);
+  box-shadow: none;
+}
+body[data-theme="g"] .btn-ink:hover:not(:disabled),
+body[data-theme="g"] .auth-card > button:hover:not(:disabled) {
+  background: var(--gold-hi);
+  box-shadow: none;
+}
+body[data-theme="g"] .btn-ink:active:not(:disabled) { box-shadow: none; }
+/* G · 去装饰性墨滴晕染；焦点环改茶褐 */
+body[data-theme="g"] .ink-blob { display: none; }
+body[data-theme="g"] :focus-visible { outline-color: rgba(107, 91, 54, 0.60); }
+/* G · 主题切换 tab 选中态（茶褐） */
+
+body[data-theme="g"] .theme-tabs button.on {
+  background: rgba(160, 130, 74, 0.16); color: #52452A;
+  box-shadow: inset 0 0 0 1px rgba(160, 130, 74, 0.38);
+}
+
 /* 全局过渡：所有继承 token 的属性自动平滑 */
 body, body * {
   transition:
@@ -1292,3 +1555,13 @@ body[data-theme="d"] .theme-tabs button.on {
   }
   .ink-blob { animation: none !important; }
 }
+
+/* ---------- 17. v13 · 主题 tab 容量适配（追加于文件末尾以保证级联顺序） ----------
+   tab 4 → 7 后，961~1760px 桌面宽度沿用既有 ≤960px 的「只留色块」策略，
+   避免文字标签换行挤压顶栏；>1760px 宽屏仍显示完整文字标签。
+   注意：必须位于 §7 的 .theme-tabs button 基础规则之后（同特异性后者胜出）。 */
+@media (min-width: 961px) and (max-width: 1760px) {
+  .theme-tabs button { font-size: 0; padding: 6px 9px; gap: 0; }
+  .theme-tabs button .chip { width: 14px; height: 14px; }
+}
+.theme-tabs button { white-space: nowrap; }

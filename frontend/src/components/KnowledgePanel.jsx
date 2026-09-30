@@ -89,7 +89,7 @@ export default function KnowledgePanel({ projectId }) {
           <input ref={fileRef} type="file" multiple hidden
                  accept=".pdf,.docx,.txt,.md,.markdown"
                  onChange={e => upload(e.target.files)} />
-          <div className="kb-drop-icon">{uploading ? '入' : '＋'}</div>
+          <div className="kb-drop-icon">{uploading ? '…' : '＋'}</div>
           <div className="kb-drop-main">{uploading ? '解析入库中…（分块 + 向量化）' : '点击或拖拽上传资料'}</div>
           <div className="muted">PDF / DOCX / TXT / MD ｜ 单文件 ≤20MB ｜ 同内容自动去重</div>
         </div>
@@ -100,7 +100,7 @@ export default function KnowledgePanel({ projectId }) {
             {summary?.results?.map((r, i) => (
               <span key={i} className={`kb-mini kb-mini-${r.status}`}
                     title={r.status === 'skipped' ? (r.reason || '同内容已入库，自动去重') : (r.error || '')}>
-                {r.status === 'ready' ? '✓' : r.status === 'skipped' ? '＝' : '✕'} {r.filename}
+                {r.status === 'ready' ? '已入库 · ' : r.status === 'skipped' ? '已存在 · ' : '失败 · '}{r.filename}
               </span>
             ))}
           </div>
@@ -108,7 +108,7 @@ export default function KnowledgePanel({ projectId }) {
         {err && <div className="err">{err}</div>}
 
         <div className="kb-search">
-          <input placeholder="库内检索：如 RRF 倒数排名融合…" value={q}
+          <input placeholder="输入关键词，检索资料内容…" value={q}
                  onChange={e => setQ(e.target.value)}
                  onKeyDown={e => { if (e.key === 'Enter') search() }} />
           <select value={mode} onChange={e => setMode(e.target.value)} title="检索范围（v10 三态：仅内置 / 仅库内 / 混合）">
