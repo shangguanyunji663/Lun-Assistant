@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>彩蛋 · 其一 · 编队调度局</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     彩蛋其一 · 编队调度局
+     美术方向：新构成主义（工作台 i 主题同源）
+     克莱因蓝 #2B4BC7 / 红 #D9402A / 黄 #DFA51E / 黑 #141310
+     直角 · 2.5px 黑框 · 错位硬阴影 · 几何色块 · 硬切动效
+     ============================================================ */
+  :root {
+    --bg: #F4F1EA; --panel: #FDFCF9; --ink: #141310; --mid: #3E3B33; --low: #6E6A5E;
+    --blue: #2B4BC7; --red: #D9402A; --yellow: #DFA51E;
+    --line: rgba(20, 19, 16, 0.26);
+    --mono: "IBM Plex Mono", Consolas, monospace;
+    --sans: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--sans); overflow: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image:
+      linear-gradient(rgba(20, 19, 16, 0.055) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(20, 19, 16, 0.055) 1px, transparent 1px);
+    background-size: 48px 48px; }
+
+  .top { position: relative; z-index: 3; display: flex; align-items: center; gap: 16px; padding: 0 22px; min-height: 58px;
+    border-bottom: 2.5px solid var(--ink); background: var(--bg); }
+  .top .tag { font-family: var(--mono); font-size: 11px; font-weight: 600; letter-spacing: 0.22em; color: var(--red); }
+  .top .no { font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; color: var(--panel);
+    background: var(--ink); padding: 4px 8px; }
+  .top nav { margin-left: auto; display: flex; gap: 10px; }
+  .top nav a { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--ink); text-decoration: none;
+    border: 2px solid var(--ink); padding: 6px 12px; background: var(--panel); }
+  .top nav a:hover { background: var(--yellow); }
+
+  main { position: relative; z-index: 2; height: calc(100% - 58px); display: flex; flex-direction: column; padding: 14px 22px 18px; gap: 12px; }
+
+  /* 几何点缀（构成主义） */
+  .geo { position: fixed; z-index: 1; pointer-events: none; }
+  .geo.circle { width: 170px; height: 170px; border-radius: 50%; background: var(--red); right: 6vw; top: 12vh; opacity: 0.9;
+    animation: spin 40s linear infinite; }
+  .geo.tri { width: 0; height: 0; border-left: 54px solid transparent; border-right: 54px solid transparent;
+    border-bottom: 92px solid var(--yellow); left: 4vw; bottom: 30vh; animation: float 7s ease-in-out infinite; }
+  .geo.sq { width: 64px; height: 64px; background: var(--blue); right: 14vw; bottom: 14vh; transform: rotate(45deg); }
+  @keyframes spin { to { transform: rotate(360deg) } }
+  @keyframes float { 50% { transform: translateY(-16px) } }
+
+  /* HUD：黑框信息格 */
+  .hud { display: flex; align-items: stretch; border: 2.5px solid var(--ink); background: var(--panel);
+    box-shadow: 6px 6px 0 rgba(20, 19, 16, 0.85); }
+  .hud .cell { padding: 9px 18px; border-right: 2px solid var(--ink); }
+  .hud .k { display: block; font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 0.2em; color: var(--red); margin-bottom: 3px; }
+  .hud b { font-family: var(--mono); font-size: 21px; font-weight: 600; }
+  .hud b.pulse { animation: pulse 0.28s steps(2); }
+  @keyframes pulse { 50% { color: var(--red); } }
+  .hud .tcell { flex: 1; display: flex; align-items: center; padding: 0 16px; border-right: 2px solid var(--ink); }
+  .timer { width: 100%; height: 14px; border: 2px solid var(--ink); background: var(--panel); }
+  .timer .bar { height: 100%; width: 100%; background: var(--blue); }
+  .timer .bar.low { background: var(--red); }
+
+  /* 舞台 */
+  .stage { flex: 1; position: relative; border: 2.5px solid var(--ink); background: var(--panel);
+    box-shadow: 8px 8px 0 rgba(20, 19, 16, 0.85); overflow: hidden; }
+  .stage .deco { position: absolute; pointer-events: none; opacity: 0.10; }
+  .stage .deco.c { width: 300px; height: 300px; border: 10px solid var(--blue); border-radius: 50%; left: 50%; top: 40%; transform: translate(-50%, -50%); animation: spin 60s linear infinite; }
+  .stage .deco.t { width: 0; height: 0; border-left: 96px solid transparent; border-right: 96px solid transparent; border-bottom: 166px solid var(--red); left: 16%; top: 18%; }
+  .stage .hint { position: absolute; left: 50%; top: 14px; transform: translateX(-50%);
+    font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: var(--mid); white-space: nowrap;
+    background: var(--panel); border: 2px solid var(--ink); padding: 5px 12px; }
+  .lane { position: absolute; left: 0; right: 0; bottom: 16px; display: flex; flex-wrap: wrap; gap: 14px;
+    justify-content: center; align-items: flex-end; padding: 0 14px; }
+
+  /* 任务卡：直角 + 硬阴影 */
+  .card { position: relative; width: 216px; padding: 13px 15px 15px; background: var(--panel);
+    border: 2.5px solid var(--ink); box-shadow: 5px 5px 0 var(--blue);
+    cursor: grab; user-select: none; touch-action: none; animation: cardIn 0.12s steps(2); }
+  @keyframes cardIn { from { transform: translateY(12px); opacity: 0.2; } }
+  .card .who { font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 0.22em; color: var(--red); }
+  .card p { margin: 7px 0 0; font-size: 13.5px; line-height: 1.75; }
+  .card .life { position: absolute; left: 0; bottom: 0; height: 5px; width: 100%; background: var(--blue);
+    transform-origin: left; animation: life linear forwards; }
+  @keyframes life { to { transform: scaleX(0); background: var(--red); } }
+  .card.sel { outline: 4px solid var(--yellow); outline-offset: 3px; }
+  .card.dragging { z-index: 40; cursor: grabbing; box-shadow: 12px 14px 0 var(--blue); }
+  .card.shake { animation: shake 0.3s steps(4); }
+  @keyframes shake { 25% { transform: translateX(-7px); } 50% { transform: translateX(7px); } 75% { transform: translateX(-4px); } }
+  .card.expired { animation: expire 0.3s steps(3) forwards; }
+  @keyframes expire { to { opacity: 0; transform: translateY(-8px); } }
+  .card.fly { transition: transform 0.22s linear, opacity 0.22s linear; opacity: 0; pointer-events: none;
+    transform: translate(var(--dx), var(--dy)) scale(0.1); }
+
+  /* 匠人阵位：几何色块 */
+  .agents { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0; border: 2.5px solid var(--ink); background: var(--panel); }
+  .agent { position: relative; padding: 13px 6px 11px; text-align: center; cursor: pointer;
+    border-right: 2px solid var(--ink); background: var(--panel); transition: background-color 0.06s linear; }
+  .agent:last-child { border-right: none; }
+  .agent:hover { background: var(--yellow); }
+  .agent .chip { width: 42px; height: 42px; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center;
+    color: #FDFCF9; font-size: 22px; font-weight: 700; border: 2px solid var(--ink); }
+  .agent:nth-child(1) .chip { background: var(--blue); }
+  .agent:nth-child(2) .chip { background: var(--red); }
+  .agent:nth-child(3) .chip { background: var(--yellow); color: var(--ink); }
+  .agent:nth-child(4) .chip { background: var(--ink); }
+  .agent:nth-child(5) .chip { background: var(--red); }
+  .agent:nth-child(6) .chip { background: var(--blue); }
+  .agent .nm { font-size: 12.5px; letter-spacing: 0.06em; }
+  .agent .key { position: absolute; right: 8px; top: 6px; font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--low); }
+  .agent .mark { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 46px; font-weight: 900; opacity: 0; pointer-events: none; }
+  .agent.good .mark { color: rgba(43, 75, 199, 0.9); animation: mark 0.45s steps(3) forwards; }
+  .agent.bad .mark { color: rgba(217, 64, 42, 0.9); animation: mark 0.45s steps(3) forwards; }
+  .agent.good .mark::before { content: "准"; }
+  .agent.bad .mark::before { content: "误"; }
+  @keyframes mark { 0% { opacity: 0; transform: scale(1.7); } 30% { opacity: 1; } 100% { opacity: 0; transform: scale(1); } }
+  .agent.bad { background: rgba(217, 64, 42, 0.18); }
+
+  .dot { position: fixed; width: 8px; height: 8px; background: var(--blue); pointer-events: none; z-index: 60; }
+
+  /* 遮罩 / 结算 */
+  .overlay { position: fixed; inset: 0; z-index: 80; background: rgba(244, 241, 234, 0.92); display: flex; align-items: center; justify-content: center; }
+  .overlay.hide { display: none; }
+  .panel { width: min(640px, 92vw); border: 2.5px solid var(--ink); background: var(--panel); padding: 32px 36px;
+    box-shadow: 10px 10px 0 var(--blue); }
+  .kicker { margin: 0 0 12px; font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.32em; color: var(--red); }
+  .panel h2 { margin: 0 0 14px; font-weight: 900; font-size: 32px; letter-spacing: 0.04em; }
+  .panel .rules { margin: 0 0 22px; padding: 0 0 0 18px; color: var(--mid); font-size: 13.5px; line-height: 2.1; }
+  .rank { display: flex; align-items: center; gap: 22px; margin: 6px 0 18px; }
+  .seal-big { width: 96px; height: 96px; flex: none; background: var(--red); color: #FDFCF9; border: 2.5px solid var(--ink);
+    display: flex; align-items: center; justify-content: center; font-size: 54px; font-weight: 900;
+    box-shadow: 6px 6px 0 var(--ink); animation: stamp 0.35s steps(4); }
+  @keyframes stamp { from { transform: scale(2) rotate(-10deg); opacity: 0; } }
+  .rank b { display: block; font-size: 28px; font-weight: 900; letter-spacing: 0.1em; }
+  .rank span { display: block; margin-top: 6px; color: var(--low); font-family: var(--mono); font-size: 12px; }
+  .stats { list-style: none; margin: 0 0 24px; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+    border: 2.5px solid var(--ink); }
+  .stats li { padding: 10px 14px; border-right: 2px solid var(--ink); }
+  .stats li:last-child { border-right: none; }
+  .stats .k { display: block; font-family: var(--mono); font-size: 9px; font-weight: 600; letter-spacing: 0.18em; color: var(--red); margin-bottom: 4px; }
+  .stats b { font-family: var(--mono); font-size: 19px; font-weight: 600; }
+  .actions { display: flex; gap: 12px; }
+  .btn { font-family: var(--sans); font-size: 13.5px; text-decoration: none; padding: 11px 22px; border: 2.5px solid var(--ink);
+    color: var(--ink); background: var(--panel); cursor: pointer; letter-spacing: 0.08em; box-shadow: 4px 4px 0 var(--ink); }
+  .btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--ink); }
+  .btn.ink { background: var(--blue); color: #FDFCF9; }
+  .btn.ink:hover { background: var(--red); }
+
+  @media (max-width: 840px) {
+    .agents { grid-template-columns: repeat(3, 1fr); }
+    .agent:nth-child(3) { border-right: none; }
+    .agent:nth-child(-n+3) { border-bottom: 2px solid var(--ink); }
+    .card { width: 158px; }
+    .hud { flex-wrap: wrap; }
+    .geo.circle { display: none; }
+  }
+</style>
+</head>
+<body>
+<i class="geo circle" aria-hidden="true"></i>
+<i class="geo tri" aria-hidden="true"></i>
+<i class="geo sq" aria-hidden="true"></i>
+
+<header class="top">
+  <span class="tag">彩蛋 · 编队调度局</span>
+  <span class="no">其一 / 叁</span>
+  <nav>
+    <button class="top-link" id="mute" type="button" style="font-family:var(--mono);font-size:11px;letter-spacing:0.1em;color:var(--ink);border:2px solid var(--ink);background:var(--panel);padding:6px 12px;cursor:pointer;">音效：开</button>
+    <a href="../index.html">返回门面</a>
+    <a href="../app.html">进入工作台</a>
+  </nav>
+</header>
+
+<main>
+  <div class="hud">
+    <div class="cell"><span class="k">SCORE · 得分</span><b id="score">0</b></div>
+    <div class="cell"><span class="k">COMBO · 连击</span><b id="combo">x0</b></div>
+    <div class="cell"><span class="k">DISPATCH · 派单</span><b id="served">0</b></div>
+    <div class="tcell"><div class="timer"><div class="bar" id="bar"></div></div></div>
+    <div class="cell" style="border-right:none"><span class="k">TIME · 剩余</span><b id="time">60s</b></div>
+  </div>
+
+  <div class="stage">
+    <i class="deco c" aria-hidden="true"></i>
+    <i class="deco t" aria-hidden="true"></i>
+    <div class="hint" id="hint">把任务卡交给正确的匠人 · 点卡再点人 · 键盘 1-6 直接派单</div>
+    <div class="lane" id="lane"></div>
+  </div>
+
+  <div class="agents" id="agents"></div>
+</main>
+
+<div class="overlay" id="startOv">
+  <div class="panel">
+    <p class="kicker">EASTER 01 · 编队调度局</p>
+    <h2>现在，你是主控</h2>
+    <ul class="rules">
+      <li>任务卡不断弹出：把它派给正确的专项匠人（选题 / 文献 / 写作 / 格式 / 查重 / 答辩）。</li>
+      <li>派对 +10，连击 ≥3 有加成；派错扣分并断连击；卡片超时作废。</li>
+      <li>60 秒后结算：得分越高功名越高——童生到状元。</li>
+    </ul>
+    <div class="actions">
+      <button class="btn ink" id="startBtn" type="button">开始调度</button>
+      <a class="btn" href="../index.html">返回门面</a>
+    </div>
+  </div>
+</div>
+
+<div class="overlay hide" id="endOv">
+  <div class="panel">
+    <p class="kicker">RESULT · 调度结算</p>
+    <div class="rank">
+      <div class="seal-big" id="rankSeal">秀</div>
+      <div><b id="rankName">秀才</b><span id="rankLine"></span></div>
+    </div>
+    <ul class="stats">
+      <li><span class="k">TOTAL · 总分</span><b id="fScore">0</b></li>
+      <li><span class="k">CORRECT · 派对</span><b id="fServed">0</b></li>
+      <li><span class="k">MAX COMBO · 最高连击</span><b id="fCombo">x0</b></li>
+    </ul>
+    <div class="actions">
+      <button class="btn ink" id="againBtn" type="button">再来一局</button>
+      <a class="btn" href="../app.html">进入工作台</a>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict'
+
+  var AGENTS = [
+    { k: 'topic', char: '选', name: '选题匠' },
+    { k: 'lit', char: '献', name: '文献匠' },
+    { k: 'write', char: '笔', name: '笔耕匠' },
+    { k: 'format', char: '格', name: '格式匠' },
+    { k: 'check', char: '查', name: '查重匠' },
+    { k: 'defense', char: '辩', name: '答辩匠' }
+  ]
+  var TASKS = [
+    ['帮我确定一个可行的论文选题', 'topic'],
+    ['这个选题有没有创新点，帮我评估', 'topic'],
+    ['帮我拟一份开题报告的思路', 'topic'],
+    ['检索近三年大模型相关文献', 'lit'],
+    ['核对这几篇文献的出处与年份', 'lit'],
+    ['为第三章写一段方法论初稿', 'write'],
+    ['帮我写一段摘要', 'write'],
+    ['把这段结论扩写成一节', 'write'],
+    ['把参考文献改成 GB/T 7714 格式', 'format'],
+    ['帮我排一下图表编号', 'format'],
+    ['按学校模板调一下章节样式', 'format'],
+    ['查一下这段话的重复率', 'check'],
+    ['这段表述太像原文了，帮我改写', 'check'],
+    ['标出引用边界，别踩红线', 'check'],
+    ['帮我拟一份答辩讲稿', 'defense'],
+    ['预演几个答辩可能会问的问题', 'defense'],
+    ['整理一份答辩材料清单', 'defense']
+  ]
+  var DURATION = 60
+
+  var $ = function (id) { return document.getElementById(id) }
+  var lane = $('lane'), agentsBox = $('agents')
+  var hud = { score: $('score'), combo: $('combo'), served: $('served'), time: $('time'), bar: $('bar') }
+  var startOv = $('startOv'), endOv = $('endOv'), hint = $('hint')
+
+  /* ---- 音效 ---- */
+  var ac = null, muted = false
+  function beep(freq, dur, type, gain) {
+    if (muted) return
+    try {
+      var AC = window.AudioContext || window.webkitAudioContext
+      if (!AC) return
+      ac = ac || new AC()
+      var o = ac.createOscillator(), g = ac.createGain()
+      o.type = type || 'square'
+      o.frequency.value = freq
+      g.gain.value = gain == null ? 0.04 : gain
+      g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + (dur || 0.09))
+      o.connect(g); g.connect(ac.destination)
+      o.start(); o.stop(ac.currentTime + (dur || 0.09))
+    } catch (e) { /* 静默降级 */ }
+  }
+  $('mute').addEventListener('click', function () {
+    muted = !muted
+    this.textContent = muted ? '音效：关' : '音效：开'
+  })
+
+  var running = false, score = 0, combo = 0, maxCombo = 0, served = 0
+  var timeLeft = DURATION, spawnTimer = null, tickTimer = null, sel = null, drag = null
+
+  AGENTS.forEach(function (a, i) {
+    var el = document.createElement('div')
+    el.className = 'agent'
+    el.dataset.k = a.k
+    el.innerHTML = '<span class="key">' + (i + 1) + '</span>' +
+      '<div class="chip">' + a.char + '</div><div class="nm">' + a.name + '</div>' +
+      '<div class="mark"></div>'
+    el.addEventListener('click', function () { if (sel) dispatch(sel, a.k) })
+    agentsBox.appendChild(el)
+  })
+
+  function updateHud(pulseKey) {
+    hud.score.textContent = String(score)
+    hud.combo.textContent = 'x' + combo
+    hud.served.textContent = String(served)
+    hud.time.textContent = Math.ceil(timeLeft) + 's'
+    if (pulseKey) {
+      var el = hud[pulseKey]
+      el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse')
+    }
+  }
+  function splash(x, y, color) {
+    for (var i = 0; i < 8; i++) {
+      var d = document.createElement('i')
+      d.className = 'dot'
+      d.style.left = x + 'px'; d.style.top = y + 'px'
+      d.style.background = color
+      document.body.appendChild(d)
+      var ang = Math.random() * Math.PI * 2, r = 30 + Math.random() * 50
+      d.animate([
+        { transform: 'translate(0,0)', opacity: 1 },
+        { transform: 'translate(' + Math.cos(ang) * r + 'px,' + Math.sin(ang) * r + 'px) rotate(180deg)', opacity: 0 }
+      ], { duration: 340, easing: 'steps(4)' })
+      setTimeout(function (node) { node.remove() }, 400, d)
+    }
+  }
+
+  function spawn() {
+    if (!running) return
+    var arr = Array.from(lane.children)
+    if (arr.length >= 5) return
+    var pick = TASKS[Math.floor(Math.random() * TASKS.length)]
+    var elapsed = DURATION - timeLeft
+    var life = Math.max(4200, 6600 - elapsed * 45)
+    var card = document.createElement('div')
+    card.className = 'card'
+    card.dataset.a = pick[1]
+    card.innerHTML = '<span class="who">TASK · 待派</span><p>' + pick[0] + '</p>' +
+      '<i class="life" style="animation-duration:' + life + 'ms"></i>'
+    card.querySelector('.life').addEventListener('animationend', function () {
+      if (!running || !card.isConnected || card.classList.contains('fly')) return
+      combo = 0; score = Math.max(0, score - 5)
+      card.classList.add('expired'); updateHud('combo')
+      setTimeout(function () { card.remove() }, 320)
+    })
+    card.addEventListener('pointerdown', function (e) { onDown(e, card) })
+    card.addEventListener('pointermove', onMove)
+    card.addEventListener('pointerup', onUp)
+    card.addEventListener('pointercancel', onUp)
+    lane.appendChild(card)
+  }
+
+  function select(card) {
+    sel = card
+    Array.prototype.forEach.call(lane.children, function (c) { c.classList.remove('sel') })
+    card.classList.add('sel')
+  }
+  function onDown(e, card) {
+    if (!running) return
+    select(card)
+    drag = { el: card, x0: e.clientX, y0: e.clientY, moved: false }
+    try { card.setPointerCapture(e.pointerId) } catch (err) { /* 忽略 */ }
+  }
+  function onMove(e) {
+    if (!drag || drag.el !== e.currentTarget) return
+    var dx = e.clientX - drag.x0, dy = e.clientY - drag.y0
+    if (!drag.moved && Math.sqrt(dx * dx + dy * dy) > 8) {
+      drag.moved = true
+      drag.el.classList.add('dragging')
+    }
+    if (drag.moved) drag.el.style.transform = 'translate(' + dx + 'px,' + dy + 'px)'
+  }
+  function onUp(e) {
+    if (!drag || drag.el !== e.currentTarget) return
+    var el = drag.el, moved = drag.moved
+    drag = null
+    el.style.transform = ''
+    el.classList.remove('dragging')
+    if (!moved) return
+    el.style.pointerEvents = 'none'
+    var hit = document.elementFromPoint(e.clientX, e.clientY)
+    el.style.pointerEvents = ''
+    var agent = hit && hit.closest ? hit.closest('.agent') : null
+    if (agent) dispatch(el, agent.dataset.k)
+  }
+
+  function dispatch(card, key) {
+    if (!running || !card || !card.isConnected) return
+    var agent = agentsBox.querySelector('.agent[data-k="' + key + '"]')
+    var ok = card.dataset.a === key
+    if (ok) {
+      combo += 1
+      maxCombo = Math.max(maxCombo, combo)
+      score += 10 + (combo >= 3 ? 5 : 0)
+      served += 1
+      agent.classList.remove('good'); void agent.offsetWidth; agent.classList.add('good')
+      var r = card.getBoundingClientRect(), ar = agent.getBoundingClientRect()
+      card.style.setProperty('--dx', (ar.left + ar.width / 2 - r.left - r.width / 2) + 'px')
+      card.style.setProperty('--dy', (ar.top + ar.height / 2 - r.top - r.height / 2) + 'px')
+      card.classList.add('fly')
+      setTimeout(function () { card.remove() }, 240)
+      splash(ar.left + ar.width / 2, ar.top + ar.height / 2, '#2B4BC7')
+      beep(740, 0.06); setTimeout(function () { beep(1100, 0.08) }, 60)
+      if (sel === card) sel = null
+      updateHud('score')
+    } else {
+      combo = 0; score = Math.max(0, score - 5)
+      agent.classList.remove('bad'); void agent.offsetWidth; agent.classList.add('bad')
+      setTimeout(function () { agent.classList.remove('bad') }, 700)
+      card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake')
+      beep(160, 0.16, 'sawtooth', 0.045)
+      updateHud('combo')
+    }
+  }
+
+  document.addEventListener('keydown', function (e) {
+    if (!running) return
+    var n = parseInt(e.key, 10)
+    if (!(n >= 1 && n <= 6)) return
+    var card = sel && sel.isConnected ? sel : lane.firstElementChild
+    if (card) dispatch(card, AGENTS[n - 1].k)
+  })
+
+  function scheduleSpawn() {
+    if (!running) return
+    var elapsed = DURATION - timeLeft
+    var gap = Math.max(1050, 2400 - elapsed * 24)
+    spawnTimer = setTimeout(function () { spawn(); scheduleSpawn() }, gap)
+  }
+
+  function start() {
+    score = 0; combo = 0; maxCombo = 0; served = 0; timeLeft = DURATION; sel = null
+    lane.innerHTML = ''
+    Array.prototype.forEach.call(agentsBox.children, function (a) { a.classList.remove('good', 'bad') })
+    hud.bar.classList.remove('low')
+    hud.bar.style.width = '100%'
+    updateHud('score')
+    startOv.classList.add('hide'); endOv.classList.add('hide')
+    running = true
+    spawn(); scheduleSpawn()
+    tickTimer = setInterval(function () {
+      timeLeft -= 0.1
+      if (timeLeft <= 0) { timeLeft = 0; updateHud('time'); end(); return }
+      hud.bar.style.width = (timeLeft / DURATION * 100) + '%'
+      hud.bar.classList.toggle('low', timeLeft < 15)
+      updateHud('time')
+    }, 100)
+  }
+  function end() {
+    running = false
+    clearInterval(tickTimer); clearTimeout(spawnTimer)
+    Array.prototype.forEach.call(lane.children, function (c) { c.classList.add('expired') })
+    setTimeout(function () { lane.innerHTML = '' }, 320)
+    var rank = score >= 240 ? ['状元', '状'] : score >= 170 ? ['进士', '进'] : score >= 110 ? ['举人', '举'] : score >= 50 ? ['秀才', '秀'] : ['童生', '童']
+    $('rankSeal').textContent = rank[1]
+    $('rankName').textContent = rank[0]
+    $('rankLine').textContent = '主控手速 ' + served + ' 单 / 分 · 最高连击 x' + maxCombo
+    $('fScore').textContent = String(score)
+    $('fServed').textContent = String(served)
+    $('fCombo').textContent = 'x' + maxCombo
+    endOv.classList.remove('hide')
+    beep(523, 0.1); setTimeout(function () { beep(659, 0.1) }, 110); setTimeout(function () { beep(880, 0.2) }, 220)
+  }
+  $('startBtn').addEventListener('click', start)
+  $('againBtn').addEventListener('click', start)
+
+  agentsBox.addEventListener('click', function (e) {
+    if (!running) return
+    if (e.target.closest('.agent') && !sel) {
+      hint.animate([{ opacity: 1 }, { opacity: 0.2 }, { opacity: 1 }], { duration: 420 })
+    }
+  })
+})()
+</script>
+</body>
+</html>

@@ -767,6 +767,8 @@ body[data-theme="dark"] .ln-ico-moon { display: none; }
    h/i/j/k 四主题显示 #ed-site（编辑部版式，内容与六段同源）。
    切换由 landing.js 控制 display；ed-site 显示时入场动画自动重播
    （display none→block 重新触发 CSS animation）。
+   两套结构各含一个 .ln-theme-btn 主题切换入口：经典导航按钮随 #ln-site 隐藏时，
+   由期刊头按钮接管，保证任意版式下都能循环切回 light/dark。
    字体：Google Fonts CDN（app.html 同款 link），离线回退系统宋体/黑体。
    ============================================================ */
 #ed-site { display: none; }
@@ -783,6 +785,8 @@ body[data-theme="h"] .ln-theme-btn svg,
 body[data-theme="i"] .ln-theme-btn svg,
 body[data-theme="j"] .ln-theme-btn svg,
 body[data-theme="k"] .ln-theme-btn svg { display: none; }
+/* 吸顶导航下的锚点定位：两套结构的 section 统一留出导航高度（导航按钮跳转用） */
+.ln-section, #ed-site section { scroll-margin-top: 84px; }
 
 /* ---- 编辑部设计令牌（四主题共享骨架，个性由 --ed-* 变量驱动） ---- */
 #ed-site {
@@ -904,6 +908,11 @@ body[data-theme="k"] #ed-site::before {
   transition: background-color 0.25s var(--ed-ease), transform 0.25s var(--ed-ease);
 }
 .ed-masthead .cta:hover { background: var(--ed-accent); }
+/* 期刊头主题按钮（编辑部版式下的切换入口；--ln-* 令牌已在 body[data-theme=h~k] 映射） */
+.ed-masthead .ln-theme-btn {
+  font-family: var(--ed-mono); letter-spacing: 0.14em;
+  border-radius: var(--ed-radius);
+}
 
 /* ---- 封面 Hero ---- */
 .ed-hero { position: relative; padding: 9vh 5vw 6vh; border-bottom: 1px solid var(--ed-line); }
@@ -977,6 +986,16 @@ body[data-theme="i"] .ed-hero .geo-2 {
 .ed-toc .t small { display: block; font-family: var(--ed-sans); font-weight: 400; font-size: 13px; color: var(--ed-low); margin-top: 6px; letter-spacing: 0.02em; }
 .ed-toc .pg { font-family: var(--ed-mono); font-size: 11px; color: var(--ed-low); letter-spacing: 0.1em; }
 
+/* ---- 架构要目（编排 / 检索 / 会话 / 底座 四行） ---- */
+.ed-spec { padding: 9vh 5vw 5vh; position: relative; z-index: 1; }
+.ed-spec-list { border-top: 1px solid var(--ed-line); }
+.ed-spec-item {
+  display: grid; grid-template-columns: 96px 1fr; gap: 26px; align-items: baseline;
+  padding: 20px 6px; border-bottom: 1px solid var(--ed-line);
+}
+.ed-spec-item dt { font-family: var(--ed-mono); font-size: 12px; letter-spacing: 0.2em; color: var(--ed-accent); }
+.ed-spec-item dd { font-size: 14px; line-height: 1.9; color: var(--ed-mid); }
+
 /* ---- 指标带（数字滚动复用 .ln-num[data-count] 机制） ---- */
 .ed-readout {
   display: grid; grid-template-columns: repeat(4, 1fr);
@@ -999,6 +1018,27 @@ body[data-theme="i"] .ed-hero .geo-2 {
 .ed-console-sec .sub { color: var(--ed-mid); font-size: 13.5px; margin-bottom: 5vh; max-width: 40em; }
 .ed-console-sec .ln-shot { max-width: 940px; margin: 0 auto; }
 
+/* ---- 三栏说明带（人机协同 / 开始）：编辑部联栅格，1px 分隔线 ---- */
+.ed-tri { padding: 9vh 5vw; position: relative; z-index: 1; }
+.ed-tri .lead { color: var(--ed-mid); font-size: 13.5px; line-height: 2; max-width: 46em; margin: 0 0 5vh; }
+.ed-tri-grid { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid var(--ed-line); }
+.ed-tri-grid > * { padding: 30px 26px 6px; border-left: 1px solid var(--ed-line); }
+.ed-tri-grid > *:first-child { border-left: none; padding-left: 0; }
+.ed-tri-grid .no { font-family: var(--ed-mono); font-size: 12px; letter-spacing: 0.14em; color: var(--ed-accent); }
+.ed-tri-grid h3 {
+  font-family: var(--ed-serif); font-weight: 900; font-size: clamp(18px, 2.2vw, 24px);
+  letter-spacing: 0.04em; color: var(--ed-ink); margin: 14px 0 12px;
+}
+.ed-tri-grid p { font-size: 13.5px; line-height: 2; color: var(--ed-mid); }
+.ed-tri-grid .lk {
+  display: inline-block; margin-top: 14px;
+  font-family: var(--ed-mono); font-size: 11px; letter-spacing: 0.14em;
+  color: var(--ed-accent); text-decoration: none;
+  border-bottom: 1px solid currentColor; padding-bottom: 3px;
+  transition: color 0.25s var(--ed-ease);
+}
+.ed-tri-grid .lk:hover { color: var(--ed-ink); }
+
 /* ---- 版权页脚 ---- */
 .ed-colophon {
   border-top: var(--ed-bw) solid var(--ed-line-strong);
@@ -1011,6 +1051,10 @@ body[data-theme="i"] .ed-hero .geo-2 {
 /* ed-site 响应式 */
 @media (max-width: 860px) {
   .ed-masthead nav { display: none; }
+  .ed-tri-grid { grid-template-columns: 1fr; }
+  .ed-tri-grid > * { border-left: none; border-top: 1px solid var(--ed-line); padding: 22px 0 4px; }
+  .ed-tri-grid > *:first-child { border-top: none; }
+  .ed-spec-item { grid-template-columns: 64px 1fr; gap: 14px; }
   body[data-theme="i"] .ed-hero .geo { display: none; }
   .ed-readout { grid-template-columns: 1fr 1fr; }
   .ed-ro:nth-child(3) { border-left: none; }
@@ -1054,3 +1098,114 @@ body[data-theme="k"] {
 }
 /* ed-hero CTA 行（复用 .ln-btn 体系） */
 .ed-hero-cta { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 36px; }
+
+/* ============================================================
+   彩蛋机关（2026-10-01）
+   页脚暗语 + 触发确认层（三门手势共用；landing.js 控制显示）
+   视觉沿用当前主题的 --ln-* 令牌，两套版式下均可用
+   ============================================================ */
+.egg-hint { color: var(--ln-low); opacity: 0.72; }
+.egg-progress { color: #9E3B2C; }
+
+/* 落笔处（书写门专用区域：田字格暗示「写个字」，只有这里运笔才留墨、才算数） */
+.ink-pad {
+  position: fixed; right: 20px; bottom: 96px; width: 268px; height: 120px; z-index: 40;
+  background: color-mix(in srgb, var(--ln-panel) 90%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--ln-ink) 26%, transparent);
+  opacity: 0.5; transition: opacity 0.25s var(--ln-ease), border-color 0.25s var(--ln-ease);
+}
+.ink-pad:hover { opacity: 1; }
+.ink-pad .ip-g { position: absolute; pointer-events: none;
+  background: color-mix(in srgb, var(--ln-ink) 16%, transparent); transition: background-color 0.25s; }
+.ink-pad .ip-g.h { left: 11%; right: 11%; top: 50%; height: 1.5px; }
+.ink-pad .ip-g.v { top: 13%; bottom: 13%; left: 50%; width: 1.5px; }
+.ink-pad .ip-label { position: absolute; left: 10px; top: 7px; pointer-events: none;
+  font-family: "IBM Plex Mono", Consolas, monospace; font-size: 9.5px; letter-spacing: 0.2em; color: var(--ln-low); }
+/* 悬停即宽容模式：田字格加深、判定门槛降低（landing.js） */
+.ink-pad.easy { opacity: 1; border-style: solid; }
+.ink-pad.easy .ip-g { background: color-mix(in srgb, var(--ln-ink) 32%, transparent); }
+/* 快写成一个字了 / 已触发：边框呼应 */
+.ink-pad.half { border-color: color-mix(in srgb, #9E3B2C 65%, transparent); }
+.ink-pad.count-3 { border-color: #9E3B2C; box-shadow: 0 0 0 6px rgba(158, 59, 44, 0.12); }
+.ink-pad canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
+@media (max-width: 860px) {
+  .ink-pad { width: 208px; height: 96px; right: 12px; bottom: 76px; opacity: 0.42; }
+}
+
+.egg-veil {
+  position: fixed; inset: 0; z-index: 300;
+  display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--ln-bg) 93%, transparent);
+}
+.egg-veil.hide { display: none; }
+.egg-veil.gone { opacity: 0; transition: opacity 0.42s ease; }
+.egg-ink {
+  position: absolute; width: 44vmin; height: 44vmin; border-radius: 50%;
+  background: radial-gradient(circle, rgba(26, 24, 21, 0.30), rgba(26, 24, 21, 0.06) 58%, transparent 70%);
+  animation: eggBloom 0.7s cubic-bezier(0.2, 1, 0.4, 1) both;
+}
+@keyframes eggBloom { from { transform: scale(0.15); opacity: 0; } }
+.egg-veil.gone .egg-ink { transform: scale(6); transition: transform 0.5s ease-out; }
+.egg-card {
+  position: relative; width: min(560px, 90vw);
+  background: var(--ln-panel); border: 1.5px solid var(--ln-ink);
+  padding: 34px 38px; box-shadow: 8px 10px 0 rgba(26, 24, 21, 0.14);
+  animation: eggCard 0.42s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+}
+@keyframes eggCard { from { transform: translateY(18px) scale(0.95); opacity: 0; } }
+.egg-seal {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 46px; height: 46px; margin-bottom: 16px;
+  background: #9E3B2C; color: #F6F3EC;
+  font-family: "Noto Serif SC", "Songti SC", serif; font-size: 24px; font-weight: 900;
+  box-shadow: inset 0 0 0 2px rgba(246, 243, 236, 0.55);
+}
+.egg-line {
+  margin: 0 0 12px; color: var(--ln-ink);
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  font-size: 23px; font-weight: 900; line-height: 1.65; letter-spacing: 0.04em;
+}
+.egg-sub {
+  margin: 0 0 26px; color: var(--ln-low);
+  font-family: "IBM Plex Mono", Consolas, monospace;
+  font-size: 11.5px; letter-spacing: 0.14em;
+}
+.egg-actions { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.egg-go, .egg-later {
+  font-family: var(--ln-sans, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif);
+  font-size: 13.5px; letter-spacing: 0.1em; padding: 12px 24px; cursor: pointer;
+}
+.egg-go { background: #9E3B2C; color: #F6F3EC; border: 1.5px solid #9E3B2C; }
+.egg-go:hover { background: #B8483A; border-color: #B8483A; }
+.egg-later { background: none; color: var(--ln-mid); border: 1px solid var(--ln-line-mid); }
+.egg-later:hover { border-color: #9E3B2C; color: #9E3B2C; }
+
+/* ============================================================
+   顶栏控制区对齐（2026-10-01）
+   目的：主题切换按钮 / 进入工作台 在两套版式中占据完全相同的屏幕位置，
+   支撑「5 秒内点击 5 次主题按钮」类彩蛋的快速连击（按钮不得随版式跳动）。
+   统一项：顶栏最小高度 64px、垂直居中；右内边距 40px（≤860px 为 16px）；
+   主题按钮 / CTA 固定盒宽；控制区间距 14px。
+   注：只统一「盒位」，排版风格（字体 / 圆角 / 图标）仍按各版式设计。
+   ============================================================ */
+.ln-nav, .ed-masthead {
+  min-height: 64px;
+  align-items: center;
+  padding-right: 40px;
+}
+.ln-nav { gap: 14px; }
+.ed-masthead { gap: 14px; }
+.ln-nav-actions { gap: 14px; }
+.ln-theme-btn { min-width: 108px; justify-content: center; }
+.ln-nav .ln-btn-solid, .ed-masthead .cta {
+  min-width: 150px; height: 32px; padding-top: 0; padding-bottom: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+@media (max-width: 860px) {
+  .ln-nav, .ed-masthead { padding-right: 16px; }
+  .ed-masthead .ln-theme-btn { margin-left: auto; }
+}
+@media (max-width: 560px) {
+  .ln-theme-btn { min-width: 88px; }
+  .ln-nav .ln-btn-solid, .ed-masthead .cta { min-width: 128px; }
+}

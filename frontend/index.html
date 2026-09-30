@@ -230,10 +230,33 @@
         <span>论匠 LunJiang — 多智能体论文全流程工作台</span>
         <span>FastAPI · LangGraph · PostgreSQL + pgvector · Redis · React 18</span>
         <span>MIT License · © <span id="ln-year">2026</span></span>
+        <span class="egg-hint">页边三则 · 手快者当主控 · 细读者见风险 · 落笔者得题款<span class="egg-progress"></span></span>
       </div>
     </footer>
 
     <script type="module" src="/src/landing.js"></script>
+  </div>
+
+  <!-- 彩蛋机关 · 落笔处（书写门：仅在此区域运笔留墨，写成一个字即可触发；landing.js 控制） -->
+  <div class="ink-pad" id="ink-pad" title="一处小小砚纸——试试写个字？">
+    <i class="ip-g h" aria-hidden="true"></i>
+    <i class="ip-g v" aria-hidden="true"></i>
+    <span class="ip-label">落笔处</span>
+    <canvas id="ip-canvas"></canvas>
+  </div>
+
+  <!-- 彩蛋机关 · 触发确认层（landing.js 控制：三门手势共用） -->
+  <div class="egg-veil hide" id="egg-veil" aria-hidden="true">
+    <div class="egg-ink" aria-hidden="true"></div>
+    <div class="egg-card">
+      <span class="egg-seal" aria-hidden="true">匠</span>
+      <p class="egg-line" id="egg-line"></p>
+      <p class="egg-sub" id="egg-sub"></p>
+      <div class="egg-actions">
+        <button class="egg-go" id="egg-go" type="button">进去看看</button>
+        <button class="egg-later" id="egg-later" type="button">先不急着进</button>
+      </div>
+    </div>
   </div>
 
   <!-- v15 · 编辑部结构（h/i/j/k 主题显示；内容与 ln-site 六段同源） -->
@@ -242,10 +265,14 @@
       <span class="vol">VOL.01 — 2026</span>
       <span class="name">论 匠</span>
       <nav>
-        <a href="#ed-toc">目次</a>
-        <a href="#ed-console">工作台</a>
-        <a href="https://github.com/shangguanyunji663/Lun-Assistant" target="_blank" rel="noreferrer">GitHub</a>
+        <a href="#ed-toc">能力</a>
+        <a href="#ed-readout">架构与评测</a>
+        <a href="#ed-synergy">人机协同</a>
+        <a href="#ed-start">开始</a>
       </nav>
+      <button id="ed-theme" class="ln-theme-btn" type="button" aria-label="切换主题">
+        <span class="ln-theme-label">构成</span>
+      </button>
       <a class="cta" href="./app.html">进入工作台 →</a>
     </header>
 
@@ -291,13 +318,52 @@
       </ol>
     </section>
 
-    <section class="ed-readout">
-      <div class="ed-ro"><div class="k">INTENT / 意图分类</div><div class="v"><span class="ln-num" data-count="100">0</span><span class="ln-unit">%</span></div><div class="d">Top-1 · 50 条意图集 · 56ms/条</div></div>
-      <div class="ed-ro"><div class="k">RECALL@5 / 检索</div><div class="v"><span class="ln-num" data-count="100">0</span><span class="ln-unit">%</span></div><div class="d">20 条简单集 · 目标 ≥90%</div></div>
-      <div class="ed-ro"><div class="k">REGRESSION / 回归</div><div class="v"><span class="ln-num" data-count="16">0</span><span class="ln-unit">/16</span></div><div class="d">S1–S7 七大必测场景</div></div>
-      <div class="ed-ro"><div class="k">OFFLINE / 离线用例</div><div class="v"><span class="ln-num" data-count="89">0</span><span class="ln-unit">项</span></div><div class="d">治理 / 模型 / 改写 / API 集成</div></div>
+    <section id="ed-readout">
+      <div class="ed-spec">
+        <div class="ed-toc-head">
+          <h2>架构是公开的，数字也是</h2>
+          <span class="en">ARCHITECTURE &amp; EVALUATION</span>
+        </div>
+        <dl class="ed-spec-list">
+          <div class="ed-spec-item"><dt>编排</dt><dd>LangGraph 主从编排：主控智能体调度专项角色，规划 — 执行 — 校验闭环</dd></div>
+          <div class="ed-spec-item"><dt>检索</dt><dd>PostgreSQL 16 + pgvector：向量与关键词多路召回，RRF 融合后精排</dd></div>
+          <div class="ed-spec-item"><dt>会话</dt><dd>Redis：会话检查点、限流与分布式锁，执行状态可恢复</dd></div>
+          <div class="ed-spec-item"><dt>底座</dt><dd>Ollama 本地推理：对话模型 + bge-m3 向量化 + bge-reranker 精排，全程可离线</dd></div>
+        </dl>
+      </div>
+      <div class="ed-readout">
+        <div class="ed-ro"><div class="k">INTENT / 意图分类</div><div class="v"><span class="ln-num" data-count="100">0</span><span class="ln-unit">%</span></div><div class="d">Top-1 · 50 条意图集 · 56ms/条</div></div>
+        <div class="ed-ro"><div class="k">RECALL@5 / 检索</div><div class="v"><span class="ln-num" data-count="100">0</span><span class="ln-unit">%</span></div><div class="d">20 条简单集 · 目标 ≥90%</div></div>
+        <div class="ed-ro"><div class="k">REGRESSION / 回归</div><div class="v"><span class="ln-num" data-count="16">0</span><span class="ln-unit">/16</span></div><div class="d">S1–S7 七大必测场景</div></div>
+        <div class="ed-ro"><div class="k">OFFLINE / 离线用例</div><div class="v"><span class="ln-num" data-count="89">0</span><span class="ln-unit">项</span></div><div class="d">治理 / 模型 / 改写 / API 集成</div></div>
+      </div>
     </section>
     <p class="ed-honesty">水位如实标注：口语长尾集 80% · 学术刁钻集 95% · hold-out 泛化 75%（6/8）。全部数字来自 2026-09-04 全本地底座一次完整实测，复现命令见仓库 <code>docs/EVALUATION_REPORT.md</code>。</p>
+
+    <section class="ed-tri" id="ed-synergy">
+      <div class="ed-toc-head">
+        <h2>机器起草，人来定稿</h2>
+        <span class="en">HUMAN IN THE LOOP / 01—03</span>
+      </div>
+      <p class="lead">多智能体系统最容易失控的地方是「自作主张」。论匠把确认权留给写作的人：关键节点主动发问，产出必须经你采纳。</p>
+      <div class="ed-tri-grid">
+        <article>
+          <span class="no">01</span>
+          <h3>产出需确认</h3>
+          <p>智能体在关键节点主动发起确认（interrupt），生成内容以「待采纳」状态呈现——采纳才落稿，不满意就重生成。</p>
+        </article>
+        <article>
+          <span class="no">02</span>
+          <h3>全链路留痕</h3>
+          <p>每次执行的意图识别、路由决策、工具调用与耗时完整落库，Trace 面板可逐条回放，出了问题有据可查。</p>
+        </article>
+        <article>
+          <span class="no">03</span>
+          <h3>记忆沉淀</h3>
+          <p>选题结论、论文大纲、写作约束与章节进度沉淀为结构化项目档案，跨会话延续，不靠聊天记录捞 context。</p>
+        </article>
+      </div>
+    </section>
 
     <section class="ed-console-sec" id="ed-console">
       <p class="sec-k ln-reveal">CONSOLE · 工作台实景</p>
@@ -340,9 +406,36 @@
       </figure>
     </section>
 
+    <section class="ed-tri" id="ed-start">
+      <div class="ed-toc-head">
+        <h2>三种方式，开始使用</h2>
+        <span class="en">GET STARTED / 01—03</span>
+      </div>
+      <div class="ed-tri-grid">
+        <article>
+          <span class="no">01</span>
+          <h3>在线试用</h3>
+          <p>无需安装，浏览器打开即用。注册一个账号，选一个课题，看着编队开工。</p>
+          <a class="lk" href="./app.html">进入工作台 →</a>
+        </article>
+        <article>
+          <span class="no">02</span>
+          <h3>源码仓库</h3>
+          <p>FastAPI · LangGraph · PostgreSQL + pgvector · Redis · React 18，MIT License，含部署与评测文档。</p>
+          <a class="lk" href="https://github.com/shangguanyunji663/Lun-Assistant" target="_blank" rel="noreferrer">前往 GitHub →</a>
+        </article>
+        <article>
+          <span class="no">03</span>
+          <h3>学习指南</h3>
+          <p>31 课从零复现多智能体架构：设计认知、八大模块解剖、动手实现与评测，附可运行骨架。</p>
+          <a class="lk" href="https://github.com/shangguanyunji663/Lun-Assistant/blob/main/%E8%AE%BA%E5%8C%A0%E5%AD%A6%E4%B9%A0%E6%8C%87%E5%8D%97.md" target="_blank" rel="noreferrer">阅读指南 →</a>
+        </article>
+      </div>
+    </section>
+
     <footer class="ed-colophon">
       <div class="big">论匠 LUNJIANG</div>
-      <div class="meta">编辑部版式 · 四种现代艺术主题<br/>Noto Serif SC / IBM Plex Mono · 与经典七版共存切换<br/>EDITORIAL EDITION — v15</div>
+      <div class="meta">编辑部版式 · 四种现代艺术主题<br/>Noto Serif SC / IBM Plex Mono · 与经典七版共存切换<br/>EDITORIAL EDITION — v15<br/><span class="egg-hint">页边三则 · 手快者当主控 · 细读者见风险 · 落笔者得题款<span class="egg-progress"></span></span></div>
     </footer>
   </div>
 
