@@ -50,6 +50,10 @@ v14  顶栏修复+落地页mock化（ROUND16） → CHANGELOG-v14.md（版本变
    ▼
 v15  现代艺术四主题（ROUND17）     → CHANGELOG-v15.md（版本变更）+ OPTIMIZATION_ROUND17.md（轮次记录）
      工作台 A-K 十一主题 · 落地页编辑部双结构六主题 · 与经典七版共存
+   │
+   ▼
+R18  落地页一致性修复 + 三枚彩蛋（ROUND18） → OPTIMIZATION_ROUND18.md（轮次记录）
+     编辑部版式补齐 / 导航对齐 / 主题入口 · 彩蛋机关（调度局 / 捉虫 / 临帖）
 ```
 
 ***
@@ -74,6 +78,7 @@ v15  现代艺术四主题（ROUND17）     → CHANGELOG-v15.md（版本变更�
 | v14      | [`OPTIMIZATION_ROUND16.md`](./OPTIMIZATION_ROUND16.md)               | 轮次记录 | ROUND16 · 一致性收尾 / 顶栏修复 / C1~C3 / a11y       |
 | v15      | [`CHANGELOG-v15.md`](./CHANGELOG-v15.md)                             | 版本变更 | v15 现代艺术四主题 H/I/J/K · 工作台 11 主题（ROUND17） |
 | v15      | [`OPTIMIZATION_ROUND17.md`](./OPTIMIZATION_ROUND17.md)               | 轮次记录 | ROUND17 · 落地页编辑部双结构 · 字体接入 · tuner 追平 |
+| v15      | [`OPTIMIZATION_ROUND18.md`](./OPTIMIZATION_ROUND18.md)               | 轮次记录 | ROUND18 · 落地页一致性修复 + 三枚彩蛋机关（调度局 / 捉虫 / 临帖） |
 
 ***
 
@@ -84,6 +89,7 @@ v15  现代艺术四主题（ROUND17）     → CHANGELOG-v15.md（版本变更�
 | 设计稿资源（HTML/PNG） | `design-concepts/`（preview\.html / tuner.html / 参考图）         |
 | 设计样图（v15 四方向） | `frontend/design-samples/`（sample-{a-editorial,b-konstrukt,c-nightflight,d-riso}.html） |
 | 生产代码            | `frontend/src/styles.css`（token）· `src/hooks/useTheme.js`（主题注册）· `src/landing.css`/`landing.js`（落地页）· `public/console/tuner.html`（调参台） |
+| 彩蛋页（落地页入口） | `frontend/public/easter/`（dispatch · hunt · brush，落地页三门触发的独立静态页，见 ROUND18） |
 | 后端 / 通用轮次       | `docs/OPTIMIZATION_ROUND{1-6}.md` 等                          |
 
 ***
@@ -101,7 +107,7 @@ v15  现代艺术四主题（ROUND17）     → CHANGELOG-v15.md（版本变更�
 
 ***
 
-## 六、本目录文件清单（12 份正文 + 1 模板 + v13 截图目录）
+## 六、本目录文件清单（17 份正文 + 本索引 + 模板 + v11/v13 截图目录）
 
 ```
 docs/frontend-versions/
@@ -118,7 +124,13 @@ docs/frontend-versions/
 ├── CHANGELOG-v12.md             ← v12 设计稿侧
 ├── OPTIMIZATION_ROUND11.md      ← v12 生产侧落档
 ├── CHANGELOG-v13.md             ← v13 新增三主题（E/F/G）
-├── v13-screenshots/             ← v13 七主题实拍截图（theme-a~g.png）
-└── OPTIMIZATION_ROUND15.md      ← R15 落地页（静态多页 + 双主题）
+├── CHANGELOG-v14.md             ← v14 顶栏修复 + 落地页 mock 化
+├── OPTIMIZATION_ROUND15.md      ← R15 落地页（静态多页 + 双主题）
+├── OPTIMIZATION_ROUND16.md      ← ROUND16 顶栏修复 · 一致性收尾
+├── CHANGELOG-v15.md             ← v15 现代艺术四主题（含 §九 一致性修复补记）
+├── OPTIMIZATION_ROUND17.md      ← ROUND17 落地页编辑部双结构
+├── OPTIMIZATION_ROUND18.md      ← ROUND18 落地页一致性修复 + 三枚彩蛋
+├── v11-screenshots/             ← v11 实拍截图
+└── v13-screenshots/             ← v13 七主题实拍截图（theme-a~g.png）
 ```
 

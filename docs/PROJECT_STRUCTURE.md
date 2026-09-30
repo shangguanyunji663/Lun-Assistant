@@ -11,6 +11,8 @@
 > 本文档只做说明，不改变任何代码逻辑。
 >
 > ⚠️ **变更标注（2026-09-30 · v14/v15 同步轮）**：随前端 v14（顶栏修复/落地页 mock 化）与 v15（现代艺术四主题/落地页编辑部双结构）落地，§2/§3/§5 的主题数量、frontend 结构树与维护约定已按当前代码同步更新；§4 清理记录为 2026-09-02 历史快照，保持原样。
+>
+> ⚠️ **变更标注（2026-10-01 · 落地页一致性修复 + 彩蛋轮）**：随前端 ROUND18（落地页双结构一致性修复 + 三枚彩蛋机关）落地，§3 frontend 结构树已补 `public/easter/`、`src/landing.js` 彩蛋机关说明与 `index.html` 入口说明；工作台与后端零改动。轮次详情见 [`frontend-versions/OPTIMIZATION_ROUND18.md`](frontend-versions/OPTIMIZATION_ROUND18.md)。
 
 ---
 
@@ -63,8 +65,8 @@ frontend/
 │   ├── main.jsx           # React 入口
 │   ├── App.jsx            # 主界面：会话/对话/项目/右侧 tab + 11 主题切换器（A-K）
 │   ├── styles.css         # 全局样式 + 十一主题 design tokens（:root = A；§13 v13 / §19-20 v14 / §21 v15 追加段）
-│   ├── landing.css        # 落地页样式（双主题令牌 + 排印 + §12 mock + §13 编辑部双结构六主题）
-│   ├── landing.js         # 落地页交互（六主题循环切换 / 入场 reveal / 数字滚动，<2KB 零依赖）
+│   ├── landing.css        # 落地页样式（双主题令牌 + 排印 + §12 mock + §13 编辑部双结构六主题 + 彩蛋机关/顶栏对齐追加段）
+│   ├── landing.js         # 落地页交互（六主题循环切换 / 入场 reveal / 数字滚动 / 彩蛋机关三门 · 确认层状态机，零依赖）
 │   ├── InkBackground.jsx  # 山水背景分层（photo/veil/wash/grain/divider/stamp）
 │   ├── api.js             # REST + SSE 封装
 │   ├── constants.js
@@ -73,14 +75,15 @@ frontend/
 │                          # ProjectArchive / ProjectDialog / decor(Seal·Markdown·WoodRoll)
 ├── public/
 │   ├── bg/                # 主题背景图：bg-{a,c,d}-*.webp（B/E/F/G/H-K 为无图实色主题；v14 已清 b/mist）
-│   └── console/tuner.html # 调参台（A-K 十一主题透明度/WCAG 测算，经 localStorage 与主应用联动）
+│   ├── console/tuner.html # 调参台（A-K 十一主题透明度/WCAG 测算，经 localStorage 与主应用联动）
+│   └── easter/            # 彩蛋页：dispatch / hunt / brush（落地页三门触发的独立静态页，ROUND18，不进构建）
 ├── design-samples/        # v15 四方向设计样图（零依赖静态 HTML，未进构建）
 ├── scripts/
 │   ├── compress-bg-to-webp.py   # 主题图 PNG→WebP 转换（保留）
 │   ├── shot-app.mjs             # 主应用主题回归（mock 登录 + token 探针 + 截图）
 │   ├── shot-themes.mjs          # 调参台主题回归截图
 │   └── verify-upload-msg.mjs    # 上传提示验证
-├── index.html             # 落地页（双结构：#ln-site 经典六段 light/dark + #ed-site 编辑部版式 h/i/j/k）+ app.html 工作台双入口
+├── index.html             # 落地页（双结构：#ln-site 经典六段 light/dark + #ed-site 编辑部版式 h/i/j/k；含彩蛋机关「落笔处」与确认层）+ app.html 工作台双入口
 ├── vite.config.js         # base=/Lun-Assistant/（GitHub Pages）+ 双入口
 ├── package.json / package-lock.json
 └── node_modules/          # gitignore，勿提交
@@ -92,7 +95,7 @@ frontend/
 |------|------|
 | `src/hooks/useTheme.js` | ★★★ 主题注册单一真源（THEMES 11 项 A-K + localStorage 联动 + 切换音效） |
 | `src/styles.css` | ★★★ 十一主题 token（A 柔雾青绿 / B 黑白瑞士 / C 暗墨夜山 / D 青绿金碧 / E-G v13 / H-K v15 现代艺术） |
-| `src/landing.css` + `src/landing.js` | ★★★ 落地页双结构与六主题（#ln-site 经典 / #ed-site 编辑部） |
+| `src/landing.css` + `src/landing.js` | ★★★ 落地页双结构与六主题（#ln-site 经典 / #ed-site 编辑部）+ 彩蛋机关（三门触发 · 确认层状态机） |
 | `src/InkBackground.jsx` | ★★★ 背景分层骨架（图层与主题装饰开关） |
 | `index.html` / `app.html` | ★★★ 落地页 / 工作台双入口（vite 双入口构建） |
 | `public/console/tuner.html` | ★★ 调参台（A-K 十一主题透明度/WCAG 测算） |
