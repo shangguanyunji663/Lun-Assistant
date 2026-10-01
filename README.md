@@ -104,7 +104,7 @@
 ```mermaid
 flowchart TB
     subgraph FE["前端 Frontend · React 18 + Vite"]
-        UI["对话流 / 时间线 / 知识库面板 / Trace 回放 / 十一主题切换"]
+        UI["对话流 / 时间线 / 知识库面板 / Trace 回放 / 六套设计语言切换"]
     end
 
     subgraph API["接口层 api/"]
@@ -406,7 +406,7 @@ Lun-Assistant/
 ├── evals/                   评测 Harness + A/B + 七大场景回归 + 报告图表
 ├── scripts/                 初始化 + 冒烟 + 压测脚本
 ├── tests/                   离线单元测试（89 用例，无外部依赖）
-├── frontend/                React 18 + Vite（落地页 + 工作台 / SSE 对话 / 时间线 / 知识库 / Trace / 十一主题）
+├── frontend/                React 18 + Vite（落地页 ×6 + 工作台 / SSE 对话 / 时间线 / 知识库 / Trace / 六套设计语言）
 ├── docs/                    文档（学习指南 / 优化记录 / 前端版本线 frontend-versions/）
 ├── alembic/                 SQLAlchemy 迁移（异步 env.py 聚合全部模型）
 ├── docker-compose.yml       PostgreSQL(pgvector) + Redis + app 编排（--scale app=2 起多实例）
@@ -492,6 +492,7 @@ Lun-Assistant/
 | v14 | [变更](docs/frontend-versions/CHANGELOG-v14.md) · [Round 16](docs/frontend-versions/OPTIMIZATION_ROUND16.md) | 顶栏容量修复（五档减法）· 落地页 mock 化（替换过时截图）· tuner 追平七主题 · a11y 补强 |
 | v15 | [变更](docs/frontend-versions/CHANGELOG-v15.md) · [Round 17](docs/frontend-versions/OPTIMIZATION_ROUND17.md) | 现代艺术四主题 H 墨格编辑部 / I 新构成主义 / J 夜航诗意 / K 拓印套色（工作台 11 主题共存）· 落地页编辑部双结构（6 主题）· web 字体接入 |
 | R18 | [Round 18](docs/frontend-versions/OPTIMIZATION_ROUND18.md) | 落地页一致性修复（编辑部版式补齐 · 导航 / 主题入口 / 锚点 / 顶栏对齐）· 三枚彩蛋机关（编队调度局 / 查重捉虫 / 临帖墨试） |
+| v18 | [变更](docs/frontend-versions/CHANGELOG-v18.md) | **六套设计语言（推翻重来）**：铅字印刷 / 夜航仪表 / 学术海报 / 木牍竖排 / 孔版双色 / 索引档案。旧的「11 主题 + 柔化开关」体系整体删除，改为 `<html data-skin>` + 每皮肤一份完整样式；落地页每皮肤一个独立 HTML；业务逻辑与后端零改动 |
 
 ---
 

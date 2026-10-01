@@ -1,0 +1,779 @@
+/* ============================================================================
+   皮肤 E · 孔版双色（Riso Collage）
+   —— 纸白 + 墨黑 + 荧光粉 / 荧光青。丝网孔版的双色套印：错位、硬阴影、贴纸。
+   设计性格：六套里最「野」的一套——零模糊硬阴影、圆点底纹、贴纸弹入、便签微旋转。
+
+   骨架与皮肤 A 同构（令牌 → 外壳 → 顶栏 → 按钮 → 选择器 → … → 响应式），
+   便于六套皮肤横向维护。次级面板由 styles/panels.css 吃令牌自动适配，
+   此处只覆写与「孔版」性格冲突的部分。
+   ============================================================================ */
+
+/* ============================================================ 1. 令牌 */
+html[data-skin="e"] {
+  --bg: #F1F1EC;
+  --surface: #FFFFFF;
+  --surface-2: #E7E7E2;
+
+  --text: #12100F;
+  --text-2: #3C3936;
+  --text-3: #6E6A64;
+
+  --line: rgba(18, 16, 15, .18);
+  --line-2: rgba(18, 16, 15, .5);
+
+  /* 双色套印：粉为主套色、青为副套色，白为套印后的纸面 */
+  --accent: #FF4D9D;
+  --accent-2: #00C2CE;
+  --accent-ink: #FFFFFF;
+  --danger: #D6006E;
+
+  --font-display: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* 回弹曲线：贴纸「弹入」的性格；用于全局过渡也只会让位移带一点回弹 */
+  --ease: cubic-bezier(.2, 1.3, .4, 1);
+  --dur: .2s;
+  --dur-slow: .42s;
+
+  /* 孔版没有圆角、没有柔光——只有直角与硬位移阴影 */
+  --r-card: 0px;
+  --r-btn: 0px;
+  --r-pill: 2px;
+
+  --shadow-card: 4px 4px 0 rgba(18, 16, 15, 1);
+  --shadow-pop: 6px 6px 0 rgba(18, 16, 15, 1);
+  --shadow-glow: 0 0 0 4px rgba(255, 77, 157, .28);
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 22px;
+  --s-6: 28px;
+
+  --fs-micro: 10.5px;
+  --fs-sm: 13px;
+  --fs-md: 14.5px;
+  --fs-lg: 16.5px;
+  --fs-xl: 20px;
+  --fs-2xl: 28px;
+
+  /* 「已入库」用文字贴纸而非椭圆章（panels.css 读取） */
+  --stamp-display: none;
+  --stamp-text-display: inline;
+
+  --scan-display: none;
+}
+
+/* 贴纸弹入：从 92% 弹到 102% 再落回，落点保留每块贴纸自己的微旋转（--e-r） */
+@keyframes e-pop {
+  0%   { opacity: 0; transform: scale(.92) rotate(var(--e-r, 0deg)); }
+  65%  { opacity: 1; transform: scale(1.02) rotate(var(--e-r, 0deg)); }
+  100% { opacity: 1; transform: scale(1) rotate(var(--e-r, 0deg)); }
+}
+/* 运行中圆点的脉冲：只动 transform，不触发布局重排 */
+@keyframes e-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.35); }
+}
+
+/* ============================================================ 2. 外壳 */
+/* 圆点底纹铺在根容器上（而非 body）：.wb 覆盖整页且非 opaque 缺省，
+   这样中栏的透明背景才能透出底纹，构成「孔版网点」的纸面感 */
+html[data-skin="e"] body {
+  background-color: var(--bg);
+  background-image: radial-gradient(color-mix(in srgb, var(--text) 5.5%, transparent) 1px, transparent 1px);
+  background-size: 16px 16px;
+  color: var(--text);
+}
+html[data-skin="e"] .wb {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: var(--bg);
+  background-image: radial-gradient(color-mix(in srgb, var(--text) 5.5%, transparent) 1px, transparent 1px);
+  background-size: 16px 16px;
+  color: var(--text);
+}
+/* 水流曲线属「AI 味」材质，与孔版拼贴冲突，直接关掉 */
+html[data-skin="e"] .ambient-lines { display: none; }
+
+html[data-skin="e"] .wb-boot {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  letter-spacing: .22em;
+  color: var(--text-3);
+}
+
+/* ============================================================ 3. 顶栏
+   白底 + 2.5px 黑下线：孔版的「版口线」 */
+html[data-skin="e"] .wb-top {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  padding: 12px 24px;
+  background: var(--surface);
+  border-bottom: 2.5px solid var(--text);
+}
+
+html[data-skin="e"] .wb-brand { display: flex; align-items: center; gap: 11px; }
+/* 品牌方块用叠色：黑边的粉块 + 青色偏移投影，模拟两次套印没对准 */
+html[data-skin="e"] .wb-brand .seal {
+  border: 2px solid var(--text);
+  border-radius: 0;
+  background: var(--accent);
+  box-shadow: 3px 3px 0 var(--accent-2);
+  font-weight: 900;
+}
+html[data-skin="e"] .wb-brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+html[data-skin="e"] .wb-brand-text b {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: .1em;
+}
+html[data-skin="e"] .wb-brand-text i {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-style: normal;
+  letter-spacing: .1em;
+  color: var(--text-3);
+}
+
+html[data-skin="e"] .wb-proj { display: flex; align-items: center; gap: var(--s-2); }
+/* 项目标签做成青色小块（1.5px 黑边） */
+html[data-skin="e"] .wb-proj-sel {
+  max-width: 262px;
+  padding: 7px 12px;
+  border: 1.5px solid var(--text);
+  border-radius: 0;
+  background: var(--accent-2);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .04em;
+}
+html[data-skin="e"] .wb-proj-sel:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+html[data-skin="e"] .wb-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .04em;
+  color: var(--text-2);
+}
+html[data-skin="e"] .wb-user b {
+  padding: 2px 7px;
+  border: 1.5px solid var(--text);
+  background: var(--accent);
+  color: var(--text);
+  font-weight: 700;
+}
+html[data-skin="e"] .wb-user i {
+  padding: 2px 6px;
+  border: 1.5px solid var(--text);
+  font-size: 9px;
+  font-style: normal;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+/* 视图切换：连排的「印版块」，选中直接反色成墨块 */
+html[data-skin="e"] .wb-views { display: flex; }
+html[data-skin="e"] .wb-view {
+  padding: 7px 14px;
+  margin-left: -1.5px;
+  border: 1.5px solid var(--text);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: var(--text-2);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="e"] .wb-view:first-child { margin-left: 0; }
+html[data-skin="e"] .wb-view:hover { background: var(--surface-2); }
+html[data-skin="e"] .wb-view.is-on { background: var(--text); color: var(--bg); }
+
+/* ============================================================ 4. 按钮
+   所有按钮都是「贴纸小块」：2px 黑边 + 硬位移阴影 */
+html[data-skin="e"] .wb-btn {
+  padding: 8px 14px;
+  border: 2px solid var(--text);
+  border-radius: 0;
+  background: var(--surface);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: .02em;
+  box-shadow: 3px 3px 0 var(--text);
+  /* 位移交给 [data-magnet]（fx.js）拥有；此处只过渡配色与阴影（纯绘制，不重排） */
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
+              box-shadow var(--dur) var(--ease);
+}
+html[data-skin="e"] .wb-btn-ghost { background: var(--surface); }
+html[data-skin="e"] .wb-btn-ghost:hover:not(:disabled) { background: var(--surface-2); box-shadow: 4px 4px 0 var(--text); }
+html[data-skin="e"] .wb-btn-ink {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+  box-shadow: 3px 3px 0 var(--accent);
+}
+html[data-skin="e"] .wb-btn-ink:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--text);
+  color: var(--accent-ink);
+  box-shadow: 4px 4px 0 var(--text);
+}
+html[data-skin="e"] .wb-btn:disabled { opacity: .4; box-shadow: none; }
+
+/* 退出：文字链式，下划线用粉套色 */
+html[data-skin="e"] .wb-btn.wb-exit {
+  padding: 4px 2px;
+  border: 0;
+  border-bottom: 2px solid var(--accent);
+  background: transparent;
+  box-shadow: none;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .06em;
+}
+html[data-skin="e"] .wb-btn.wb-exit:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--accent-ink);
+  border-bottom-color: var(--text);
+  box-shadow: none;
+}
+
+/* ============================================================ 5. 皮肤选择器 */
+html[data-skin="e"] .skin-picker { position: relative; }
+html[data-skin="e"] .skin-trigger { display: inline-flex; align-items: center; gap: 8px; }
+html[data-skin="e"] .sp-chip {
+  width: 11px;
+  height: 11px;
+  flex: none;
+  border: 1.5px solid var(--text);
+  border-radius: var(--r-pill);
+}
+html[data-skin="e"] .sp-label { font-size: var(--fs-sm); }
+html[data-skin="e"] .sp-caret { font-size: 9px; opacity: .6; }
+
+html[data-skin="e"] .skin-pop {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 60;
+  width: 330px;
+  padding: var(--s-4);
+  border: 2px solid var(--text);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+  animation: e-pop var(--dur-slow) cubic-bezier(.2, 1.3, .4, 1) both;
+}
+html[data-skin="e"] .sp-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--line-2);
+}
+html[data-skin="e"] .sp-title { font-size: var(--fs-md); font-weight: 900; letter-spacing: .1em; }
+html[data-skin="e"] .sp-hint {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .1em;
+  color: var(--text-3);
+}
+/* 分列排布并留出间隙：选中项的粉色硬阴影不能被裁掉 */
+html[data-skin="e"] .sp-grid { display: flex; flex-direction: column; gap: 7px; padding: var(--s-3) 0; }
+html[data-skin="e"] .sp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 2px solid transparent;
+  text-align: left;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease),
+              box-shadow var(--dur) var(--ease);
+}
+html[data-skin="e"] .sp-item:hover { background: var(--surface-2); }
+html[data-skin="e"] .sp-item.on {
+  background: var(--accent-2);
+  border-color: var(--text);
+  box-shadow: 4px 4px 0 var(--accent);
+}
+html[data-skin="e"] .sp-item .sp-chip { width: 14px; height: 14px; }
+html[data-skin="e"] .sp-body { display: flex; flex-direction: column; min-width: 0; }
+html[data-skin="e"] .sp-name { font-size: var(--fs-sm); font-weight: 800; }
+html[data-skin="e"] .sp-name em {
+  margin-left: 7px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: .1em;
+  color: var(--text-3);
+}
+html[data-skin="e"] .sp-desc { margin-top: 3px; font-size: 11px; line-height: 1.6; color: var(--text-3); }
+html[data-skin="e"] .sp-check { margin-left: auto; color: var(--danger); font-size: 13px; }
+html[data-skin="e"] .sp-foot {
+  display: block;
+  padding-top: var(--s-3);
+  border-top: 2px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .08em;
+  color: var(--text-3);
+}
+html[data-skin="e"] .sp-foot:hover { color: var(--danger); }
+
+/* ============================================================ 6. 横幅 */
+html[data-skin="e"] .wb-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 10px 24px;
+  border-bottom: 2.5px solid var(--text);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+html[data-skin="e"] .wb-banner.is-err { background: var(--accent); color: var(--accent-ink); }
+html[data-skin="e"] .wb-banner.is-warn { background: var(--surface-2); color: var(--text-2); }
+html[data-skin="e"] .wb-banner-x { margin-left: auto; font-size: 15px; line-height: 1; }
+html[data-skin="e"] .wb-banner-x:hover { color: var(--text); }
+
+/* ============================================================ 7. 三栏 */
+html[data-skin="e"] .wb-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 262px minmax(0, 1fr) 322px;
+}
+html[data-skin="e"] .wb-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+/* 栏间用 2.5px 墨线分隔（而非细线），强化「版口」的硬边 */
+html[data-skin="e"] .wb-volumes,
+html[data-skin="e"] .wb-main { border-right: 2.5px solid var(--text); }
+/* 中栏透明：让根容器的圆点底纹透出来 */
+html[data-skin="e"] .wb-main { background: transparent; }
+html[data-skin="e"] .wb-volumes,
+html[data-skin="e"] .wb-side { background: var(--surface-2); }
+
+/* 栏头：黑底反白块，像印在版口的标签 */
+html[data-skin="e"] .wb-colhead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 18px;
+  background: var(--text);
+  color: var(--bg);
+}
+html[data-skin="e"] .wb-ch-en,
+html[data-skin="e"] .wb-ch-cn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--bg);
+  opacity: .85;
+}
+
+/* ============================================================ 8. 会话卷册 */
+html[data-skin="e"] .wb-new {
+  margin: 18px 16px 4px;
+  padding: 12px;
+  border: 2px dashed var(--text);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="e"] .wb-new span { color: var(--accent); }
+html[data-skin="e"] .wb-new:hover:not(:disabled) { background: var(--accent); color: var(--accent-ink); border-style: solid; }
+html[data-skin="e"] .wb-new:hover:not(:disabled) span { color: inherit; }
+html[data-skin="e"] .wb-new:disabled { opacity: .4; }
+
+html[data-skin="e"] .wb-vollist { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 16px 26px; }
+/* 每个会话 = 一张便签：白底 2px 黑边 + 4px 硬阴影，奇偶反向微旋转 */
+html[data-skin="e"] .wb-vol {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px 15px;
+  margin-bottom: 16px;
+  border: 2px solid var(--text);
+  background: var(--surface);
+  box-shadow: 4px 4px 0 var(--text);
+  cursor: grab;
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease),
+              background var(--dur) var(--ease);
+}
+html[data-skin="e"] .wb-vol:nth-child(odd) { transform: rotate(-.7deg); }
+html[data-skin="e"] .wb-vol:nth-child(even) { transform: rotate(.7deg); }
+html[data-skin="e"] .wb-vol:hover { transform: rotate(0deg) translate(-2px, -2px); box-shadow: 7px 7px 0 var(--accent-2); }
+html[data-skin="e"] .wb-vol.is-on { background: var(--accent-2); box-shadow: 7px 7px 0 var(--accent); }
+/* 拖拽时由行内 transform 接管位移，这里只做状态提示 */
+html[data-skin="e"] .wb-vol.is-dragging { cursor: grabbing; opacity: .9; }
+
+html[data-skin="e"] .wb-vol-no {
+  flex: none;
+  padding-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .08em;
+  color: var(--text-3);
+}
+html[data-skin="e"] .wb-vol-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+html[data-skin="e"] .wb-vol-title {
+  font-size: var(--fs-md);
+  font-weight: 800;
+  letter-spacing: .01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html[data-skin="e"] .wb-vol-meta {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .08em;
+  color: var(--text-3);
+}
+html[data-skin="e"] .wb-vol-del {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--text-2);
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="e"] .wb-vol:hover .wb-vol-del { opacity: 1; }
+html[data-skin="e"] .wb-vol-del:hover { color: var(--danger); }
+html[data-skin="e"] .wb-vol-empty { padding: 18px 16px; font-size: var(--fs-sm); color: var(--text-3); }
+
+/* ============================================================ 9. 对话主区 */
+html[data-skin="e"] .wb-stream { flex: 1; min-height: 0; overflow-y: auto; }
+html[data-skin="e"] .wb-inner { max-width: 760px; margin: 0 auto; padding: 32px 36px 14px; }
+
+/* 左右交错的撕纸卡：用户靠右、助手靠左 */
+html[data-skin="e"] .wb-msg { max-width: 78%; }
+html[data-skin="e"] .wb-msg + .wb-msg { margin-top: 34px; }
+html[data-skin="e"] .wb-msg.is-user { margin-left: auto; }
+
+html[data-skin="e"] .wb-msg-head { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+/* 用户侧表头反向排布，视觉上「出站」 */
+html[data-skin="e"] .wb-msg.is-user .wb-msg-head { flex-direction: row-reverse; }
+html[data-skin="e"] .wb-msg-mark {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  padding: 2px 7px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: var(--fs-micro);
+  font-weight: 900;
+  letter-spacing: .06em;
+}
+html[data-skin="e"] .wb-msg.is-ai .wb-msg-mark { background: var(--accent); color: var(--accent-ink); }
+html[data-skin="e"] .wb-msg-name { font-size: var(--fs-sm); font-weight: 800; }
+html[data-skin="e"] .wb-msg-role {
+  padding: 1px 6px;
+  border: 1.5px solid var(--text);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: .14em;
+  color: var(--text-2);
+}
+html[data-skin="e"] .wb-msg-time {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .08em;
+  color: var(--text-3);
+}
+/* 卡片本体：白底 2.5px 黑边方框；助手青影、用户粉影；落成时保留微旋转 */
+html[data-skin="e"] .wb-msg .wb-bubble {
+  --e-r: -.4deg;
+  padding: 16px 20px;
+  border: 2.5px solid var(--text);
+  background: var(--surface);
+  box-shadow: 5px 5px 0 var(--accent-2);
+  font-size: var(--fs-md);
+  line-height: 1.95;
+  animation: e-pop var(--dur-slow) cubic-bezier(.2, 1.3, .4, 1) both;
+}
+html[data-skin="e"] .wb-msg.is-user .wb-bubble { --e-r: .5deg; box-shadow: 5px 5px 0 var(--accent); }
+html[data-skin="e"] .wb-msg.is-ai .wb-bubble { font-weight: 700; }
+
+/* 空态 */
+html[data-skin="e"] .wb-empty { padding: 56px 0 28px; text-align: center; }
+html[data-skin="e"] .wb-empty .seal {
+  margin: 0 auto 20px;
+  border: 2.5px solid var(--text);
+  border-radius: 0;
+  background: var(--accent);
+  box-shadow: 5px 5px 0 var(--accent-2);
+}
+html[data-skin="e"] .wb-empty h2 { font-size: 26px; font-weight: 900; letter-spacing: .1em; }
+html[data-skin="e"] .wb-empty-lead {
+  max-width: 30em;
+  margin: 12px auto 0;
+  font-size: var(--fs-sm);
+  line-height: 1.95;
+  color: var(--text-2);
+}
+html[data-skin="e"] .wb-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: var(--s-5);
+}
+html[data-skin="e"] .wb-prompt {
+  padding: 9px 15px;
+  border: 2px solid var(--text);
+  background: var(--surface);
+  box-shadow: 3px 3px 0 var(--text);
+  font-size: 12.5px;
+  font-weight: 700;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
+              box-shadow var(--dur) var(--ease);
+}
+html[data-skin="e"] .wb-prompt:hover { background: var(--accent); color: var(--accent-ink); box-shadow: 5px 5px 0 var(--text); }
+
+/* ============================================================ 10. 中断确认条
+   整块荧光粉底 + 黑边 + 硬阴影：像一张被拍在桌上的粉色告示 */
+html[data-skin="e"] .wb-break {
+  --e-r: -.4deg;
+  margin: 2px 36px 18px;
+  border: 2.5px solid var(--text);
+  background: var(--accent);
+  box-shadow: 6px 6px 0 var(--text);
+  animation: e-pop var(--dur-slow) cubic-bezier(.2, 1.3, .4, 1) .18s both;
+}
+html[data-skin="e"] .wb-break-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 18px;
+  border-bottom: 2px solid var(--text);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+}
+html[data-skin="e"] .wb-break-badge {
+  padding: 3px 9px;
+  background: var(--text);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .18em;
+}
+html[data-skin="e"] .wb-break-note {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .14em;
+  color: var(--text);
+  opacity: .78;
+}
+/* 长问题文本靠 word-break 换行，n 个按钮靠 flex-wrap 折行，不破版 */
+html[data-skin="e"] .wb-break-ask {
+  padding: 15px 18px 0;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1.5;
+  letter-spacing: -.01em;
+  color: var(--accent-ink);
+  word-break: break-word;
+}
+html[data-skin="e"] .wb-break-ops { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px 18px 16px; }
+html[data-skin="e"] .wb-break-op {
+  padding: 9px 16px;
+  border: 2px solid var(--text);
+  background: var(--surface);
+  font-size: 12.5px;
+  font-weight: 700;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="e"] .wb-break-op:hover:not(:disabled) { background: var(--text); color: var(--bg); }
+html[data-skin="e"] .wb-break-input {
+  flex: 1;
+  min-width: 150px;
+  padding: 9px 12px;
+  border: 2px solid var(--text);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+html[data-skin="e"] .wb-break-input:focus { outline: 2px solid var(--text); outline-offset: 1px; }
+/* 粉色底上不必再叠硬阴影，避免与整块的 6px 阴影打架 */
+html[data-skin="e"] .wb-break .wb-btn-ink { box-shadow: none; }
+
+/* ============================================================ 11. 输入区 */
+html[data-skin="e"] .wb-compose {
+  padding: 14px 36px 18px;
+  border-top: 2.5px solid var(--text);
+  background: var(--surface-2);
+}
+html[data-skin="e"] .wb-compose-box {
+  display: flex;
+  align-items: stretch;
+  max-width: 760px;
+  margin: 0 auto;
+  border: 2.5px solid var(--text);
+  background: var(--surface);
+  box-shadow: 5px 5px 0 var(--text);
+  transition: border-color var(--dur) var(--ease);
+}
+/* 聚焦整框变青（比给 textarea 描边更醒目，也是孔版的副套色登场） */
+html[data-skin="e"] .wb-compose-box:focus-within { border-color: var(--accent-2); }
+html[data-skin="e"] .wb-compose-ta {
+  flex: 1;
+  resize: none;
+  padding: 12px 14px;
+  border: 0;
+  background: transparent;
+  font-size: 13.5px;
+  line-height: 1.8;
+}
+html[data-skin="e"] .wb-compose-send {
+  border: 0;
+  border-left: 2.5px solid var(--text);
+  border-radius: 0;
+  background: var(--accent-2);
+  color: var(--text);
+  padding: 0 26px;
+  box-shadow: none;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .16em;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="e"] .wb-compose-send:hover:not(:disabled) { background: var(--accent); color: var(--accent-ink); }
+html[data-skin="e"] .wb-compose-send.is-busy { background: var(--accent); color: var(--accent-ink); }
+html[data-skin="e"] .wb-compose-send:disabled { opacity: .5; }
+html[data-skin="e"] .wb-compose-hint {
+  max-width: 760px;
+  margin: 10px auto 0;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .1em;
+  color: var(--text-3);
+}
+
+/* ============================================================ 12. 右栏 */
+html[data-skin="e"] .wb-side-tabs { display: flex; background: var(--surface); border-bottom: 2.5px solid var(--text); }
+html[data-skin="e"] .wb-side-tab {
+  flex: 1;
+  padding: 12px 0;
+  border-left: 1.5px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--text-2);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="e"] .wb-side-tab:first-child { border-left: 0; }
+html[data-skin="e"] .wb-side-tab:hover { background: var(--surface-2); }
+html[data-skin="e"] .wb-side-tab.is-on { background: var(--accent-2); color: var(--text); font-weight: 700; }
+html[data-skin="e"] .wb-side-body { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 18px 26px; }
+
+/* 时间线条目 = 贴纸卡：白底 2px 黑边 + 3px 硬阴影，右上角一颗状态圆点 */
+html[data-skin="e"] .wb-tl { display: flex; flex-direction: column; gap: 14px; }
+html[data-skin="e"] .wb-tl-item {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px 13px;
+  border: 2px solid var(--text);
+  background: var(--surface);
+  box-shadow: 3px 3px 0 var(--text);
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+html[data-skin="e"] .wb-tl-item:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 var(--accent); }
+html[data-skin="e"] .wb-tl-item::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 9px;
+  height: 9px;
+  border: 1.5px solid var(--text);
+  border-radius: 50%;
+  background: var(--accent-2);
+}
+html[data-skin="e"] .wb-tl-no {
+  flex: none;
+  padding-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  color: var(--text-3);
+}
+html[data-skin="e"] .wb-tl-body { display: flex; flex-direction: column; min-width: 0; padding-right: 16px; }
+html[data-skin="e"] .wb-tl-title { font-size: var(--fs-sm); font-weight: 800; word-break: break-word; }
+html[data-skin="e"] .wb-tl-meta {
+  margin-top: 5px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .08em;
+  color: var(--text-3);
+  word-break: break-word;
+}
+html[data-skin="e"] .wb-tl-item.is-error .wb-tl-title { color: var(--danger); }
+html[data-skin="e"] .wb-tl-item.is-interrupt .wb-tl-title { color: var(--danger); }
+
+/* 「运行中」项：主栏在流式输出时，把时间线最后一条点亮成粉边 + 脉冲点。
+   纯 CSS 邻接选择器实现，无需 JSX 提供运行态类名 */
+html[data-skin="e"] .wb-main.is-streaming ~ .wb-side .wb-tl-item:last-child {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  box-shadow: 3px 3px 0 var(--accent);
+}
+html[data-skin="e"] .wb-main.is-streaming ~ .wb-side .wb-tl-item:last-child .wb-tl-title { color: var(--danger); }
+html[data-skin="e"] .wb-main.is-streaming ~ .wb-side .wb-tl-item:last-child::after {
+  background: var(--accent);
+  animation: e-pulse 1.6s var(--ease) infinite;
+}
+
+/* ============================================================ 13. 次级面板覆写
+   面板本体已由 tokens 吃成直角；这里只把「拖拽区 / 强调卡」调成孔版语言 */
+html[data-skin="e"] .kb-drop { border-style: dashed; border-color: var(--line-2); }
+html[data-skin="e"] .kb-hit { box-shadow: 3px 3px 0 var(--accent-2); }
+html[data-skin="e"] .trace-item.active { box-shadow: 3px 3px 0 var(--accent); border-color: var(--text); }
+html[data-skin="e"] .auth-card { box-shadow: var(--shadow-pop); }
+
+/* ============================================================ 14. 响应式 */
+@media (max-width: 1380px) {
+  html[data-skin="e"] .wb-body { grid-template-columns: 236px minmax(0, 1fr) 292px; }
+  html[data-skin="e"] .wb-inner,
+  html[data-skin="e"] .wb-compose-box,
+  html[data-skin="e"] .wb-compose-hint { max-width: none; }
+}
+@media (max-width: 1080px) {
+  html[data-skin="e"] .wb-body { grid-template-columns: 232px minmax(0, 1fr); }
+  html[data-skin="e"] .wb-side { grid-column: 1 / -1; border-top: 2.5px solid var(--text); max-height: 46vh; }
+  html[data-skin="e"] .wb-main { border-right: 0; }
+  html[data-skin="e"] .wb-break { margin-inline: 22px; }
+  html[data-skin="e"] .wb-inner,
+  html[data-skin="e"] .wb-compose { padding-inline: 22px; }
+}
+@media (max-width: 820px) {
+  html[data-skin="e"] .wb-top { flex-wrap: wrap; gap: var(--s-3); padding: 10px 16px; }
+  html[data-skin="e"] .wb-body { grid-template-columns: 1fr; }
+  html[data-skin="e"] .wb-volumes { max-height: 34vh; border-right: 0; border-bottom: 2.5px solid var(--text); }
+  html[data-skin="e"] .wb-main { border-right: 0; }
+  html[data-skin="e"] .wb-proj-sel { max-width: 150px; }
+  html[data-skin="e"] .wb-msg { max-width: 92%; }
+}

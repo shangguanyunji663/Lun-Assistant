@@ -1,0 +1,583 @@
+<!doctype html>
+<!-- v18 落地页 · 皮肤 E「孔版双色 Riso Collage」
+     与 index.html（皮肤 A·铅字印刷）同构：同一套骨架、同一份共享脚本
+     （src/landing/shared.js：皮肤切换器 / 入场编排 / 数字滚动 / 打字机 / 彩蛋三门），
+     只换版式与材质。落地页一律不自跳（皮肤记忆只在站根 index.html 生效）。 -->
+<html lang="zh-CN" data-skin="e" class="no-js">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#F1F1EC" />
+    <meta name="description"
+      content="论匠 LunJiang —— 多智能体论文全流程工作台。选题、文献、写作、格式、查重、答辩，六个环节一支编队，产出经你确认后落稿。" />
+    <title>论匠 LunJiang · 多智能体论文全流程工作台</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="/src/landing/shared.css" />
+    <style>
+      /* ============================================================
+         皮肤 E · 孔版双色（Riso Collage）—— 页面层
+         纸白 + 墨黑 + 荧光粉 / 荧光青；零模糊硬阴影、圆点底纹、拼贴贴纸。
+         共享物（切换器 / 砚纸 / 彩蛋层）靠下面这组 --lb-* 令牌取色。
+         ============================================================ */
+      :root {
+        --lb-bg: #F1F1EC;
+        --lb-surface: #FFFFFF;
+        --lb-fg: #12100F;
+        --lb-muted: #6E6A64;
+        --lb-line: rgba(18, 16, 15, .5);
+        --lb-accent: #FF4D9D;
+        --lb-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        --lb-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+        /* 孔版只有一种字族：共享件的「衬线位」沿用同一族，保持语言一致 */
+        --lb-serif: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+        --lb-r: 0px;
+        --lb-shadow: 5px 5px 0 #12100F;
+        --lb-ease: cubic-bezier(.2, 1.3, .4, 1);
+
+        /* 页面自有令牌 */
+        --paper: #F1F1EC;
+        --surface: #FFFFFF;
+        --ink: #12100F;
+        --ink2: #3C3936;
+        --ink3: #6E6A64;
+        --pink: #FF4D9D;
+        --cyan: #00C2CE;
+        --line: rgba(18, 16, 15, .2);
+        --line2: rgba(18, 16, 15, .5);
+      }
+
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background: var(--paper);
+        color: var(--ink);
+        font-family: var(--lb-sans);
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+        /* 16px 圆点底纹：孔版的网点，唯一的「材质」来源（不用渐变柔光） */
+        background-image: radial-gradient(rgba(18, 16, 15, .055) 1px, transparent 1px);
+        background-size: 16px 16px;
+      }
+      a { color: inherit; text-decoration: none; }
+      h1, h2, h3, p, ul, ol, li, figure { margin: 0; padding: 0; list-style: none; }
+      .wrap { max-width: 1380px; margin: 0 auto; padding: 0 56px; }
+      .mono { font-family: var(--lb-mono); }
+
+      /* 贴纸弹入：scale(.86) → 1.035 → 1，落点保留该元素自己的微旋转（--r） */
+      .pop { animation: pop .85s var(--lb-ease) both; }
+      @keyframes pop {
+        0%   { opacity: 0; transform: scale(.86) rotate(calc(var(--r, 0deg) * 1.8)); }
+        62%  { opacity: 1; transform: scale(1.035) rotate(var(--r, 0deg)); }
+        100% { opacity: 1; transform: scale(1) rotate(var(--r, 0deg)); }
+      }
+
+      /* ---------------------------------------------------- 报头 */
+      /* 白底 + 2.5px 黑下线：孔版的「版口线」 */
+      .mast { background: var(--surface); border-bottom: 2.5px solid var(--ink); position: relative; z-index: 5; }
+      .mast-in { display: flex; align-items: center; gap: 30px; padding: 14px 0; }
+      .mk { display: flex; align-items: center; gap: 12px; }
+      /* 品牌方块叠色：黑块 + 粉硬阴影，套印没对准的错位感 */
+      .mk-blk {
+        width: 32px; height: 32px; flex: none; display: grid; place-items: center;
+        background: var(--ink); border: 2px solid var(--ink); box-shadow: 3px 3px 0 var(--pink);
+        color: var(--paper); font-size: 16px; font-weight: 900;
+      }
+      .mk-txt { display: flex; flex-direction: column; line-height: 1.15; }
+      .mk-txt b { font-size: 19px; font-weight: 900; letter-spacing: .04em; }
+      .mk-txt small {
+        margin-top: 2px; font-family: var(--lb-mono); font-size: 9px;
+        letter-spacing: .18em; text-transform: uppercase; color: var(--ink3);
+      }
+      /* 导航项 = 白底黑框小方块，hover 反手刷成青块 */
+      .mnav { display: flex; gap: 8px; margin-left: auto; font-family: var(--lb-mono); font-size: 11px; letter-spacing: .1em; }
+      .mnav a {
+        padding: 8px 13px; border: 1.5px solid var(--ink); background: var(--surface);
+        transition: background .2s var(--lb-ease), box-shadow .2s var(--lb-ease), transform .2s var(--lb-ease);
+      }
+      .mnav a:hover { background: var(--cyan); box-shadow: 3px 3px 0 var(--ink); transform: translate(-1px, -1px); }
+      .issue {
+        font-family: var(--lb-mono); font-size: 10px; letter-spacing: .18em; color: var(--ink3);
+        border-left: 2px solid var(--line); padding-left: 18px;
+      }
+      .go {
+        padding: 11px 20px; background: var(--ink); color: var(--paper);
+        font-family: var(--lb-mono); font-size: 11px; letter-spacing: .16em;
+        box-shadow: 4px 4px 0 var(--pink);
+        transition: box-shadow .2s var(--lb-ease), background .2s var(--lb-ease), color .2s var(--lb-ease);
+      }
+      .go:hover { background: var(--pink); color: #fff; box-shadow: 6px 6px 0 var(--ink); }
+
+      /* ---------------------------------------------------- Hero（拼贴） */
+      .hero { position: relative; display: grid; grid-template-columns: 1.15fr .85fr; gap: 48px; padding: 56px 0 58px; }
+      /* 左上角圆贴纸：青底黑框、逆时针歪着 */
+      .sticker {
+        position: absolute; top: 34px; left: -8px; width: 122px; height: 122px; z-index: 3;
+        display: grid; place-items: center; text-align: center; border-radius: 50%;
+        background: var(--cyan); border: 2.5px solid var(--ink); box-shadow: 5px 5px 0 var(--ink);
+        font-family: var(--lb-mono); font-size: 10px; letter-spacing: .1em; line-height: 1.9;
+        --r: -13deg;
+      }
+      .sticker b { display: block; font-size: 21px; font-weight: 900; letter-spacing: -.02em; }
+
+      .hcol { padding-top: 128px; position: relative; z-index: 2; }
+      .spk {
+        display: flex; align-items: center; gap: 12px; margin-bottom: 24px;
+        font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .24em; color: var(--ink2);
+      }
+      .spk i { width: 34px; height: 10px; flex: none; background: var(--cyan); border: 2px solid var(--ink); }
+
+      /* 两个错位重叠的巨型文字块 */
+      h1 { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+      h1 .blk {
+        display: inline-block; padding: 6px 22px 14px;
+        font-size: clamp(40px, 6.2vw, 100px); font-weight: 900;
+        line-height: .96; letter-spacing: -.04em;
+      }
+      .t1 { background: var(--surface); border: 2.5px solid var(--ink); box-shadow: 7px 7px 0 var(--pink); --r: -1.6deg; }
+      .t2 { background: var(--pink); border: 2.5px solid var(--ink); color: #fff; box-shadow: 7px 7px 0 var(--cyan); --r: 1.4deg; }
+
+      /* 题记：本页唯一使用打字机的元素，做成一枚白色小贴纸 */
+      .hero-note {
+        display: inline-block; margin-top: 28px; min-height: 1.7em;
+        padding: 9px 16px; background: var(--surface); border: 2px solid var(--ink);
+        box-shadow: 4px 4px 0 var(--cyan);
+        font-size: 15px; font-weight: 700; letter-spacing: .08em; color: var(--ink2);
+      }
+      .hero-note::after { content: "▍"; margin-left: 2px; color: var(--pink); animation: blink 1.05s steps(1) infinite; }
+      @keyframes blink { 50% { opacity: 0; } }
+
+      .hero-sub { margin-top: 22px; max-width: 32em; font-size: 16px; line-height: 1.95; color: var(--ink2); }
+      .hero-sub b { font-weight: 900; background: var(--cyan); padding: 1px 5px; box-shadow: inset 0 -6px 0 rgba(0, 194, 206, .3); }
+
+      .acts { display: flex; align-items: center; gap: 14px; margin-top: 34px; }
+      .b1 {
+        display: inline-block; padding: 16px 32px; background: var(--ink); color: var(--paper);
+        font-size: 14px; font-weight: 700; letter-spacing: .06em; box-shadow: 5px 5px 0 var(--pink);
+        transition: box-shadow .22s var(--lb-ease), transform .22s var(--lb-ease), background .22s;
+        transform: translate(var(--mgx, 0), var(--mgy, 0));
+      }
+      .b1:hover { background: var(--pink); color: #fff; box-shadow: 7px 7px 0 var(--ink); }
+      .b2 {
+        display: inline-block; padding: 15px 28px; background: var(--surface); border: 2px solid var(--ink);
+        font-size: 14px; font-weight: 700; letter-spacing: .06em; box-shadow: 5px 5px 0 var(--cyan);
+        transition: box-shadow .22s var(--lb-ease), background .22s;
+        transform: translate(var(--mgx, 0), var(--mgy, 0));
+      }
+      .b2:hover { background: var(--cyan); box-shadow: 7px 7px 0 var(--ink); }
+
+      /* 照片：撕纸贴纸（白底照片 + 黑框 + 上下两条胶带） */
+      .torn {
+        align-self: end; position: relative; margin-bottom: 18px;
+        padding: 12px 12px 44px; background: var(--surface);
+        border: 2.5px solid var(--ink); box-shadow: 8px 8px 0 var(--ink);
+        --r: 2deg;
+      }
+      .torn img {
+        display: block; width: 100%; aspect-ratio: 5 / 4; object-fit: cover;
+        filter: grayscale(1) contrast(1.35);
+        transition: transform .3s var(--lb-ease);
+      }
+      /* 倾斜由指针驱动：写在图上，避免与贴纸自身的弹入旋转打架 */
+      .torn.tilt-on img { transform: perspective(880px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); }
+      .torn .cap {
+        position: absolute; left: 12px; bottom: 13px; display: flex; gap: 14px;
+        font-family: var(--lb-mono); font-size: 10px; letter-spacing: .14em; color: var(--ink2);
+      }
+      .tape {
+        position: absolute; z-index: 2; width: 108px; height: 30px;
+        background: rgba(0, 194, 206, .6); border: 1.5px solid rgba(18, 16, 15, .28);
+        top: -16px; left: -22px; transform: rotate(-16deg);
+      }
+      .tape.b { top: auto; left: auto; right: -26px; bottom: -14px; transform: rotate(9deg); background: rgba(255, 77, 157, .5); }
+
+      /* ---------------------------------------------------- 双色横条带 */
+      .band { margin-top: 52px; border-top: 2.5px solid var(--ink); border-bottom: 2.5px solid var(--ink); overflow: hidden; }
+      .band-in { display: flex; width: max-content; animation: band 34s linear infinite; }
+      .bd {
+        flex: 0 0 auto; width: 210px; padding: 14px 0; text-align: center; white-space: nowrap;
+        border-right: 2px solid var(--ink);
+        font-size: 19px; font-weight: 900; letter-spacing: .04em; color: var(--ink);
+      }
+      .bd:nth-child(odd) { background: var(--pink); }
+      .bd:nth-child(even) { background: var(--cyan); }
+      @keyframes band { to { transform: translateX(-50%); } }
+
+      /* ---------------------------------------------------- 读数带 */
+      .readout { margin-top: 56px; border-top: 2.5px solid var(--ink); }
+      .ro {
+        display: flex; align-items: baseline; gap: 28px; padding: 22px 18px;
+        border-bottom: 2.5px solid var(--ink);
+      }
+      /* 半透明斜向套色：粉 / 青交替 */
+      .ro:nth-child(odd) { background: linear-gradient(115deg, rgba(255, 77, 157, .16), transparent 62%); }
+      .ro:nth-child(even) { background: linear-gradient(115deg, rgba(0, 194, 206, .18), transparent 62%); }
+      .ro .v {
+        font-size: clamp(30px, 3.4vw, 46px); font-weight: 900; line-height: 1;
+        letter-spacing: -.03em; transition: color .25s var(--lb-ease);
+      }
+      .ro:hover .v { color: var(--pink); }
+      .ro .v u { text-decoration: none; font-size: .44em; vertical-align: super; }
+      .ro .k { font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink2); }
+      .ro .d { margin-left: auto; text-align: right; font-family: var(--lb-mono); font-size: 12px; letter-spacing: .04em; color: var(--ink3); }
+
+      /* ---------------------------------------------------- 章节通用 */
+      .sec { padding: 84px 0 0; }
+      .sechead { display: flex; align-items: baseline; gap: 14px; padding-bottom: 14px; border-bottom: 2.5px solid var(--ink); }
+      .sechead::before {
+        content: ""; align-self: center; width: 13px; height: 13px; flex: none;
+        background: var(--pink); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--cyan);
+      }
+      .sechead h2 { font-size: clamp(24px, 2.9vw, 36px); font-weight: 900; letter-spacing: -.01em; }
+      .sechead .la { font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--ink3); }
+      .sechead .fill { flex: 1; }
+      .lead { margin-top: 22px; max-width: 46em; font-size: 15.5px; line-height: 2; color: var(--ink2); }
+
+      /* 六个环节 = 六张贴纸 */
+      .stages { display: grid; grid-template-columns: repeat(3, 1fr); gap: 34px 26px; margin-top: 30px; padding: 4px 4px 20px; }
+      .st {
+        padding: 18px 18px 20px; background: var(--surface); border: 2px solid var(--ink);
+        box-shadow: 4px 4px 0 var(--ink);
+        transition: transform .25s var(--lb-ease), box-shadow .25s var(--lb-ease);
+      }
+      .st:nth-child(odd) { transform: rotate(-1.2deg); }
+      .st:nth-child(even) { transform: rotate(1.2deg); }
+      .st:hover { transform: rotate(0deg) translateY(-6px); box-shadow: 7px 9px 0 var(--pink); }
+      .st .no { font-family: var(--lb-mono); font-size: 10px; letter-spacing: .16em; color: var(--ink3); }
+      .st h3 { margin: 9px 0 7px; font-size: 17px; font-weight: 900; letter-spacing: .02em; }
+      .st p { font-size: 12.5px; line-height: 1.8; color: var(--ink2); }
+
+      /* 架构：左侧大贴纸 + 右侧粉底告示 */
+      .arch { display: grid; grid-template-columns: 1.25fr .75fr; gap: 40px; margin-top: 30px; align-items: start; }
+      .panel {
+        padding: 8px 22px; background: var(--surface); border: 2.5px solid var(--ink);
+        box-shadow: 6px 6px 0 var(--ink);
+      }
+      .arch-item { display: grid; grid-template-columns: 66px 1fr; gap: 18px; padding: 17px 0; border-bottom: 2px dashed var(--line); }
+      .arch-item:last-child { border-bottom: 0; }
+      .arch-k {
+        justify-self: start; padding: 3px 8px; background: var(--ink); color: var(--paper);
+        font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .12em;
+      }
+      .arch-item span:last-child { font-size: 13.5px; line-height: 1.9; color: var(--ink2); }
+      .honesty {
+        padding: 20px 22px 22px; background: var(--pink); border: 2.5px solid var(--ink);
+        box-shadow: 6px 6px 0 var(--cyan); --r: -1deg;
+        transform: rotate(var(--r, 0deg));
+        font-size: 13.5px; line-height: 1.95; color: var(--ink);
+      }
+      .honesty b { display: block; margin-bottom: 10px; font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .2em; }
+      .honesty code { font-family: var(--lb-mono); font-size: 12.5px; border-bottom: 2px solid var(--ink); }
+
+      /* 人机协同 / 开始：三张贴纸 */
+      .trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px 24px; margin-top: 30px; padding: 4px 4px 24px; }
+      .card {
+        display: flex; flex-direction: column; align-items: flex-start;
+        padding: 22px 22px 24px; background: var(--surface); border: 2px solid var(--ink);
+        box-shadow: 4px 4px 0 var(--ink);
+        transform: rotate(var(--r, 0deg));
+        transition: transform .25s var(--lb-ease), box-shadow .25s var(--lb-ease);
+      }
+      .card:nth-child(1) { --r: -1deg; }
+      .card:nth-child(2) { --r: 1deg; }
+      .card:nth-child(3) { --r: -1deg; }
+      .card:hover { transform: rotate(0deg) translateY(-6px); box-shadow: 7px 9px 0 var(--cyan); }
+      .card h3 { margin-bottom: 12px; font-size: 17px; font-weight: 900; letter-spacing: .02em; }
+      .card h3::after {
+        content: ""; display: block; width: 30px; height: 6px; margin-top: 9px;
+        background: var(--pink); border: 1.5px solid var(--ink);
+      }
+      .card p { font-size: 13.5px; line-height: 1.95; color: var(--ink2); }
+      .card .b1 { margin-top: 18px; padding: 12px 22px; font-size: 13px; }
+      .card .b2 { margin-top: 18px; padding: 11px 20px; font-size: 13px; }
+
+      /* ---------------------------------------------------- 页脚 */
+      .foot { margin-top: 88px; background: var(--surface); border-top: 2.5px solid var(--ink); }
+      .foot-in { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 22px 0 10px; }
+      .foot-brand { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 900; letter-spacing: .12em; }
+      .foot-brand i { width: 14px; height: 14px; background: var(--cyan); border: 2px solid var(--ink); box-shadow: 2px 2px 0 var(--pink); }
+      .foot-stack, .foot-lic { font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .12em; color: var(--ink3); }
+      .foot-in .fill { flex: 1; }
+      .egg-hint { padding-bottom: 30px; font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .14em; color: var(--ink3); }
+
+      /* ---------------------------------------------------- 响应式 */
+      @media (max-width: 1080px) {
+        .wrap { padding: 0 28px; }
+        .hero { grid-template-columns: 1fr; gap: 30px; padding: 34px 0 44px; }
+        .mnav, .issue { display: none; }
+        .sticker { top: 22px; width: 98px; height: 98px; font-size: 9px; }
+        .sticker b { font-size: 17px; }
+        .hcol { padding-top: 88px; }
+        .stages { grid-template-columns: repeat(2, 1fr); }
+        .arch { grid-template-columns: 1fr; gap: 26px; }
+        .trio { grid-template-columns: 1fr; }
+        .ro { flex-wrap: wrap; gap: 10px 22px; }
+        .ro .d { margin-left: 0; width: 100%; text-align: left; }
+      }
+      /* 窄屏把旋转贴纸归正，避免硬阴影与旋转带来的横向溢出 */
+      @media (max-width: 720px) {
+        .hero { padding-top: 26px; }
+        .blk { padding: 6px 14px 12px; }
+        .band .bd { width: 168px; font-size: 16px; }
+        .stages { grid-template-columns: 1fr; }
+        .st, .st:nth-child(odd), .st:nth-child(even) { transform: none; }
+        .card, .card:hover, .honesty, .t1, .t2, .torn, .sticker { --r: 0deg; }
+        .st:hover, .card:hover { transform: translateY(-4px); }
+        .tape { width: 84px; height: 24px; left: -14px; }
+      }
+
+      /* 弱动效降级：贴纸不再弹入，但保留各自的静态微旋转 */
+      @media (prefers-reduced-motion: reduce) {
+        .pop { animation: none !important; opacity: 1 !important; transform: rotate(var(--r, 0deg)); }
+        .band-in { animation: none !important; }
+        .hero-note::after { animation: none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ============================================================ 报头 -->
+    <header class="mast">
+      <div class="wrap mast-in">
+        <span class="mk">
+          <span class="mk-blk" aria-hidden="true">论</span>
+          <span class="mk-txt"><b>论匠</b><small>LunJiang · No.18</small></span>
+        </span>
+        <nav class="mnav" aria-label="主导航">
+          <a href="#stages">六个环节</a>
+          <a href="#arch">架构与评测</a>
+          <a href="#synergy">人机协同</a>
+          <a href="#start">开始使用</a>
+        </nav>
+        <span class="issue">2026 · 10 · 全本地底座</span>
+        <a class="go" href="./app.html">进入工作台</a>
+      </div>
+    </header>
+
+    <main>
+      <!-- ============================================================ Hero -->
+      <section class="wrap hero">
+        <!-- 左上角圆贴纸 -->
+        <span class="sticker pop" style="animation-delay:.47s" aria-hidden="true">
+          <span><b>06</b>环节<br /><b>07</b>智能体</span>
+        </span>
+
+        <div class="hcol">
+          <p class="spk pop" style="--r:0deg;animation-delay:.05s">
+            <i aria-hidden="true"></i>多智能体论文全流程工作台
+          </p>
+
+          <h1>
+            <span class="blk t1 pop" style="animation-delay:.11s">论文不是</span>
+            <span class="blk t2 pop" style="animation-delay:.17s">一次生成的</span>
+          </h1>
+
+          <p class="hero-note" data-typewriter>机器起草，人来定稿。</p>
+
+          <p class="hero-sub pop" style="--r:0deg;animation-delay:.29s">
+            六个环节，一支编队。<b>主控智能体</b>把选题、文献、方法、格式、查重、答辩拆开派活，
+            每一次产出都先落在待采纳区，<b>你点头才落稿</b>。
+          </p>
+
+          <div class="acts pop" style="--r:0deg;animation-delay:.35s">
+            <a class="b1" href="./app.html" data-magnet data-burst>进入工作台</a>
+            <a class="b2" href="#arch" data-magnet>阅读评测报告 →</a>
+          </div>
+        </div>
+
+        <figure class="torn pop" style="animation-delay:.41s" data-tilt>
+          <span class="tape" aria-hidden="true"></span>
+          <span class="tape b" aria-hidden="true"></span>
+          <img alt="黑白纪实摄影：双手在木桌上的稿纸上批注"
+            src="./fig/fig-e-manuscript.jpg" />
+          <figcaption class="cap"><span>图版 01 · 待采纳的手稿</span><span>Riso</span></figcaption>
+        </figure>
+      </section>
+
+      <!-- ============================================================ 双色横条带 -->
+      <div class="band" aria-hidden="true">
+        <div class="band-in">
+          <span class="bd">选题立项</span><span class="bd">文献综述</span><span class="bd">方法与写作</span>
+          <span class="bd">格式规范</span><span class="bd">查重降重</span><span class="bd">答辩准备</span>
+          <span class="bd">选题立项</span><span class="bd">文献综述</span><span class="bd">方法与写作</span>
+          <span class="bd">格式规范</span><span class="bd">查重降重</span><span class="bd">答辩准备</span>
+        </div>
+      </div>
+
+      <!-- ============================================================ 读数 -->
+      <section class="wrap">
+        <div class="readout">
+          <div class="ro" data-reveal>
+            <span class="v"><span data-count="100">100</span><u>%</u></span>
+            <span class="k">Intent Top-1</span>
+            <span class="d">意图分类 50 条集 · 56ms/条</span>
+          </div>
+          <div class="ro" data-reveal>
+            <span class="v"><span data-count="16">16</span><u>/16</u></span>
+            <span class="k">Regression</span>
+            <span class="d">S1–S7 七大必测场景全通</span>
+          </div>
+          <div class="ro" data-reveal>
+            <span class="v"><span data-count="100">100</span><u>%</u></span>
+            <span class="k">Recall@5</span>
+            <span class="d">稠密 + 稀疏 + 句窗三路融合</span>
+          </div>
+          <div class="ro" data-reveal>
+            <span class="v"><span data-count="89">89</span><u>项</u></span>
+            <span class="k">Offline Cases</span>
+            <span class="d">治理 / 模型 / 改写 / API</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ 六个环节 -->
+      <section class="wrap sec" id="stages">
+        <div class="sechead" data-reveal>
+          <h2>六个环节，一支智能体编队</h2>
+          <span class="la">Capabilities</span>
+          <span class="fill"></span>
+          <span class="la">01 — 06</span>
+        </div>
+        <p class="lead" data-reveal>
+          不是一个大模型硬扛所有问题：主控智能体识别意图、拆解任务、按环节路由给专项角色，
+          人的确认卡在关键节点上。
+        </p>
+
+        <div class="stages">
+          <article class="st" data-reveal>
+            <span class="no">01</span>
+            <h3>选题立项</h3>
+            <p>把专业方向与写作要求交给选题环节，产出选题结论与理由，自动沉淀为项目档案的选题记录。</p>
+          </article>
+          <article class="st" data-reveal>
+            <span class="no">02</span>
+            <h3>文献综述</h3>
+            <p>向量检索与关键词多路召回，融合后精排；引用的每一段都可以溯源到原文。</p>
+          </article>
+          <article class="st" data-reveal>
+            <span class="no">03</span>
+            <h3>方法与写作</h3>
+            <p>复杂任务由 Planner 拆成步骤序列，以「规划 — 执行 — 校验」循环推进，逐章成稿。</p>
+          </article>
+          <article class="st" data-reveal>
+            <span class="no">04</span>
+            <h3>格式规范</h3>
+            <p>字数、引用格式与交付节点写入结构化记忆，在写作全程作为硬约束参与校验。</p>
+          </article>
+          <article class="st" data-reveal>
+            <span class="no">05</span>
+            <h3>查重降重</h3>
+            <p>语义改写与引用边界核对，逐段标注风险，可疑段落交给人工确认，而不是静默放行。</p>
+          </article>
+          <article class="st" data-reveal>
+            <span class="no">06</span>
+            <h3>答辩准备</h3>
+            <p>汇总研究过程与阶段性产出，整理答辩所需的陈述要点与支撑材料。</p>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============================================================ 架构与评测 -->
+      <section class="wrap sec" id="arch">
+        <div class="sechead" data-reveal>
+          <h2>架构是公开的，数字也是</h2>
+          <span class="la">Architecture &amp; Evaluation</span>
+        </div>
+
+        <div class="arch">
+          <div class="panel" data-reveal>
+            <div class="arch-item"><span class="arch-k">编排</span><span>LangGraph 主从编排：主控调度专项角色，规划 — 执行 — 校验闭环</span></div>
+            <div class="arch-item"><span class="arch-k">检索</span><span>PostgreSQL + pgvector：向量与关键词多路召回，融合后精排</span></div>
+            <div class="arch-item"><span class="arch-k">会话</span><span>Redis：会话检查点、限流与分布式锁，执行状态可恢复</span></div>
+            <div class="arch-item"><span class="arch-k">底座</span><span>Ollama 本地推理：对话模型 + bge-m3 向量化 + 重排，全程可离线</span></div>
+          </div>
+
+          <div data-reveal>
+            <p class="honesty">
+              <b>水位如实标注</b>
+              口语长尾集 80% · 学术刁钻集 95% · hold-out 泛化 75%（6/8）。
+              全部数字来自一次完整的全本地底座实测，复现命令见仓库
+              <code>docs/EVALUATION_REPORT.md</code>。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ 人机协同 -->
+      <section class="wrap sec" id="synergy">
+        <div class="sechead" data-reveal>
+          <h2>机器起草，人来定稿</h2>
+          <span class="la">Human in the Loop</span>
+        </div>
+        <p class="lead" data-reveal>
+          多智能体系统最容易失控的地方是「自作主张」。论匠把确认权留给写作的人：
+          关键节点主动发问，产出必须经你采纳。
+        </p>
+
+        <div class="trio">
+          <div class="card" data-reveal>
+            <h3>产出需确认</h3>
+            <p>智能体在关键节点主动发起确认，生成内容以「待采纳」状态呈现——采纳才落稿，不满意就重生成。</p>
+          </div>
+          <div class="card" data-reveal>
+            <h3>全链路留痕</h3>
+            <p>每次执行的意图识别、路由决策、工具调用与耗时完整落库，可逐条回放，出了问题有据可查。</p>
+          </div>
+          <div class="card" data-reveal>
+            <h3>记忆沉淀</h3>
+            <p>选题结论、论文大纲、写作约束与章节进度沉淀为结构化项目档案，跨会话延续。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ 开始 -->
+      <section class="wrap sec" id="start">
+        <div class="sechead" data-reveal>
+          <h2>三种方式，开始使用</h2>
+          <span class="la">Get Started</span>
+        </div>
+
+        <div class="trio">
+          <div class="card" data-reveal>
+            <h3>在线试用</h3>
+            <p>无需安装，浏览器打开即用。注册一个账号，选一个课题，看着编队开工。</p>
+            <a class="b1" href="./app.html" data-magnet>进入工作台</a>
+          </div>
+          <div class="card" data-reveal>
+            <h3>源码仓库</h3>
+            <p>FastAPI · LangGraph · PostgreSQL + pgvector · Redis · React 18，MIT License，含部署与评测文档。</p>
+            <a class="b2" href="https://github.com/shangguanyunji663/Lun-Assistant" target="_blank" rel="noreferrer">前往 GitHub →</a>
+          </div>
+          <div class="card" data-reveal>
+            <h3>学习指南</h3>
+            <p>从零复现多智能体架构：设计认知、模块解剖、动手实现与评测，附可运行骨架。</p>
+            <a class="b2" href="https://github.com/shangguanyunji663/Lun-Assistant/blob/main/%E8%AE%BA%E5%8C%A0%E5%AD%A6%E4%B9%A0%E6%8C%87%E5%8D%97.md" target="_blank" rel="noreferrer">阅读指南 →</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============================================================ 页脚 -->
+    <footer class="foot">
+      <div class="wrap">
+        <div class="foot-in">
+          <span class="foot-brand"><i aria-hidden="true"></i>论匠 LUNJIANG</span>
+          <span class="foot-stack">FastAPI · LangGraph · PostgreSQL + pgvector · Redis · React 18</span>
+          <span class="fill"></span>
+          <span class="foot-lic">MIT License · © <span id="lj-year">2026</span></span>
+        </div>
+        <p class="egg-hint">
+          页边三则 · 手快者当主控 · 细读者见风险 · 落笔者得题款<span class="egg-progress"></span>
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      document.getElementById('lj-year').textContent = String(new Date().getFullYear())
+    </script>
+    <script type="module" src="/src/landing/shared.js"></script>
+  </body>
+</html>

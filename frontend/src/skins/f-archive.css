@@ -1,0 +1,916 @@
+/* ============================================================================
+   皮肤 F · 索引档案（Archive Index）
+   —— 档案纸灰绿 + 墨绿 + 图章红。编目号、打字机元数据、卡片抽屉、
+      连续打印纸、斜置角章。设计性格：克制、机关感、纸面清晰；
+      零圆角、零柔光（阴影一律硬位移）。
+
+   骨架与皮肤 A（a-letterpress.css）同构：令牌块 → .wb-* 外壳 → 装饰 → 响应式，
+   便于六套皮肤横向维护。次级面板（知识库 / 档案 / 可观测 / 登录页）由
+   styles/panels.css 吃令牌自动适配，此处只覆写与「档案室」性格冲突的部分。
+   ============================================================================ */
+
+/* ============================================================ 1. 令牌 */
+html[data-skin="f"] {
+  --bg: #E1E2DD;          /* 档案纸灰绿 */
+  --surface: #F4F3EE;     /* 面板米白 */
+  --surface-2: #DADBD6;   /* 次级（抽屉 / 栏头 / 输入区） */
+
+  --text: #2B342E;        /* 墨绿 */
+  --text-2: #4E574F;
+  --text-3: #6B746C;
+
+  --line: rgba(43, 52, 46, .16);
+  --line-2: rgba(43, 52, 46, .42);
+
+  --accent: #A33B2A;      /* 图章红：fx.js 直接读取，必须给值 */
+  --accent-2: #2B342E;    /* 粒子 / 光晕的辅色，取墨绿 */
+  --accent-ink: #F6EFE9;
+  --danger: #8E2F21;
+
+  --font-display: "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --ease: cubic-bezier(.19, 1, .22, 1);
+  --dur: .22s;
+  --dur-slow: .46s;
+
+  /* 档案：直角是语言的一部分 */
+  --r-card: 0px;
+  --r-btn: 0px;
+  --r-pill: 1px;
+
+  --shadow-card: none;
+  --shadow-pop: 5px 5px 0 rgba(43, 52, 46, .16);
+  --shadow-glow: 0 0 18px rgba(163, 59, 42, .28);
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 22px;
+  --s-6: 28px;
+
+  --fs-micro: 10.5px;
+  --fs-sm: 13px;
+  --fs-md: 14.5px;
+  --fs-lg: 16px;
+  --fs-xl: 19px;
+  --fs-2xl: 26px;
+
+  /* 面板里「已入库」用图章红椭圆章而非文字——本皮肤的性格正需要这枚章 */
+  --stamp-display: inline;
+  --stamp-text-display: none;
+
+  --scan-display: none;
+
+  /* ---- 本皮肤独有的材质具名值（档案室的纸与卡）---- */
+  --f-paper: #FBFBF7;                             /* 连续打印纸 */
+  --f-paper-bed: #CFD0CB;                         /* 中栏衬底，比档案纸更深以衬出纸页 */
+  --f-rule: rgba(43, 52, 46, .09);                /* 打印纸横格线 */
+  --f-perf: rgba(43, 52, 46, .42);                /* 走纸针孔 */
+  --f-edge: rgba(43, 52, 46, .22);                /* 纸页边缘内描边 */
+  --f-user-bg: #EFEFE9;                           /* 用户消息的窄纸底 */
+  --f-card: 2px 2px 0 rgba(43, 52, 46, .13);      /* 索引卡硬位移阴影 */
+  --f-card-on: 4px 4px 0 rgba(43, 52, 46, .2);
+}
+
+/* ============================================================ 2. 外壳 */
+html[data-skin="f"] .wb {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+/* 档案室是静室：不要 fx.css 的流动氛围曲线 */
+html[data-skin="f"] .ambient-lines { display: none; }
+
+/* ============================================================ 3. 顶栏
+   顶栏上方压一条「字段条」——用伪元素写入档案号 / 卷宗 / 密级 / 调阅日期，
+   它是档案的抬头，不遮挡顶栏真实元素：给 .wb-top 留出 padding-top 让位。 */
+html[data-skin="f"] .wb-top {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  padding: 45px 26px 11px;   /* 顶部 34px 预留给字段条 */
+  border-bottom: 1px solid var(--line-2);
+  background: var(--surface);
+}
+html[data-skin="f"] .wb-top::before {
+  content: "档案号 LJ-2026-0017　　卷宗 会话 04　　密级 公开";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  padding: 0 190px 0 26px;   /* 右侧留白给「调阅…」，窄屏时左串自动被裁切 */
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .2em;
+  color: var(--text-3);
+  white-space: nowrap;
+  overflow: hidden;
+  pointer-events: none;
+}
+html[data-skin="f"] .wb-top::after {
+  content: "调阅 2026.10.01";
+  position: absolute;
+  top: 0;
+  right: 26px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .2em;
+  color: var(--text);
+  pointer-events: none;
+}
+
+html[data-skin="f"] .wb-brand { display: flex; align-items: center; gap: 11px; }
+/* 品牌印：同为「档案标签」的方框，不做实底，与图章红区分开 */
+html[data-skin="f"] .wb-brand .seal {
+  border-radius: 0;
+  background: transparent;
+  border: 2px solid var(--text);
+  color: var(--text);
+}
+html[data-skin="f"] .wb-brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+html[data-skin="f"] .wb-brand-text b {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+html[data-skin="f"] .wb-brand-text i {
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-style: normal;
+  letter-spacing: .12em;
+  color: var(--text-3);
+}
+
+html[data-skin="f"] .wb-proj { display: flex; align-items: center; gap: var(--s-2); }
+html[data-skin="f"] .wb-proj-sel {
+  max-width: 260px;
+  padding: 5px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--line-2);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .06em;
+  color: var(--text-2);
+}
+html[data-skin="f"] .wb-proj-sel:focus { border-color: var(--accent); }
+
+/* 视图切换：连体的标签盒（负外边距吃掉双线），选中翻墨底 */
+html[data-skin="f"] .wb-views { display: flex; }
+html[data-skin="f"] .wb-view {
+  padding: 7px 15px;
+  border: 1px solid var(--line);
+  margin-left: -1px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .18em;
+  color: var(--text-3);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
+              border-color var(--dur) var(--ease);
+}
+html[data-skin="f"] .wb-view:hover { color: var(--text); }
+html[data-skin="f"] .wb-view.is-on {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--surface);
+}
+
+html[data-skin="f"] .wb-user {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  color: var(--text-2);
+}
+html[data-skin="f"] .wb-user b { font-weight: 400; color: var(--text); }
+html[data-skin="f"] .wb-user i {
+  padding: 2px 6px;
+  border: 1px solid var(--line-2);
+  font-size: 8.5px;
+  font-style: normal;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+/* 退出：退化成一枚等宽文字出口，不抢顶栏的盒子节奏。
+   带上 .wb-btn 是为了压过 .wb-btn-ghost:hover 的按钮底色（后者特异性更高）。 */
+html[data-skin="f"] .wb-btn.wb-exit {
+  padding: 0;
+  border: 0;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  color: var(--text-2);
+}
+html[data-skin="f"] .wb-btn.wb-exit:hover { background: transparent; color: var(--accent); }
+
+/* ============================================================ 4. 按钮 */
+html[data-skin="f"] .wb-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 0;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .12em;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
+              border-color var(--dur) var(--ease);
+}
+html[data-skin="f"] .wb-btn-ghost:hover:not(:disabled) {
+  border-color: var(--text);
+  background: rgba(43, 52, 46, .06);
+}
+html[data-skin="f"] .wb-btn-ink { background: var(--text); border-color: var(--text); color: var(--surface); }
+html[data-skin="f"] .wb-btn-ink:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+html[data-skin="f"] .wb-btn:disabled { opacity: .38; }
+
+/* ============================================================ 5. 皮肤选择器 */
+html[data-skin="f"] .skin-picker { position: relative; }
+html[data-skin="f"] .skin-trigger { display: inline-flex; align-items: center; gap: 8px; }
+html[data-skin="f"] .sp-chip {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border: 1px solid var(--line-2);
+}
+html[data-skin="f"] .sp-label { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .1em; }
+html[data-skin="f"] .sp-caret { font-size: 8px; opacity: .6; }
+
+html[data-skin="f"] .skin-pop {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 60;
+  width: 326px;
+  padding: var(--s-4);
+  border: 1.5px solid var(--text);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+  animation: base-rise var(--dur) var(--ease) both;
+}
+html[data-skin="f"] .sp-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-2);
+}
+html[data-skin="f"] .sp-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 900;
+  letter-spacing: .12em;
+}
+html[data-skin="f"] .sp-hint {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .12em;
+  color: var(--text-3);
+}
+html[data-skin="f"] .sp-grid { padding: var(--s-3) 0 var(--s-2); }
+html[data-skin="f"] .sp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 8px;
+  border-left: 3px solid transparent;
+  text-align: left;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+html[data-skin="f"] .sp-item:hover { background: rgba(43, 52, 46, .05); }
+/* 选中项：一条图章红左条，等于在目录上划了重点 */
+html[data-skin="f"] .sp-item.on { border-left-color: var(--accent); background: rgba(163, 59, 42, .06); }
+html[data-skin="f"] .sp-item .sp-chip { width: 13px; height: 13px; }
+html[data-skin="f"] .sp-body { display: flex; flex-direction: column; min-width: 0; }
+html[data-skin="f"] .sp-name {
+  font-family: var(--font-display);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+html[data-skin="f"] .sp-name em {
+  margin-left: 7px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: .12em;
+  color: var(--text-3);
+}
+html[data-skin="f"] .sp-desc {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+html[data-skin="f"] .sp-check { margin-left: auto; color: var(--accent); font-size: 12px; }
+html[data-skin="f"] .sp-foot {
+  display: block;
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  color: var(--text-3);
+}
+html[data-skin="f"] .sp-foot:hover { color: var(--accent); }
+
+/* ============================================================ 6. 横幅 */
+html[data-skin="f"] .wb-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 9px 26px;
+  border-bottom: 1px solid var(--line-2);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .08em;
+}
+html[data-skin="f"] .wb-banner.is-err { background: rgba(163, 59, 42, .1); color: var(--danger); }
+html[data-skin="f"] .wb-banner.is-warn { background: rgba(43, 52, 46, .06); color: var(--text-2); }
+html[data-skin="f"] .wb-banner-x { margin-left: auto; font-size: 15px; line-height: 1; }
+
+/* ============================================================ 7. 三栏 */
+html[data-skin="f"] .wb-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr) 286px;
+}
+html[data-skin="f"] .wb-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+html[data-skin="f"] .wb-volumes,
+html[data-skin="f"] .wb-main { border-right: 1px solid var(--line-2); }
+/* 中栏用更深的衬底，让居中的打印纸「浮」出来 */
+html[data-skin="f"] .wb-main { background: var(--f-paper-bed); }
+html[data-skin="f"] .wb-volumes,
+html[data-skin="f"] .wb-side { background: var(--surface-2); }
+
+/* 栏头 = 抽屉标签：等宽大写 + 中文在右 */
+html[data-skin="f"] .wb-colhead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line-2);
+}
+html[data-skin="f"] .wb-ch-en,
+html[data-skin="f"] .wb-ch-cn {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* ============================================================ 8. 会话卷册（索引卡）
+   抽屉里的一叠卡：编目号 + 标题 + 元数据，悬停整卡轻推，选中卡挂「当前」角章。 */
+html[data-skin="f"] .wb-new {
+  margin: 14px 12px 10px;
+  padding: 11px;
+  border: 1px dashed var(--line-2);   /* 空卡槽：虚线表示「还缺一张」 */
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .14em;
+  color: var(--text-2);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
+              border-color var(--dur) var(--ease);
+}
+html[data-skin="f"] .wb-new span { color: var(--accent); }
+html[data-skin="f"] .wb-new:hover:not(:disabled) {
+  border-style: solid;
+  border-color: var(--text);
+  background: var(--surface);
+  color: var(--text);
+}
+html[data-skin="f"] .wb-new:disabled { opacity: .4; }
+
+html[data-skin="f"] .wb-vollist { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 12px 16px; }
+html[data-skin="f"] .wb-vol {
+  position: relative;
+  /* 卡内两块：编号行（右侧放删除钮）/ 标题 + 元数据 */
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "no   del"
+    "body body";
+  gap: 6px 8px;
+  margin-bottom: 11px;
+  padding: 11px 13px 13px;
+  border: 1px solid var(--line-2);
+  background-color: var(--surface);
+  background-image: repeating-linear-gradient(0deg, transparent 0 18px, var(--f-rule) 18px 19px);
+  background-position: 0 46px;
+  box-shadow: var(--f-card);
+  cursor: grab;
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease),
+              border-color var(--dur) var(--ease);
+}
+html[data-skin="f"] .wb-vol:hover { transform: translateX(3px); }
+html[data-skin="f"] .wb-vol.is-on { border-color: var(--text); box-shadow: var(--f-card-on); }
+/* 卡顶 3px 图章红：只属于被抽出来的那张卡 */
+html[data-skin="f"] .wb-vol::before {
+  content: "";
+  position: absolute;
+  left: -1px;
+  right: -1px;
+  top: -1px;
+  height: 3px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+}
+html[data-skin="f"] .wb-vol.is-on::before { opacity: 1; }
+/* 「当前」角章：斜挂在卡片右上角外侧。
+   必须显式复位 inset/opacity/background——fx.css 的 [data-tilt]::after 高光层
+   与它共用同一个伪元素，低特异性声明（inset:0 / opacity:0 / 径向渐变）会渗进来。 */
+html[data-skin="f"] .wb-vol.is-on::after {
+  content: "当前";
+  position: absolute;
+  inset: auto;
+  right: -5px;
+  top: -9px;
+  padding: 1px 6px;
+  border: 2px solid var(--accent);
+  border-radius: 0;
+  background: var(--surface);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: .12em;
+  line-height: 1.3;
+  transform: rotate(-8deg);
+  opacity: 1;
+  pointer-events: none;
+}
+html[data-skin="f"] .wb-vol-no {
+  grid-area: no;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .16em;
+  color: var(--text-3);
+}
+/* 编目号前缀写死在伪元素里：这是本皮肤的「档案室」暗号，非业务数据 */
+html[data-skin="f"] .wb-vol-no::before { content: "LJ-0017-"; }
+html[data-skin="f"] .wb-vol-body { grid-area: body; display: flex; flex-direction: column; min-width: 0; }
+html[data-skin="f"] .wb-vol-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html[data-skin="f"] .wb-vol-meta {
+  margin-top: 7px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .08em;
+  color: var(--text-3);
+}
+html[data-skin="f"] .wb-vol-del {
+  grid-area: del;
+  width: 18px;
+  height: 18px;
+  color: var(--text-3);
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="f"] .wb-vol:hover .wb-vol-del { opacity: 1; }
+html[data-skin="f"] .wb-vol-del:hover { color: var(--accent); }
+html[data-skin="f"] .wb-vol-empty {
+  padding: 20px 16px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .12em;
+  color: var(--text-3);
+}
+
+/* ============================================================ 9. 对话主区（连续打印纸）
+   一张居中的纸：横格底 + 两侧走纸针孔；用户消息是等宽窄纸，助手消息是正文。 */
+html[data-skin="f"] .wb-stream { flex: 1; min-height: 0; overflow-y: auto; padding: 0 26px; }
+html[data-skin="f"] .wb-inner {
+  position: relative;
+  max-width: 820px;
+  min-height: 100%;          /* 纸始终铺满可视高度，滚动时才有「连续」感 */
+  margin: 0 auto;
+  padding: 26px 30px 30px;
+  background-color: var(--f-paper);
+  background-image: repeating-linear-gradient(0deg, transparent 0 27px, var(--f-rule) 27px 28px);
+  background-position: 0 62px;
+  box-shadow: inset 0 0 0 1px var(--f-edge);
+}
+/* 走纸针孔贴在「纸」的两侧（而非 .wb-stream）：纸会随内容一起滚，
+   若挂在滚动容器上，绝对定位的孔边会被钉死在视口里，滚动时露馅。 */
+html[data-skin="f"] .wb-inner::before,
+html[data-skin="f"] .wb-inner::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 22px;
+  pointer-events: none;
+  background-image: radial-gradient(circle, var(--f-perf) 2.2px, transparent 2.4px);
+  background-size: 12px 22px;
+  background-position: 6px 11px;
+  background-repeat: repeat-y;
+}
+html[data-skin="f"] .wb-inner::before { left: 0; border-right: 1px dashed var(--f-edge); }
+html[data-skin="f"] .wb-inner::after { right: 0; border-left: 1px dashed var(--f-edge); }
+
+html[data-skin="f"] .wb-msg + .wb-msg { margin-top: 30px; }
+/* 消息头 = 打印纸的字段行（FROM … / 时间），等宽大写小字 */
+html[data-skin="f"] .wb-msg-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+html[data-skin="f"] .wb-msg-mark {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border: 1px solid var(--line-2);
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+html[data-skin="f"] .wb-msg.is-ai .wb-msg-mark { border-color: var(--accent); color: var(--accent); }
+html[data-skin="f"] .wb-msg-name {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 400;
+  letter-spacing: .16em;
+  color: var(--text);
+}
+html[data-skin="f"] .wb-msg-name::before { content: "FROM "; color: var(--text-3); }
+html[data-skin="f"] .wb-msg-role {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .16em;
+  color: var(--text-3);
+}
+html[data-skin="f"] .wb-msg-time {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  color: var(--text-3);
+}
+/* 用户：打字机字 + 左侧图章红条的窄纸 */
+html[data-skin="f"] .wb-msg.is-user .wb-bubble {
+  padding: 12px 14px;
+  border-left: 3px solid var(--accent);
+  background: var(--f-user-bg);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.85;
+}
+/* 助手：正文直接印在横格纸上 */
+html[data-skin="f"] .wb-msg.is-ai .wb-bubble {
+  font-size: 14.5px;
+  line-height: 1.95;
+}
+
+/* 空态 */
+html[data-skin="f"] .wb-empty { padding: 60px 0 30px; text-align: center; }
+/* 空态印章做成双线图章环——档案室唯一允许「圆」的地方是印面 */
+html[data-skin="f"] .wb-empty .seal {
+  margin: 0 auto 20px;
+  border-radius: 0;
+  background: transparent;
+  border: 2.5px solid var(--accent);
+  outline: 1px solid var(--accent);
+  outline-offset: 3px;
+  color: var(--accent);
+}
+html[data-skin="f"] .wb-empty h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+html[data-skin="f"] .wb-empty-lead {
+  max-width: 30em;
+  margin: 12px auto 0;
+  font-size: var(--fs-sm);
+  line-height: 1.95;
+  color: var(--text-2);
+}
+html[data-skin="f"] .wb-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: var(--s-5);
+}
+html[data-skin="f"] .wb-prompt {
+  padding: 9px 15px;
+  border: 1px solid var(--line-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .04em;
+  color: var(--text-2);
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="f"] .wb-prompt:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ============================================================ 10. 中断确认条（盖章卡）
+   一张外挂角章的卡：问题用宋体问，选项是等宽方框（采纳 ＝ 墨底米字）。 */
+html[data-skin="f"] .wb-break {
+  position: relative;
+  width: calc(100% - 52px);
+  max-width: 820px;
+  margin: 0 auto 6px;
+  padding: 16px 18px;
+  border: 1.5px solid var(--text);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+}
+/* 「待采纳」角章：左上角外挂，斜置盖上去。
+   同样要显式复位——它和 fx.css 的 [data-tilt]::after 高光层共用伪元素。 */
+html[data-skin="f"] .wb-break::after {
+  content: "待采纳";
+  position: absolute;
+  inset: auto;
+  left: 16px;
+  top: -13px;
+  padding: 2px 8px;
+  border: 2.5px solid var(--accent);
+  border-radius: 0;
+  background: var(--f-paper);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .16em;
+  line-height: 1.3;
+  transform: rotate(-6deg);
+  opacity: 1;
+  pointer-events: none;
+}
+html[data-skin="f"] .wb-break-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid var(--line);
+}
+html[data-skin="f"] .wb-break-badge {
+  padding: 3px 8px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .18em;
+}
+html[data-skin="f"] .wb-break-note {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .16em;
+  color: var(--text-3);
+}
+html[data-skin="f"] .wb-break-ask {
+  margin: 14px 0;
+  font-family: var(--font-display);
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  word-break: break-word;     /* 长问题文本换行而不是撑破卡片 */
+}
+html[data-skin="f"] .wb-break-ops { display: flex; flex-wrap: wrap; align-items: center; gap: 0; }
+html[data-skin="f"] .wb-break-op {
+  padding: 10px 16px;
+  border: 1.5px solid var(--text);
+  margin-right: -1.5px;       /* 连体方框：相邻边框重叠成一竖线 */
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
+              border-color var(--dur) var(--ease);
+}
+html[data-skin="f"] .wb-break-op:first-child { background: var(--text); color: var(--surface); }
+html[data-skin="f"] .wb-break-op:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+html[data-skin="f"] .wb-break-input {
+  flex: 1;
+  min-width: 140px;
+  margin-left: 16px;
+  padding: 10px 4px;
+  border-bottom: 1.5px solid var(--line-2);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  transition: border-color var(--dur) var(--ease);
+}
+html[data-skin="f"] .wb-break-input:focus { border-color: var(--accent); }
+html[data-skin="f"] .wb-break .wb-btn-ink { margin-left: 12px; }
+
+/* ============================================================ 11. 输入区 */
+html[data-skin="f"] .wb-compose {
+  padding: 14px 26px 16px;
+  border-top: 1px solid var(--line-2);
+  background: var(--surface-2);
+}
+/* 输入框是一只方正的墨框盒，右端嵌墨底「提交」钮 */
+html[data-skin="f"] .wb-compose-box {
+  display: flex;
+  align-items: stretch;
+  max-width: 820px;
+  margin: 0 auto;
+  border: 1.5px solid var(--text);
+  background: var(--surface);
+  transition: border-color var(--dur) var(--ease);
+}
+html[data-skin="f"] .wb-compose-box:focus-within { border-color: var(--accent); }
+html[data-skin="f"] .wb-compose-ta {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+  padding: 12px 14px;
+  border: 0;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  line-height: 1.85;
+}
+html[data-skin="f"] .wb-compose-send {
+  padding: 0 26px;
+  border: 0;
+  border-radius: 0;
+  background: var(--text);
+  color: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .18em;
+  transition: background var(--dur) var(--ease);
+}
+html[data-skin="f"] .wb-compose-send:hover:not(:disabled) { background: var(--accent); }
+html[data-skin="f"] .wb-compose-hint {
+  max-width: 820px;
+  margin: 9px auto 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .12em;
+  color: var(--text-3);
+}
+
+/* ============================================================ 12. 右栏（事件卡） */
+html[data-skin="f"] .wb-side-tabs { display: flex; border-bottom: 1px solid var(--line-2); background: var(--surface-2); }
+html[data-skin="f"] .wb-side-tab {
+  flex: 1;
+  padding: 11px 4px;
+  border-left: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  color: var(--text-3);
+  transition: color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+html[data-skin="f"] .wb-side-tab:first-child { border-left: 0; }
+html[data-skin="f"] .wb-side-tab:hover { color: var(--text); }
+html[data-skin="f"] .wb-side-tab.is-on {
+  color: var(--text);
+  font-weight: 700;
+  box-shadow: inset 0 -3px 0 var(--accent);
+}
+html[data-skin="f"] .wb-side-body { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 16px; }
+
+/* 执行时间线 = 一叠事件卡：EVENT 编号行 + 标题 + 等宽读数 */
+html[data-skin="f"] .wb-tl { display: flex; flex-direction: column; }
+html[data-skin="f"] .wb-tl-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;    /* 编号在上、内容在下，而不是并排 */
+  gap: 6px;
+  margin-bottom: 11px;
+  padding: 12px 13px;
+  border: 1px solid var(--line-2);
+  background-color: var(--surface);
+  background-image: repeating-linear-gradient(0deg, transparent 0 19px, var(--f-rule) 19px 20px);
+  background-position: 0 42px;
+}
+html[data-skin="f"] .wb-tl-no {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .18em;
+  color: var(--text-3);
+}
+html[data-skin="f"] .wb-tl-no::before { content: "EVENT "; }
+html[data-skin="f"] .wb-tl-body { display: flex; flex-direction: column; min-width: 0; }
+html[data-skin="f"] .wb-tl-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  word-break: break-word;
+}
+html[data-skin="f"] .wb-tl-meta {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .06em;
+  color: var(--text-3);
+  word-break: break-word;
+}
+/* 运行中：node_start 尚无配对 node_end，即「正在跑的那一件」——用图章红边标出来 */
+html[data-skin="f"] .wb-tl-item.is-start {
+  border-color: var(--accent);
+  box-shadow: 2px 2px 0 rgba(163, 59, 42, .22);
+}
+html[data-skin="f"] .wb-tl-item.is-start::after {
+  content: "";
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  animation: f-blink 1.2s steps(1) infinite;
+}
+@keyframes f-blink { 50% { opacity: 0; } }
+html[data-skin="f"] .wb-tl-item.is-error .wb-tl-title { color: var(--danger); }
+html[data-skin="f"] .wb-tl-item.is-interrupt .wb-tl-title { color: var(--accent); }
+html[data-skin="f"] .empty-tip {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1.9;
+  letter-spacing: .04em;
+}
+
+/* ============================================================ 13. 次级面板覆写 */
+/* 档案语言下，卡片一律改为「直角纸块」：描边收细、去圆角、去柔光 */
+html[data-skin="f"] .kb-hit,
+html[data-skin="f"] .kb-doc,
+html[data-skin="f"] .trace-item,
+html[data-skin="f"] .prog-item {
+  border-radius: 0;
+  border-color: var(--line);
+  box-shadow: none;
+}
+html[data-skin="f"] .kb-hit { border-left: 3px solid var(--accent); }
+html[data-skin="f"] .kb-drop {
+  border-style: dashed;
+  border-color: var(--line-2);
+  border-radius: 0;
+  background: transparent;
+}
+html[data-skin="f"] .kd-icon { border-radius: 0; }
+html[data-skin="f"] .modal-card { border-radius: 0; box-shadow: var(--shadow-pop); }
+html[data-skin="f"] .auth-card { border-radius: 0; box-shadow: var(--shadow-pop); }
+html[data-skin="f"] .wb-boot {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .2em;
+}
+
+/* ============================================================ 14. 响应式 */
+@media (max-width: 1380px) {
+  html[data-skin="f"] .wb-body { grid-template-columns: 234px minmax(0, 1fr) 268px; }
+  html[data-skin="f"] .wb-inner { max-width: none; }
+}
+@media (max-width: 1080px) {
+  html[data-skin="f"] .wb-body { grid-template-columns: 232px minmax(0, 1fr); }
+  html[data-skin="f"] .wb-side { grid-column: 1 / -1; border-top: 1px solid var(--line-2); max-height: 46vh; }
+}
+@media (max-width: 820px) {
+  html[data-skin="f"] .wb-top { flex-wrap: wrap; gap: var(--s-3); padding: 45px 18px 11px; }
+  html[data-skin="f"] .wb-top::before { padding: 0 160px 0 18px; }
+  html[data-skin="f"] .wb-top::after { right: 18px; }
+  html[data-skin="f"] .wb-body { grid-template-columns: 1fr; }
+  html[data-skin="f"] .wb-volumes { max-height: 34vh; border-right: 0; border-bottom: 1px solid var(--line-2); }
+  html[data-skin="f"] .wb-main { border-right: 0; }
+  html[data-skin="f"] .wb-stream { padding: 0 14px; }
+  html[data-skin="f"] .wb-compose { padding: 14px 14px 16px; }
+  html[data-skin="f"] .wb-break { width: calc(100% - 28px); }
+  html[data-skin="f"] .wb-proj-sel { max-width: 160px; }
+}

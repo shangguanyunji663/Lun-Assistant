@@ -1,25 +1,18 @@
 <!doctype html>
-<!-- v18 落地页 · 皮肤 A「铅字印刷 Letterpress」
+<!-- v18 落地页 · 皮肤 D「木牍竖排 Bamboo Slips」
      六套设计语言共用同一套落地页骨架脚本（src/landing/shared.js）：
      皮肤切换器 / 入场编排 / 数字滚动 / 打字机 / 彩蛋三门，六页行为完全一致。
-     本页只负责「铅字」这一套版式与材质。 -->
-<html lang="zh-CN" data-skin="a" class="no-js">
+     本页只负责「木牍」这一套版式与材质：竹青灰底、竹节横纹、右起竖排、朱色印记。
+     与皮肤 A（index.html）同构：报头 → Hero → 竹简条带 → 读数 → 六环节 →
+     架构与评测 → 人机协同 → 开始使用 → 页脚。 -->
+<html lang="zh-CN" data-skin="d" class="no-js">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#E8E3D8" />
+    <meta name="theme-color" content="#D5DCCD" />
     <meta name="description"
       content="论匠 LunJiang —— 多智能体论文全流程工作台。选题、文献、写作、格式、查重、答辩，六个环节一支编队，产出经你确认后落稿。" />
     <title>论匠 LunJiang · 多智能体论文全流程工作台</title>
-
-    <!-- 皮肤记忆：在站根访问时，跳到用户上次选的那套设计语言。
-         只在本页（站根）生效，landing-*.html 不自跳，避免与用户操作打架。 -->
-    <script>
-      try {
-        var s = localStorage.getItem('lj_skin')
-        if (s && s !== 'a' && /^[a-f]$/.test(s)) location.replace('./landing-' + s + '.html')
-      } catch (e) { /* 隐私模式：留在本页 */ }
-    </script>
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -28,202 +21,228 @@
     <link rel="stylesheet" href="/src/landing/shared.css" />
     <style>
       /* ============================================================
-         皮肤 A · 铅字印刷 —— 页面层
-         共享物的取色令牌（--lb-*）定义在这里，shared.css 读取。
+         皮肤 D · 木牍竖排 —— 页面层
+         共享物（皮肤切换器 / 落笔处 / 彩蛋层）的取色令牌（--lb-*）定义在这里，
+         shared.css 与 shared.js 读取它们，从而融入本页设计语言。
+         色值直接对齐 src/skins/d-bamboo.css，保证落地页与工作台同源。
          ============================================================ */
       :root {
-        --lb-bg: #E8E3D8;
-        --lb-surface: #F0EBE1;
-        --lb-fg: #151310;
-        --lb-muted: #6E675C;
-        --lb-line: rgba(21, 19, 16, .42);
-        --lb-accent: #C0332A;
+        --lb-bg: #D5DCCD;
+        --lb-surface: #E2E8DA;
+        --lb-fg: #1A241E;
+        --lb-muted: #5E6B62;
+        --lb-line: rgba(26, 36, 30, .42);
+        --lb-accent: #A8402C;
         --lb-serif: "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
         --lb-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
         --lb-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
         --lb-r: 0px;
-        --lb-shadow: 8px 9px 0 rgba(21, 19, 16, .16);
+        --lb-shadow: 8px 9px 0 rgba(26, 36, 30, .18);
         --lb-ease: cubic-bezier(.19, 1, .22, 1);
 
-        --paper: #E8E3D8;
-        --surface: #F0EBE1;
-        --ink: #151310;
-        --ink2: #4A453C;
-        --ink3: #6E675C;
-        --red: #C0332A;
-        --line: rgba(21, 19, 16, .16);
-        --rule: rgba(21, 19, 16, .78);
+        /* 页面内别名（与 d-bamboo.css 的令牌一一对应） */
+        --bg: #D5DCCD;
+        --surface: #E2E8DA;
+        --surface-2: #C6CFBE;
+        --ink: #1A241E;
+        --ink2: #3F4C44;
+        --ink3: #5E6B62;
+        --zhu: #A8402C;
+        --zhu-ink: #EFE7DC;
+        --line: rgba(26, 36, 30, .16);
+        --rule: rgba(26, 36, 30, .72);
+        --slip: #D1D8C8;                       /* 竹简条底：比页面略深一档 */
+        --fibre: rgba(26, 36, 30, .07);        /* 竹丝竖纹 */
       }
 
       * { box-sizing: border-box; }
       html { -webkit-text-size-adjust: 100%; }
       body {
         margin: 0;
-        background: var(--paper);
+        background-color: var(--bg);
         color: var(--ink);
         font-family: var(--lb-sans);
         -webkit-font-smoothing: antialiased;
         overflow-x: hidden;
-        /* 纸张噪点：与静默的扫描线互斥（本皮肤关闭扫描线，靠这层建立材质） */
-        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='180' height='180' filter='url(%23n)' opacity='.13'/></svg>");
+        /* 竹节纹理：横向 1px 竹节线，周期 78px（简牍分节），与工作台同一条纹 */
+        background-image: repeating-linear-gradient(0deg,
+          rgba(26, 36, 30, .05) 0 1px, transparent 1px 78px);
       }
       a { color: inherit; text-decoration: none; }
       h1, h2, h3, p, ul, ol, li, figure { margin: 0; padding: 0; list-style: none; }
-      .wrap { max-width: 1380px; margin: 0 auto; padding: 0 56px; }
+      .wrap { max-width: 1420px; margin: 0 auto; padding: 0 52px; }
       .mono { font-family: var(--lb-mono); }
 
       /* ---------------------------------------------------- 报头 */
-      .mast { border-bottom: 3px solid var(--ink); position: relative; }
-      .mast::after { content: ""; position: absolute; left: 0; right: 0; bottom: -7px; height: 1px; background: var(--ink); }
-      .mast-in { display: flex; align-items: center; gap: 34px; padding: 16px 0; }
-      .mk { display: flex; align-items: center; gap: 12px; }
-      .mk-seal {
-        width: 30px; height: 30px; background: var(--red); display: grid; place-items: center;
-        font-family: var(--lb-serif); font-weight: 900; font-size: 17px; color: #F2EDE2;
+      .mast { border-bottom: 1px solid var(--rule); }
+      .mast-in { display: flex; align-items: center; gap: 30px; padding: 16px 0; }
+      .mk { display: flex; align-items: center; gap: 14px; }
+      /* 竖排朱印：朱底米字，「论 / 匠」上下相叠，是本页最鲜明的记号 */
+      .seal-v {
+        writing-mode: vertical-rl;
+        font-family: var(--lb-serif); font-weight: 900; font-size: 13px;
+        letter-spacing: .34em; line-height: 1; padding: 12px 7px;
+        background: var(--zhu); color: var(--zhu-ink);
       }
-      .mk b { font-family: var(--lb-serif); font-size: 20px; letter-spacing: .12em; }
-      .mk small {
-        display: block; margin-top: 2px; font-family: var(--lb-mono); font-size: 10px;
+      .nm { font-family: var(--lb-serif); font-size: 19px; font-weight: 900; letter-spacing: .2em; }
+      .nm small {
+        display: block; margin-top: 5px;
+        font-family: var(--lb-mono); font-size: 9.5px; font-weight: 400;
         letter-spacing: .24em; color: var(--ink3); text-transform: uppercase;
       }
-      .mnav { display: flex; gap: 30px; margin-left: auto; font-size: 13px; }
-      .mnav a { padding-bottom: 3px; border-bottom: 1px solid transparent; }
-      .mnav a:hover { border-color: var(--rule); }
+      .mnav { display: flex; gap: 30px; margin-left: auto; font-size: 13.5px; }
+      .mnav a { padding-bottom: 4px; border-bottom: 1px solid transparent; transition: color .22s var(--lb-ease), border-color .22s var(--lb-ease); }
+      .mnav a:hover { color: var(--zhu); border-color: var(--zhu); }
       .issue {
         font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .2em; color: var(--ink3);
         border-left: 1px solid var(--line); padding-left: 20px;
       }
       .go {
-        background: var(--ink); color: var(--paper); font-size: 13px;
-        padding: 11px 22px; letter-spacing: .06em;
-        transition: background .22s var(--lb-ease);
+        background: var(--ink); color: var(--bg); font-size: 13.5px;
+        padding: 13px 26px; letter-spacing: .1em;
+        transition: background .25s var(--lb-ease);
       }
-      .go:hover { background: var(--red); }
+      .go:hover { background: var(--zhu); color: var(--zhu-ink); }
 
-      /* ---------------------------------------------------- Hero */
-      .hero { display: grid; grid-template-columns: 1.12fr .88fr; gap: 64px; align-items: center; padding: 74px 0 60px; }
+      /* ---------------------------------------------------- Hero（右起竖排） */
+      .hero {
+        display: grid; grid-template-columns: minmax(0, 1fr) auto;
+        gap: 74px; align-items: start; padding: 66px 0 54px;
+      }
+      /* 竖排大标题：每一行落成一列，自右向左排开 —— 简牍的起笔方向 */
+      .vt {
+        writing-mode: vertical-rl;
+        margin: 0; max-height: 62vh;
+        font-family: var(--lb-serif); font-weight: 900;
+        font-size: clamp(26px, 3vw, 48px);
+        letter-spacing: .08em; line-height: 1.12;
+      }
+      .vt .vl { display: block; white-space: nowrap; animation: drop 1.05s var(--lb-ease) both; }
+      .vt .vl:nth-child(1) { animation-delay: .05s; }
+      .vt .vl:nth-child(2) { animation-delay: .18s; }
+      .vt .vl:nth-child(3) { animation-delay: .31s; }
+      /* 三列错峰落下：自上而下落定 */
+      @keyframes drop { from { opacity: 0; transform: translateY(-38px); } to { opacity: 1; transform: none; } }
+      .vt em { font-style: normal; color: var(--zhu); }
+
+      /* 横排说明：与竖排标题成 L 形构图 */
+      .note { max-width: 33em; padding-top: 6px; }
       .kick {
-        display: flex; align-items: center; gap: 12px; margin-bottom: 26px;
-        font-family: var(--lb-mono); font-size: 11px; letter-spacing: .26em;
-        text-transform: uppercase; color: var(--ink3);
+        display: flex; align-items: center; gap: 12px; margin-bottom: 30px;
+        font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .26em;
+        text-transform: uppercase; color: var(--ink2);
       }
-      .kick i { width: 7px; height: 7px; background: var(--red); display: inline-block; animation: blip 2.4s infinite; }
-      @keyframes blip { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
-
-      h1 { font-family: var(--lb-serif); font-weight: 900; font-size: clamp(46px, 6vw, 92px); line-height: 1; letter-spacing: -.015em; }
-      h1 .ln { display: block; overflow: hidden; }
-      h1 .ln > span { display: block; animation: rise 1s var(--lb-ease) both; }
-      h1 .ln:nth-child(1) > span { animation-delay: .05s; }
-      h1 .ln:nth-child(2) > span { animation-delay: .16s; }
-      h1 .ln:nth-child(3) > span { animation-delay: .27s; }
-      @keyframes rise { from { transform: translateY(118%); } to { transform: translateY(0); } }
-      h1 em { font-style: normal; color: var(--red); }
-
-      /* 题记：逐字打出，作为本页唯一使用打字机的元素 */
+      .kick::before { content: ""; width: 44px; height: 1px; background: var(--rule); }
+      /* 题记：逐字打出，本页唯一使用打字机的元素 */
       .hero-note {
-        margin-top: 26px; min-height: 1.7em;
-        font-family: var(--lb-serif); font-size: 16px; letter-spacing: .1em; color: var(--ink2);
+        min-height: 1.8em;
+        font-family: var(--lb-serif); font-weight: 700;
+        font-size: clamp(18px, 1.6vw, 22px); letter-spacing: .14em; color: var(--ink);
       }
-      .hero-note::after { content: "▍"; margin-left: 2px; color: var(--red); animation: blip 1.05s steps(1) infinite; }
+      .hero-note::after { content: "▍"; margin-left: 3px; color: var(--zhu); animation: blip 1.05s steps(1) infinite; }
+      @keyframes blip { 0%, 100% { opacity: 1; } 50% { opacity: .2; } }
+      .hero-sub { margin-top: 18px; font-size: 15.5px; line-height: 2.05; color: var(--ink2); }
+      .hero-sub b { color: var(--ink); font-weight: 700; box-shadow: inset 0 -2px 0 var(--zhu); }
 
-      .hero-sub { margin-top: 18px; font-size: 16.5px; line-height: 1.95; color: var(--ink2); max-width: 31em; }
-      .hero-sub b { color: var(--ink); font-weight: 700; box-shadow: inset 0 -.5em 0 rgba(192, 51, 42, .18); }
-
-      .acts { display: flex; align-items: center; gap: 26px; margin-top: 36px; }
+      .acts { display: flex; align-items: center; gap: 20px; margin-top: 34px; }
       .btn-ink {
-        display: inline-block; background: var(--ink); color: var(--paper); font-size: 14px;
-        padding: 17px 36px; letter-spacing: .08em;
-        transition: transform .25s var(--lb-ease), background .25s;
+        display: inline-block; background: var(--ink); color: var(--bg); font-size: 14px;
+        padding: 16px 34px; letter-spacing: .1em;
+        transition: background .25s var(--lb-ease), color .25s var(--lb-ease);
       }
-      .btn-ink:hover { transform: translate(-3px, -3px); background: var(--red); }
+      .btn-ink:hover { background: var(--zhu); color: var(--zhu-ink); }
       .lnk {
-        font-family: var(--lb-mono); font-size: 12px; letter-spacing: .14em;
-        border-bottom: 1px solid var(--rule); padding-bottom: 4px;
+        font-family: var(--lb-mono); font-size: 11.5px; letter-spacing: .14em;
+        border-bottom: 1px solid var(--rule); padding-bottom: 5px;
+        transition: color .22s var(--lb-ease), border-color .22s var(--lb-ease);
       }
-      .lnk:hover { color: var(--red); border-color: var(--red); }
+      .lnk:hover { color: var(--zhu); border-color: var(--zhu); }
 
-      /* 图版 */
-      .plate {
-        position: relative; background: #DFD9CB; border: 1.5px solid var(--ink); padding: 12px;
-        transform: rotate(-.9deg); box-shadow: 14px 16px 0 rgba(21, 19, 16, .13);
+      /* ---------------------------------------------------- 竹简条带（原跑马灯） */
+      .slipband {
+        border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule);
+        overflow: hidden; white-space: nowrap;
       }
-      .plate img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; filter: grayscale(1) contrast(1.22) brightness(.97); }
-      .plate .cap {
-        display: flex; justify-content: space-between; padding-top: 10px;
-        font-family: var(--lb-mono); font-size: 10px; letter-spacing: .16em;
-        text-transform: uppercase; color: var(--ink3);
-      }
-      .stamp {
-        position: absolute; right: -26px; top: -30px; width: 112px; height: 112px;
-        display: grid; place-items: center; background: var(--red); color: #F3EEE3;
-        font-family: var(--lb-serif); font-weight: 900; font-size: 56px;
-        animation: stamp .75s .95s cubic-bezier(.2, 1.4, .4, 1) both;
-        box-shadow: 0 3px 0 rgba(21, 19, 16, .25);
-      }
-      .stamp::after { content: ""; position: absolute; inset: 8px; border: 2px solid rgba(243, 238, 227, .55); }
-      @keyframes stamp {
-        0% { opacity: 0; transform: scale(2.7) rotate(-24deg); }
-        58% { opacity: 1; transform: scale(.93) rotate(-7deg); }
-        76% { transform: scale(1.04) rotate(-9deg); }
-        100% { transform: scale(1) rotate(-8deg); }
-      }
-
-      /* ---------------------------------------------------- 跑马灯 */
-      .marq { border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); padding: 13px 0; overflow: hidden; white-space: nowrap; }
-      .marq-in { display: inline-flex; animation: marq 30s linear infinite; }
-      .marq-in span {
-        display: inline-flex; align-items: center; gap: 30px; padding: 0 30px;
-        font-family: var(--lb-serif); font-weight: 700; font-size: 17px; letter-spacing: .06em;
-      }
-      .marq-in span::after { content: "◆"; color: var(--red); font-size: 9px; }
+      .slipband-in { display: inline-flex; align-items: stretch; animation: marq 36s linear infinite; }
       @keyframes marq { to { transform: translateX(-50%); } }
+      /* 每条 = 一根竹简：顶部朱色朱文编号 + 竖排环节名 + 竹丝竖纹 */
+      .slip {
+        display: flex; flex-direction: column; align-items: center; gap: 12px;
+        width: 84px; padding: 15px 0 17px;
+        border-right: 1px solid var(--line);
+        background-color: var(--slip);
+        background-image: linear-gradient(90deg, var(--fibre) 0 1px, transparent 1px 11px);
+        background-size: 11px 100%;
+      }
+      .slip i { font-style: normal; font-family: var(--lb-mono); font-size: 10px; letter-spacing: .1em; color: var(--zhu); }
+      .slip b { writing-mode: vertical-rl; font-family: var(--lb-serif); font-weight: 900; font-size: 15px; letter-spacing: .2em; }
 
       /* ---------------------------------------------------- 读数带 */
-      .readout { display: grid; grid-template-columns: repeat(4, 1fr); padding: 52px 0 0; }
-      .ro { padding: 0 32px; border-left: 1px solid var(--line); }
-      .ro:first-child { border-left: 0; padding-left: 0; }
+      .readout { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 54px; border-top: 1px solid var(--rule); }
+      .ro { padding: 30px 28px; border-right: 1px solid var(--line); }
+      .ro:last-child { border-right: 0; }
       .ro .n {
         font-family: var(--lb-serif); font-weight: 900; line-height: 1;
-        font-size: clamp(34px, 4vw, 58px); letter-spacing: -.02em;
+        font-size: clamp(28px, 3.2vw, 46px); letter-spacing: -.01em;
         transition: color .3s var(--lb-ease);
       }
-      .ro:hover .n { color: var(--red); }
+      .ro:hover .n { color: var(--zhu); }
       .ro .n u { text-decoration: none; font-size: .42em; vertical-align: super; }
-      .ro .k { margin-top: 14px; font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink3); }
+      .ro .k { margin-top: 13px; font-family: var(--lb-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink2); }
       .ro .d { margin-top: 7px; font-size: 12.5px; line-height: 1.7; color: var(--ink3); }
 
       /* ---------------------------------------------------- 章节通用 */
       .sec { padding: 78px 0 0; }
       .sechead { display: flex; align-items: baseline; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--rule); }
-      .sechead h2 { font-family: var(--lb-serif); font-weight: 900; font-size: clamp(24px, 2.8vw, 36px); letter-spacing: .01em; }
+      .sechead h2 {
+        position: relative; padding-left: 16px;
+        font-family: var(--lb-serif); font-weight: 900;
+        font-size: clamp(24px, 2.8vw, 36px); letter-spacing: .01em;
+      }
+      /* 朱色铭条：章节标题前的一道朱漆 */
+      .sechead h2::before { content: ""; position: absolute; left: 0; top: .18em; bottom: .16em; width: 3px; background: var(--zhu); }
       .sechead .la { font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .24em; text-transform: uppercase; color: var(--ink3); }
       .sechead .fill { flex: 1; }
-      .lead { margin-top: 22px; max-width: 46em; font-size: 15.5px; line-height: 2; color: var(--ink2); }
+      .lead { margin-top: 22px; max-width: 46em; font-size: 15.5px; line-height: 2.05; color: var(--ink2); }
 
-      /* 六环节：编号边注式条目，不用卡片 */
-      .stages { margin-top: 14px; }
+      /* 六环节：竹简格（三列两行，每格一根竹简） */
+      .stages { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 26px; border-top: 1px solid var(--line); border-left: 1px solid var(--line); }
       .stage {
-        display: grid; grid-template-columns: 64px 1fr 1.5fr; gap: 24px;
-        align-items: start; padding: 24px 0; border-bottom: 1px solid var(--line);
-        transition: background .28s var(--lb-ease);
+        position: relative; overflow: hidden;
+        padding: 26px 30px 30px;
+        border-right: 1px solid var(--line); border-bottom: 1px solid var(--line);
+        background-image: linear-gradient(90deg, var(--fibre) 0 1px, transparent 1px 9px);
+        background-size: 9px 100%;
+        transition: background-color .3s var(--lb-ease);
       }
-      .stage:hover { background: rgba(21, 19, 16, .035); }
-      .stage .no { font-family: var(--lb-mono); font-size: 11px; letter-spacing: .16em; color: var(--ink3); padding-top: 5px; }
-      .stage h3 { font-family: var(--lb-serif); font-size: 20px; font-weight: 900; letter-spacing: .1em; }
-      .stage p { font-size: 14px; line-height: 1.95; color: var(--ink2); }
+      .stage:hover { background-color: rgba(26, 36, 30, .05); }
+      /* 朱色左条：hover 时自上而下展开（只动 transform，不触发布局） */
+      .stage::before {
+        content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+        background: var(--zhu); transform: scaleY(0); transform-origin: top;
+        transition: transform .44s var(--lb-ease);
+      }
+      .stage:hover::before { transform: scaleY(1); }
+      .stage .no { font-family: var(--lb-serif); font-weight: 900; font-size: 15px; letter-spacing: .1em; color: var(--zhu); }
+      .stage h3 {
+        writing-mode: vertical-rl; white-space: nowrap;
+        height: 98px; margin: 14px 0 16px;
+        font-family: var(--lb-serif); font-size: 19px; font-weight: 900; letter-spacing: .14em;
+      }
+      .stage p { font-size: 13.5px; line-height: 1.95; color: var(--ink2); }
 
-      /* 架构 */
+      /* ---------------------------------------------------- 架构 */
       .arch { display: grid; grid-template-columns: 1.25fr .75fr; gap: 46px; margin-top: 26px; }
       .arch-item { display: grid; grid-template-columns: 64px 1fr; gap: 20px; padding: 16px 0; border-bottom: 1px solid var(--line); }
       .arch-k { font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .2em; color: var(--ink3); padding-top: 4px; }
       .arch-item span:last-child { font-size: 14px; line-height: 1.9; }
       .honesty {
-        margin-top: 26px; padding-left: 18px; border-left: 3px solid var(--red);
+        padding-left: 18px; border-left: 3px solid var(--zhu);
         font-size: 13.5px; line-height: 1.95; color: var(--ink2);
       }
       .honesty code { font-family: var(--lb-mono); font-size: 12.5px; border-bottom: 1px solid var(--line); }
 
-      /* 人机协同 / 开始：三栏细线格 */
+      /* 人机协同 / 开始：三栏细线格，不用卡片 */
       .trio { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 26px; }
       .trio > div { padding: 26px 26px 30px; border-left: 1px solid var(--line); }
       .trio > div:first-child { border-left: 0; padding-left: 0; }
@@ -233,9 +252,10 @@
       .trio .lnk { display: inline-block; margin-top: 20px; }
 
       /* ---------------------------------------------------- 页脚 */
-      .foot { margin-top: 84px; border-top: 3px solid var(--ink); position: relative; }
-      .foot::before { content: ""; position: absolute; left: 0; right: 0; top: 4px; height: 1px; background: var(--ink); }
-      .foot-in { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 22px 0 10px; }
+      .foot { margin-top: 84px; border-top: 1px solid var(--rule); }
+      /* 装订线：页脚缝上压一道朱色短记，收住整卷 */
+      .foot-in { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 26px 0 10px; }
+      .foot-in::before { content: ""; position: absolute; left: 0; top: -1px; width: 84px; height: 3px; background: var(--zhu); }
       .foot-brand { font-family: var(--lb-serif); font-weight: 900; letter-spacing: .18em; }
       .foot-stack, .foot-lic { font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .14em; color: var(--ink3); }
       .foot-in .fill { flex: 1; }
@@ -244,17 +264,23 @@
       /* ---------------------------------------------------- 响应式 */
       @media (max-width: 1080px) {
         .wrap { padding: 0 28px; }
-        .hero { grid-template-columns: 1fr; gap: 44px; padding: 48px 0; }
+        .hero { grid-template-columns: 1fr; gap: 40px; padding: 46px 0; }
+        /* 竖排退回横排：窄屏下竖排会横向溢出 */
+        .vt { writing-mode: horizontal-tb; max-height: none; font-size: clamp(30px, 7vw, 46px); line-height: 1.22; }
+        .vt .vl { display: block; }
         .mnav, .issue { display: none; }
-        .readout { grid-template-columns: repeat(2, 1fr); gap: 34px 0; padding-top: 40px; }
-        .ro:nth-child(3) { border-left: 0; padding-left: 0; }
+        .readout { grid-template-columns: repeat(2, 1fr); margin-top: 40px; }
+        .ro:nth-child(2n) { border-right: 0; }
+        .stages { grid-template-columns: repeat(2, 1fr); }
         .arch { grid-template-columns: 1fr; gap: 24px; }
         .trio { grid-template-columns: 1fr; }
         .trio > div { border-left: 0; padding: 22px 0; border-top: 1px solid var(--line); }
         .trio > div:first-child { border-top: 0; }
-        .stage { grid-template-columns: 48px 1fr; }
-        .stage p { grid-column: 2; }
-        .stamp { width: 84px; height: 84px; font-size: 42px; right: -12px; top: -18px; }
+      }
+      @media (max-width: 720px) {
+        .stages { grid-template-columns: 1fr; }
+        .stage h3 { height: 76px; font-size: 17px; }
+        .slip { width: 74px; }
       }
     </style>
   </head>
@@ -263,8 +289,8 @@
     <header class="mast">
       <div class="wrap mast-in">
         <span class="mk">
-          <span class="mk-seal" aria-hidden="true">论</span>
-          <span><b>论匠</b><small>LunJiang · No.18</small></span>
+          <span class="seal-v" aria-hidden="true">论匠</span>
+          <span class="nm">论匠<small>LunJiang · No.18</small></span>
         </span>
         <nav class="mnav" aria-label="主导航">
           <a href="#stages">六个环节</a>
@@ -278,16 +304,11 @@
     </header>
 
     <main>
-      <!-- ============================================================ Hero -->
+      <!-- ============================================================ Hero
+           左：横排说明 + CTA；右：右起竖排大标题。两笔成 L 形。 -->
       <section class="wrap hero">
-        <div>
-          <p class="kick"><i aria-hidden="true"></i>多智能体论文全流程工作台</p>
-
-          <h1>
-            <span class="ln"><span>论文，</span></span>
-            <span class="ln"><span>不是一次</span></span>
-            <span class="ln"><span><em>生成</em>的。</span></span>
-          </h1>
+        <div class="note">
+          <p class="kick">多智能体论文全流程工作台</p>
 
           <p class="hero-note" data-typewriter>机器起草，人来定稿。</p>
 
@@ -302,21 +323,28 @@
           </div>
         </div>
 
-        <figure class="plate" data-tilt>
-          <span class="stamp" aria-hidden="true">匠</span>
-          <!-- 配图走本地资产（public/fig/），不依赖外部出图接口：
-               首访即可见，离线/内网部署也不受影响。下同。 -->
-          <img alt="木质书桌上摊开的手稿、钢笔与活字铅字块"
-            src="./fig/hero-a-letterpress.jpg" />
-          <figcaption class="cap"><span>图版 01 · 稿纸与活字</span><span>Letterpress</span></figcaption>
-        </figure>
+        <h1 class="vt">
+          <span class="vl">一卷论文，</span>
+          <span class="vl">六个环节，</span>
+          <span class="vl"><em>逐个</em>刻完。</span>
+        </h1>
       </section>
 
-      <!-- ============================================================ 跑马灯 -->
-      <div class="marq" aria-hidden="true">
-        <div class="marq-in">
-          <span>选题立项</span><span>文献综述</span><span>方法与写作</span><span>格式规范</span><span>查重降重</span><span>答辩准备</span>
-          <span>选题立项</span><span>文献综述</span><span>方法与写作</span><span>格式规范</span><span>查重降重</span><span>答辩准备</span>
+      <!-- ============================================================ 竹简条带 -->
+      <div class="slipband" aria-hidden="true">
+        <div class="slipband-in">
+          <span class="slip"><i>壹</i><b>选题立项</b></span>
+          <span class="slip"><i>贰</i><b>文献综述</b></span>
+          <span class="slip"><i>叁</i><b>方法与写作</b></span>
+          <span class="slip"><i>肆</i><b>格式规范</b></span>
+          <span class="slip"><i>伍</i><b>查重降重</b></span>
+          <span class="slip"><i>陆</i><b>答辩准备</b></span>
+          <span class="slip"><i>壹</i><b>选题立项</b></span>
+          <span class="slip"><i>贰</i><b>文献综述</b></span>
+          <span class="slip"><i>叁</i><b>方法与写作</b></span>
+          <span class="slip"><i>肆</i><b>格式规范</b></span>
+          <span class="slip"><i>伍</i><b>查重降重</b></span>
+          <span class="slip"><i>陆</i><b>答辩准备</b></span>
         </div>
       </div>
 
@@ -352,7 +380,7 @@
           <h2>六个环节，一支智能体编队</h2>
           <span class="la">Capabilities</span>
           <span class="fill"></span>
-          <span class="la">01 — 06</span>
+          <span class="la">壹 — 陆</span>
         </div>
         <p class="lead" data-reveal>
           不是一个大模型硬扛所有问题：主控智能体识别意图、拆解任务、按环节路由给专项角色，
@@ -361,32 +389,32 @@
 
         <div class="stages">
           <article class="stage" data-reveal>
-            <span class="no">01</span>
+            <span class="no">壹</span>
             <h3>选题立项</h3>
             <p>把专业方向与写作要求交给选题环节，产出选题结论与理由，自动沉淀为项目档案的选题记录。</p>
           </article>
           <article class="stage" data-reveal>
-            <span class="no">02</span>
+            <span class="no">贰</span>
             <h3>文献综述</h3>
             <p>向量检索与关键词多路召回，融合后精排；引用的每一段都可以溯源到原文。</p>
           </article>
           <article class="stage" data-reveal>
-            <span class="no">03</span>
+            <span class="no">叁</span>
             <h3>方法与写作</h3>
             <p>复杂任务由 Planner 拆成步骤序列，以「规划 — 执行 — 校验」循环推进，逐章成稿。</p>
           </article>
           <article class="stage" data-reveal>
-            <span class="no">04</span>
+            <span class="no">肆</span>
             <h3>格式规范</h3>
             <p>字数、引用格式与交付节点写入结构化记忆，在写作全程作为硬约束参与校验。</p>
           </article>
           <article class="stage" data-reveal>
-            <span class="no">05</span>
+            <span class="no">伍</span>
             <h3>查重降重</h3>
             <p>语义改写与引用边界核对，逐段标注风险，可疑段落交给人工确认，而不是静默放行。</p>
           </article>
           <article class="stage" data-reveal>
-            <span class="no">06</span>
+            <span class="no">陆</span>
             <h3>答辩准备</h3>
             <p>汇总研究过程与阶段性产出，整理答辩所需的陈述要点与支撑材料。</p>
           </article>
@@ -445,7 +473,7 @@
         </div>
       </section>
 
-      <!-- ============================================================ 开始 -->
+      <!-- ============================================================ 开始使用 -->
       <section class="wrap sec" id="start">
         <div class="sechead" data-reveal>
           <h2>三种方式，开始使用</h2>

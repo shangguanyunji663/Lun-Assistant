@@ -1,15 +1,26 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-skin="a">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#E8EFF3" />
-    <meta name="description" content="论匠 · 基于 LangGraph 主从多智能体架构的论文全流程智能助手" />
+    <meta name="theme-color" content="#E8E3D8" />
+    <meta name="description" content="论匠 · 多智能体论文全流程工作台 —— 六套设计语言可切换" />
     <title>论匠 · 工作台</title>
-    <!-- v15 · 现代艺术四主题（H/I/J/K）web 字体：CDN 加载 + 系统栈回退（离线场景降级宋体/黑体，见 CHANGELOG-v15） -->
+    <!-- 首帧前把皮肤属性就位（读 localStorage.lj_skin），否则会闪一帧默认皮肤。
+        脚本被禁用时保持模板里的 data-skin="a"，功能不受影响。 -->
+    <script>
+      try {
+        var s = localStorage.getItem('lj_skin')
+        if (!/^[a-f]$/.test(s || '')) s = 'a'
+        document.documentElement.setAttribute('data-skin', s)
+      } catch (e) { /* 隐私模式：保持模板默认 */ }
+    </script>
+    <!-- 六套皮肤共用的三档字族：宋（A/D/F 标题）、黑（全皮肤正文）、等宽（标注与数据） -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700;900&family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@700;900&display=swap"
+      rel="stylesheet" />
   </head>
   <body>
     <div id="root"></div>

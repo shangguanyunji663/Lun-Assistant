@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { BrushRule } from './decor.jsx'
+import { Rule } from './decor.jsx'
 
 // 项目弹窗 —— 新建（POST）与 编辑/删除（PATCH / DELETE）
 // 状态选项与后端 infrastructure/models/project.py PROJECT_STATUSES 一致
@@ -40,7 +40,7 @@ export default function ProjectDialog({ mode, initial, onClose, onCreate, onPatc
     <div className="modal-mask" onClick={e => { if (e.target === e.currentTarget) onClose() }}>
       <div className="modal-card" onClick={e => e.stopPropagation()}>
         <h3>{editing ? '编辑论文项目' : '新建论文项目'}</h3>
-        <div className="modal-rule"><BrushRule width={80} /></div>
+        <div className="modal-rule"><Rule width={80} /></div>
         {!editing && <p className="muted center">先给论文起一个题目，专业与写作要求可稍后补充。</p>}
 
         <div className="field">

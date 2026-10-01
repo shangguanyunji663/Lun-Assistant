@@ -2,7 +2,7 @@
 
 > 文档域：frontend-versions
 > 文档类型：操作手册 / 指南
-> 主题版本：v8 → v15
+> 主题版本：v8 → v18
 > 轮次：—
 > 日期：2026-09-02
 > 状态：已落地
@@ -54,7 +54,16 @@ v15  现代艺术四主题（ROUND17）     → CHANGELOG-v15.md（版本变更�
    ▼
 R18  落地页一致性修复 + 三枚彩蛋（ROUND18） → OPTIMIZATION_ROUND18.md（轮次记录）
      编辑部版式补齐 / 导航对齐 / 主题入口 · 彩蛋机关（调度局 / 捉虫 / 临帖）
+   │
+   ▼
+v18  六套设计语言（推翻重来）        → CHANGELOG-v18.md（版本变更）
+     铅字印刷 / 夜航仪表 / 学术海报 / 木牍竖排 / 孔版双色 / 索引档案
+     视觉层整体重写：数据-theme 换肤体系（11 主题 + 柔化开关）删除，
+     改为 <html data-skin> + 每皮肤一份完整样式；落地页每皮肤一个独立 HTML
 ```
+
+> v16（6 主题 + 柔化开关）与 v17（动效层）落在 v15 与 v18 之间，作为**过程版本**
+> 未单独出档；其成果的去留见 [`CHANGELOG-v18.md`](./CHANGELOG-v18.md) §四。
 
 ***
 
@@ -79,6 +88,7 @@ R18  落地页一致性修复 + 三枚彩蛋（ROUND18） → OPTIMIZATION_ROUND
 | v15      | [`CHANGELOG-v15.md`](./CHANGELOG-v15.md)                             | 版本变更 | v15 现代艺术四主题 H/I/J/K · 工作台 11 主题（ROUND17） |
 | v15      | [`OPTIMIZATION_ROUND17.md`](./OPTIMIZATION_ROUND17.md)               | 轮次记录 | ROUND17 · 落地页编辑部双结构 · 字体接入 · tuner 追平 |
 | v15      | [`OPTIMIZATION_ROUND18.md`](./OPTIMIZATION_ROUND18.md)               | 轮次记录 | ROUND18 · 落地页一致性修复 + 三枚彩蛋机关（调度局 / 捉虫 / 临帖） |
+| v18      | [`CHANGELOG-v18.md`](./CHANGELOG-v18.md)                             | 版本变更 | v18 六套设计语言推翻重来（皮肤契约 / 工作台换肤 / 落地页每皮肤一页） |
 
 ***
 
@@ -86,9 +96,10 @@ R18  落地页一致性修复 + 三枚彩蛋（ROUND18） → OPTIMIZATION_ROUND
 
 | 类型              | 位置                                                           |
 | --------------- | ------------------------------------------------------------ |
-| 设计稿资源（HTML/PNG） | `design-concepts/`（preview\.html / tuner.html / 参考图）         |
-| 设计样图（v15 四方向） | `frontend/design-samples/`（sample-{a-editorial,b-konstrukt,c-nightflight,d-riso}.html） |
-| 生产代码            | `frontend/src/styles.css`（token）· `src/hooks/useTheme.js`（主题注册）· `src/landing.css`/`landing.js`（落地页）· `public/console/tuner.html`（调参台） |
+| 设计稿资源（HTML/PNG） | `design-concepts/`（preview\.html / 参考图）                       |
+| 设计样图（v15 历史档案） | `frontend/design-samples/`（proposal-1…10 · sample-{a-editorial,b-konstrukt,c-nightflight,d-riso}.html，不参与构建） |
+| **皮肤契约（v18 起单一真源）** | `frontend/src/skins/CONTRACT.md`（令牌表 + 类名表 + 书写规范 + 自检清单） |
+| **生产代码（v18）** | 工作台样式 `frontend/src/skins/{a-letterpress…f-archive}.css` + 共享底座 `src/styles/{base,panels}.css` + 动效层 `src/fx.css`；皮肤注册 `src/skins/registry.js`；落地页 `frontend/index.html` + `landing-{b…f}.html` + 共享行为 `src/landing/shared.{js,css}` |
 | 彩蛋页（落地页入口） | `frontend/public/easter/`（dispatch · hunt · brush，落地页三门触发的独立静态页，见 ROUND18） |
 | 后端 / 通用轮次       | `docs/OPTIMIZATION_ROUND{1-6}.md` 等                          |
 
@@ -130,6 +141,7 @@ docs/frontend-versions/
 ├── CHANGELOG-v15.md             ← v15 现代艺术四主题（含 §九 一致性修复补记）
 ├── OPTIMIZATION_ROUND17.md      ← ROUND17 落地页编辑部双结构
 ├── OPTIMIZATION_ROUND18.md      ← ROUND18 落地页一致性修复 + 三枚彩蛋
+├── CHANGELOG-v18.md             ← v18 六套设计语言（推翻重来）
 ├── v11-screenshots/             ← v11 实拍截图
 └── v13-screenshots/             ← v13 七主题实拍截图（theme-a~g.png）
 ```
