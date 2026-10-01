@@ -19,7 +19,7 @@ export function Rule({ width = 96 }) {
   return <span className="rule" style={{ width }} aria-hidden="true" />
 }
 
-/* 背景氛围：三条缓慢流动的曲线（v17 动效层；样式见 styles.css · 背景氛围动效）
+/* 背景氛围：三条缓慢流动的曲线（动效层；样式见 fx.css · 背景氛围动效）
    纯装饰，fixed 定位且不接收指针事件，不参与任何布局。 */
 export function AmbientLines() {
   return (

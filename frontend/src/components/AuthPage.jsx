@@ -1,13 +1,15 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
+
 import { api } from '../api.js'
 import { Seal } from './decor.jsx'
-import ThemePicker from './ThemePicker.jsx'
+import SkinPicker from './SkinPicker.jsx'
 
 /* ============================================================
    登录页 · 左品牌 / 右表单
-     主题与柔化开关同样可用（只改材质配色，与工作台完全一致）
+     皮肤（6 套设计语言）在此同样可切换，切换即时生效——
+     登录页与工作台共用同一套 .wb-* / .auth-* 皮肤样式。
    ============================================================ */
-export default function AuthPage({ onLogin, themeCtl }) {
+export default function AuthPage({ onLogin, skinCtl }) {
   const [mode, setMode] = useState('login')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -28,17 +30,17 @@ export default function AuthPage({ onLogin, themeCtl }) {
   const isLogin = mode === 'login'
 
   return (
-    <div className="auth-wrap">
-      {themeCtl && (
-        <div className="auth-theme"><ThemePicker {...themeCtl} /></div>
+    <div className="auth">
+      {skinCtl && (
+        <div className="auth-skin"><SkinPicker {...skinCtl} /></div>
       )}
 
       {/* 左 · 品牌区 */}
       <section className="auth-brand">
-        <div className="brand-seal"><Seal size={56} /></div>
-        <h1 className="brand-vert">论匠</h1>
-        <p className="brand-en">LunJiang · 多智能体论文全流程助手</p>
-        <ul className="brand-points">
+        <Seal size={56} />
+        <h1 className="auth-title">论匠</h1>
+        <p className="auth-sub">LunJiang · 多智能体论文全流程助手</p>
+        <ul className="auth-points">
           <li>选题 · 文献 · 写作 · 格式 · 查重 · 答辩</li>
           <li>主控智能体调度，产出经你确认后落稿</li>
           <li>全链路留痕，执行过程可回放</li>
@@ -46,9 +48,9 @@ export default function AuthPage({ onLogin, themeCtl }) {
       </section>
 
       {/* 右 · 表单区 */}
-      <form className="auth-card card" onSubmit={submit}>
+      <form className="auth-card" onSubmit={submit}>
         <h2>{isLogin ? '登录' : '注册'}</h2>
-        <p className="muted">{isLogin ? '登录以继续使用' : '注册后将自动登录'}</p>
+        <p className="auth-note muted">{isLogin ? '登录以继续使用' : '注册后将自动登录'}</p>
 
         <label className="field">
           <span>用户名</span>
@@ -62,7 +64,8 @@ export default function AuthPage({ onLogin, themeCtl }) {
                  autoComplete={isLogin ? 'current-password' : 'new-password'} />
         </label>
 
-        <button className="btn btn-ink auth-submit" disabled={busy || !username || !password}>
+        <button className="wb-btn wb-btn-ink auth-submit" data-magnet
+                disabled={busy || !username || !password}>
           {busy ? '处理中…' : (isLogin ? '登 录' : '注册并登录')}
         </button>
 

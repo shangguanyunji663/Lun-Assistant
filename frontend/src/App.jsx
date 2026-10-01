@@ -1,54 +1,172 @@
-import React, { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+
 import { api } from './api.js'
-import { Seal, Markdown, AmbientLines } from './components/decor.jsx'
+import { DEMO_INTERRUPT, DEMO_PROJECTS, DEMO_SESSIONS, DEMO_USER, isDemo } from './demo.js'
+import { initPointerFx, stampAt } from './fx.js'
+import { AmbientLines, Markdown, Seal } from './components/decor.jsx'
 import AuthPage from './components/AuthPage.jsx'
 import Timeline from './components/Timeline.jsx'
 import TracePanel from './components/TracePanel.jsx'
 import KnowledgePanel from './components/KnowledgePanel.jsx'
 import ProjectArchive from './components/ProjectArchive.jsx'
 import ProjectDialog from './components/ProjectDialog.jsx'
-import ThemePicker from './components/ThemePicker.jsx'
-import { initPointerFx, toast } from './fx.js'
+import SkinPicker from './components/SkinPicker.jsx'
 import { useChat } from './hooks/useChat.js'
 import { useProjects } from './hooks/useProjects.js'
 import { useSessions } from './hooks/useSessions.js'
-import { useTheme } from './hooks/useTheme.js'
+import { useSkin } from './hooks/useSkin.js'
 
 /* ============================================================
-   主应用 · v16
-     · 主题体系：6 主题 + 柔化开关（见 tokens.css / useTheme.js）
-     · 布局：会话卷册 + 对话主区 + 右栏三 tab；可观测为独立视图
-     · 状态逻辑在 src/hooks/（主题 / 会话 / 项目 / 对话）
+   主应用 · v18「六套设计语言」
+     · 皮肤：<html data-skin="a…f">，6 套完整设计语言（配色/字体/排版/材质/动效性格）
+       整套切换，见 src/skins/*.css 与 skins/registry.js。
+     · 结构：三栏（会话卷册 / 对话主区 / 右栏三 tab）；可观测为独立视图。
+     · 逻辑层沿用 v12 起的自定义 hooks（对话 SSE / 会话 / 项目），本版未改其内核。
+     · 可玩性：会话卷册可拖拽重排；采纳产出时在落点砸一枚图章。
    ============================================================ */
 
+/* ---------------------------------------------------------- 会话卷册
+   拖拽重排：按住一行拖动，跨过相邻行时实时交换；松手落定。
+   仅用 Pointer 事件，触屏同样可用（touch-action: none 防误滚）。 */
+function VolumeList({ sessions, activeId, disabled, onSelect, onRemove, onReorder, fmtTime }) {
+  const listRef = useRef(null)
+  const [drag, setDrag] = useState(null) // { id, from, delta, axis }
+
+  const begin = (e, s, idx) => {
+    if (disabled) return
+    const list = listRef.current
+    const rects = [...list.querySelectorAll('.wb-vol')].map(el => el.getBoundingClientRect())
+
+    /* 轴向自适应：A/B/C/E/F 的会话栏是左侧竖列（沿 Y 拖），
+       而 D「木牍竖排」把它放进了顶部横向书签栏（必须沿 X 拖）——
+       竖向位移在横排容器里会被 overflow 裁掉，手感尽失。
+       这里按前两项的实际排布判断，不依赖皮肤类名或媒体查询。 */
+    const horizontal = rects.length > 1
+      && Math.abs(rects[1].left - rects[0].left) > Math.abs(rects[1].top - rects[0].top)
+    const axis = horizontal ? 'x' : 'y'
+    const step = rects.length > 1
+      ? (horizontal ? rects[1].left - rects[0].left : rects[1].top - rects[0].top)
+      : (horizontal ? 180 : 74)
+    const startAt = horizontal ? e.clientX : e.clientY
+
+    let armed = false
+    let delta = 0
+
+    const move = (ev) => {
+      delta = (horizontal ? ev.clientX : ev.clientY) - startAt
+      if (!armed) {
+        if (Math.abs(delta) < 6) return
+        armed = true
+        setDrag({ id: s.id, from: idx, delta: 0, axis })
+      }
+      setDrag({ id: s.id, from: idx, delta, axis })
+      /* 横排书签栏总宽超过容器：指针贴边时顺带滚动，否则拖不到远处的位次 */
+      if (horizontal) {
+        const r = list.getBoundingClientRect()
+        if (ev.clientX - r.left < 48) list.scrollLeft -= 7
+        else if (r.right - ev.clientX < 48) list.scrollLeft += 7
+      }
+    }
+
+    const up = () => {
+      window.removeEventListener('pointermove', move)
+      window.removeEventListener('pointerup', up)
+      if (!armed) { onSelect(s.id); setDrag(null); return }
+      // 位移换算成目标位次（相邻项间距固定，取整即可）
+      const steps = Math.round(delta / (step || 1))
+      const to = Math.max(0, Math.min(sessions.length - 1, idx + steps))
+      if (to !== idx) onReorder(idx, to)
+      setDrag(null)
+    }
+
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+  }
+
+  return (
+    <div className="wb-vollist" ref={listRef} data-dragging={drag ? 'on' : undefined}>
+      {!sessions.length && <p className="wb-vol-empty">尚无会话</p>}
+      {sessions.map((s, i) => {
+        const d = drag && drag.id === s.id ? drag : null
+        const style = d
+          ? { transform: d.axis === 'x' ? `translateX(${d.delta}px)` : `translateY(${d.delta}px)` }
+          : undefined
+        return (
+          <div key={s.id}
+               className={`wb-vol${s.id === activeId ? ' is-on' : ''}${d ? ' is-dragging' : ''}`}
+               /* 拖拽中的项摘掉 data-tilt：否则 fx.css 的
+                  [data-tilt].tilt-on 会以 !important 夺走 transform，
+                  上面的位移就画不出来了（跟随手感全靠它） */
+               data-tilt={disabled || d ? undefined : ''}
+               style={style}
+               role="button" tabIndex={0}
+               aria-pressed={s.id === activeId}
+               onPointerDown={e => begin(e, s, i)}
+               onKeyDown={e => {
+                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(s.id) }
+               }}
+               title={disabled ? '生成中，暂不可切换' : `${s.title}（可拖动排序）`}>
+            <span className="wb-vol-no" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+            <span className="wb-vol-body">
+              <span className="wb-vol-title">{s.title}</span>
+              <span className="wb-vol-meta">{fmtTime(s.updatedAt)} · {s.msgs.length} 条</span>
+            </span>
+            <button className="wb-vol-del" disabled={disabled}
+                    onPointerDown={e => e.stopPropagation()}
+                    onClick={e => { e.stopPropagation(); onRemove(s.id) }}
+                    title="删除会话">×</button>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+/* 开发预览模式（?demo=1）：仅 DEV 构建生效，见 src/demo.js。
+   用途是「不起后端也能逐套检查六种设计语言」，生产构建下恒为 false。 */
+const DEMO = isDemo()
+
 export default function App() {
-  const [user, setUser] = useState(null)
-  const [booting, setBooting] = useState(true)
+  const [user, setUser] = useState(DEMO ? DEMO_USER : null)
+  const [booting, setBooting] = useState(!DEMO)
   const [tab, setTab] = useState('chat')
   const [sideTab, setSideTab] = useState('timeline')
 
-  // ---- 主题 + 柔化 ----
-  const themeCtl = useTheme()
+  // ---- 皮肤（6 套设计语言）----
+  const skinCtl = useSkin()
 
   // ---- 会话卷册 ----
   const {
     sessions, active, setActiveId, messages, timeline, bottomRef,
-    patchSession, newSession: createSession, removeSession: deleteSession,
-  } = useSessions()
+    patchSession, newSession: createSession, removeSession: deleteSession, reorderSessions,
+  } = useSessions(DEMO ? DEMO_SESSIONS : null)
 
   // ---- 项目 ----
   const {
     projects, projectsErr, setProjectsErr, projectId, setProjectId,
     archiveKey, setArchiveKey, dialog, setDialog, currentProject,
     createProject, patchProject, deleteProject,
-  } = useProjects(user)
+  } = useProjects(user, DEMO ? { projects: DEMO_PROJECTS } : null)
 
   // ---- 对话发送 / SSE 流式 ----
   const { streaming, interrupt, setInterrupt, input, setInput, send } =
-    useChat({ active, patchSession, projectId, setArchiveKey })
+    useChat({ active, patchSession, projectId, setArchiveKey, demo: DEMO })
+
+  /* 演示模式：首屏就把中断确认条摆出来（真实环境由 SSE 的 interrupt 事件触发） */
+  const demoSeeded = useRef(false)
+  useEffect(() => {
+    if (!DEMO || demoSeeded.current) return
+    if (!timeline.some(e => e.type === 'interrupt')) return
+    demoSeeded.current = true
+    setInterrupt(DEMO_INTERRUPT)
+  }, [timeline, setInterrupt])
+
+  /* 指针特效（3D 倾斜 / 按钮磁吸 / 点击粒子）：全局挂一次，随应用卸载回收 */
+  useEffect(() => initPointerFx(), [])
 
   /* ---- 自动登录 ---- */
   useEffect(() => {
+    if (DEMO) return
     const t = localStorage.getItem('lj_token')
     if (!t) { setBooting(false); return }
     api.me().then(u => setUser(u)).catch(e => {
@@ -56,18 +174,6 @@ export default function App() {
       localStorage.removeItem('lj_token')
     }).finally(() => setBooting(false))
   }, [])
-
-  /* ---- v17 指针特效：3D 倾斜 / 按钮磁吸 / 光标拖尾 / 点击粒子 ---- */
-  useEffect(() => initPointerFx(), [])
-
-  /* ---- 对话落档后的成就提示（首次挂载不提示） ---- */
-  const archiveSeen = useRef(archiveKey)
-  useEffect(() => {
-    if (archiveKey > archiveSeen.current) {
-      toast('项目档案已同步', '结构化记忆已随本轮对话更新')
-    }
-    archiveSeen.current = archiveKey
-  }, [archiveKey])
 
   /* ---- 会话增删（生成中锁定）---- */
   const newSession = () => {
@@ -97,58 +203,87 @@ export default function App() {
       : `${d.getMonth() + 1}月${d.getDate()}日`
   }
 
-  /* 等宽时钟，供 ops 主题展示「[14:32:07] [主控]」式呼号；无 ts 的历史消息返回空串 */
+  /* 等宽时钟：部分皮肤（如夜航仪表）用它做「[14:32:07] 主控」式呼号 */
   const fmtClock = (ts) => {
     if (!ts) return ''
     const d = new Date(ts)
     const p = (n) => String(n).padStart(2, '0')
-    return `[${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}]`
+    return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
   }
 
-  // bottomRef 为自定义 hook 返回的稳定 ref，静态分析无法识别其身份，无需加入依赖
+  // bottomRef 为自定义 hook 返回的稳定 ref，无需加入依赖
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, timeline])
 
-  if (booting) return <div className="boot muted">加载中…</div>
-  if (!user) return <><AmbientLines /><AuthPage onLogin={setUser} themeCtl={themeCtl} /></>
+  /* 采纳类操作：在点击落点砸一枚图章（可玩性反馈，替代平淡的 toast） */
+  const answerInterrupt = (e, op) => {
+    if (/采纳|通过|确认/.test(op)) stampAt(e.clientX, e.clientY, '匠')
+    send(op, op)
+  }
+
+  if (booting) return <div className="wb-boot">加载中…</div>
+  if (!user) return <AuthPage onLogin={setUser} skinCtl={skinCtl} />
 
   return (
-    <div className="app">
+    <div className="wb">
       <AmbientLines />
-      <header className="topbar">
-        <h1 className="brand">
-          <Seal size={26} />
-          <span className="brand-text">论匠<small>多智能体论文全流程助手</small></span>
-        </h1>
-        <div className="spacer" />
 
-        <div className="proj-picker">
-          <select value={projectId ?? ''} onChange={e => setProjectId(e.target.value ? Number(e.target.value) : null)}>
+      {/* ============================================================ 顶栏 */}
+      <header className="wb-top">
+        <span className="wb-brand">
+          <Seal size={26} />
+          <span className="wb-brand-text">
+            <b>论匠</b>
+            <i>LunJiang · 多智能体论文全流程助手</i>
+          </span>
+        </span>
+
+        <div className="wb-proj">
+          <select className="wb-proj-sel"
+                  value={projectId ?? ''}
+                  onChange={e => setProjectId(e.target.value ? Number(e.target.value) : null)}
+                  title="关联的论文项目">
             <option value="">（未关联项目）</option>
             {projects.map(p => <option key={p.id} value={p.id}>{`#${p.id} ${p.title}`}</option>)}
           </select>
-          <button className="btn btn-ghost btn-sm" disabled={!projectId}
+          <button className="wb-btn wb-btn-ghost" data-magnet
+                  disabled={!projectId}
                   onClick={() => setDialog({ mode: 'edit', project: currentProject })}
                   title={projectId ? '编辑 / 删除当前项目' : '请先选择项目'}>项目设置</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setDialog({ mode: 'create' })}>新建项目</button>
+          <button className="wb-btn wb-btn-ghost" data-magnet
+                  onClick={() => setDialog({ mode: 'create' })}>新建项目</button>
         </div>
 
-        {/* 主题选择器：6 主题 + 柔化开关（只改材质与配色，不动结构） */}
-        <ThemePicker {...themeCtl} />
+        <span className="wb-fill" />
 
-        <nav className="view-tabs">
-          <button className={tab === 'chat' ? 'on' : ''} onClick={() => setTab('chat')}>对话</button>
-          <button className={tab === 'trace' ? 'on' : ''} onClick={() => setTab('trace')}
+        <SkinPicker {...skinCtl} />
+
+        <nav className="wb-views" aria-label="视图">
+          <button className={`wb-view${tab === 'chat' ? ' is-on' : ''}`}
+                  onClick={() => setTab('chat')}>对话</button>
+          <button className={`wb-view${tab === 'trace' ? ' is-on' : ''}`}
+                  onClick={() => setTab('trace')}
                   title={user.role !== 'admin' ? '仅 admin 可见 Trace 数据' : ''}>可观测</button>
         </nav>
 
-        <span className="who">{user.username}<em>{user.role}</em></span>
-        <button className="btn btn-ghost" onClick={() => { localStorage.removeItem('lj_token'); setUser(null) }}>退出</button>
+        <span className="wb-user">
+          <b>{user.username}</b><i>{user.role}</i>
+        </span>
+        <button className="wb-btn wb-btn-ghost wb-exit"
+                onClick={() => { localStorage.removeItem('lj_token'); setUser(null) }}>退出</button>
       </header>
 
-      {projectsErr && <div className="top-banner err">{projectsErr} <span className="link" onClick={() => setProjectsErr('')}>×</span></div>}
+      {/* ============================================================ 横幅 */}
+      {projectsErr && (
+        <div className="wb-banner is-err">
+          {projectsErr}
+          <button className="wb-banner-x" onClick={() => setProjectsErr('')} aria-label="关闭">×</button>
+        </div>
+      )}
       {user.role !== 'admin' && tab === 'trace' && (
-        <div className="top-banner warn">当前账号为 {user.role}，Trace 列表需要 admin 权限，此页面将无法加载数据。</div>
+        <div className="wb-banner is-warn">
+          当前账号为 {user.role}，Trace 列表需要 admin 权限，此页面将无法加载数据。
+        </div>
       )}
 
       {dialog && (
@@ -157,141 +292,158 @@ export default function App() {
           onCreate={createProject} onPatch={patchProject} onDelete={deleteProject} />
       )}
 
+      {/* ============================================================ 主体 */}
       {tab === 'chat' ? (
-        <>
-          {/* 图纸尺寸标注线：blueprint 主题显示（见 blueprint.css），其余主题隐藏 */}
-          <div className="bench-deco" aria-hidden="true">
-            <svg className="dimline" viewBox="0 0 1200 34">
-              <line className="dl-main" x1="8" y1="20" x2="1192" y2="20" />
-              <line className="dl-tick" x1="8" y1="11" x2="8" y2="29" />
-              <line className="dl-tick" x1="1192" y1="11" x2="1192" y2="29" />
-              <path className="dl-arrow" d="M8 20 L22 15 M8 20 L22 25" />
-              <path className="dl-arrow" d="M1192 20 L1178 15 M1192 20 L1178 25" />
-            </svg>
-            <span className="dimline-label">Layout 1240 × Auto</span>
-          </div>
-          <main className="chat-layout">
-          {/* 会话卷册 */}
-          <aside className="sessions card">
-            <div className="sess-head">
-              <span className="t">会话卷册</span>
-              <button className="btn btn-ghost btn-sm" onClick={newSession} data-burst
-                      disabled={streaming} title="新建会话">新建</button>
+        <main className="wb-body">
+          {/* ---------- 左 · 会话卷册 ---------- */}
+          <aside className="wb-col wb-volumes">
+            <div className="wb-colhead">
+              <span className="wb-ch-en">Volumes</span>
+              <span className="wb-fill" />
+              <span className="wb-ch-cn">会话卷册</span>
             </div>
-            <div className="sess-list">
-              {sessions.length === 0 && <div className="sess-empty">尚无会话</div>}
-              {sessions.map(s => (
-                <div key={s.id}
-                     className={`sess-item${s.id === active?.id ? ' on' : ''}`}
-                     role="button" tabIndex={0}
-                     data-tilt
-                     aria-pressed={s.id === active?.id}
-                     onClick={() => selectSession(s.id)}
-                     onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectSession(s.id) } }}
-                     title={streaming ? '生成中，暂不可切换' : s.title}>
-                  <div className="sess-title">{s.title}</div>
-                  <div className="sess-meta">{fmtTime(s.updatedAt)} · {s.msgs.length} 条</div>
-                  <button className="sess-del" disabled={streaming}
-                          onClick={e => { e.stopPropagation(); removeSession(s.id) }}
-                          title="删除会话">×</button>
-                </div>
-              ))}
-            </div>
+            <button className="wb-new" data-magnet onClick={newSession} disabled={streaming}>
+              <span aria-hidden="true">＋</span> 新建会话
+            </button>
+            <VolumeList
+              sessions={sessions} activeId={active?.id} disabled={streaming}
+              onSelect={selectSession} onRemove={removeSession}
+              onReorder={reorderSessions} fmtTime={fmtTime} />
           </aside>
 
-          <section className={`chat-col card${streaming ? ' streaming' : ''}`}>
-            <div className="messages">
-              <div className="msgs-inner">
+          {/* ---------- 中 · 对话主区 ---------- */}
+          <section className={`wb-col wb-main${streaming ? ' is-streaming' : ''}`}>
+            <div className="wb-stream">
+              <div className="wb-inner">
                 {messages.length === 0 && (
-                  <div className="empty-state">
+                  <div className="wb-empty">
                     <Seal size={44} />
                     <h2>落笔之前</h2>
-                    <p>写下你的论文需求：选题、文献、写作、格式、查重、答辩，各环节都有专项助手接手推进。</p>
-                    <div className="prompts">
+                    <p className="wb-empty-lead">
+                      写下你的论文需求：选题、文献、写作、格式、查重、答辩，
+                      各环节都有专项助手接手推进。
+                    </p>
+                    <div className="wb-prompts">
                       {['帮我确定一个可行的论文选题', '检索近三年大模型相关文献', '为第三章写一段方法论初稿']
-                        .map(p => <button key={p} className="btn btn-ghost btn-sm" onClick={() => send(p)}>{p}</button>)}
+                        .map(p => (
+                          <button key={p} className="wb-prompt" data-magnet data-burst
+                                  onClick={() => send(p)}>{p}</button>
+                        ))}
                     </div>
                   </div>
                 )}
-                {messages.map((m, i) => (
-                  <div key={i} className={`msg ${m.role}`}>
-                    {/* 等宽时间戳 + 呼号：ops 主题显示，其余主题隐藏（见 styles.css 基态） */}
-                    <span className="msg-meta" aria-hidden="true">
-                      {fmtClock(m.ts)}{m.role === 'user' ? ' [用户]' : ' [主控]'}
-                    </span>
-                    <div className="msg-mark">{m.role === 'user' ? '言' : '匠'}</div>
-                    <div className="bubble">
-                      {m.role === 'assistant'
-                        ? <>
-                            <Markdown>{m.content || (streaming && i === messages.length - 1 ? '' : '')}</Markdown>
-                            {streaming && i === messages.length - 1 && <span className="cursor" aria-hidden="true" />}
+
+                {messages.map((m, i) => {
+                  const isUser = m.role === 'user'
+                  const last = i === messages.length - 1
+                  return (
+                    <article key={i} className={`wb-msg ${isUser ? 'is-user' : 'is-ai'}`}>
+                      <div className="wb-msg-head">
+                        <span className="wb-msg-mark" aria-hidden="true">{isUser ? '言' : '匠'}</span>
+                        <span className="wb-msg-name">{isUser ? user.username : '匠'}</span>
+                        <span className="wb-msg-role">{isUser ? 'USER' : 'MAIN AGENT'}</span>
+                        <span className="wb-fill" />
+                        <time className="wb-msg-time">{fmtClock(m.ts)}</time>
+                      </div>
+                      <div className="wb-bubble">
+                        {isUser ? m.content : (
+                          <>
+                            <Markdown>{m.content}</Markdown>
+                            {streaming && last && <span className="cursor" aria-hidden="true" />}
                           </>
-                        : m.content}
-                    </div>
-                  </div>
-                ))}
+                        )}
+                      </div>
+                    </article>
+                  )
+                })}
                 <div ref={bottomRef} />
               </div>
             </div>
 
+            {/* 中断确认条 */}
             {interrupt && (
-              <div className="interrupt-bar">
-                <span className="ib-q">{interrupt.question || '请确认下一步操作'}</span>
-                <div className="ib-opts">
-                  {(interrupt.options || []).map(op => (
-                    <button key={op} className="btn btn-ghost btn-sm" onClick={() => send(op, op)} data-burst disabled={streaming}>{op}</button>
-                  ))}
+              <div className="wb-break" data-tilt>
+                <div className="wb-break-head">
+                  <span className="wb-break-badge">待确认</span>
+                  <span className="wb-break-note">HUMAN-IN-THE-LOOP</span>
+                  <span className="wb-fill" />
+                  <span className="wb-break-note">需要你的决定</span>
                 </div>
-                <div className="free-form">
-                  <input placeholder="输入你的反馈…" value={input}
+                <p className="wb-break-ask">{interrupt.question || '请确认下一步操作'}</p>
+                <div className="wb-break-ops">
+                  {(interrupt.options || []).map(op => (
+                    <button key={op} className="wb-break-op" data-magnet data-burst
+                            onClick={e => answerInterrupt(e, op)}
+                            disabled={streaming}>{op}</button>
+                  ))}
+                  <input className="wb-break-input" placeholder="或输入你的反馈…"
+                         value={input}
                          onChange={e => setInput(e.target.value)}
-                         onKeyDown={e => e.key === 'Enter' && input && send(input, input)} />
-                  <button className="btn btn-ink btn-sm" onClick={() => input && send(input, input)} disabled={streaming || !input}>发送反馈</button>
+                         onKeyDown={e => { if (e.key === 'Enter' && input.trim()) send(input.trim(), input.trim()) }} />
+                  <button className="wb-btn wb-btn-ink"
+                          onClick={e => answerInterrupt(e, input.trim())}
+                          disabled={streaming || !input.trim()}>发送反馈</button>
                 </div>
               </div>
             )}
 
-            <div className="input-bar">
-              <div className="composer">
-                <textarea rows={2} placeholder="输入论文相关请求，如：帮我找几篇大模型文献 / 帮我写摘要…" value={input}
+            {/* 输入区 */}
+            <div className="wb-compose">
+              <div className="wb-compose-box">
+                <textarea className="wb-compose-ta" rows={2}
+                          placeholder="输入论文相关请求，如：帮我找几篇大模型文献 / 帮我写摘要…"
+                          value={input}
                           disabled={streaming || !!interrupt}
                           onChange={e => setInput(e.target.value)}
-                          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && input.trim()) { e.preventDefault(); send(input.trim()) } }} />
-                <button className={`btn btn-ink send${streaming ? ' is-busy' : ''}`} data-burst data-magnet
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && !e.shiftKey && input.trim()) {
+                              e.preventDefault()
+                              send(input.trim())
+                            }
+                          }} />
+                <button className={`wb-compose-send wb-btn wb-btn-ink${streaming ? ' is-busy' : ''}`}
+                        data-magnet
                         disabled={streaming || !input.trim() || !!interrupt}
                         onClick={() => send(input.trim())}>
                   {streaming ? '生成中…' : '发送'}
                 </button>
               </div>
-              <div className="input-hint">Enter 发送 · Shift + Enter 换行{projectId ? ` · 已关联项目 #${projectId}` : ' · 未关联项目（对话不使用项目知识库）'}</div>
+              <p className="wb-compose-hint">
+                Enter 发送 · Shift + Enter 换行
+                {projectId ? ` · 已关联项目 #${projectId}` : ' · 未关联项目（对话不使用项目知识库）'}
+              </p>
             </div>
           </section>
 
-          <aside className="side-col card">
-            <div className="side-tabs">
-              <button className={sideTab === 'timeline' ? 'on' : ''} onClick={() => setSideTab('timeline')}>执行时间线</button>
-              <button className={sideTab === 'knowledge' ? 'on' : ''} onClick={() => setSideTab('knowledge')}>项目知识库</button>
-              <button className={sideTab === 'archive' ? 'on' : ''} onClick={() => setSideTab('archive')}>项目档案</button>
-            </div>
-            <div className="side-scroll">
-              {sideTab === 'timeline' ? (
-                <>
-                  <Timeline events={timeline} />
-                  {!timeline.length &&
-                    <p className="muted empty-tip">发起对话后，这里展示主控调度 / 意图识别 / 路由 / 工具调用（含 Planner 规划与步骤）。</p>}
-                </>
-              ) : sideTab === 'knowledge' ? (
-                <KnowledgePanel projectId={projectId} />
-              ) : (
-                <ProjectArchive projectId={projectId} refreshKey={archiveKey}
+          {/* ---------- 右 · 可观测 / 知识库 / 档案 ---------- */}
+          <aside className="wb-col wb-side">
+            <nav className="wb-side-tabs" aria-label="侧栏">
+              <button className={`wb-side-tab${sideTab === 'timeline' ? ' is-on' : ''}`}
+                      onClick={() => setSideTab('timeline')}>执行时间线</button>
+              <button className={`wb-side-tab${sideTab === 'knowledge' ? ' is-on' : ''}`}
+                      onClick={() => setSideTab('knowledge')}>项目知识库</button>
+              <button className={`wb-side-tab${sideTab === 'archive' ? ' is-on' : ''}`}
+                      onClick={() => setSideTab('archive')}>项目档案</button>
+            </nav>
+            <div className="wb-side-body">
+              {sideTab === 'timeline' && (
+                timeline.length
+                  ? <Timeline events={timeline} />
+                  : <p className="empty-tip">
+                      发起对话后，这里展示主控调度 / 意图识别 / 路由 / 工具调用
+                      （含 Planner 规划与步骤）。
+                    </p>
+              )}
+              {sideTab === 'knowledge' && <KnowledgePanel projectId={projectId} demo={DEMO} />}
+              {sideTab === 'archive' && (
+                <ProjectArchive projectId={projectId} refreshKey={archiveKey} demo={DEMO}
                                 onEdit={() => setDialog({ mode: 'edit', project: currentProject })} />
               )}
             </div>
           </aside>
         </main>
-        </>
       ) : (
-        <main className="trace-main"><TracePanel /></main>
+        <main className="wb-trace-main"><TracePanel demo={DEMO} /></main>
       )}
     </div>
   )

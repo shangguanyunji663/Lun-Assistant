@@ -1,9 +1,9 @@
 /* ============================================================
-   v17 · 动效工具箱（落地页 landing.js 与工作台 React 共用）
-   —— 点击粒子 / 主题切换全屏过渡 / 成就提示条 / 元素级指针特效
+   v18 · 动效工具箱（落地页 src/landing/shared.js 与工作台 React 共用）
+   —— 点击粒子 / 换肤全屏过渡 / 成就提示条 / 元素级指针特效 / 采纳盖章
 
    设计约束：
-     · 颜色一律从 tokens.css 变量读取，不硬编码主题色
+     · 颜色一律从皮肤令牌变量读取（--accent 等），不硬编码任何皮肤色
      · 尊重 prefers-reduced-motion：命中时全部降级（不产生运动）
      · 粒子节点靠 animationend 自动回收，无残留定时器
      · 指针特效只做「与元素绑定」的交互：3D 倾斜（含高光扫过）+ 按钮磁吸；
@@ -12,8 +12,9 @@
    导出：
      initPointerFx()   → 初始化元素级指针特效，返回 dispose()
      burstAt(x, y)     → 在坐标处迸发一圈粒子
-     themeFlash(x, y, onCover) → 全屏圆形遮罩过渡，onCover 在盖满瞬间回调
+     skinFlash(x, y, onCover) → 全屏圆形遮罩过渡，onCover 在盖满瞬间回调
      toast(main, sub)  → 顶部成就提示条
+     stampAt(x, y, ch) → 在坐标处砸下一枚图章（v18：采纳产出时的盖章反馈）
      reduceMotion()    → 当前是否处于「减少动态效果」环境
    ============================================================ */
 
@@ -67,8 +68,34 @@ export function burstAt(x, y, count = 20) {
   host.appendChild(frag)
 }
 
-/* ---------------------------------------------------------- 主题切换全屏过渡 */
-export function themeFlash(x, y, onCover) {
+/* ---------------------------------------------------------- 采纳盖章
+   在 (x, y) 处砸下一枚方形图章——用于「采纳产出」这类需要仪式感的确认动作。
+   图章尺寸随视口轻微浮动，落定角度带随机抖动，避免重复触发时显得机械。 */
+export function stampAt(x, y, char = '匠') {
+  if (reduceMotion()) return
+  const host = getLayer()
+  const el = document.createElement('div')
+  el.className = 'fx-stamp'
+  el.textContent = char
+  const size = 74 + Math.random() * 16
+  el.style.width = `${size}px`
+  el.style.height = `${size}px`
+  el.style.marginLeft = `${-size / 2}px`
+  el.style.marginTop = `${-size / 2}px`
+  el.style.left = `${x}px`
+  el.style.top = `${y}px`
+  el.style.fontSize = `${size * 0.42}px`
+  el.style.setProperty('--stamp-r', `${(Math.random() * 12 - 6).toFixed(1)}deg`)
+  el.addEventListener('animationend', () => {
+    // 停留片刻后淡出，避免印章永久堆积在页面上
+    el.animate?.([{ opacity: 1 }, { opacity: 0 }], { duration: 520, delay: 620, fill: 'forwards' })
+    window.setTimeout(() => el.remove(), 1200)
+  }, { once: true })
+  host.appendChild(el)
+}
+
+/* ---------------------------------------------------------- 换肤全屏过渡 */
+export function skinFlash(x, y, onCover) {
   const done = typeof onCover === 'function' ? onCover : () => {}
   if (reduceMotion()) { done(); return }
   const host = getLayer()
@@ -85,9 +112,9 @@ export function themeFlash(x, y, onCover) {
   el.style.height = `${r * 2}px`
   el.style.marginLeft = `${-r}px`
   el.style.marginTop = `${-r}px`
-  el.style.setProperty('--flash-c', token('--accent', '#D97742'))
+  el.style.setProperty('--flash-c', token('--accent', '#333'))
   host.appendChild(el)
-  // 遮罩盖满的瞬间切换主题，形成「揭幕」效果
+  // 遮罩盖满的瞬间切换皮肤，形成「揭幕」效果
   const coverAt = reduceMotion() ? 0 : 230
   window.setTimeout(done, coverAt)
   el.addEventListener('animationend', () => el.remove(), { once: true })

@@ -1,15 +1,39 @@
 import { useState } from 'react'
 
 import { sse } from '../api.js'
+import { DEMO_INTERRUPT, demoReply } from '../demo.js'
 import { titleOf } from './useSessions.js'
+
+/* 演示模式应答：按固定节奏把假文本喂给打字机，并补一条时间线与中断，
+   让「流式观感 / 时间线 / 中断确认条」三处在不起后端时也能被验证。
+   注：demo.js 用静态引入（App.jsx 也静态引它，动态 import 反而拆不出 chunk）。 */
+async function demoChat(sid, text, resume, { feedTyper, patchSession, setInterrupt }) {
+  const out = demoReply(resume || text)
+  patchSession(sid, s => ({
+    ...s,
+    timeline: [...s.timeline, {
+      type: 'intent',
+      payload: { label: resume ? '人工确认反馈' : '演示请求', layer: 'demo', confidence: 0.99 },
+    }],
+  }))
+  for (const c of (out.match(/[\s\S]{1,6}/g) || [])) {
+    feedTyper(c)
+    await new Promise(r => setTimeout(r, 26))
+  }
+  setInterrupt(DEMO_INTERRUPT)
+  patchSession(sid, s => ({ ...s, timeline: [...s.timeline, { type: 'interrupt', payload: DEMO_INTERRUPT }] }))
+  return out
+}
 
 /**
  * 对话发送与 SSE 流式编排：
  * - 追加用户消息 / 占位助手消息；
  * - 通过 patchSession 增量更新当前流式文本、时间线事件；
- * - interrupt 中断态由调用方展示"确认条"，resume 续跑复用 send。
+ * - interrupt 中断态由调用方展示"确认条"，resume 续跑复用 send；
+ * - demo（开发预览）：不发请求，用固定的应答文本走同一条打字机管线，
+ *   以便在不起后端的情况下验证六套皮肤下的流式观感。
  */
-export function useChat({ active, patchSession, projectId, setArchiveKey }) {
+export function useChat({ active, patchSession, projectId, setArchiveKey, demo = null }) {
   const [streaming, setStreaming] = useState(false)
   const [interrupt, setInterrupt] = useState(null)
   const [input, setInput] = useState('')
@@ -69,7 +93,9 @@ export function useChat({ active, patchSession, projectId, setArchiveKey }) {
     }
 
     try {
-      const finalText = await sse(resume ? '/agent/resume' : '/agent/chat',
+      const finalText = demo
+        ? await demoChat(sid, text, resume, { feedTyper, patchSession, setInterrupt })
+        : await sse(resume ? '/agent/resume' : '/agent/chat',
         resume
           ? { session_id: sid, feedback: resume, project_id: projectId }
           : { session_id: sid, message: text, project_id: projectId },

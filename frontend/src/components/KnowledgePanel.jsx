@@ -1,11 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { api } from '../api.js'
 import { toast } from '../fx.js'
+import { DEMO_KNOWLEDGE } from '../demo.js'
 
 const FMT_ICON = { pdf: 'PDF', docx: 'DOC', txt: 'TXT', md: 'MD' }
 
 // 文档状态徽章（后端 ingest pipeline 仅产出 ready / parsing / failed）
-// ready 额外渲染一枚双线椭圆「已入库」橡皮章（SVG），仅 lab 主题显示（见 themes/lab.css）
+// ready 额外渲染一枚双线椭圆「已入库」橡皮章（SVG）。
+// 是否显示由皮肤决定：skin 把 --stamp-display 设为 inline 即启用（见 src/skins/*.css）。
 function StatusBadge({ status }) {
   const label = { ready: '已入库', parsing: '解析中', failed: '失败' }[status] || status
   return (
@@ -22,8 +24,8 @@ function StatusBadge({ status }) {
   )
 }
 
-export default function KnowledgePanel({ projectId }) {
-  const [docs, setDocs] = useState([])
+export default function KnowledgePanel({ projectId, demo = false }) {
+  const [docs, setDocs] = useState(demo ? DEMO_KNOWLEDGE : [])
   const [err, setErr] = useState('')
   const [uploading, setUploading] = useState(false)
   const [uploadMsg, setUploadMsg] = useState('')
@@ -36,13 +38,20 @@ export default function KnowledgePanel({ projectId }) {
   const fileRef = useRef(null)
 
   const load = async (pid = projectId) => {
+    if (demo) return
     if (!pid) { setDocs([]); return }
     try { setDocs((await api.listKnowledge(pid)).documents); setErr('') }
     catch (e) { setErr(String(e.message || e)) }
   }
-  useEffect(() => { load(); setHits(null); setUploadMsg('') }, [projectId])
+  useEffect(() => {
+    if (demo) { setDocs(DEMO_KNOWLEDGE); return }
+    load(); setHits(null); setUploadMsg('')
+    // demo 为常量开关，不随渲染变化
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId])
 
   const upload = async (files) => {
+    if (demo) { setUploadMsg('演示模式：未接入后端，上传不会真正解析入库。'); return }
     const arr = Array.from(files || [])
     if (!arr.length || uploading) return
     setUploading(true); setUploadMsg(''); setErr('')
@@ -69,12 +78,14 @@ export default function KnowledgePanel({ projectId }) {
   }
 
   const remove = async (docId, filename) => {
+    if (demo) { setUploadMsg('演示模式：未接入后端，删除不会生效。'); return }
     if (!window.confirm(`确定从知识库删除「${filename}」？对应向量分块与原始文件将一并清除。`)) return
     try { await api.deleteKnowledge(projectId, docId); setErr(''); load(); setHits(null) }
     catch (e) { setErr(String(e.message || e)) }
   }
 
   const search = async () => {
+    if (demo) { setUploadMsg('演示模式：未接入后端，检索不可用。'); return }
     const query = q.trim()
     if (!query || searching) return
     setSearching(true); setErr(''); setFallback(false)

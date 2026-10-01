@@ -1,0 +1,670 @@
+<!doctype html>
+<!-- v18 落地页 · 皮肤 B「夜航仪表 Instrument Console」
+     六套设计语言共用同一套落地页骨架脚本（src/landing/shared.js）：
+     皮肤切换器 / 入场编排 / 数字滚动 / 打字机 / 彩蛋三门，六页行为完全一致。
+     本页只负责「仪表台」这一套版式与材质：近黑底 + 56px 方格 + 荧光青遥测读数。
+     落地页一律不自跳（皮肤记忆跳转只属于站根 index.html）。 -->
+<html lang="zh-CN" data-skin="b" class="no-js">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#07080A" />
+    <meta name="description"
+      content="论匠 LunJiang —— 多智能体论文全流程工作台。选题、文献、写作、格式、查重、答辩，六个环节一支编队，产出经你确认后落稿。" />
+    <title>论匠 LunJiang · 多智能体论文全流程工作台</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="/src/landing/shared.css" />
+    <style>
+      /* ============================================================
+         皮肤 B · 夜航仪表 —— 页面层
+         共享物的取色令牌（--lb-*）定义在这里，shared.css 读取。
+         色值直接沿用工作台侧 src/skins/b-console.css，保证同一套设计语言。
+         ============================================================ */
+      :root {
+        /* —— 落地页令牌：切换器 / 砚纸 / 彩蛋层据此取色 —— */
+        --lb-bg: #07080A;
+        --lb-surface: #0B0D10;
+        --lb-fg: #D9DFE3;
+        --lb-muted: #657078;
+        --lb-line: rgba(255, 255, 255, .16);
+        --lb-accent: #3FE0C4;
+        --lb-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        --lb-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+        /* 仪表台不做衬线：题款字也走等宽+黑体，保持「铭牌」语气 */
+        --lb-serif: "IBM Plex Mono", "Noto Sans SC", sans-serif;
+        --lb-r: 2px;
+        --lb-shadow: 0 18px 46px rgba(0, 0, 0, .62);
+        --lb-ease: cubic-bezier(.19, 1, .22, 1);
+
+        /* —— 本页自用：与 b-console.css 令牌一致 —— */
+        --bg: #07080A;
+        --panel: #0B0D10;
+        --panel-2: #0D1013;
+        --fg: #D9DFE3;
+        --fg-2: #B4BCC2;
+        --dim: #657078;
+        --acc: #3FE0C4;
+        --acc-hi: #5CF0D6;
+        --warn: #FFB454;
+        --line: rgba(255, 255, 255, .075);
+        --line-2: rgba(255, 255, 255, .16);
+        --grid: rgba(255, 255, 255, .075);
+        --acc-wash: rgba(63, 224, 196, .05);
+        --acc-line: rgba(63, 224, 196, .45);
+        --track: rgba(255, 255, 255, .09);
+        --ring: rgba(63, 224, 196, .5);
+      }
+
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background-color: var(--bg);
+        color: var(--fg);
+        font-family: var(--lb-sans);
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+        /* 56px 方格底纹：两层 1px linear-gradient 画满整页坐标纸 */
+        background-image:
+          linear-gradient(var(--grid) 1px, transparent 1px),
+          linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+        background-size: 56px 56px;
+        background-position: -1px -1px;
+      }
+      a { color: inherit; text-decoration: none; }
+      h1, h2, h3, p, ul, ol, li, figure { margin: 0; padding: 0; list-style: none; }
+      .wrap { max-width: 1400px; margin: 0 auto; padding: 0 40px; }
+      .mono { font-family: var(--lb-mono); }
+      /* 全站小字：等宽 + 大写 + 宽字距 */
+      .tag {
+        font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .22em;
+        text-transform: uppercase; color: var(--dim);
+      }
+
+      /* 状态灯脉冲：仪表盘上唯一「活着」的证据 */
+      @keyframes ping {
+        0% { box-shadow: 0 0 0 0 var(--ring); }
+        70% { box-shadow: 0 0 0 8px transparent; }
+        100% { box-shadow: 0 0 0 0 transparent; }
+      }
+      @keyframes blink { 50% { opacity: 0; } }
+
+      /* ---------------------------------------------------- 顶轨 */
+      /* 单条 1px 亮线收底（不叠双线）：顶栏是一条导轨，越干净越像仪表 */
+      .rail { position: relative; z-index: 5; background: var(--panel); border-bottom: 1px solid var(--line-2); }
+      .rail-in { display: flex; align-items: center; gap: 26px; height: 58px; }
+      .brand { display: flex; align-items: center; gap: 12px; }
+      .brand-mark {
+        width: 30px; height: 30px; display: grid; place-items: center;
+        border: 1px solid var(--acc); color: var(--acc);
+        font-family: var(--lb-mono); font-size: 12px; font-weight: 700; letter-spacing: .04em;
+      }
+      .brand-txt { display: flex; flex-direction: column; line-height: 1.15; }
+      .brand-txt b {
+        font-family: var(--lb-mono); font-size: 13px; font-weight: 700;
+        letter-spacing: .2em; text-transform: uppercase;
+      }
+      .brand-txt i {
+        margin-top: 3px; font-family: var(--lb-mono); font-size: 9px; font-style: normal;
+        letter-spacing: .16em; text-transform: uppercase; color: var(--dim);
+      }
+      .nav { display: flex; gap: 26px; margin-left: 26px; }
+      .nav a {
+        font-family: var(--lb-mono); font-size: 11px; letter-spacing: .14em; text-transform: uppercase;
+        color: var(--dim); padding-bottom: 3px; border-bottom: 1px solid transparent;
+        transition: color .22s var(--lb-ease), border-color .22s var(--lb-ease);
+      }
+      .nav a:hover { color: var(--fg); border-color: var(--line-2); }
+      .stat {
+        margin-left: auto; display: flex; align-items: center; gap: 9px;
+        font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .14em;
+        text-transform: uppercase; color: var(--dim);
+      }
+      .stat i { width: 6px; height: 6px; border-radius: 50%; background: var(--acc); animation: ping 2.2s infinite; }
+      /* 入口按钮：方框，hover 转青 */
+      .enter {
+        padding: 10px 20px; border: 1px solid var(--acc); border-radius: 0;
+        background: var(--acc); color: var(--bg);
+        font-family: var(--lb-mono); font-size: 11px; font-weight: 600;
+        letter-spacing: .16em; text-transform: uppercase;
+        transition: background .22s var(--lb-ease), border-color .22s var(--lb-ease);
+      }
+      .enter:hover { background: var(--acc-hi); border-color: var(--acc-hi); }
+
+      /* ---------------------------------------------------- Hero */
+      .hero { display: grid; grid-template-columns: minmax(0, 1.06fr) minmax(0, .94fr); gap: 60px; align-items: center; padding: 78px 0 62px; }
+      .kick {
+        display: flex; align-items: center; gap: 12px; margin-bottom: 26px;
+        font-family: var(--lb-mono); font-size: 11px; letter-spacing: .26em;
+        text-transform: uppercase; color: var(--dim);
+      }
+      .kick i { width: 7px; height: 7px; border-radius: 50%; background: var(--acc); animation: ping 2.2s infinite; }
+
+      h1 { font-family: var(--lb-sans); font-weight: 900; font-size: clamp(40px, 5.4vw, 78px); line-height: 1.14; letter-spacing: -.01em; }
+      h1 .ln { display: block; overflow: hidden; }
+      h1 .ln > span { display: block; animation: rise 1s var(--lb-ease) both; }
+      h1 .ln:nth-child(1) > span { animation-delay: .05s; }
+      h1 .ln:nth-child(2) > span { animation-delay: .16s; }
+      h1 .ln:nth-child(3) > span { animation-delay: .27s; }
+      @keyframes rise { from { transform: translateY(115%); } to { transform: translateY(0); } }
+      h1 em { font-style: normal; color: var(--acc); }
+
+      /* 题记：逐字打出，作为本页唯一使用打字机的元素 */
+      .hero-note {
+        margin-top: 24px; min-height: 1.7em;
+        font-family: var(--lb-mono); font-size: 14px; letter-spacing: .14em; color: var(--acc);
+      }
+      .hero-note::after { content: "▌"; margin-left: 2px; color: var(--acc); animation: blink 1.05s steps(1) infinite; }
+
+      .hero-sub { margin-top: 16px; max-width: 32em; font-size: 15.5px; line-height: 2; color: var(--fg-2); }
+      .hero-sub b { color: var(--fg); font-weight: 700; box-shadow: inset 0 -.55em 0 rgba(63, 224, 196, .12); }
+
+      .acts { display: flex; align-items: center; gap: 24px; margin-top: 34px; }
+      .btn {
+        display: inline-block; padding: 16px 34px; border: 1px solid var(--acc); border-radius: var(--lb-r);
+        background: var(--acc); color: var(--bg);
+        font-family: var(--lb-mono); font-size: 12.5px; font-weight: 600;
+        letter-spacing: .16em; text-transform: uppercase;
+        transition: background .22s var(--lb-ease), border-color .22s var(--lb-ease);
+      }
+      .btn:hover { background: var(--acc-hi); border-color: var(--acc-hi); }
+      .lnk {
+        font-family: var(--lb-mono); font-size: 11.5px; letter-spacing: .14em; color: var(--fg-2);
+        padding-bottom: 4px; border-bottom: 1px solid var(--acc-line);
+        transition: color .22s var(--lb-ease);
+      }
+      .lnk:hover { color: var(--acc); }
+
+      /* 遥测面板：青描边 + 扫描线 + 读数轨，替代铅字版的「图版照片」 */
+      .hud {
+        position: relative; overflow: hidden;
+        border: 1px solid var(--acc-line); border-radius: var(--lb-r);
+        background: var(--panel); box-shadow: var(--lb-shadow);
+      }
+      .hud-scan {
+        position: absolute; left: 0; right: 0; top: 0; height: 2px; pointer-events: none;
+        background: linear-gradient(90deg, transparent, var(--acc), transparent);
+        box-shadow: 0 0 14px rgba(63, 224, 196, .55);
+        animation: scanDown 4.4s var(--lb-ease) infinite;
+      }
+      @keyframes scanDown {
+        0% { transform: translateY(0); opacity: 0; }
+        12% { opacity: 1; }
+        86% { opacity: 1; }
+        100% { transform: translateY(440px); opacity: 0; }
+      }
+      .hud-head {
+        display: flex; align-items: center; gap: 12px;
+        padding: 12px 16px; border-bottom: 1px solid var(--line);
+        font-family: var(--lb-mono); font-size: 10px; letter-spacing: .2em;
+        text-transform: uppercase; color: var(--dim);
+      }
+      .hud-live { margin-left: auto; display: flex; align-items: center; gap: 7px; color: var(--acc); }
+      .hud-live i { width: 6px; height: 6px; border-radius: 50%; background: var(--acc); animation: ping 2.2s infinite; }
+      .hud-body { padding: 6px 16px 10px; }
+      .gauge { padding: 14px 0; border-bottom: 1px solid var(--line); }
+      .gauge:last-child { border-bottom: 0; }
+      .gauge-k { font-family: var(--lb-mono); font-size: 10px; letter-spacing: .18em; text-transform: uppercase; color: var(--dim); }
+      .gauge-v { margin-top: 8px; font-family: var(--lb-mono); font-size: 30px; font-weight: 500; line-height: 1; letter-spacing: -.01em; }
+      .gauge-v u { text-decoration: none; font-size: 14px; color: var(--dim); margin-left: 3px; }
+      .hud-cap {
+        display: flex; justify-content: space-between; gap: 12px;
+        padding: 10px 16px; border-top: 1px solid var(--line);
+        font-family: var(--lb-mono); font-size: 9.5px; letter-spacing: .16em;
+        text-transform: uppercase; color: var(--dim);
+      }
+
+      /* 进度轨：槽 + 荧光青填充（scaleX 推进），全页统一 */
+      .track { position: relative; height: 2px; background: var(--track); overflow: hidden; }
+      .track i {
+        position: absolute; inset: 0; background: var(--acc);
+        transform-origin: left; transform: scaleX(0);
+        animation: grow 1.1s var(--lb-ease) forwards;
+        animation-delay: calc(var(--d, 0) * 90ms);
+      }
+      @keyframes grow { to { transform: scaleX(var(--p, 1)); } }
+      .gauge .track { margin-top: 12px; }
+
+      /* 流量柱：吞吐读数下方的一排呼吸条 */
+      .spark { display: flex; align-items: flex-end; gap: 3px; height: 34px; margin-top: 12px; }
+      .spark i { flex: 1; background: rgba(63, 224, 196, .3); animation: wave 2.8s ease-in-out infinite; }
+      .spark i:nth-child(2n) { animation-delay: .3s; }
+      .spark i:nth-child(3n) { animation-delay: .6s; }
+      @keyframes wave { 0%, 100% { height: 22%; } 50% { height: 100%; } }
+
+      /* ---------------------------------------------------- 日志滚动条 */
+      .logs {
+        margin-top: 34px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+        padding: 12px 0; overflow: hidden; white-space: nowrap; background: rgba(11, 13, 16, .6);
+      }
+      .logs-in { display: inline-flex; animation: logmove 38s linear infinite; }
+      .logs-in span {
+        display: inline-flex; align-items: center;
+        padding: 0 22px; font-family: var(--lb-mono); font-size: 11.5px;
+        letter-spacing: .04em; color: var(--dim);
+      }
+      .logs-in em { font-style: normal; color: var(--acc); }
+      .logs-in b { font-weight: 500; color: var(--fg); }
+      .logs-in span::after { content: ""; width: 4px; height: 4px; background: var(--line-2); margin-left: 22px; }
+      @keyframes logmove { to { transform: translateX(-50%); } }
+
+      /* ---------------------------------------------------- 读数带 */
+      .readout { display: grid; grid-template-columns: repeat(4, 1fr); padding: 56px 0 0; }
+      .ro { padding: 0 30px; border-left: 1px solid var(--line); }
+      .ro:first-child { border-left: 0; padding-left: 0; }
+      .ro-top { display: flex; align-items: center; gap: 8px; }
+      .ro-top .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--acc); animation: ping 2.4s infinite; }
+      .ro .k { font-family: var(--lb-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+      .ro .n {
+        margin-top: 14px; font-family: var(--lb-mono); font-weight: 500;
+        font-size: clamp(34px, 4vw, 56px); line-height: 1; letter-spacing: -.02em;
+        transition: color .3s var(--lb-ease);
+      }
+      .ro:hover .n { color: var(--acc); }
+      .ro .n u { text-decoration: none; font-size: .42em; color: var(--dim); margin-left: 3px; }
+      .ro .d { margin-top: 10px; font-size: 12.5px; line-height: 1.7; color: var(--dim); }
+      .ro .track { margin-top: 14px; }
+
+      /* ---------------------------------------------------- 章节通用 */
+      .sec { padding: 80px 0 0; }
+      .sechead { display: flex; align-items: baseline; gap: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--line-2); }
+      .sechead h2 { font-family: var(--lb-sans); font-weight: 800; font-size: clamp(22px, 2.6vw, 34px); letter-spacing: .01em; }
+      .sechead .la { font-family: var(--lb-mono); font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+      /* 弹性占位抽成一条横规线，充当左右的「——」 */
+      .sechead .fill { flex: 1; align-self: center; height: 1px; background: var(--line-2); opacity: .4; }
+      .lead { margin-top: 22px; max-width: 48em; font-size: 15px; line-height: 2; color: var(--fg-2); }
+
+      /* 六环节：任务行（编号 / 名称 + 英文标签 / 右侧状态读数 / 底部 1px 轨），不用卡片 */
+      .stages { margin-top: 8px; }
+      .stage {
+        position: relative; display: grid; grid-template-columns: 56px minmax(0, 1fr) 190px;
+        gap: 22px; align-items: start; padding: 24px 0 26px;
+      }
+      .stage .no { font-family: var(--lb-mono); font-size: 11px; letter-spacing: .14em; color: var(--dim); padding-top: 4px; }
+      .stage .body h3 { font-family: var(--lb-sans); font-size: 19px; font-weight: 700; letter-spacing: .02em; }
+      .stage .body h3 .en {
+        margin-left: 10px; font-family: var(--lb-mono); font-size: 10px; font-weight: 400;
+        letter-spacing: .16em; text-transform: uppercase; color: var(--dim); vertical-align: 2px;
+      }
+      .stage .body p { margin-top: 8px; font-size: 13.5px; line-height: 1.95; color: var(--fg-2); }
+      .stage .meta {
+        display: flex; flex-direction: column; align-items: flex-end; gap: 6px; padding-top: 5px;
+        font-family: var(--lb-mono); text-align: right;
+      }
+      .stage .meta .st { font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+      .stage .meta .lat { font-size: 10.5px; letter-spacing: .1em; color: var(--dim); }
+      .stage.is-done .meta .st { color: var(--acc); }
+      .stage.is-run .meta .st { color: var(--fg); }
+      .stage.is-run .meta .lat { color: var(--fg-2); }
+      /* 底部 1px 轨：完成=推进到位（grow），运行中=持续流式推进 */
+      .stage .track { position: absolute; left: 0; right: 0; bottom: 0; height: 1px; background: var(--line); }
+      .stage .track i { transform: scaleX(0); background: var(--dim); animation: none; }
+      .stage.is-done .track i { background: var(--acc); animation: grow 1.1s var(--lb-ease) forwards; animation-delay: calc(var(--d, 0) * 90ms); }
+      .stage.is-run .track i { background: var(--acc); animation: stream 6s linear infinite; }
+      @keyframes stream {
+        0% { transform: scaleX(.05); }
+        50% { transform: scaleX(.7); }
+        100% { transform: scaleX(.97); }
+      }
+
+      /* ---------------------------------------------------- 架构与评测 */
+      .arch { display: grid; grid-template-columns: 1.2fr .8fr; gap: 44px; margin-top: 26px; }
+      .arch-item { display: grid; grid-template-columns: 68px 1fr; gap: 18px; padding: 15px 0; border-bottom: 1px solid var(--line); }
+      .arch-k { font-family: var(--lb-mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--acc); padding-top: 3px; }
+      .arch-item span:last-child { font-size: 13.5px; line-height: 1.9; color: var(--fg-2); }
+      .honesty {
+        margin-top: 26px; padding-left: 16px; border-left: 2px solid var(--warn);
+        font-size: 13px; line-height: 2; color: var(--fg-2);
+      }
+      .honesty code { font-family: var(--lb-mono); font-size: 12px; color: var(--fg); border-bottom: 1px solid var(--acc-line); }
+
+      /* ---------------------------------------------------- 人机协同 / 开始：三栏细线格 */
+      .trio { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 26px; border-top: 1px solid var(--line); }
+      .trio > div { padding: 26px 26px 30px; border-left: 1px solid var(--line); }
+      .trio > div:first-child { border-left: 0; padding-left: 0; }
+      .trio .idx { font-family: var(--lb-mono); font-size: 10px; letter-spacing: .2em; color: var(--acc); }
+      .trio h3 { margin-top: 10px; font-family: var(--lb-sans); font-size: 17px; font-weight: 700; letter-spacing: .02em; }
+      .trio p { margin-top: 10px; font-size: 13.5px; line-height: 1.95; color: var(--fg-2); }
+      .trio .btn { margin-top: 18px; padding: 12px 22px; font-size: 12px; }
+      .trio .lnk { display: inline-block; margin-top: 20px; }
+
+      /* ---------------------------------------------------- 页脚 */
+      .foot { margin-top: 88px; border-top: 1px solid var(--line-2); background: var(--panel); }
+      .foot-in { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 22px 0 10px; }
+      .foot-brand { font-family: var(--lb-mono); font-size: 12px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; }
+      .foot-stack, .foot-lic { font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--dim); }
+      .foot-in .fill { flex: 1; }
+      .egg-hint { padding-bottom: 30px; font-family: var(--lb-mono); font-size: 10.5px; letter-spacing: .16em; color: var(--dim); }
+
+      /* ---------------------------------------------------- 响应式：≤1080px 单列化 */
+      @media (max-width: 1080px) {
+        .wrap { padding: 0 24px; }
+        .hero { grid-template-columns: 1fr; gap: 44px; padding: 52px 0; }
+        .nav, .stat { display: none; }
+        .readout { grid-template-columns: repeat(2, 1fr); gap: 34px 0; padding-top: 44px; }
+        .ro:nth-child(3) { border-left: 0; padding-left: 0; }
+        .logs { margin-top: 26px; }
+        .arch { grid-template-columns: 1fr; gap: 24px; }
+        .trio { grid-template-columns: 1fr; border-top: 0; }
+        .trio > div { border-left: 0; padding: 22px 0; border-top: 1px solid var(--line); }
+        .trio > div:first-child { border-top: 0; padding-top: 0; }
+        .stage { grid-template-columns: 40px minmax(0, 1fr); row-gap: 10px; }
+        .stage .meta { grid-column: 2; flex-direction: row; align-items: baseline; gap: 12px; text-align: left; padding-top: 0; }
+      }
+
+      /* ---------------------------------------------------- 弱动效降级 */
+      @media (prefers-reduced-motion: reduce) {
+        .kick i, .stat i, .hud-live i, .ro-top .dot, .hud-scan, .spark i { animation: none !important; }
+        h1 .ln > span { animation: none !important; }
+        .track i { animation: none !important; transform: scaleX(var(--p, 1)); }
+        .stage .track i { transform: scaleX(0); }
+        .stage.is-done .track i { transform: scaleX(1); }
+        .stage.is-run .track i { transform: scaleX(1); }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ============================================================ 顶轨 -->
+    <header class="rail">
+      <div class="wrap rail-in">
+        <a class="brand" href="./index.html">
+          <span class="brand-mark" aria-hidden="true">LJ</span>
+          <span class="brand-txt"><b>论匠 LunJiang</b><i>Instrument Console · No.18</i></span>
+        </a>
+        <nav class="nav" aria-label="主导航">
+          <a href="#stages">六个环节</a>
+          <a href="#arch">架构与评测</a>
+          <a href="#synergy">人机协同</a>
+          <a href="#start">开始使用</a>
+        </nav>
+        <span class="stat"><i aria-hidden="true"></i>Ollama · Local · Online</span>
+        <a class="enter" href="./app.html">进入工作台</a>
+      </div>
+    </header>
+
+    <main>
+      <!-- ============================================================ Hero -->
+      <section class="wrap hero">
+        <div>
+          <p class="kick"><i aria-hidden="true"></i>多智能体论文全流程工作台</p>
+
+          <h1>
+            <span class="ln"><span>把论文拆成</span></span>
+            <span class="ln"><span>六个环节，</span></span>
+            <span class="ln"><span><em>逐个跑通</em>。</span></span>
+          </h1>
+
+          <p class="hero-note" data-typewriter>机器起草，人来定稿。</p>
+
+          <p class="hero-sub">
+            六个环节，一支编队。<b>主控智能体</b>把选题、文献、方法、格式、查重、答辩拆开派活，
+            每一次产出都先落在待采纳区，<b>你点头才落稿</b>。
+          </p>
+
+          <div class="acts">
+            <a class="btn" href="./app.html" data-magnet data-burst>进入工作台</a>
+            <a class="lnk" href="#arch">阅读评测报告 →</a>
+          </div>
+        </div>
+
+        <!-- 遥测面板：替代铅字版的图版照片，Hero 右侧的「仪表盘」 -->
+        <figure class="hud" data-tilt>
+          <span class="hud-scan" aria-hidden="true"></span>
+          <div class="hud-head">
+            <span>Telemetry · 主控遥测</span>
+            <span class="hud-live"><i aria-hidden="true"></i>Live</span>
+          </div>
+          <div class="hud-body">
+            <div class="gauge">
+              <div class="gauge-k">Intent Top-1</div>
+              <div class="gauge-v">100<u>%</u></div>
+              <div class="track"><i style="--p: .96"></i></div>
+            </div>
+            <div class="gauge">
+              <div class="gauge-k">Regression</div>
+              <div class="gauge-v">16<u>/16</u></div>
+              <div class="track"><i style="--p: .94"></i></div>
+            </div>
+            <div class="gauge">
+              <div class="gauge-k">Throughput</div>
+              <div class="gauge-v">42<u>tok/s</u></div>
+              <!-- 流量柱：一排呼吸条，读数之外给一点「在跑」的动态 -->
+              <div class="spark" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+            </div>
+          </div>
+          <figcaption class="hud-cap">
+            <span>图版 01 · 主控遥测</span>
+            <span>Ollama · Local</span>
+          </figcaption>
+        </figure>
+      </section>
+
+      <!-- ============================================================ 日志滚动条 -->
+      <div class="logs" aria-hidden="true">
+        <div class="logs-in">
+          <span><em>[主控]</em>意图识别 <b>选题咨询</b> conf 0.96 · 56ms</span>
+          <span><em>[Planner]</em>规划 3 步 → 校验通过</span>
+          <span><em>[检索]</em>RRF 融合 412ms · 命中 <b>50</b> 篇</span>
+          <span><em>[写作]</em>第 3 章流式生成中 …</span>
+          <span><em>[中断]</em>待采纳：方法论初稿 · 等待人工确认</span>
+          <span><em>[主控]</em>意图识别 <b>选题咨询</b> conf 0.96 · 56ms</span>
+          <span><em>[Planner]</em>规划 3 步 → 校验通过</span>
+          <span><em>[检索]</em>RRF 融合 412ms · 命中 <b>50</b> 篇</span>
+          <span><em>[写作]</em>第 3 章流式生成中 …</span>
+          <span><em>[中断]</em>待采纳：方法论初稿 · 等待人工确认</span>
+        </div>
+      </div>
+
+      <!-- ============================================================ 读数带 -->
+      <section class="wrap">
+        <div class="readout">
+          <div class="ro" data-reveal>
+            <div class="ro-top"><span class="dot" aria-hidden="true"></span><span class="k">Intent Top-1</span></div>
+            <div class="n"><span data-count="100">100</span><u>%</u></div>
+            <div class="d">意图分类 50 条集 · 56ms/条</div>
+            <div class="track"><i style="--p: .96"></i></div>
+          </div>
+          <div class="ro" data-reveal>
+            <div class="ro-top"><span class="dot" aria-hidden="true"></span><span class="k">Regression</span></div>
+            <div class="n"><span data-count="16">16</span><u>/16</u></div>
+            <div class="d">S1–S7 七大必测场景全通</div>
+            <div class="track"><i style="--p: 1; --d: 1"></i></div>
+          </div>
+          <div class="ro" data-reveal>
+            <div class="ro-top"><span class="dot" aria-hidden="true"></span><span class="k">Recall@5</span></div>
+            <div class="n"><span data-count="100">100</span><u>%</u></div>
+            <div class="d">稠密 + 稀疏 + 句窗三路融合</div>
+            <div class="track"><i style="--p: .9; --d: 2"></i></div>
+          </div>
+          <div class="ro" data-reveal>
+            <div class="ro-top"><span class="dot" aria-hidden="true"></span><span class="k">Offline Cases</span></div>
+            <div class="n"><span data-count="89">89</span><u>项</u></div>
+            <div class="d">治理 / 模型 / 改写 / API</div>
+            <div class="track"><i style="--p: .74; --d: 3"></i></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ 六个环节 -->
+      <section class="wrap sec" id="stages">
+        <div class="sechead" data-reveal>
+          <h2>六个环节，一支智能体编队</h2>
+          <span class="la">Capabilities</span>
+          <span class="fill"></span>
+          <span class="la">01 — 06</span>
+        </div>
+        <p class="lead" data-reveal>
+          不是一个大模型硬扛所有问题：主控智能体识别意图、拆解任务、按环节路由给专项角色，
+          人的确认卡在关键节点上。
+        </p>
+
+        <div class="stages">
+          <article class="stage is-done" data-reveal style="--d: 0">
+            <span class="no">01</span>
+            <div class="body">
+              <h3>选题立项 <span class="en">Topic</span></h3>
+              <p>把专业方向与写作要求交给选题环节，产出选题结论与理由，自动沉淀为项目档案的选题记录。</p>
+            </div>
+            <div class="meta"><span class="st">Done</span><span class="lat">4.2s</span></div>
+            <div class="track" aria-hidden="true"><i></i></div>
+          </article>
+          <article class="stage is-done" data-reveal style="--d: 1">
+            <span class="no">02</span>
+            <div class="body">
+              <h3>文献综述 <span class="en">Retrieval</span></h3>
+              <p>向量检索与关键词多路召回，融合后精排；引用的每一段都可以溯源到原文。</p>
+            </div>
+            <div class="meta"><span class="st">Done</span><span class="lat">38.1s</span></div>
+            <div class="track" aria-hidden="true"><i></i></div>
+          </article>
+          <article class="stage is-run" data-reveal style="--d: 2">
+            <span class="no">03</span>
+            <div class="body">
+              <h3>方法与写作 <span class="en">Plan-Exec</span></h3>
+              <p>复杂任务由 Planner 拆成步骤序列，以「规划 — 执行 — 校验」循环推进，逐章成稿。</p>
+            </div>
+            <div class="meta"><span class="st">Streaming</span><span class="lat">3/6 章</span></div>
+            <div class="track" aria-hidden="true"><i></i></div>
+          </article>
+          <article class="stage" data-reveal>
+            <span class="no">04</span>
+            <div class="body">
+              <h3>格式规范 <span class="en">Constraints</span></h3>
+              <p>字数、引用格式与交付节点写入结构化记忆，在写作全程作为硬约束参与校验。</p>
+            </div>
+            <div class="meta"><span class="st">Queued</span><span class="lat">待派发</span></div>
+            <div class="track" aria-hidden="true"><i></i></div>
+          </article>
+          <article class="stage" data-reveal>
+            <span class="no">05</span>
+            <div class="body">
+              <h3>查重降重 <span class="en">Rewrite</span></h3>
+              <p>语义改写与引用边界核对，逐段标注风险，可疑段落交给人工确认，而不是静默放行。</p>
+            </div>
+            <div class="meta"><span class="st">Queued</span><span class="lat">待派发</span></div>
+            <div class="track" aria-hidden="true"><i></i></div>
+          </article>
+          <article class="stage" data-reveal>
+            <span class="no">06</span>
+            <div class="body">
+              <h3>答辩准备 <span class="en">Outline</span></h3>
+              <p>汇总研究过程与阶段性产出，整理答辩所需的陈述要点与支撑材料。</p>
+            </div>
+            <div class="meta"><span class="st">Queued</span><span class="lat">待派发</span></div>
+            <div class="track" aria-hidden="true"><i></i></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ============================================================ 架构与评测 -->
+      <section class="wrap sec" id="arch">
+        <div class="sechead" data-reveal>
+          <h2>架构是公开的，数字也是</h2>
+          <span class="la">Architecture &amp; Evaluation</span>
+        </div>
+
+        <div class="arch">
+          <div data-reveal>
+            <div class="arch-item"><span class="arch-k">编排</span><span>LangGraph 主从编排：主控调度专项角色，规划 — 执行 — 校验闭环</span></div>
+            <div class="arch-item"><span class="arch-k">检索</span><span>PostgreSQL + pgvector：向量与关键词多路召回，融合后精排</span></div>
+            <div class="arch-item"><span class="arch-k">会话</span><span>Redis：会话检查点、限流与分布式锁，执行状态可恢复</span></div>
+            <div class="arch-item"><span class="arch-k">底座</span><span>Ollama 本地推理：对话模型 + bge-m3 向量化 + 重排，全程可离线</span></div>
+          </div>
+
+          <div data-reveal>
+            <p class="honesty">
+              水位如实标注：口语长尾集 80% · 学术刁钻集 95% · hold-out 泛化 75%（6/8）。
+              全部数字来自一次完整的全本地底座实测，复现命令见仓库
+              <code>docs/EVALUATION_REPORT.md</code>。
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ 人机协同 -->
+      <section class="wrap sec" id="synergy">
+        <div class="sechead" data-reveal>
+          <h2>机器起草，人来定稿</h2>
+          <span class="la">Human in the Loop</span>
+        </div>
+        <p class="lead" data-reveal>
+          多智能体系统最容易失控的地方是「自作主张」。论匠把确认权留给写作的人：
+          关键节点主动发问，产出必须经你采纳。
+        </p>
+
+        <div class="trio">
+          <div data-reveal>
+            <span class="idx">01 / Confirm</span>
+            <h3>产出需确认</h3>
+            <p>智能体在关键节点主动发起确认，生成内容以「待采纳」状态呈现——采纳才落稿，不满意就重生成。</p>
+          </div>
+          <div data-reveal>
+            <span class="idx">02 / Trace</span>
+            <h3>全链路留痕</h3>
+            <p>每次执行的意图识别、路由决策、工具调用与耗时完整落库，可逐条回放，出了问题有据可查。</p>
+          </div>
+          <div data-reveal>
+            <span class="idx">03 / Memory</span>
+            <h3>记忆沉淀</h3>
+            <p>选题结论、论文大纲、写作约束与章节进度沉淀为结构化项目档案，跨会话延续。</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ 开始 -->
+      <section class="wrap sec" id="start">
+        <div class="sechead" data-reveal>
+          <h2>三种方式，开始使用</h2>
+          <span class="la">Get Started</span>
+        </div>
+
+        <div class="trio">
+          <div data-reveal>
+            <span class="idx">01 / App</span>
+            <h3>在线试用</h3>
+            <p>无需安装，浏览器打开即用。注册一个账号，选一个课题，看着编队开工。</p>
+            <a class="btn" href="./app.html" data-magnet>进入工作台</a>
+          </div>
+          <div data-reveal>
+            <span class="idx">02 / Repo</span>
+            <h3>源码仓库</h3>
+            <p>FastAPI · LangGraph · PostgreSQL + pgvector · Redis · React 18，MIT License，含部署与评测文档。</p>
+            <a class="lnk" href="https://github.com/shangguanyunji663/Lun-Assistant" target="_blank" rel="noreferrer">前往 GitHub →</a>
+          </div>
+          <div data-reveal>
+            <span class="idx">03 / Guide</span>
+            <h3>学习指南</h3>
+            <p>从零复现多智能体架构：设计认知、模块解剖、动手实现与评测，附可运行骨架。</p>
+            <a class="lnk" href="https://github.com/shangguanyunji663/Lun-Assistant/blob/main/%E8%AE%BA%E5%8C%A0%E5%AD%A6%E4%B9%A0%E6%8C%87%E5%8D%97.md" target="_blank" rel="noreferrer">阅读指南 →</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============================================================ 页脚 -->
+    <footer class="foot">
+      <div class="wrap">
+        <div class="foot-in">
+          <span class="foot-brand">论匠 LunJiang</span>
+          <span class="foot-stack">FastAPI · LangGraph · PostgreSQL + pgvector · Redis · React 18</span>
+          <span class="fill"></span>
+          <span class="foot-lic">MIT License · © <span id="lj-year">2026</span></span>
+        </div>
+        <p class="egg-hint">
+          页边三则 · 手快者当主控 · 细读者见风险 · 落笔者得题款<span class="egg-progress"></span>
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      document.getElementById('lj-year').textContent = String(new Date().getFullYear())
+    </script>
+    <script type="module" src="/src/landing/shared.js"></script>
+  </body>
+</html>

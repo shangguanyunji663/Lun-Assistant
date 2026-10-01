@@ -1,0 +1,892 @@
+/* ============================================================================
+   皮肤 D · 木牍竖排（Bamboo Slips）
+   —— 竹青灰底 + 墨绿 + 朱色印记。竖向构字、竹节纹理、方框书签、硬位移阴影。
+   设计性格：竹简册页；安静但有体量感；零圆角、零柔光（只用硬位移深色阴影）。
+
+   与皮肤 A 同构：令牌 → 外壳 → 顶栏 → 按钮 → 皮肤选择器 → 横幅 → 三栏 →
+   会话卷册 → 对话主区 → 中断条 → 输入区 → 右栏 → 面板覆写 → 响应式三档。
+
+   本皮肤最大的结构变化：**会话卷册从左侧竖列改为顶部横排书签栏**
+   （.wb-body 由单行三列改为两行，第一行跨两列放书签栏）。见第 7 / 8 节。
+   次级面板（知识库 / 档案 / 可观测 / 登录页）吃令牌自动适配，只覆写方角性格。
+   ============================================================================ */
+
+/* ============================================================ 1. 令牌 */
+html[data-skin="d"] {
+  --bg: #D5DCCD;          /* 竹青灰：整页底 */
+  --surface: #E2E8DA;     /* 面板：略亮 */
+  --surface-2: #C6CFBE;   /* 次级：竹青压深，用于右栏 / 输入区 / 书签 */
+
+  --text: #1A241E;        /* 墨绿（本皮肤的「墨」） */
+  --text-2: #3F4C44;
+  --text-3: #5E6B62;
+
+  --line: rgba(26, 36, 30, .16);
+  --line-2: rgba(26, 36, 30, .42);
+
+  --accent: #A8402C;      /* 朱色印记 */
+  --accent-2: #1A241E;
+  --accent-ink: #EFE7DC;  /* 米色：朱底上的字 */
+  --danger: #8C2F1F;
+
+  --font-display: "Noto Serif SC", "Source Han Serif SC", "Songti SC", SimSun, serif;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --ease: cubic-bezier(.19, 1, .22, 1);
+  --dur: .22s;
+  --dur-slow: .46s;
+
+  /* 木牍：直角是形制的一部分（简牍皆为方裁） */
+  --r-card: 0px;
+  --r-btn: 0px;
+  --r-pill: 1px;
+
+  --shadow-card: none;
+  --shadow-pop: 8px 9px 0 rgba(26, 36, 30, .18);
+  --shadow-glow: 0 0 18px rgba(168, 64, 44, .3);
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 22px;
+  --s-6: 28px;
+
+  --fs-micro: 11px;
+  --fs-sm: 13.5px;
+  --fs-md: 15px;
+  --fs-lg: 17px;
+  --fs-xl: 20px;
+  --fs-2xl: 28px;
+
+  /* 本皮肤独有的具名值（契约允许）：竹简条材质 + 标题铭线。
+     --rule 是比 --line-2 更实的「铭线」，用于顶栏 / 书签栏 / 输入区的横向分界，
+     让页面有简牍装订的体量感。 */
+  --rule: rgba(26, 36, 30, .72);
+  --slip: #D1D8C8;        /* 竹简条底：比页面略深一档 */
+  --slip-user: #C9D1C0;   /* 用户条：再深一档，靠右缩进时形成层次 */
+  --fibre: rgba(26, 36, 30, .07);  /* 竹丝竖纹 */
+
+  /* 「已入库」用朱色椭圆章 —— 印记是木牍语言的一部分 */
+  --stamp-display: inline;
+  --stamp-text-display: none;
+
+  --scan-display: none;       /* 竹简宜静，关掉扫描线 */
+}
+
+/* 竹节纹理：横向 1px 竹节线，周期 78px（简牍分节）。铺在 body 与 .wb 上，
+   因为 .wb 是 100vh 的不透明根容器，只写在 body 上会被它盖住。 */
+html[data-skin="d"] body,
+html[data-skin="d"] .wb {
+  background-color: var(--bg);
+  background-image: repeating-linear-gradient(0deg,
+    rgba(26, 36, 30, .05) 0 1px, transparent 1px 78px);
+}
+
+/* ============================================================ 2. 外壳 */
+html[data-skin="d"] .wb {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  color: var(--text);
+}
+/* 曲线氛围与竹简的直线形制冲突，直接弃用 */
+html[data-skin="d"] .ambient-lines { display: none; }
+
+/* ============================================================ 3. 顶栏 */
+html[data-skin="d"] .wb-top {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  min-height: 60px;
+  padding: 8px 26px;
+  border-bottom: 1px solid var(--rule);
+  /* 顶栏留透明，让 .wb 的竹节纹理透上来 */
+  background: transparent;
+}
+
+html[data-skin="d"] .wb-brand { display: flex; align-items: center; gap: 12px; }
+
+/* 顶栏朱印：竖排两字「论匠」。
+   decor.jsx 给 .seal 写了内联 26×26 尺寸，必须用 !important 压过内联样式，
+   否则拉不成竖长方印。 */
+html[data-skin="d"] .wb-brand .seal {
+  width: 22px !important;
+  height: 46px !important;
+  display: flex;
+  writing-mode: vertical-rl;   /* 竖排书写下，row 轴即竖直方向：论 / 匠上下相叠 */
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 0;
+  border-radius: 0;
+  letter-spacing: .08em;
+}
+html[data-skin="d"] .wb-brand .seal::after {
+  content: "匠";
+  font-weight: 900;
+}
+
+html[data-skin="d"] .wb-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+html[data-skin="d"] .wb-brand-text b {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 900;
+  letter-spacing: .18em;
+}
+html[data-skin="d"] .wb-brand-text i {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-style: normal;
+  letter-spacing: .18em;
+  color: var(--text-3);
+}
+
+html[data-skin="d"] .wb-proj { display: flex; align-items: center; gap: var(--s-2); }
+html[data-skin="d"] .wb-proj-sel {
+  max-width: 250px;
+  padding: 5px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  background: transparent;
+  font-size: var(--fs-sm);
+  transition: border-color var(--dur) var(--ease);
+}
+html[data-skin="d"] .wb-proj-sel:focus { border-color: var(--accent); }
+html[data-skin="d"] .wb-proj .wb-btn { padding: 6px 11px; font-size: 12px; }
+
+/* 视图切换：方框按钮，选中翻成墨底米字（木牍标签） */
+html[data-skin="d"] .wb-views {
+  display: flex;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .2em;
+}
+html[data-skin="d"] .wb-view {
+  padding: 7px 14px;
+  margin-left: -1px;
+  border: 1px solid var(--line-2);
+  color: var(--text-2);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
+              border-color var(--dur) var(--ease);
+}
+html[data-skin="d"] .wb-view:hover { color: var(--text); }
+html[data-skin="d"] .wb-view.is-on {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+
+html[data-skin="d"] .wb-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .12em;
+  color: var(--text-3);
+}
+html[data-skin="d"] .wb-user b { font-weight: 400; color: var(--text); }
+html[data-skin="d"] .wb-user i {
+  padding: 2px 6px;
+  border: 1px solid var(--line-2);
+  font-size: 9px;
+  font-style: normal;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+
+/* 退出：退化为等宽文字链接，避免顶栏堆太多方框 */
+html[data-skin="d"] .wb-exit {
+  padding: 0;
+  border: 0;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .16em;
+  color: var(--text-3);
+  transition: color var(--dur) var(--ease);
+}
+html[data-skin="d"] .wb-exit:hover { color: var(--accent); }
+
+/* ============================================================ 4. 按钮 */
+html[data-skin="d"] .wb-btn {
+  padding: 8px 14px;
+  border: 1.5px solid var(--text);
+  border-radius: 0;
+  background: transparent;
+  font-size: var(--fs-sm);
+  letter-spacing: .06em;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
+              border-color var(--dur) var(--ease);
+}
+html[data-skin="d"] .wb-btn-ghost:hover:not(:disabled) { background: rgba(26, 36, 30, .07); }
+html[data-skin="d"] .wb-btn-ink {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--bg);
+}
+html[data-skin="d"] .wb-btn-ink:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+html[data-skin="d"] .wb-btn:disabled { opacity: .38; }
+
+/* ============================================================ 5. 皮肤选择器 */
+html[data-skin="d"] .skin-picker { position: relative; }
+html[data-skin="d"] .skin-trigger { display: inline-flex; align-items: center; gap: 8px; }
+html[data-skin="d"] .sp-chip {
+  width: 11px;
+  height: 11px;
+  flex: none;
+  border: 1px solid rgba(26, 36, 30, .5);
+}
+html[data-skin="d"] .sp-label { font-size: var(--fs-sm); }
+html[data-skin="d"] .sp-caret { font-size: 9px; opacity: .6; }
+
+/* 弹层做成一张「米色签纸」：压过竹青底，墨边 + 硬位移阴影 */
+html[data-skin="d"] .skin-pop {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 60;
+  width: 322px;
+  padding: var(--s-4);
+  border: 1.5px solid var(--text);
+  background: var(--accent-ink);
+  box-shadow: var(--shadow-pop);
+  animation: base-rise var(--dur) var(--ease) both;
+}
+html[data-skin="d"] .sp-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--rule);
+}
+html[data-skin="d"] .sp-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-md);
+  font-weight: 900;
+  letter-spacing: .14em;
+}
+html[data-skin="d"] .sp-hint {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  color: var(--text-3);
+}
+html[data-skin="d"] .sp-grid { padding: var(--s-3) 0 var(--s-2); }
+html[data-skin="d"] .sp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 8px;
+  border-left: 3px solid transparent;
+  text-align: left;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+html[data-skin="d"] .sp-item:hover { background: rgba(26, 36, 30, .06); }
+/* 选中 = 朱色左条 + 微朱底（与书签栏的选中语言一致） */
+html[data-skin="d"] .sp-item.on {
+  border-left-color: var(--accent);
+  background: rgba(168, 64, 44, .09);
+}
+html[data-skin="d"] .sp-item .sp-chip { width: 13px; height: 13px; }
+html[data-skin="d"] .sp-body { display: flex; flex-direction: column; min-width: 0; }
+html[data-skin="d"] .sp-name { font-size: var(--fs-sm); font-weight: 700; }
+html[data-skin="d"] .sp-name em {
+  margin-left: 7px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: .12em;
+  color: var(--text-3);
+}
+html[data-skin="d"] .sp-desc {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+html[data-skin="d"] .sp-check { margin-left: auto; color: var(--accent); font-size: 12px; }
+html[data-skin="d"] .sp-foot {
+  display: block;
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  color: var(--text-3);
+}
+html[data-skin="d"] .sp-foot:hover { color: var(--accent); }
+
+/* ============================================================ 6. 横幅 */
+html[data-skin="d"] .wb-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 10px 26px;
+  border-bottom: 1px solid var(--rule);
+  font-size: var(--fs-sm);
+}
+html[data-skin="d"] .wb-banner.is-err { background: rgba(168, 64, 44, .13); color: var(--danger); }
+html[data-skin="d"] .wb-banner.is-warn { background: rgba(26, 36, 30, .07); color: var(--text-2); }
+html[data-skin="d"] .wb-banner-x { margin-left: auto; font-size: 15px; line-height: 1; }
+
+/* ============================================================ 7. 三栏
+   结构变化：书签栏占第一行并跨两列，主区与右栏落在第二行。
+   这样会话卷册就从左列变成了顶部横向的「书签」，与木牍的册页感一致。 */
+html[data-skin="d"] .wb-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 302px;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+html[data-skin="d"] .wb-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+
+html[data-skin="d"] .wb-volumes { grid-column: 1 / -1; grid-row: 1; min-width: 0; }
+html[data-skin="d"] .wb-main { grid-column: 1; grid-row: 2; background: transparent; }
+html[data-skin="d"] .wb-side {
+  grid-column: 2;
+  grid-row: 2;
+  border-left: 1px solid var(--rule);
+  background: var(--surface-2);
+}
+
+/* 栏头：书签栏左侧的「栏脊」标签，等宽标注 */
+html[data-skin="d"] .wb-ch-en,
+html[data-skin="d"] .wb-ch-cn {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* ============================================================ 8. 会话卷册（顶部书签栏） */
+html[data-skin="d"] .wb-volumes {
+  flex-direction: row;      /* 覆盖 .wb-col 的竖列：整栏改为横向书签 */
+  align-items: stretch;
+  gap: 0;
+  padding: 14px 26px 0;
+  border-bottom: 1px solid var(--line-2);
+}
+
+/* 栏脊标签：靠底右对齐，与书签正文的基线呼应 */
+html[data-skin="d"] .wb-colhead {
+  flex: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 18px 14px 0;
+}
+
+/* 「新开一卷」：DOM 里排在 .wb-vollist 之前，用 order 挪到书签栏右端；
+   虚线框、略微抬起，与实框书签区分 */
+html[data-skin="d"] .wb-new {
+  order: 3;
+  flex: none;
+  align-self: flex-end;
+  margin: 0 4px 6px 16px;
+  padding: 10px 18px;
+  border: 1px dashed var(--line-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+  color: var(--text-2);
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="d"] .wb-new span { color: var(--accent); }
+html[data-skin="d"] .wb-new:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+html[data-skin="d"] .wb-new:disabled { opacity: .4; }
+
+/* 书签横向滚动：长列表横滚而不撑破页面。
+   padding-top + 负 margin 在内部偷出 4px，让书签 hover 上浮时不被 overflow 裁掉；
+   滚动条隐藏（否则会占掉 6px 高度，使书签底边与栏线之间出现缝隙）。 */
+html[data-skin="d"] .wb-vollist {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+  padding-top: 4px;
+  margin-top: -4px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html[data-skin="d"] .wb-vollist::-webkit-scrollbar { width: 0; height: 0; }
+html[data-skin="d"] .wb-vollist[data-dragging="on"] .wb-vol { cursor: grabbing; }
+
+html[data-skin="d"] .wb-vol {
+  position: relative;
+  flex: none;
+  min-width: 168px;
+  max-width: 240px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 18px 13px;
+  margin-right: -1px;
+  border: 1px solid var(--text);
+  border-top: 3px solid var(--text);   /* 加厚的简牍头，选中时翻朱 */
+  border-bottom: 0;
+  background: var(--surface-2);
+  user-select: none;
+  cursor: grab;
+  transition: transform var(--dur-slow) var(--ease), background var(--dur) var(--ease),
+              border-color var(--dur) var(--ease);
+}
+html[data-skin="d"] .wb-vol:hover { transform: translateY(-3px); }
+/* 选中：底色与主区同色（形成咬合），顶部简牍头转朱 */
+html[data-skin="d"] .wb-vol.is-on {
+  background: var(--bg);
+  border-top-color: var(--accent);
+}
+html[data-skin="d"] .wb-vol.is-dragging {
+  cursor: grabbing;
+  opacity: .92;
+  box-shadow: var(--shadow-pop);
+}
+/* 朱色左条：hover 与选中时自下而上展开（只动 transform，不触发布局） */
+html[data-skin="d"] .wb-vol::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--accent);
+  transform: scaleY(0);
+  transform-origin: bottom;
+  transition: transform var(--dur-slow) var(--ease);
+}
+html[data-skin="d"] .wb-vol:hover::before,
+html[data-skin="d"] .wb-vol.is-on::before { transform: scaleY(1); }
+
+html[data-skin="d"] .wb-vol-no {
+  flex: none;
+  padding-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .1em;
+  color: var(--text-3);
+}
+html[data-skin="d"] .wb-vol-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+html[data-skin="d"] .wb-vol-title {
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html[data-skin="d"] .wb-vol-meta {
+  margin-top: 5px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .1em;
+  color: var(--text-3);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html[data-skin="d"] .wb-vol-del {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  color: var(--text-3);
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="d"] .wb-vol:hover .wb-vol-del { opacity: 1; }
+html[data-skin="d"] .wb-vol-del:hover { color: var(--accent); }
+
+/* 空态：跟着书签行底对齐，不塌陷 */
+html[data-skin="d"] .wb-vol-empty {
+  align-self: flex-end;
+  padding: 0 18px 14px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .16em;
+  color: var(--text-3);
+}
+
+/* ============================================================ 9. 对话主区 */
+html[data-skin="d"] .wb-stream { flex: 1; min-height: 0; overflow-y: auto; }
+html[data-skin="d"] .wb-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 30px 44px 12px;
+}
+
+/* 消息 = 竹简条：墨绿边框 + 左右竹节端面 + 竹丝竖纹。
+   形制套在 .wb-msg 上（而非 .wb-bubble），这样署名行也落在简内。 */
+html[data-skin="d"] .wb-msg {
+  position: relative;
+  padding: 15px 24px 16px;
+  border: 1.5px solid var(--text);
+  background-color: var(--slip);
+  background-image: linear-gradient(90deg, var(--fibre) 0 1px, transparent 1px 11px);
+  background-size: 11px 100%;
+  animation: d-slip-in var(--dur-slow) var(--ease) both;
+}
+html[data-skin="d"] .wb-msg + .wb-msg { margin-top: 26px; }
+
+/* 竹节端面：简条两端各一道 7px 墨绿竖线 */
+html[data-skin="d"] .wb-msg::before,
+html[data-skin="d"] .wb-msg::after {
+  content: "";
+  position: absolute;
+  top: -1.5px;
+  bottom: -1.5px;
+  width: 7px;
+  background: var(--text);
+  opacity: .85;
+}
+html[data-skin="d"] .wb-msg::before { left: -1.5px; }
+html[data-skin="d"] .wb-msg::after { right: -1.5px; }
+
+/* 用户条：靠右缩进 + 次级底色，与助手条区分 */
+html[data-skin="d"] .wb-msg.is-user { margin-left: 60px; background-color: var(--slip-user); }
+
+html[data-skin="d"] .wb-msg-head {
+  display: flex;
+  align-items: baseline;
+  gap: 11px;
+  margin-bottom: 11px;
+}
+html[data-skin="d"] .wb-msg-mark {
+  display: grid;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  flex: none;
+  background: var(--text);
+  color: var(--bg);
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 900;
+}
+html[data-skin="d"] .wb-msg.is-ai .wb-msg-mark { background: var(--accent); color: var(--accent-ink); }
+html[data-skin="d"] .wb-msg-name {
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+html[data-skin="d"] .wb-msg-role {
+  padding: 1px 7px;
+  border: 1px solid var(--line-2);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  letter-spacing: .2em;
+  color: var(--text-3);
+}
+html[data-skin="d"] .wb-msg-time {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .08em;
+  color: var(--text-3);
+}
+
+html[data-skin="d"] .wb-msg.is-user .wb-bubble { font-size: 15px; line-height: 1.9; }
+/* 助手条用宋体正文、行高 2 —— 竹简上的「写本」感 */
+html[data-skin="d"] .wb-msg.is-ai .wb-bubble {
+  font-family: var(--font-display);
+  font-size: 15.5px;
+  line-height: 2;
+}
+
+@keyframes d-slip-in {
+  from { opacity: 0; transform: translateX(-26px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* 空态 */
+html[data-skin="d"] .wb-empty { padding: 64px 0 30px; text-align: center; }
+html[data-skin="d"] .wb-empty .seal { margin: 0 auto 18px; }
+html[data-skin="d"] .wb-empty h2 {
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 900;
+  letter-spacing: .16em;
+}
+html[data-skin="d"] .wb-empty-lead {
+  max-width: 30em;
+  margin: 12px auto 0;
+  font-size: var(--fs-sm);
+  line-height: 2;
+  color: var(--text-2);
+}
+html[data-skin="d"] .wb-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: var(--s-5);
+}
+html[data-skin="d"] .wb-prompt {
+  padding: 9px 15px;
+  border: 1.5px solid var(--line-2);
+  font-size: 12.5px;
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="d"] .wb-prompt:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ============================================================ 10. 中断确认条（木牍题署） */
+html[data-skin="d"] .wb-break {
+  flex: none;
+  margin: 0 44px 4px;
+  border: 1.5px solid var(--text);
+  background: var(--surface-2);
+}
+html[data-skin="d"] .wb-break-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 20px;
+  border-bottom: 1px solid var(--rule);
+}
+/* 朱色实底「待确认」标签 */
+html[data-skin="d"] .wb-break-badge {
+  padding: 3px 8px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .2em;
+}
+html[data-skin="d"] .wb-break-note {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .18em;
+  color: var(--text-2);
+}
+html[data-skin="d"] .wb-break-ask {
+  padding: 16px 20px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  /* 长问题文本换行，不撑破题署框 */
+  word-break: break-word;
+}
+html[data-skin="d"] .wb-break-ops {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+  padding: 0 20px 18px;
+}
+html[data-skin="d"] .wb-break-op {
+  padding: 10px 20px;
+  margin-right: -1.5px;
+  border: 1.5px solid var(--text);
+  font-size: 12.5px;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
+              border-color var(--dur) var(--ease);
+}
+/* 首项 = 采纳：墨底米字 */
+html[data-skin="d"] .wb-break-op:first-child { background: var(--text); color: var(--bg); }
+html[data-skin="d"] .wb-break-op:hover:not(:disabled) {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+html[data-skin="d"] .wb-break-input {
+  flex: 1;
+  min-width: 140px;
+  margin-left: 18px;
+  padding: 10px 2px;
+  border-bottom: 1.5px solid var(--rule);
+  font-size: var(--fs-sm);
+  transition: border-color var(--dur) var(--ease);
+}
+html[data-skin="d"] .wb-break-input:focus { border-color: var(--accent); }
+html[data-skin="d"] .wb-break .wb-btn-ink { margin-left: 12px; }
+
+/* ============================================================ 11. 输入区 */
+html[data-skin="d"] .wb-compose {
+  flex: none;
+  padding: 16px 44px 18px;
+  border-top: 1px solid var(--rule);
+  background: var(--surface-2);
+}
+html[data-skin="d"] .wb-compose-box {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+/* 竹简输入框：方角墨边，聚焦转朱 */
+html[data-skin="d"] .wb-compose-ta {
+  flex: 1;
+  resize: none;
+  padding: 12px 14px;
+  border: 1.5px solid var(--text);
+  background: var(--bg);
+  font-size: 13.5px;
+  line-height: 1.85;
+  transition: border-color var(--dur) var(--ease);
+}
+html[data-skin="d"] .wb-compose-ta:focus { border-color: var(--accent); }
+html[data-skin="d"] .wb-compose-send { padding: 0 28px; letter-spacing: .16em; }
+html[data-skin="d"] .wb-compose-hint {
+  max-width: 720px;
+  margin: 10px auto 0;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .1em;
+  color: var(--text-3);
+}
+
+/* ============================================================ 12. 右栏 */
+/* 竖排题头「观测」：写在 .wb-side::before 上，占左侧一条栏脊。
+   用 padding-left 给正文让位，不改动 tabs / body 的 DOM。 */
+html[data-skin="d"] .wb-side { position: relative; padding-left: 40px; }
+html[data-skin="d"] .wb-side::before {
+  content: "观测";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-rl;
+  letter-spacing: .42em;
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-3);
+  border-right: 1px solid var(--line);
+  user-select: none;
+}
+
+html[data-skin="d"] .wb-side-tabs { display: flex; border-bottom: 1px solid var(--rule); }
+html[data-skin="d"] .wb-side-tab {
+  flex: 1;
+  padding: 13px 4px;
+  border-bottom: 2px solid transparent;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--text-3);
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+html[data-skin="d"] .wb-side-tab:hover { color: var(--text); }
+html[data-skin="d"] .wb-side-tab.is-on {
+  color: var(--text);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+html[data-skin="d"] .wb-side-body { flex: 1; min-height: 0; overflow-y: auto; padding: 18px 20px; }
+
+/* 执行时间线：编号边注 + 墨线，标题用宋体 */
+html[data-skin="d"] .wb-tl { display: flex; flex-direction: column; }
+html[data-skin="d"] .wb-tl-item {
+  display: flex;
+  gap: 10px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+html[data-skin="d"] .wb-tl-no {
+  flex: none;
+  padding-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .1em;
+  color: var(--text-3);
+}
+html[data-skin="d"] .wb-tl-body { display: flex; flex-direction: column; min-width: 0; }
+html[data-skin="d"] .wb-tl-title {
+  font-family: var(--font-display);
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  word-break: break-word;
+}
+html[data-skin="d"] .wb-tl-meta {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .08em;
+  color: var(--text-3);
+  word-break: break-word;
+}
+html[data-skin="d"] .wb-tl-item.is-error .wb-tl-title { color: var(--danger); }
+html[data-skin="d"] .wb-tl-item.is-interrupt .wb-tl-title { color: var(--accent); }
+
+/* ============================================================ 13. 次级面板覆写
+   木牍是方裁的，且只用硬位移阴影；把 panels.css 的圆角柔影统一抹平。 */
+html[data-skin="d"] .kb-hit,
+html[data-skin="d"] .kb-doc,
+html[data-skin="d"] .trace-item,
+html[data-skin="d"] .prog-item {
+  border-radius: 0;
+  border-color: var(--line);
+  box-shadow: none;
+}
+html[data-skin="d"] .kb-hit { border-left: 3px solid var(--accent); }
+html[data-skin="d"] .kb-drop { border-style: solid; border-color: var(--line-2); border-radius: 0; }
+html[data-skin="d"] .kd-icon { border-radius: 0; }
+html[data-skin="d"] .auth-card { border-radius: 0; box-shadow: var(--shadow-pop); }
+
+/* ============================================================ 14. 响应式 */
+/* ① 收窄右栏，取消正文最大宽度限制 */
+@media (max-width: 1380px) {
+  html[data-skin="d"] .wb-body { grid-template-columns: minmax(0, 1fr) 268px; }
+  html[data-skin="d"] .wb-inner,
+  html[data-skin="d"] .wb-compose-box,
+  html[data-skin="d"] .wb-compose-hint { max-width: none; }
+}
+
+/* ② 右栏折到下方：书签栏 → 主区 → 右栏，三行单列 */
+@media (max-width: 1080px) {
+  html[data-skin="d"] .wb-body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+  }
+  html[data-skin="d"] .wb-volumes { grid-row: 1; }
+  html[data-skin="d"] .wb-main { grid-row: 2; }
+  html[data-skin="d"] .wb-side {
+    grid-column: 1;
+    grid-row: 3;
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+    max-height: 46vh;
+  }
+  html[data-skin="d"] .wb-break { margin-inline: 24px; }
+  html[data-skin="d"] .wb-inner { padding-inline: 24px; }
+  html[data-skin="d"] .wb-compose { padding-inline: 24px; }
+}
+
+/* ③ 单列 + 顶栏换行；书签栏与右栏题头同步回落，避免横向溢出 */
+@media (max-width: 820px) {
+  html[data-skin="d"] .wb-top { flex-wrap: wrap; gap: var(--s-3); padding: 10px 16px; }
+  html[data-skin="d"] .wb-proj-sel { max-width: 160px; }
+  html[data-skin="d"] .wb-volumes { padding-inline: 16px; }
+  html[data-skin="d"] .wb-colhead { display: none; }   /* 窄屏省掉栏脊文字，把宽度让给书签 */
+  html[data-skin="d"] .wb-vol { min-width: 140px; }
+  html[data-skin="d"] .wb-msg.is-user { margin-left: 22px; }
+  /* 竖排题头在窄屏挤占宽度，收起 padding 与题头 */
+  html[data-skin="d"] .wb-side { padding-left: 0; }
+  html[data-skin="d"] .wb-side::before { display: none; }
+}

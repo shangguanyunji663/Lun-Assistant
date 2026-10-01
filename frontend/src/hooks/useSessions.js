@@ -25,10 +25,13 @@ const loadSessions = () => {
 /**
  * 多会话卷册管理：
  * - 会话列表 / 当前会话，localStorage 持久化（上限 MAX_SESSIONS）；
- * - 保证至少存在一个会话；patchSession 供 SSE 增量更新会话内容。
+ * - 保证至少存在一个会话；patchSession 供 SSE 增量更新会话内容；
+ * - reorderSessions 供拖拽重排（v18 可玩性）；
+ * - seed：显式传入的初始会话（开发预览模式用）；给了 seed 就忽略本地持久化，
+ *   保证演示数据每次都一致，不被上一次残留的 localStorage 覆盖。
  */
-export function useSessions() {
-  const [sessions, setSessions] = useState(loadSessions)
+export function useSessions(seed = null) {
+  const [sessions, setSessions] = useState(() => (seed ? seed : loadSessions()))
   const [activeId, setActiveId] = useState(null)
   const bottomRef = useRef(null)
 
@@ -69,6 +72,17 @@ export function useSessions() {
     })
   }
 
+  /** 拖拽重排（v18 可玩性）：把 from 位置的会话移到 to 位置 */
+  const reorderSessions = (from, to) => {
+    setSessions(list => {
+      if (from === to || from < 0 || to < 0 || from >= list.length || to >= list.length) return list
+      const next = [...list]
+      const [moved] = next.splice(from, 1)
+      next.splice(to, 0, moved)
+      return next
+    })
+  }
+
   const active = sessions.find(s => s.id === activeId) || sessions[0] || null
   const messages = active?.msgs ?? []
   const timeline = active?.timeline ?? []
@@ -76,6 +90,6 @@ export function useSessions() {
   return {
     sessions, active, activeId, setActiveId,
     messages, timeline, bottomRef,
-    patchSession, newSession, removeSession,
+    patchSession, newSession, removeSession, reorderSessions,
   }
 }

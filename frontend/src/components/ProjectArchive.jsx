@@ -1,20 +1,22 @@
 import React, { useEffect, useState } from 'react'
 import { api } from '../api.js'
 import { STATUS_LABEL } from '../constants.js'
+import { DEMO_ARCHIVE } from '../demo.js'
 
-export default function ProjectArchive({ projectId, onEdit, refreshKey }) {
-  const [detail, setDetail] = useState(null)
+export default function ProjectArchive({ projectId, onEdit, refreshKey, demo = false }) {
+  const [detail, setDetail] = useState(demo ? DEMO_ARCHIVE : null)
   const [err, setErr] = useState('')
   const [loading, setLoading] = useState(false)
 
   const load = async () => {
+    if (demo) { setDetail(DEMO_ARCHIVE); return }
     if (!projectId) { setDetail(null); return }
     setLoading(true)
     try { setDetail(await api.getProject(projectId)); setErr('') }
     catch (e) { setErr(String(e.message || e)) }
     finally { setLoading(false) }
   }
-  useEffect(() => { load() }, [projectId, refreshKey])
+  useEffect(() => { load() }, [projectId, refreshKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!projectId) return <p className="muted empty-tip">未关联项目。在顶部新建或选择一个论文项目后，这里会显示它的档案与结构化记忆。</p>
   if (loading) return <p className="muted empty-tip">读取中…</p>

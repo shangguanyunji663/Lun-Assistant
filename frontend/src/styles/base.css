@@ -1,0 +1,338 @@
+/* ============================================================================
+   v18 · 共享底座（与皮肤无关的结构性样式）
+   —— 只写「不随设计语言变化」的东西：重置、焦点、滚动条、动效降级、
+      共享原子（按钮 / 卡片 / 字段 / 弹窗骨架）、markdown 结构。
+      配色、字体、材质、布局一律交给 src/skins/*.css。
+
+   ============================ 皮肤令牌契约 ============================
+   每套皮肤必须定义下列变量（base.css / fx.css 依赖它们）：
+
+     明暗与层次   --bg  --surface  --surface-2
+     文字         --text  --text-2  --text-3
+     描边         --line  --line-2
+     强调         --accent  --accent-2
+     字体         --font-display  --font-body  --font-mono
+     动效         --ease  --dur  --dur-slow
+     圆角         --r-card  --r-pill  --r-btn
+     阴影         --shadow-card  --shadow-pop  --shadow-glow
+     间距         --s-1 … --s-6
+     字号         --fs-micro --fs-sm --fs-md --fs-lg --fs-xl --fs-2xl
+
+   未定义时下列样式一律走 fallback，不会「炸版」，但该皮肤会显得扁平。
+   ============================================================================ */
+
+/* ============================================================ 1. 基础重置 */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html,
+body { margin: 0; padding: 0; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  background: var(--bg, #fff);
+  color: var(--text, #111);
+  font-family: var(--font-body, system-ui, -apple-system, "Noto Sans SC", sans-serif);
+  font-size: var(--fs-md, 15px);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, h5, h6, p, figure, blockquote, dl, dd { margin: 0; }
+ul, ol { margin: 0; padding: 0; }
+li { list-style: none; }
+
+img, svg, video, canvas { display: block; max-width: 100%; }
+
+button, input, select, textarea {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  margin: 0;
+}
+button { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+
+a { color: inherit; text-decoration: none; }
+
+code, pre, kbd { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace); }
+
+/* ============================================================ 2. 焦点环
+   仅键盘可见：鼠标点击不出现焦点圈（:focus-visible） */
+:focus { outline: none; }
+:focus-visible {
+  outline: 2px solid var(--accent, #333);
+  outline-offset: 2px;
+}
+
+/* ============================================================ 3. 细滚动条 */
+* { scrollbar-width: thin; scrollbar-color: var(--line-2, #ccc) transparent; }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--line-2, #ccc);
+  border: 2px solid transparent;
+  background-clip: content-box;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--text-3, #999); background-clip: content-box; }
+
+/* ============================================================ 4. 布局原子 */
+.fill,
+.wb-fill { flex: 1 1 auto; min-width: 0; }
+
+/* 视觉隐藏但可被读屏读取 */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============================================================ 5. 共享原子
+   —— 这些类名跨皮肤复用（见 .btn / .card / .field …），
+      皮肤只负责覆写观感，不改变类名契约。 */
+
+/* 按钮：基态中性，-ink 为实底强调，-ghost 为描边，-danger 为危险 */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2, 8px);
+  padding: 10px 18px;
+  border: 1px solid var(--line-2, #ccc);
+  border-radius: var(--r-btn, 6px);
+  background: var(--surface, #fff);
+  color: var(--text, #111);
+  font-size: var(--fs-sm, 13.5px);
+  line-height: 1.2;
+  transition: background var(--dur, .22s) var(--ease, ease),
+              border-color var(--dur, .22s) var(--ease, ease),
+              transform var(--dur, .22s) var(--ease, ease);
+}
+.btn:hover:not(:disabled) { border-color: var(--accent, #333); }
+.btn:disabled { opacity: .5; }
+
+.btn-sm { padding: 7px 13px; font-size: var(--fs-xs, 12.5px); }
+.btn-ink { background: var(--text, #111); border-color: var(--text, #111); color: var(--bg, #fff); }
+.btn-ink:hover:not(:disabled) { background: var(--accent, #333); border-color: var(--accent, #333); }
+.btn-ghost { background: transparent; }
+.btn-danger { border-color: var(--danger, #b3402f); color: var(--danger, #b3402f); background: transparent; }
+.btn-danger:hover:not(:disabled) { background: var(--danger, #b3402f); color: var(--bg, #fff); }
+
+/* 卡片：皮肤可整体弃用（例如 A/F 用「纸块」而非卡片） */
+.card {
+  background: var(--surface, #fff);
+  border: 1px solid var(--line, #e2e2e2);
+  border-radius: var(--r-card, 8px);
+}
+
+/* 面板小标题（TracePanel / KnowledgePanel 共用） */
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-3, 12px);
+  margin-bottom: var(--s-3, 12px);
+}
+.panel-head h3 {
+  font-family: var(--font-display, inherit);
+  font-size: var(--fs-md, 15px);
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+.panel-head > :last-child { margin-left: auto; }
+
+/* 表单字段（弹窗 / 登录页共用） */
+.field { display: block; margin-bottom: var(--s-3, 12px); }
+.field > span,
+.field > label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: var(--fs-micro, 11px);
+  letter-spacing: .14em;
+  color: var(--text-3, #888);
+}
+.field input,
+.field textarea,
+.field select {
+  display: block;
+  width: 100%;
+  padding: 11px 13px;
+  border: 1px solid var(--line-2, #ccc);
+  border-radius: var(--r-btn, 6px);
+  background: var(--surface, #fff);
+  font-size: var(--fs-sm, 14px);
+  transition: border-color var(--dur, .22s) var(--ease, ease);
+}
+.field input:focus,
+.field textarea:focus,
+.field select:focus { border-color: var(--accent, #333); }
+.field textarea { resize: vertical; line-height: 1.7; }
+
+/* 语义文本 */
+.muted { color: var(--text-3, #888); }
+.err {
+  margin-top: var(--s-3, 12px);
+  padding: 10px 13px;
+  border: 1px solid var(--danger, #b3402f);
+  border-radius: var(--r-btn, 6px);
+  color: var(--danger, #b3402f);
+  font-size: var(--fs-sm, 13px);
+}
+.link { cursor: pointer; border-bottom: 1px solid currentColor; }
+.link:hover { color: var(--accent, #333); }
+.empty-tip { font-size: var(--fs-sm, 13.5px); line-height: 1.85; color: var(--text-3, #888); }
+
+/* ============================================================ 6. 弹窗骨架 */
+.modal-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  padding: var(--s-5, 24px);
+  background: color-mix(in srgb, var(--bg, #000) 62%, transparent);
+  backdrop-filter: blur(2px);
+  animation: base-fade var(--dur, .22s) var(--ease, ease) both;
+}
+@keyframes base-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.modal-card {
+  width: min(560px, 100%);
+  padding: var(--s-6, 28px);
+  background: var(--surface, #fff);
+  border: 1px solid var(--line-2, #ccc);
+  border-radius: var(--r-card, 10px);
+  box-shadow: var(--shadow-pop, 0 18px 50px rgba(0, 0, 0, .22));
+  animation: base-rise var(--dur-slow, .34s) var(--ease, ease) both;
+}
+@keyframes base-rise { from { opacity: 0; translate: 0 14px; } to { opacity: 1; translate: 0 0; } }
+
+.modal-card h3 {
+  font-family: var(--font-display, inherit);
+  font-size: var(--fs-xl, 20px);
+  font-weight: 700;
+}
+.modal-rule { margin: var(--s-2, 8px) 0 var(--s-4, 16px); }
+.modal-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2, 8px);
+  margin-top: var(--s-5, 22px);
+}
+.center { text-align: center; }
+
+/* 细分隔线（decor.Rule） */
+.rule {
+  display: block;
+  height: 1px;
+  background: var(--line-2, #ccc);
+}
+
+/* 印章（decor.Seal）：形状与配色交给皮肤 */
+.seal {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  border-radius: var(--r-btn, 6px);
+  background: var(--accent, #333);
+  color: var(--accent-ink, #fff);
+  font-family: var(--font-display, inherit);
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+}
+
+/* ============================================================ 7. markdown 结构
+   气泡内 markdown 的结构性排版（颜色 / 字体由皮肤决定） */
+.wb-bubble > :first-child { margin-top: 0; }
+.wb-bubble > :last-child { margin-bottom: 0; }
+.wb-bubble p { margin: 0 0 .72em; }
+.wb-bubble ul,
+.wb-bubble ol { margin: .5em 0 .8em; padding-left: 1.35em; }
+.wb-bubble li { list-style: inherit; margin: .22em 0; }
+.wb-bubble ul { list-style: disc; }
+.wb-bubble ol { list-style: decimal; }
+.wb-bubble h1,
+.wb-bubble h2,
+.wb-bubble h3,
+.wb-bubble h4 {
+  font-family: var(--font-display, inherit);
+  font-weight: 700;
+  line-height: 1.45;
+  margin: 1em 0 .5em;
+}
+.wb-bubble h1 { font-size: 1.32em; }
+.wb-bubble h2 { font-size: 1.2em; }
+.wb-bubble h3 { font-size: 1.1em; }
+.wb-bubble h4 { font-size: 1.02em; }
+.wb-bubble code {
+  padding: 1px 5px;
+  border: 1px solid var(--line, #e2e2e2);
+  border-radius: 4px;
+  background: var(--surface-2, #f5f5f5);
+  font-size: .9em;
+}
+.wb-bubble pre {
+  margin: .7em 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line, #e2e2e2);
+  border-radius: var(--r-btn, 6px);
+  background: var(--surface-2, #f5f5f5);
+  overflow-x: auto;
+}
+.wb-bubble pre code { padding: 0; border: 0; background: none; }
+.wb-bubble blockquote {
+  margin: .7em 0;
+  padding: 2px 0 2px 12px;
+  border-left: 2px solid var(--line-2, #ccc);
+  color: var(--text-2, #555);
+}
+.wb-bubble table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: .7em 0;
+  font-size: .94em;
+}
+.wb-bubble th,
+.wb-bubble td {
+  padding: 7px 9px;
+  border: 1px solid var(--line, #e2e2e2);
+  text-align: left;
+}
+.wb-bubble th { background: var(--surface-2, #f5f5f5); font-weight: 700; }
+.wb-bubble a { border-bottom: 1px solid currentColor; }
+.wb-bubble hr { margin: 1em 0; border: 0; border-top: 1px solid var(--line, #e2e2e2); }
+
+/* 流式输出光标 */
+.cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 3px;
+  vertical-align: -.12em;
+  background: var(--accent, #333);
+  animation: cursor-blink 1.05s steps(1, end) infinite;
+}
+@keyframes cursor-blink { 50% { opacity: 0; } }
+
+/* ============================================================ 8. 弱动效降级
+   系统开启「减少动态效果」时，全局关掉动画与位移，但保留最终可见态。 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .cursor { opacity: 1 !important; }
+}

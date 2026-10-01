@@ -1,0 +1,947 @@
+/* ============================================================================
+   皮肤 B · 夜航仪表（Instrument Console）
+   —— 近黑仪器台 + 荧光青遥测读数 + 全站等宽标注 + 56px 方格底纹。
+   设计性格：一台正在跑的控制台，不是一份文档——读数、编号、状态灯、
+   进度轨；单色荧光强调，暗色硬阴影，圆角一律 ≤2px。
+
+   本文件与 a-letterpress.css 同构：令牌 → 外壳 → .wb-* 段落 → 响应式三档，
+   便于六套皮肤统一维护。次级面板（知识库 / 档案 / 可观测 / 登录页）由
+   styles/panels.css 吃令牌自动适配，此处只覆写与「仪表」性格冲突的部分。
+   ============================================================================ */
+
+/* ============================================================ 1. 令牌 */
+html[data-skin="b"] {
+  --bg: #07080A;
+  --surface: #0B0D10;
+  --surface-2: #0D1013;
+
+  --text: #D9DFE3;
+  --text-2: #B4BCC2;
+  --text-3: #657078;
+
+  --line: rgba(255, 255, 255, .075);
+  --line-2: rgba(255, 255, 255, .16);
+
+  --accent: #3FE0C4;
+  --accent-2: #FFB454;
+  --accent-ink: #07080A;
+  --danger: #FF6B5A;
+
+  /* —— 以下为本皮肤独有的具名值：荧光青的各种「档位」。
+        集中在此，避免散落的裸 rgba() 变成隐性主题色 —— */
+  --accent-hi: #5CF0D6;                     /* hover 亮一档 */
+  --accent-wash: rgba(63, 224, 196, .045);  /* 中断条的青底 */
+  --accent-sel: rgba(63, 224, 196, .05);    /* 选中项的微青底 */
+  --accent-line: rgba(63, 224, 196, .45);   /* 青描边 / 链接下划线 */
+  --ring: rgba(63, 224, 196, .5);           /* 状态灯脉冲环 */
+  --grid: rgba(255, 255, 255, .075);        /* 方格底纹线 */
+  --hover-fill: rgba(255, 255, 255, .022);
+  --track: rgba(255, 255, 255, .09);        /* 进度轨底槽 */
+  --chip-line: rgba(255, 255, 255, .28);    /* 色点描边 */
+  --danger-wash: rgba(255, 107, 90, .08);
+  --warn-wash: rgba(255, 180, 84, .07);
+
+  /* 显示字体前置等宽：拉丁字符走 Plex Mono，中文字形自然回落到思源黑，
+     于是「标题」也能带上仪器铭牌的字距感，而中文正文依旧可读 */
+  --font-display: "IBM Plex Mono", "Noto Sans SC", "PingFang SC", sans-serif;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --ease: cubic-bezier(.19, 1, .22, 1);
+  --dur: .22s;
+  --dur-slow: .42s;
+
+  /* 仪表盘：只允许 2px 与直角两档 */
+  --r-card: 2px;
+  --r-btn: 2px;
+  --r-pill: 2px;
+
+  --shadow-card: none;
+  --shadow-pop: 0 18px 46px rgba(0, 0, 0, .6);
+  --shadow-glow: 0 0 22px rgba(63, 224, 196, .35);
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 22px;
+  --s-6: 28px;
+
+  --fs-micro: 10.5px;
+  --fs-sm: 13px;
+  --fs-md: 14.5px;
+  --fs-lg: 16px;
+  --fs-xl: 19px;
+  --fs-2xl: 26px;
+
+  /* 知识库「已入库」用读数文字而非椭圆章——控制台不盖章 */
+  --stamp-display: none;
+  --stamp-text-display: inline;
+}
+
+/* 方格底纹：两层 1px linear-gradient 画 56px 网格。
+   仪表台的「坐标纸」底座，用 background 而非伪元素，
+   不参与布局、不与 fx 层抢层叠。 */
+html[data-skin="b"] body {
+  background-color: var(--bg);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 56px 56px;
+  background-position: -1px -1px;
+  color: var(--text);
+}
+
+/* ============================================================ 2. 外壳 */
+html[data-skin="b"] .wb {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  /* 透明：把 body 的方格让给对话主区，面板区各自上暗色 */
+  background: transparent;
+  color: var(--text);
+}
+/* 流动曲线是「纸面手写」的语气，与仪表的直线网格相冲，直接关掉；
+   氛围交给方格底纹 + fx.css 的扫描线 */
+html[data-skin="b"] .ambient-lines { display: none; }
+
+/* 品牌印记：不做实底章，改为一枚描边青方，像机箱上的铭牌 */
+html[data-skin="b"] .seal {
+  border: 1px solid var(--accent);
+  border-radius: 0;
+  background: transparent;
+  color: var(--accent);
+}
+
+/* ============================================================ 3. 顶栏
+   单条 1px 亮线收底（不叠双线）：顶栏是一条「导轨」，越干净越像仪表 */
+html[data-skin="b"] .wb-top {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  height: 52px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--line-2);
+  background: var(--surface);
+}
+
+html[data-skin="b"] .wb-brand { display: flex; align-items: center; gap: 11px; }
+html[data-skin="b"] .wb-brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+html[data-skin="b"] .wb-brand-text b {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+html[data-skin="b"] .wb-brand-text i {
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-style: normal;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+html[data-skin="b"] .wb-proj { display: flex; align-items: center; gap: var(--s-2); }
+/* 项目下拉做成方框：仪表台的「当前通道」选择器 */
+html[data-skin="b"] .wb-proj-sel {
+  max-width: 300px;
+  padding: 7px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 0;
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--text-2);
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="b"] .wb-proj-sel:focus { border-color: var(--accent); color: var(--text); }
+
+html[data-skin="b"] .wb-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: var(--text-3);
+}
+html[data-skin="b"] .wb-user b { font-weight: 400; color: var(--text); }
+html[data-skin="b"] .wb-user i {
+  font-style: normal;
+  font-size: 9.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* 视图切换：选中 = 实底荧光青 + 黑字（唯一的大面积实底强调，用来说明「现在在哪」） */
+html[data-skin="b"] .wb-views { display: flex; }
+html[data-skin="b"] .wb-view {
+  padding: 7px 14px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  transition: color var(--dur) var(--ease),
+              background var(--dur) var(--ease),
+              border-color var(--dur) var(--ease);
+}
+html[data-skin="b"] .wb-view:hover { color: var(--text); }
+html[data-skin="b"] .wb-view.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+/* ============================================================ 4. 按钮 */
+html[data-skin="b"] .wb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  padding: 8px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-btn);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  transition: background var(--dur) var(--ease),
+              border-color var(--dur) var(--ease),
+              color var(--dur) var(--ease);
+}
+html[data-skin="b"] .wb-btn-ghost:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-wash);
+}
+html[data-skin="b"] .wb-btn-ink {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+html[data-skin="b"] .wb-btn-ink:hover:not(:disabled) {
+  background: var(--accent-hi);
+  border-color: var(--accent-hi);
+  color: var(--accent-ink);
+}
+html[data-skin="b"] .wb-btn:disabled { opacity: .35; }
+
+/* ============================================================ 5. 皮肤选择器 */
+html[data-skin="b"] .skin-picker { position: relative; }
+html[data-skin="b"] .skin-trigger { display: inline-flex; align-items: center; gap: 8px; }
+html[data-skin="b"] .sp-chip {
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border: 1px solid var(--chip-line);
+  border-radius: 0;
+}
+html[data-skin="b"] .sp-label { font-size: 11px; letter-spacing: .1em; }
+html[data-skin="b"] .sp-caret { font-size: 9px; opacity: .6; }
+
+html[data-skin="b"] .skin-pop {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 60;
+  width: 330px;
+  padding: var(--s-4);
+  border: 1px solid var(--line-2);
+  border-top-color: var(--accent);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+  animation: base-rise var(--dur) var(--ease) both;
+}
+html[data-skin="b"] .sp-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+html[data-skin="b"] .sp-title {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+html[data-skin="b"] .sp-hint {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .12em;
+  color: var(--text-3);
+}
+html[data-skin="b"] .sp-grid { padding: var(--s-2) 0; }
+html[data-skin="b"] .sp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 8px;
+  border-left: 2px solid transparent;
+  text-align: left;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+html[data-skin="b"] .sp-item:hover { background: var(--hover-fill); }
+html[data-skin="b"] .sp-item.on { border-left-color: var(--accent); background: var(--accent-sel); }
+html[data-skin="b"] .sp-item .sp-chip { width: 12px; height: 12px; }
+html[data-skin="b"] .sp-body { display: flex; flex-direction: column; min-width: 0; }
+html[data-skin="b"] .sp-name {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .06em;
+  color: var(--text);
+}
+html[data-skin="b"] .sp-name em {
+  margin-left: 7px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+html[data-skin="b"] .sp-desc {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+html[data-skin="b"] .sp-check { margin-left: auto; color: var(--accent); font-size: 12px; }
+html[data-skin="b"] .sp-foot {
+  display: block;
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  color: var(--text-3);
+}
+html[data-skin="b"] .sp-foot:hover { color: var(--accent); }
+
+/* ============================================================ 6. 横幅
+   用左侧 2px 语义色条代替整块底色：像仪表盘上的告警灯条 */
+html[data-skin="b"] .wb-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 9px 20px;
+  border-bottom: 1px solid var(--line-2);
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: .06em;
+}
+html[data-skin="b"] .wb-banner.is-err {
+  border-left: 2px solid var(--danger);
+  background: var(--danger-wash);
+  color: var(--danger);
+}
+html[data-skin="b"] .wb-banner.is-warn {
+  border-left: 2px solid var(--accent-2);
+  background: var(--warn-wash);
+  color: var(--accent-2);
+}
+html[data-skin="b"] .wb-banner-x { margin-left: auto; font-size: 15px; line-height: 1; }
+
+/* ============================================================ 7. 三栏 */
+html[data-skin="b"] .wb-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 252px minmax(0, 1fr) 312px;
+}
+html[data-skin="b"] .wb-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+html[data-skin="b"] .wb-volumes,
+html[data-skin="b"] .wb-main { border-right: 1px solid var(--line); }
+/* 主区透明：让底层方格透出来，对话框像悬浮在坐标纸上 */
+html[data-skin="b"] .wb-main { background: transparent; }
+html[data-skin="b"] .wb-volumes,
+html[data-skin="b"] .wb-side { background: var(--surface); }
+
+/* 栏头：英文左、中文右，中间一条细规线分隔（SESSIONS —— 04 的排法） */
+html[data-skin="b"] .wb-colhead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 42px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+}
+html[data-skin="b"] .wb-ch-en,
+html[data-skin="b"] .wb-ch-cn {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--text-3);
+}
+/* 只作用于栏头的弹性占位：抽成一条横规线，充当左右的「——」 */
+html[data-skin="b"] .wb-colhead .wb-fill {
+  align-self: center;
+  height: 1px;
+  background: var(--line-2);
+  opacity: .45;
+}
+
+/* ============================================================ 8. 会话卷册 */
+html[data-skin="b"] .wb-new {
+  margin: 14px 16px;
+  padding: 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-2);
+  transition: border-color var(--dur) var(--ease),
+              color var(--dur) var(--ease),
+              background var(--dur) var(--ease);
+}
+html[data-skin="b"] .wb-new span { color: var(--accent); }
+html[data-skin="b"] .wb-new:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-wash);
+}
+html[data-skin="b"] .wb-new:disabled { opacity: .4; }
+
+html[data-skin="b"] .wb-vollist { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: var(--s-4); }
+html[data-skin="b"] .wb-vol {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-left: 2px solid transparent;
+  border-bottom: 1px solid var(--line);
+  cursor: grab;
+  transition: background var(--dur) var(--ease);
+}
+html[data-skin="b"] .wb-vol:hover { background: var(--hover-fill); }
+html[data-skin="b"] .wb-vol.is-on { border-left-color: var(--accent); background: var(--accent-sel); }
+html[data-skin="b"] .wb-vol-no {
+  flex: none;
+  padding-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .1em;
+  color: var(--text-3);
+}
+html[data-skin="b"] .wb-vol.is-on .wb-vol-no { color: var(--accent); }
+html[data-skin="b"] .wb-vol-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+html[data-skin="b"] .wb-vol-title {
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: .01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html[data-skin="b"] .wb-vol.is-on .wb-vol-title { color: var(--accent); }
+html[data-skin="b"] .wb-vol-meta {
+  margin-top: 5px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+html[data-skin="b"] .wb-vol-del {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 0;
+  color: var(--text-3);
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="b"] .wb-vol:hover .wb-vol-del { opacity: 1; }
+html[data-skin="b"] .wb-vol-del:hover { color: var(--accent); }
+html[data-skin="b"] .wb-vol-empty {
+  padding: 20px 16px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .08em;
+  color: var(--text-3);
+}
+
+/* ============================================================ 9. 对话主区 */
+html[data-skin="b"] .wb-stream { flex: 1; min-height: 0; overflow-y: auto; }
+html[data-skin="b"] .wb-inner {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 26px 26px 8px;
+}
+
+/* —— 调度日志式消息 ——
+   左侧 76px gutter 放等宽时间戳；正文列上方是 [角色] 标签；
+   .wb-msg::before 画一条贯穿到下一则的 1px 竖线，把整条对话读成一份 log。 */
+html[data-skin="b"] .wb-msg {
+  position: relative;
+  padding-left: 76px;
+}
+html[data-skin="b"] .wb-msg + .wb-msg { margin-top: 30px; }
+html[data-skin="b"] .wb-msg::before {
+  content: "";
+  position: absolute;
+  left: 30px;
+  top: 26px;
+  bottom: -30px;
+  width: 1px;
+  background: var(--line);
+  pointer-events: none;
+}
+/* 末条不再向下延伸：留一条「未完成」的线会误导读数 */
+html[data-skin="b"] .wb-msg:last-of-type::before { display: none; }
+
+html[data-skin="b"] .wb-msg-head {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 10px;
+}
+html[data-skin="b"] .wb-msg-mark {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border: 1px solid var(--line-2);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-3);
+}
+html[data-skin="b"] .wb-msg.is-ai .wb-msg-mark { border-color: var(--accent); color: var(--accent); }
+html[data-skin="b"] .wb-msg-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  color: var(--text-2);
+}
+/* 角色标签用裸方括号：读作 [USER] / [MAIN AGENT] 的通道标记，
+   不再另加描边——方括号本身已经框住了它，双层装饰反而变噪 */
+html[data-skin="b"] .wb-msg-role {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+html[data-skin="b"] .wb-msg-role::before { content: "["; color: var(--line-2); }
+html[data-skin="b"] .wb-msg-role::after { content: "]"; color: var(--line-2); }
+html[data-skin="b"] .wb-msg.is-ai .wb-msg-role { color: var(--accent); }
+/* 时间戳绝对定位进 gutter，末尾的 .wb-fill 因此空出右侧不打架 */
+html[data-skin="b"] .wb-msg-time {
+  position: absolute;
+  left: 0;
+  top: 2px;
+  width: 56px;
+  text-align: right;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .06em;
+  color: var(--text-3);
+}
+
+/* 用户输入 = 命令回显：等宽 + 左侧 2px 竖档，不铺底色 */
+html[data-skin="b"] .wb-msg.is-user .wb-bubble {
+  padding-left: 14px;
+  border-left: 2px solid var(--line-2);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.95;
+  color: var(--text);
+  word-break: break-word;
+}
+/* 助手正文 = 读数：正文走中文黑体，编号/链接走荧光等宽 */
+html[data-skin="b"] .wb-msg.is-ai .wb-bubble {
+  font-size: 14.5px;
+  line-height: 1.95;
+  color: var(--text);
+}
+html[data-skin="b"] .wb-msg.is-ai .wb-bubble :is(ul, ol) > li::marker {
+  font-family: var(--font-mono);
+  font-size: .85em;
+  color: var(--accent);
+}
+html[data-skin="b"] .wb-msg.is-ai .wb-bubble a {
+  color: var(--accent);
+  border-bottom-color: var(--accent-line);
+}
+html[data-skin="b"] .wb-bubble code { border-radius: 2px; border-color: var(--line); }
+html[data-skin="b"] .wb-bubble pre { border-radius: var(--r-card); border-color: var(--line); }
+html[data-skin="b"] .wb-bubble blockquote { border-left-color: var(--accent-line); }
+
+/* 空态 */
+html[data-skin="b"] .wb-empty { padding: 54px 0 26px; text-align: center; }
+html[data-skin="b"] .wb-empty .seal { margin: 0 auto 18px; box-shadow: var(--shadow-glow); }
+html[data-skin="b"] .wb-empty h2 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: .16em;
+  color: var(--text);
+}
+html[data-skin="b"] .wb-empty-lead {
+  max-width: 34em;
+  margin: 12px auto 0;
+  font-size: var(--fs-sm);
+  line-height: 1.95;
+  color: var(--text-2);
+}
+html[data-skin="b"] .wb-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: var(--s-5);
+}
+html[data-skin="b"] .wb-prompt {
+  padding: 9px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  letter-spacing: .04em;
+  color: var(--text-2);
+  transition: border-color var(--dur) var(--ease),
+              color var(--dur) var(--ease),
+              background var(--dur) var(--ease);
+}
+html[data-skin="b"] .wb-prompt:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-wash);
+}
+
+/* ============================================================ 10. 中断确认条
+   青描边卡片：整个界面里唯一「等你操作」的模块，因此给描边 + 微青底 */
+html[data-skin="b"] .wb-break {
+  margin: 0 26px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--r-card);
+  background: var(--accent-wash);
+  animation: base-rise var(--dur) var(--ease) both;
+}
+html[data-skin="b"] .wb-break-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--line-2);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .18em;
+}
+html[data-skin="b"] .wb-break-badge {
+  padding: 3px 8px;
+  border-radius: 0;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+html[data-skin="b"] .wb-break-note {
+  font-size: 9.5px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+html[data-skin="b"] .wb-break-ask {
+  padding: 13px 14px 0;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--text);
+  word-break: break-word;
+}
+html[data-skin="b"] .wb-break-ops {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px 14px;
+}
+html[data-skin="b"] .wb-break-op {
+  padding: 9px 15px;
+  border: 1px solid var(--line-2);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  color: var(--text-2);
+  transition: border-color var(--dur) var(--ease),
+              color var(--dur) var(--ease),
+              background var(--dur) var(--ease);
+}
+/* 第一个选项（通常为「采纳」）即主操作：实底荧光青 */
+html[data-skin="b"] .wb-break-op:first-child {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+html[data-skin="b"] .wb-break-op:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+html[data-skin="b"] .wb-break-op:first-child:hover:not(:disabled) {
+  background: var(--accent-hi);
+  border-color: var(--accent-hi);
+  color: var(--accent-ink);
+}
+html[data-skin="b"] .wb-break-input {
+  flex: 1;
+  min-width: 150px;
+  margin-left: 6px;
+  padding: 8px 2px;
+  border-bottom: 1px solid var(--line-2);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: .04em;
+  color: var(--text);
+}
+html[data-skin="b"] .wb-break-input:focus { border-color: var(--accent); }
+html[data-skin="b"] .wb-break .wb-btn-ink { padding: 9px 16px; }
+
+/* ============================================================ 11. 输入区
+   方框 + 实底 SEND：整块就是个命令行，focus-within 时框线亮起 */
+html[data-skin="b"] .wb-compose {
+  padding: 14px 26px 16px;
+  border-top: 1px solid var(--line-2);
+  background: var(--surface-2);
+}
+html[data-skin="b"] .wb-compose-box {
+  display: flex;
+  align-items: stretch;
+  max-width: 760px;
+  margin: 0 auto;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-card);
+  background: var(--bg);
+  transition: border-color var(--dur) var(--ease);
+}
+html[data-skin="b"] .wb-compose-box:focus-within { border-color: var(--accent); }
+html[data-skin="b"] .wb-compose-ta {
+  flex: 1;
+  resize: none;
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  line-height: 1.8;
+  color: var(--text);
+}
+html[data-skin="b"] .wb-compose-ta::placeholder { color: var(--text-3); }
+html[data-skin="b"] .wb-compose-send {
+  padding: 0 22px;
+  border: 0;
+  border-radius: 0;
+  letter-spacing: .16em;
+}
+html[data-skin="b"] .wb-compose-hint {
+  max-width: 760px;
+  margin: 9px auto 0;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* ============================================================ 12. 右栏 */
+html[data-skin="b"] .wb-side-tabs { display: flex; border-bottom: 1px solid var(--line); }
+html[data-skin="b"] .wb-side-tab {
+  flex: 1;
+  padding: 12px 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: .14em;
+  color: var(--text-3);
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+html[data-skin="b"] .wb-side-tab:hover { color: var(--text); }
+html[data-skin="b"] .wb-side-tab.is-on { color: var(--accent); border-color: var(--accent); }
+html[data-skin="b"] .wb-side-body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; }
+
+/* —— 遥测式时间线 ——
+   每项 = 状态圆点（完成=青实心 / 待确认=青脉冲 / 异常=红）+ 标题
+        + 右侧等宽序号读数 + 底部 2px 进度轨（scaleX 推进） */
+html[data-skin="b"] .wb-tl { display: flex; flex-direction: column; }
+html[data-skin="b"] .wb-tl-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 12px;
+  padding: 12px 0 13px;
+  border-bottom: 1px solid var(--line);
+}
+/* 轨槽：画在 item::before（先绘），填充画在 body::after（后绘）才能压在上层 */
+html[data-skin="b"] .wb-tl-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--track);
+}
+html[data-skin="b"] .wb-tl-body {
+  grid-column: 1;
+  grid-row: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+html[data-skin="b"] .wb-tl-body::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(1);
+  transform-origin: left;
+  transition: transform var(--dur-slow) var(--ease);
+}
+html[data-skin="b"] .wb-tl-no {
+  grid-column: 2;
+  grid-row: 1;
+  padding-top: 1px;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .1em;
+  color: var(--text-3);
+}
+html[data-skin="b"] .wb-tl-title {
+  position: relative;
+  padding-left: 15px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text);
+  word-break: break-word;
+}
+/* 状态灯：绝对定位在标题左侧，避免 flex 文本节点换行的排版坑 */
+html[data-skin="b"] .wb-tl-title::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 6px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+html[data-skin="b"] .wb-tl-meta {
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  word-break: break-word;
+}
+/* 待确认：灯脉冲 + 轨推到半程，表示「卡在等人」 */
+html[data-skin="b"] .wb-tl-item.is-interrupt .wb-tl-title { color: var(--accent); }
+html[data-skin="b"] .wb-tl-item.is-interrupt .wb-tl-title::before { animation: b-console-ping 1.8s var(--ease) infinite; }
+html[data-skin="b"] .wb-tl-item.is-interrupt .wb-tl-body::after { transform: scaleX(.5); }
+/* 异常：红点 + 红轨满格（错误已发生，不是进行中） */
+html[data-skin="b"] .wb-tl-item.is-error .wb-tl-title { color: var(--danger); }
+html[data-skin="b"] .wb-tl-item.is-error .wb-tl-title::before { background: var(--danger); }
+html[data-skin="b"] .wb-tl-item.is-error .wb-tl-body::after { background: var(--danger); }
+@keyframes b-console-ping {
+  0%   { box-shadow: 0 0 0 0 var(--ring); }
+  70%  { box-shadow: 0 0 0 7px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* ============================================================ 13. 次级面板覆写
+   panels.css 已吃令牌自动适配暗色，这里只把「圆角盒」压回仪表的 2px 直角语言 */
+html[data-skin="b"] .kb-hit,
+html[data-skin="b"] .kb-doc,
+html[data-skin="b"] .kb-drop,
+html[data-skin="b"] .kb-search input,
+html[data-skin="b"] .kb-search select,
+html[data-skin="b"] .trace-item,
+html[data-skin="b"] .prog-item,
+html[data-skin="b"] .arch-block,
+html[data-skin="b"] .auth-card {
+  border-radius: var(--r-card);
+  box-shadow: none;
+}
+html[data-skin="b"] .kb-hit { border-left: 2px solid var(--accent); }
+html[data-skin="b"] .auth-card { box-shadow: var(--shadow-pop); }
+html[data-skin="b"] .kd-icon { border-radius: 0; }
+/* 面板里的数值一律等宽，读起来才像读数 */
+html[data-skin="b"] .prog-v,
+html[data-skin="b"] .kh-score,
+html[data-skin="b"] .trace-item .tid,
+html[data-skin="b"] .lat { font-family: var(--font-mono); }
+
+/* ============================================================ 14. 响应式 */
+@media (max-width: 1380px) {
+  html[data-skin="b"] .wb-body { grid-template-columns: 232px minmax(0, 1fr) 288px; }
+  html[data-skin="b"] .wb-inner,
+  html[data-skin="b"] .wb-compose-box,
+  html[data-skin="b"] .wb-compose-hint { max-width: none; }
+}
+@media (max-width: 1080px) {
+  html[data-skin="b"] .wb-body { grid-template-columns: 224px minmax(0, 1fr); }
+  html[data-skin="b"] .wb-side {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--line-2);
+    max-height: 46vh;
+  }
+  html[data-skin="b"] .wb-break { margin-inline: 20px; }
+  html[data-skin="b"] .wb-inner,
+  html[data-skin="b"] .wb-compose { padding-inline: 20px; }
+}
+@media (max-width: 820px) {
+  html[data-skin="b"] .wb-top { flex-wrap: wrap; height: auto; padding: 10px 16px; gap: var(--s-3); }
+  html[data-skin="b"] .wb-body { grid-template-columns: 1fr; }
+  html[data-skin="b"] .wb-volumes {
+    max-height: 34vh;
+    border-right: 0;
+    border-bottom: 1px solid var(--line-2);
+  }
+  html[data-skin="b"] .wb-main { border-right: 0; }
+  html[data-skin="b"] .wb-proj-sel { max-width: 150px; }
+  /* 窄屏不能再让 76px gutter 吃掉正文：取消竖线与 gutter，
+     时间戳落回标题行右端 */
+  html[data-skin="b"] .wb-msg { padding-left: 0; }
+  html[data-skin="b"] .wb-msg::before { display: none; }
+  html[data-skin="b"] .wb-msg-time { position: static; width: auto; text-align: left; }
+}
+
+/* 弱动效降级：base.css / fx.css 已兜住全局；这里只补本皮肤自有的状态灯脉冲，
+   确保 reduce 环境下不留下持续动画（皮肤不得反向覆盖） */
+@media (prefers-reduced-motion: reduce) {
+  html[data-skin="b"] .wb-tl-item.is-interrupt .wb-tl-title::before { animation: none !important; }
+}

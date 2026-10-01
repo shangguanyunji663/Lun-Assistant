@@ -1,0 +1,648 @@
+<!doctype html>
+<!-- v18 落地页 · 皮肤 C「学术海报 Poster」
+     六套设计语言共用同一套落地页骨架脚本（src/landing/shared.js）：
+     皮肤切换器 / 入场编排 / 数字滚动 / 打字机 / 彩蛋三门，六页行为完全一致。
+     本页只负责「海报」这一套版式与材质：巨型排版、满幅色块、细线格、零圆角，
+     全站唯一字族是超粗黑体，等宽只做标注与数据 —— 与工作台侧 src/skins/c-poster.css 同一套语言。 -->
+<html lang="zh-CN" data-skin="c" class="no-js">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#F2F2EF" />
+    <meta name="description"
+      content="论匠 LunJiang —— 多智能体论文全流程工作台。选题、文献、写作、格式、查重、答辩，六个环节一支编队，产出经你确认后落稿。" />
+    <title>论匠 LunJiang · 多智能体论文全流程工作台</title>
+
+    <!-- 注：落地页一律不自跳（皮肤记忆跳转只属于站根 index.html） -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- 海报只有一套字族：超粗无衬线承担全部标题与正文，等宽仅做标注 -->
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700;900&display=swap" rel="stylesheet" />
+
+    <link rel="stylesheet" href="/src/landing/shared.css" />
+    <style>
+      /* ============================================================
+         皮肤 C · 学术海报 —— 页面层
+         共享物的取色令牌（--lb-*）定义在这里，shared.css 读取。
+         ============================================================ */
+      :root {
+        --lb-bg: #F2F2EF;
+        --lb-surface: #FFFFFF;
+        --lb-fg: #0A0A0A;
+        --lb-muted: #6E6E69;
+        --lb-line: rgba(10, 10, 10, .34);
+        --lb-accent: #CCFF00;
+        --lb-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+        /* 海报不做衬线：把 --lb-serif 也指向同一套黑体，共享物才不会冒出第二种字 */
+        --lb-serif: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+        --lb-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+        --lb-r: 0px;
+        --lb-shadow: 6px 6px 0 rgba(10, 10, 10, .18);
+        --lb-ease: cubic-bezier(.19, 1, .22, 1);
+
+        /* 本页版面色板：色值直接对齐工作台皮肤 C（src/skins/c-poster.css） */
+        --bg: #F2F2EF;
+        --surface: #FFFFFF;
+        --surface-2: #E9E9E5;
+        --ink: #0A0A0A;
+        --ink2: #3A3A38;
+        --dim: #6E6E69;
+        --acid: #CCFF00;
+        --ln: rgba(10, 10, 10, .14);
+        --ln2: rgba(10, 10, 10, .34);
+        --sans: var(--lb-sans);
+        --mono: var(--lb-mono);
+        /* 点击粒子取色（fx.js 读 --accent / --accent-2） */
+        --accent: #CCFF00;
+        --accent-2: #0A0A0A;
+      }
+
+      * { box-sizing: border-box; }
+      html { -webkit-text-size-adjust: 100%; }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--sans);
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+      /* 海报是印出来的平涂：不加纸张噪点、不加扫描线 */
+      a { color: inherit; text-decoration: none; }
+      h1, h2, h3, p, ul, ol, li, figure, figcaption { margin: 0; padding: 0; list-style: none; }
+      .wrap { max-width: 1480px; margin: 0 auto; padding: 0 48px; }
+      .mono { font-family: var(--mono); }
+
+      /* 磁吸：fx.js 只写 --mgx / --mgy，需要一条规则去消费它 */
+      [data-magnet] {
+        transform: translate(var(--mgx, 0px), var(--mgy, 0px));
+        transition: transform .2s var(--lb-ease), background .22s var(--lb-ease), color .22s var(--lb-ease);
+      }
+
+      /* ---------------------------------------------------- 报头（黑色反色条） */
+      .mast { position: relative; z-index: 10; background: var(--ink); color: var(--bg); }
+      .mast-in { display: flex; align-items: center; gap: 30px; padding: 13px 0; }
+      .mk { display: flex; align-items: center; gap: 12px; }
+      /* 品牌块 = 一枚酸绿实心方 + 黑字，在最黑的横条上做唯一的高亮点 */
+      .mk-seal {
+        width: 28px; height: 28px; background: var(--acid); color: var(--ink);
+        display: grid; place-items: center; font-weight: 900; font-size: 16px;
+      }
+      .mk b { font-weight: 900; font-size: 18px; letter-spacing: .04em; }
+      .mk small {
+        display: block; margin-top: 3px; font-family: var(--mono); font-size: 9px;
+        letter-spacing: .2em; text-transform: uppercase;
+        color: color-mix(in srgb, var(--bg) 55%, transparent);
+      }
+      .mnav { display: flex; gap: 26px; margin-left: auto; font-family: var(--mono); font-size: 11px; letter-spacing: .16em; }
+      .mnav a { color: color-mix(in srgb, var(--bg) 62%, transparent); transition: color .22s var(--lb-ease); }
+      .mnav a:hover { color: var(--acid); }
+      .issue {
+        padding-left: 26px; border-left: 1px solid color-mix(in srgb, var(--bg) 24%, transparent);
+        font-family: var(--mono); font-size: 10px; letter-spacing: .18em;
+        color: color-mix(in srgb, var(--bg) 48%, transparent);
+      }
+      .go {
+        background: var(--acid); color: var(--ink);
+        padding: 11px 22px; font-family: var(--mono); font-size: 11.5px; letter-spacing: .16em;
+        transition: background .22s var(--lb-ease), color .22s var(--lb-ease);
+      }
+      .go:hover { background: var(--surface); color: var(--ink); }
+
+      /* ---------------------------------------------------- Hero */
+      .hero { padding: 60px 0 42px; }
+      .kick {
+        display: flex; align-items: center; gap: 11px; margin-bottom: 26px;
+        font-family: var(--mono); font-size: 11px; letter-spacing: .22em;
+        text-transform: uppercase; color: var(--dim);
+      }
+      .kick i { width: 9px; height: 9px; background: var(--acid); display: inline-block; animation: blip 2.2s infinite; }
+      @keyframes blip { 0%, 100% { opacity: 1; } 50% { opacity: .18; } }
+
+      /* 海报头：巨型标题 + 右侧竖排标注 */
+      .poster { display: grid; grid-template-columns: minmax(0, 1fr) 140px; gap: 22px; align-items: stretch; }
+      h1.tt {
+        font-weight: 900;
+        font-size: clamp(50px, 8.6vw, 146px);
+        line-height: .92;
+        letter-spacing: -.038em;
+        margin: 0;
+      }
+      .tt .l { display: block; white-space: nowrap; }
+      /* 第二行整体右移，制造海报式错位 */
+      .tt .l2 { margin-left: 9%; }
+      /* 逐字入场：每个字从下方 112% 处上移进来（延迟由脚本按 45ms/字 写入） */
+      .tt .c { display: inline-block; transform: translateY(112%); animation: up .95s var(--lb-ease) both; }
+      @keyframes up { to { transform: translateY(0); } }
+      .tt em { position: relative; z-index: 0; font-style: normal; }
+      /* 关键词 = 酸绿块衬底：横条从左扫出（scaleX） */
+      .tt em::after {
+        content: ""; position: absolute; left: 0; right: 0; bottom: .06em; height: .16em;
+        background: var(--acid); z-index: -1;
+        transform-origin: left center;
+        animation: bar .8s 1.05s var(--lb-ease) both;
+      }
+      @keyframes bar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+      .vert {
+        writing-mode: vertical-rl; justify-self: end; align-self: stretch;
+        max-height: 430px; overflow: hidden;
+        padding-right: 14px; border-right: 1px solid var(--ln2);
+        font-family: var(--mono); font-size: 11px; letter-spacing: .24em; color: var(--dim);
+      }
+
+      /* 题记：本页唯一使用打字机的元素 */
+      .hero-note {
+        margin-top: 30px; min-height: 1.6em;
+        font-family: var(--mono); font-size: 12px; letter-spacing: .18em; color: var(--ink);
+      }
+      .hero-note::after { content: "▌"; margin-left: 4px; animation: blip 1.05s steps(1) infinite; }
+
+      .subrow { display: flex; align-items: flex-end; gap: 40px; margin-top: 22px; flex-wrap: wrap; }
+      .subrow p { max-width: 34em; font-size: 15.5px; line-height: 1.95; color: var(--ink2); }
+      /* 关键词 = 酸绿荧光笔衬底 */
+      .subrow p b { font-weight: 700; color: var(--ink); box-shadow: inset 0 -.42em 0 var(--acid); }
+
+      .acts { display: flex; margin-left: auto; }
+      .b1 {
+        display: inline-block; background: var(--ink); color: var(--bg);
+        padding: 18px 34px; font-size: 14px; letter-spacing: .06em;
+      }
+      .b1:hover { background: var(--acid); color: var(--ink); }
+      .b2 {
+        display: inline-block; border: 1px solid var(--ink); color: var(--ink);
+        padding: 18px 34px; font-size: 14px; letter-spacing: .06em;
+      }
+      .b2:hover { background: var(--ink); color: var(--bg); }
+
+      /* ---------------------------------------------------- 满幅黑白摄影 */
+      .band { position: relative; margin-top: 48px; background: var(--ink); }
+      .band img {
+        display: block; width: 100%; aspect-ratio: 16 / 9; max-height: 72vh; object-fit: cover;
+        filter: grayscale(1) contrast(1.28);
+        clip-path: inset(0 0 100% 0);
+        animation: reveal 1.15s .5s var(--lb-ease) both;
+      }
+      @keyframes reveal { to { clip-path: inset(0 0 0 0); } }
+      .band .tag {
+        position: absolute; left: 48px; bottom: 24px;
+        font-family: var(--mono); font-size: 11px; letter-spacing: .2em; color: #fff;
+        text-shadow: 0 1px 12px rgba(0, 0, 0, .65);
+      }
+      .band .tag2 {
+        position: absolute; right: 48px; top: 22px;
+        font-family: var(--mono); font-size: 10px; letter-spacing: .22em;
+        color: rgba(255, 255, 255, .72);
+      }
+
+      /* ---------------------------------------------------- 酸绿 CTA 条（取代跑马灯）
+         满幅酸绿实色块：这是全场最响的一条，压在上面的字必须纯黑 */
+      .acid { margin-top: 56px; background: var(--acid); color: var(--ink); }
+      .acid-in { display: flex; align-items: center; gap: 34px; padding: 26px 0; flex-wrap: wrap; }
+      .acid-in .h { font-weight: 900; font-size: clamp(20px, 2.2vw, 30px); letter-spacing: -.01em; }
+      /* 注意：这里不用 .stages —— 那是下方六环节条目的类，会串到细线格上 */
+      .acid-in .six { display: flex; gap: 20px; flex-wrap: wrap; font-family: var(--mono); font-size: 11px; letter-spacing: .14em; }
+      .acid-in .six span { position: relative; padding-left: 14px; }
+      .acid-in .six span::before { content: ""; position: absolute; left: 0; top: 5px; width: 6px; height: 6px; background: var(--ink); }
+      .acid-in .end {
+        margin-left: auto; background: var(--ink); color: var(--acid);
+        padding: 14px 26px; font-family: var(--mono); font-size: 11.5px; letter-spacing: .16em;
+        transition: background .22s var(--lb-ease), color .22s var(--lb-ease);
+      }
+      .acid-in .end:hover { background: var(--surface); color: var(--ink); }
+
+      /* ---------------------------------------------------- 读数带 */
+      .readout {
+        display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 66px;
+        border-top: 2px solid var(--ink); border-bottom: 1px solid var(--ln);
+      }
+      .ro { padding: 32px 30px 38px; border-left: 1px solid var(--ln); }
+      .ro:first-child { border-left: 0; padding-left: 0; }
+      .ro:last-child { padding-right: 0; }
+      .ro .n {
+        font-weight: 900; line-height: 1; letter-spacing: -.03em;
+        font-size: clamp(30px, 3.6vw, 54px);
+        transition: box-shadow .28s var(--lb-ease);
+      }
+      /* hover：数字被酸绿荧光笔划一道 */
+      .ro:hover .n { box-shadow: inset 0 -.24em 0 var(--acid); }
+      .ro .n u { text-decoration: none; font-size: .42em; vertical-align: super; }
+      .ro .k { margin-top: 14px; font-family: var(--mono); font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: var(--dim); }
+      .ro .d { margin-top: 7px; font-size: 12.5px; line-height: 1.7; color: var(--dim); }
+
+      /* ---------------------------------------------------- 章节通用 */
+      .sec { padding: 84px 0 0; }
+      .sechead { display: flex; align-items: baseline; gap: 16px; padding-bottom: 16px; border-bottom: 2px solid var(--ink); }
+      .sechead h2 { font-weight: 900; font-size: clamp(26px, 2.9vw, 40px); letter-spacing: -.02em; }
+      .sechead .la { font-family: var(--mono); font-size: 10.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--dim); }
+      .sechead .fill { flex: 1; }
+      .lead { margin-top: 24px; max-width: 46em; font-size: 15.5px; line-height: 2; color: var(--ink2); }
+
+      /* 六环节：巨型编号索引 + 细线格条目，不用卡片 */
+      .stages { margin-top: 8px; border-top: 1px solid var(--ln); }
+      .stage {
+        display: grid; grid-template-columns: 120px 1fr 1.5fr; gap: 26px; align-items: start;
+        padding: 26px 0; border-bottom: 1px solid var(--ln);
+        transition: background .26s var(--lb-ease), padding-left .26s var(--lb-ease);
+      }
+      /* hover：整行铺酸绿并向右位移，像被荧光笔划过的一整条 */
+      .stage:hover { background: var(--acid); padding-left: 18px; }
+      .stage .no { font-weight: 900; font-size: clamp(30px, 3vw, 44px); line-height: 1; letter-spacing: -.04em; }
+      .stage h3 { font-weight: 900; font-size: 20px; letter-spacing: -.01em; padding-top: 6px; }
+      .stage p { font-size: 14px; line-height: 1.95; color: var(--ink2); padding-top: 6px; }
+
+      /* 架构与评测：细线格 + 一块如实标注 */
+      .arch { display: grid; grid-template-columns: 1.25fr .75fr; gap: 48px; margin-top: 28px; }
+      .arch-item { display: grid; grid-template-columns: 96px 1fr; gap: 20px; padding: 16px 0; border-bottom: 1px solid var(--ln); }
+      .arch-k { font-family: var(--mono); font-size: 10.5px; letter-spacing: .2em; color: var(--dim); padding-top: 4px; }
+      .arch-item span:last-child { font-size: 14px; line-height: 1.9; }
+      .honesty {
+        padding: 22px 24px;
+        background: var(--surface-2);
+        border-top: 1px solid var(--ln); border-bottom: 1px solid var(--ln);
+        border-left: 4px solid var(--acid);
+        font-size: 13.5px; line-height: 1.95; color: var(--ink2);
+      }
+      .honesty code { font-family: var(--mono); font-size: 12.5px; background: var(--bg); padding: 1px 6px; }
+
+      /* 人机协同：整条反色横带做章头（第二处满幅色块）+ 三栏细线格 */
+      .dark { background: var(--ink); color: var(--bg); }
+      .syn-head { padding-block: 44px 42px; }
+      .dark .sechead { border-bottom-color: color-mix(in srgb, var(--bg) 32%, transparent); }
+      .dark .sechead h2 { font-size: clamp(28px, 3.6vw, 54px); letter-spacing: -.03em; line-height: 1.02; }
+      .dark .la { color: var(--acid); }
+      .dark .lead { color: color-mix(in srgb, var(--bg) 70%, transparent); }
+
+      /* 三栏细线格（人机协同 / 开始使用） */
+      .trio { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: 28px; }
+      .trio > div { padding: 4px 28px 32px; border-left: 1px solid var(--ln); }
+      .trio > div:first-child { border-left: 0; padding-left: 0; }
+      .trio > div:last-child { padding-right: 0; }
+      .trio h3 { font-weight: 900; font-size: 19px; letter-spacing: -.01em; margin-bottom: 12px; }
+      .trio p { font-size: 13.5px; line-height: 1.95; color: var(--ink2); }
+      .syn-body { padding-top: 34px; }
+      .btn-ink {
+        display: inline-block; margin-top: 18px; background: var(--ink); color: var(--bg);
+        padding: 13px 24px; font-size: 13px; letter-spacing: .06em;
+      }
+      .btn-ink:hover { background: var(--acid); color: var(--ink); }
+      .lnk {
+        display: inline-block; margin-top: 20px; padding-bottom: 4px;
+        border-bottom: 1.5px solid var(--ink);
+        font-family: var(--mono); font-size: 12px; letter-spacing: .14em;
+      }
+      .lnk:hover { background: var(--acid); }
+
+      /* ---------------------------------------------------- 页脚（黑色反色，与报头收口） */
+      .foot { margin-top: 96px; background: var(--ink); color: var(--bg); }
+      .foot-in { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 22px 0 10px; }
+      .foot-brand { font-weight: 900; letter-spacing: .16em; }
+      .foot-stack, .foot-lic { font-family: var(--mono); font-size: 10.5px; letter-spacing: .14em; color: color-mix(in srgb, var(--bg) 55%, transparent); }
+      .foot-in .fill { flex: 1; }
+      .egg-hint { padding-bottom: 32px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .16em; color: color-mix(in srgb, var(--bg) 45%, transparent); }
+
+      /* ---------------------------------------------------- 共享物局部纠正
+         共享弹层仍按 --lb-bg 给「酸绿底上的文字」取色；酸绿是全场唯一的亮块，
+         压在上面的字必须是纯黑（与工作台皮肤 C 的 --accent-ink 同一取舍）。 */
+      .egg-seal { color: var(--ink); }
+      .egg-go { color: var(--ink); }
+      .egg-go:hover { color: var(--bg); }
+
+      /* ---------------------------------------------------- 响应式 */
+      @media (max-width: 1080px) {
+        .wrap { padding: 0 26px; }
+        .mnav, .issue { display: none; }
+        .hero { padding: 44px 0 30px; }
+        .poster { grid-template-columns: 1fr; }
+        .vert { display: none; }
+        .tt .l2 { margin-left: 0; }
+        /* 巨型字号必须按选择器同权重覆盖，否则被上面的 h1.tt 压住 */
+        h1.tt { font-size: clamp(42px, 11.5vw, 96px); }
+        .subrow { gap: 24px; }
+        .acts { margin-left: 0; }
+        .band .tag { left: 26px; }
+        .band .tag2 { right: 26px; }
+        .readout { grid-template-columns: repeat(2, 1fr); margin-top: 50px; }
+        .ro { padding: 26px 22px 30px; }
+        .ro:nth-child(3) { border-left: 0; padding-left: 0; }
+        .arch { grid-template-columns: 1fr; gap: 26px; }
+        .trio { grid-template-columns: 1fr; }
+        .trio > div { border-left: 0; padding: 20px 0; border-top: 1px solid var(--ln); }
+        .trio > div:first-child { border-top: 0; padding-top: 0; }
+        .stage { grid-template-columns: 76px 1fr; gap: 18px; }
+        .stage h3, .stage p { grid-column: 2; padding-top: 0; }
+        .stage p { margin-top: 10px; }
+      }
+
+      @media (max-width: 640px) {
+        .wrap { padding: 0 20px; }
+        .mast-in { gap: 14px; }
+        .mk small { display: none; }
+        .b1, .b2 { padding: 15px 24px; }
+        .acid-in { padding: 22px 0; gap: 18px; }
+        .acid-in .end { margin-left: 0; }
+        .band .tag { font-size: 10px; }
+        .band .tag2 { display: none; }
+      }
+
+      /* 弱动效降级：把「靠动画才显形」的图与字直接落到终态 */
+      @media (prefers-reduced-motion: reduce) {
+        .tt .c { animation: none; transform: none; }
+        .tt em::after { animation: none; transform: none; }
+        .kick i, .hero-note::after { animation: none; }
+        .band img { animation: none; clip-path: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ============================================================ 报头（黑色反色条） -->
+    <header class="mast">
+      <div class="wrap mast-in">
+        <span class="mk">
+          <span class="mk-seal" aria-hidden="true">论</span>
+          <span><b>论匠</b><small>LunJiang · No.18</small></span>
+        </span>
+        <nav class="mnav" aria-label="主导航">
+          <a href="#stages">六个环节</a>
+          <a href="#arch">架构与评测</a>
+          <a href="#synergy">人机协同</a>
+          <a href="#start">开始使用</a>
+        </nav>
+        <span class="issue">06 STAGES / 07 AGENTS</span>
+        <a class="go" href="./app.html">进入工作台</a>
+      </div>
+    </header>
+
+    <main>
+      <!-- ============================================================ Hero -->
+      <section class="wrap hero">
+        <div class="poster">
+          <div>
+            <p class="kick"><i aria-hidden="true"></i>多智能体论文全流程工作台</p>
+
+            <h1 class="tt">
+              <span class="l" data-split>论文，</span>
+              <span class="l l2" data-split>不是一次</span>
+              <span class="l" data-split><em>生成</em>的。</span>
+            </h1>
+          </div>
+          <span class="vert" aria-hidden="true">MULTI-AGENT THESIS WORKBENCH</span>
+        </div>
+
+        <p class="hero-note" data-typewriter>机器起草，人来定稿。</p>
+
+        <div class="subrow">
+          <p>
+            六个环节，一支编队。<b>主控智能体</b>把选题、文献、方法、格式、查重、答辩拆开派活，
+            每一次产出都先落在待采纳区，<b>你点头才落稿</b>。
+          </p>
+          <div class="acts">
+            <a class="b1" href="./app.html" data-magnet data-burst>进入工作台</a>
+            <a class="b2" href="#arch">阅读评测报告</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ 满幅黑白摄影 -->
+      <figure class="band">
+        <img alt="黑白高对比摄影：素净桌面上的一台老式打字机"
+          src="./fig/fig-c-typewriter.jpg" />
+        <figcaption class="tag">图版 01 — 落稿之前，先由人定稿</figcaption>
+        <span class="tag2" aria-hidden="true">LOCAL INFERENCE</span>
+      </figure>
+
+      <!-- ============================================================ 酸绿 CTA 条 -->
+      <div class="acid">
+        <div class="wrap acid-in" data-reveal>
+          <span class="h">六个环节，逐个跑通。</span>
+          <span class="six">
+            <span>选题立项</span><span>文献综述</span><span>方法与写作</span><span>格式规范</span><span>查重降重</span><span>答辩准备</span>
+          </span>
+          <a class="end" href="#start">开始使用 →</a>
+        </div>
+      </div>
+
+      <!-- ============================================================ 读数带 -->
+      <section class="wrap">
+        <div class="readout">
+          <div class="ro" data-reveal>
+            <div class="n"><span data-count="100">100</span><u>%</u></div>
+            <div class="k">Intent Top-1</div>
+            <div class="d">意图分类 50 条集 · 56ms/条</div>
+          </div>
+          <div class="ro" data-reveal>
+            <div class="n"><span data-count="16">16</span><u>/16</u></div>
+            <div class="k">Regression</div>
+            <div class="d">S1–S7 七大必测场景全通</div>
+          </div>
+          <div class="ro" data-reveal>
+            <div class="n"><span data-count="100">100</span><u>%</u></div>
+            <div class="k">Recall@5</div>
+            <div class="d">稠密 + 稀疏 + 句窗三路融合</div>
+          </div>
+          <div class="ro" data-reveal>
+            <div class="n"><span data-count="89">89</span><u>项</u></div>
+            <div class="k">Offline Cases</div>
+            <div class="d">治理 / 模型 / 改写 / API</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ 六个环节 -->
+      <section class="sec" id="stages">
+        <div class="wrap">
+          <div class="sechead" data-reveal>
+            <h2>六个环节，一支智能体编队</h2>
+            <span class="la">Capabilities</span>
+            <span class="fill"></span>
+            <span class="la">01 — 06</span>
+          </div>
+          <p class="lead" data-reveal>
+            不是一个大模型硬扛所有问题：主控智能体识别意图、拆解任务、按环节路由给专项角色，
+            人的确认卡在关键节点上。
+          </p>
+
+          <div class="stages">
+            <article class="stage" data-reveal>
+              <span class="no">01</span>
+              <h3>选题立项</h3>
+              <p>把专业方向与写作要求交给选题环节，产出选题结论与理由，自动沉淀为项目档案的选题记录。</p>
+            </article>
+            <article class="stage" data-reveal>
+              <span class="no">02</span>
+              <h3>文献综述</h3>
+              <p>向量检索与关键词多路召回，融合后精排；引用的每一段都可以溯源到原文。</p>
+            </article>
+            <article class="stage" data-reveal>
+              <span class="no">03</span>
+              <h3>方法与写作</h3>
+              <p>复杂任务由 Planner 拆成步骤序列，以「规划 — 执行 — 校验」循环推进，逐章成稿。</p>
+            </article>
+            <article class="stage" data-reveal>
+              <span class="no">04</span>
+              <h3>格式规范</h3>
+              <p>字数、引用格式与交付节点写入结构化记忆，在写作全程作为硬约束参与校验。</p>
+            </article>
+            <article class="stage" data-reveal>
+              <span class="no">05</span>
+              <h3>查重降重</h3>
+              <p>语义改写与引用边界核对，逐段标注风险，可疑段落交给人工确认，而不是静默放行。</p>
+            </article>
+            <article class="stage" data-reveal>
+              <span class="no">06</span>
+              <h3>答辩准备</h3>
+              <p>汇总研究过程与阶段性产出，整理答辩所需的陈述要点与支撑材料。</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ 架构与评测 -->
+      <section class="sec" id="arch">
+        <div class="wrap">
+          <div class="sechead" data-reveal>
+            <h2>架构是公开的，数字也是</h2>
+            <span class="la">Architecture &amp; Evaluation</span>
+          </div>
+
+          <div class="arch">
+            <div data-reveal>
+              <div class="arch-item"><span class="arch-k">编排</span><span>LangGraph 主从编排：主控调度专项角色，规划 — 执行 — 校验闭环</span></div>
+              <div class="arch-item"><span class="arch-k">检索</span><span>PostgreSQL + pgvector：向量与关键词多路召回，融合后精排</span></div>
+              <div class="arch-item"><span class="arch-k">会话</span><span>Redis：会话检查点、限流与分布式锁，执行状态可恢复</span></div>
+              <div class="arch-item"><span class="arch-k">底座</span><span>Ollama 本地推理：对话模型 + bge-m3 向量化 + 重排，全程可离线</span></div>
+            </div>
+
+            <div data-reveal>
+              <p class="honesty">
+                水位如实标注：口语长尾集 80% · 学术刁钻集 95% · hold-out 泛化 75%（6/8）。
+                全部数字来自一次完整的全本地底座实测，复现命令见仓库
+                <code>docs/EVALUATION_REPORT.md</code>。
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ 人机协同 -->
+      <section class="sec" id="synergy">
+        <div class="dark">
+          <div class="wrap syn-head" data-reveal>
+            <div class="sechead">
+              <h2>机器起草，人来定稿</h2>
+              <span class="la">Human in the Loop</span>
+            </div>
+            <p class="lead">
+              多智能体系统最容易失控的地方是「自作主张」。论匠把确认权留给写作的人：
+              关键节点主动发问，产出必须经你采纳。
+            </p>
+          </div>
+        </div>
+
+        <div class="wrap syn-body">
+          <div class="trio">
+            <div data-reveal>
+              <h3>产出需确认</h3>
+              <p>智能体在关键节点主动发起确认，生成内容以「待采纳」状态呈现——采纳才落稿，不满意就重生成。</p>
+            </div>
+            <div data-reveal>
+              <h3>全链路留痕</h3>
+              <p>每次执行的意图识别、路由决策、工具调用与耗时完整落库，可逐条回放，出了问题有据可查。</p>
+            </div>
+            <div data-reveal>
+              <h3>记忆沉淀</h3>
+              <p>选题结论、论文大纲、写作约束与章节进度沉淀为结构化项目档案，跨会话延续。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================================ 开始使用 -->
+      <section class="sec" id="start">
+        <div class="wrap">
+          <div class="sechead" data-reveal>
+            <h2>三种方式，开始使用</h2>
+            <span class="la">Get Started</span>
+          </div>
+
+          <div class="trio">
+            <div data-reveal>
+              <h3>在线试用</h3>
+              <p>无需安装，浏览器打开即用。注册一个账号，选一个课题，看着编队开工。</p>
+              <a class="btn-ink" href="./app.html" data-magnet>进入工作台</a>
+            </div>
+            <div data-reveal>
+              <h3>源码仓库</h3>
+              <p>FastAPI · LangGraph · PostgreSQL + pgvector · Redis · React 18，MIT License，含部署与评测文档。</p>
+              <a class="lnk" href="https://github.com/shangguanyunji663/Lun-Assistant" target="_blank" rel="noreferrer">前往 GitHub →</a>
+            </div>
+            <div data-reveal>
+              <h3>学习指南</h3>
+              <p>从零复现多智能体架构：设计认知、模块解剖、动手实现与评测，附可运行骨架。</p>
+              <a class="lnk" href="https://github.com/shangguanyunji663/Lun-Assistant/blob/main/%E8%AE%BA%E5%8C%A0%E5%AD%A6%E4%B9%A0%E6%8C%87%E5%8D%97.md" target="_blank" rel="noreferrer">阅读指南 →</a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ============================================================ 页脚 -->
+    <footer class="foot">
+      <div class="wrap">
+        <div class="foot-in">
+          <span class="foot-brand">论匠 LUNJIANG</span>
+          <span class="foot-stack">FastAPI · LangGraph · PostgreSQL + pgvector · Redis · React 18</span>
+          <span class="fill"></span>
+          <span class="foot-lic">MIT License · © <span id="lj-year">2026</span></span>
+        </div>
+        <p class="egg-hint">
+          海报三则 · 手快者当主控 · 细读者见风险 · 落笔者得题款<span class="egg-progress"></span>
+        </p>
+      </div>
+    </footer>
+
+    <script>
+      document.getElementById('lj-year').textContent = String(new Date().getFullYear())
+    </script>
+
+    <script>
+      /* 标题逐字入场：按字符拆成 .c，逐字从下方上移
+         每字延迟 45ms，行与行之间再错峰 120ms。
+         未启用脚本 / 弱动效环境时标题原样保留，不影响阅读。 */
+      ;(function splitTitle() {
+        var lines = document.querySelectorAll('.tt [data-split]')
+        if (!lines.length) return
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+        Array.prototype.forEach.call(lines, function (line, li) {
+          var src = document.createElement('div')
+          src.innerHTML = line.innerHTML
+          line.innerHTML = ''
+          var i = 0
+          var walk = function (node, out) {
+            Array.prototype.forEach.call(node.childNodes, function (n) {
+              if (n.nodeType === 3) {
+                Array.prototype.forEach.call(n.textContent.split(''), function (ch) {
+                  if (!ch.trim()) { out.appendChild(document.createTextNode(ch)); return }
+                  var s = document.createElement('span')
+                  s.className = 'c'
+                  s.textContent = ch
+                  s.style.animationDelay = (li * 0.12 + i * 0.045).toFixed(3) + 's'
+                  i++
+                  out.appendChild(s)
+                })
+              } else {
+                // 保留 <em>（酸绿块衬底挂在它身上）
+                var box = document.createElement(n.tagName === 'EM' ? 'em' : 'span')
+                out.appendChild(box)
+                walk(n, box)
+              }
+            })
+          }
+          walk(src, line)
+        })
+      })()
+    </script>
+    <script type="module" src="/src/landing/shared.js"></script>
+  </body>
+</html>

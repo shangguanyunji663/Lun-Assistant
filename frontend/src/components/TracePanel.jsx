@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { api } from '../api.js'
+import { DEMO_TRACES } from '../demo.js'
 
 function renderTree(nodes, depth) {
   return nodes.map((n, i) => (
@@ -15,17 +16,19 @@ function renderTree(nodes, depth) {
   ))
 }
 
-export default function TracePanel() {
-  const [traces, setTraces] = useState([])
+export default function TracePanel({ demo = false }) {
+  const [traces, setTraces] = useState(demo ? DEMO_TRACES : [])
   const [detail, setDetail] = useState(null)
   const [err, setErr] = useState('')
 
   const load = async () => {
+    if (demo) { setTraces(DEMO_TRACES); return }
     try { setTraces((await api.traces(30)).items); setErr('') } catch (e) { setErr(String(e.message || e)) }
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const open = async (id) => {
+    if (demo) { setErr('演示模式：未接入后端，行为回放不可用。'); return }
     try { setDetail(await api.trace(id)) } catch (e) { setErr(String(e.message || e)) }
   }
 

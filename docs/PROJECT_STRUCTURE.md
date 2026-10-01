@@ -57,34 +57,42 @@
 
 ---
 
-## 3. frontend/ 结构（React + Vite）
+## 3. frontend/ 结构（React + Vite · v18 六套设计语言）
 
 ```
 frontend/
 ├── src/
-│   ├── main.jsx           # React 入口
-│   ├── App.jsx            # 主界面：会话/对话/项目/右侧 tab + 11 主题切换器（A-K）
-│   ├── styles.css         # 全局样式 + 十一主题 design tokens（:root = A；§13 v13 / §19-20 v14 / §21 v15 追加段）
-│   ├── landing.css        # 落地页样式（双主题令牌 + 排印 + §12 mock + §13 编辑部双结构六主题 + 彩蛋机关/顶栏对齐追加段）
-│   ├── landing.js         # 落地页交互（六主题循环切换 / 入场 reveal / 数字滚动 / 彩蛋机关三门 · 确认层状态机，零依赖）
-│   ├── InkBackground.jsx  # 山水背景分层（photo/veil/wash/grain/divider/stamp）
+│   ├── main.jsx           # React 入口；样式加载顺序：base → panels → fx → skins/*
+│   ├── App.jsx            # 工作台主壳（.wb-* 语义标记）：三栏 + 皮肤接入 + 会话拖拽重排 + 采纳盖章
+│   ├── fx.js              # 动效工具箱（粒子 / 换肤遮罩 / 成就条 / 3D 倾斜 / 磁吸 / 盖章）
+│   ├── fx.css             # 动效层样式（入场编排 / 指针特效 / 氛围 / 高光时刻 / 弱动效降级）
 │   ├── api.js             # REST + SSE 封装
-│   ├── constants.js
-│   ├── hooks/             # useChat / useProjects / useSessions / useTheme（THEMES 注册单一真源）
-│   └── components/        # AuthPage / Timeline / TracePanel / KnowledgePanel
-│                          # ProjectArchive / ProjectDialog / decor(Seal·Markdown·WoodRoll)
+│   ├── constants.js       # 状态枚举文案映射
+│   ├── demo.js            # 仅 DEV 的演示数据（?demo=1，生产不进入该分支）
+│   ├── hooks/             # useChat / useProjects / useSessions / useSkin
+│   ├── components/        # AuthPage / Timeline / TracePanel / KnowledgePanel
+│   │                      # ProjectArchive / ProjectDialog / SkinPicker / decor(Seal·Rule·AmbientLines·Markdown)
+│   ├── skins/             # ★ 皮肤（单一真源注册 + 6 套完整设计语言 + 契约文档）
+│   │   ├── registry.js    #   6 套皮肤注册（id / 名称 / 色点 / 落地页 / theme-color）
+│   │   ├── CONTRACT.md    #   皮肤契约：令牌表 + 类名表 + 书写规范 + 自检清单
+│   │   └── a-letterpress / b-console / c-poster / d-bamboo / e-riso / f-archive .css
+│   ├── styles/            # 共享底座（与皮肤无关）
+│   │   ├── base.css       #   重置 / 焦点 / 滚动条 / 弹窗骨架 / markdown 结构 / 令牌契约说明
+│   │   └── panels.css     #   共享组件层：知识库 / 档案 / 可观测 / 登录页（只吃皮肤令牌）
+│   └── landing/           # 落地页共享行为与样式（六页共用）
+│       ├── shared.js      #   皮肤切换器 / 入场编排 / 数字滚动 / 打字机 / 彩蛋三门 / 落笔处
+│       └── shared.css     #   上述共享物的样式（取色走 --lb-* 落地页令牌）
+├── index.html             # 落地页 · 皮肤 A「铅字印刷」（站根；含皮肤记忆跳转）
+├── landing-b…f.html       # 落地页 · 皮肤 B–F（六种版式无法靠 CSS 换肤，故每皮肤一页）
+├── app.html               # 工作台入口（首帧前写入 <html data-skin>）
 ├── public/
-│   ├── bg/                # 主题背景图：bg-{a,c,d}-*.webp（B/E/F/G/H-K 为无图实色主题；v14 已清 b/mist）
-│   ├── console/tuner.html # 调参台（A-K 十一主题透明度/WCAG 测算，经 localStorage 与主应用联动）
-│   └── easter/            # 彩蛋页：dispatch / hunt / brush（落地页三门触发的独立静态页，ROUND18，不进构建）
-├── design-samples/        # v15 四方向设计样图（零依赖静态 HTML，未进构建）
+│   ├── fig/              # 落地页配图（3 张黑白摄影，本地资产，不依赖外部出图接口）
+│   └── easter/            # 彩蛋页：dispatch / hunt / brush（落地页三门触发的独立静态页，不进构建）
+├── design-samples/        # 设计档案（v15 proposal-1…10 + sample-a…d，零依赖静态 HTML，不参与构建）
 ├── scripts/
-│   ├── compress-bg-to-webp.py   # 主题图 PNG→WebP 转换（保留）
-│   ├── shot-app.mjs             # 主应用主题回归（mock 登录 + token 探针 + 截图）
-│   ├── shot-themes.mjs          # 调参台主题回归截图
+│   ├── shot-app.mjs             # 主应用回归（mock 登录 + 截图）
 │   └── verify-upload-msg.mjs    # 上传提示验证
-├── index.html             # 落地页（双结构：#ln-site 经典六段 light/dark + #ed-site 编辑部版式 h/i/j/k；含彩蛋机关「落笔处」与确认层）+ app.html 工作台双入口
-├── vite.config.js         # base=/Lun-Assistant/（GitHub Pages）+ 双入口
+├── vite.config.js         # base=/Lun-Assistant/（GitHub Pages）+ 七入口（站根 / 工作台 / 5 张皮肤落地页）
 ├── package.json / package-lock.json
 └── node_modules/          # gitignore，勿提交
 ```
@@ -93,14 +101,20 @@ frontend/
 
 | 文件 | 价值 |
 |------|------|
-| `src/hooks/useTheme.js` | ★★★ 主题注册单一真源（THEMES 11 项 A-K + localStorage 联动 + 切换音效） |
-| `src/styles.css` | ★★★ 十一主题 token（A 柔雾青绿 / B 黑白瑞士 / C 暗墨夜山 / D 青绿金碧 / E-G v13 / H-K v15 现代艺术） |
-| `src/landing.css` + `src/landing.js` | ★★★ 落地页双结构与六主题（#ln-site 经典 / #ed-site 编辑部）+ 彩蛋机关（三门触发 · 确认层状态机） |
-| `src/InkBackground.jsx` | ★★★ 背景分层骨架（图层与主题装饰开关） |
-| `index.html` / `app.html` | ★★★ 落地页 / 工作台双入口（vite 双入口构建） |
-| `public/console/tuner.html` | ★★ 调参台（A-K 十一主题透明度/WCAG 测算） |
-| `design-samples/` | ★★ v15 四方向设计样图档案 |
-| `scripts/shot-app.mjs` | ★★ 回归脚本，改主题后重跑即可出全套截图 |
+| `src/skins/CONTRACT.md` | ★★★ **皮肤契约单一真源**：令牌表 / 类名表 / 书写规范 / 自检清单 |
+| `src/skins/registry.js` | ★★★ 皮肤注册单一真源（6 套：id / 名称 / 色点 / 落地页 / theme-color） |
+| `src/skins/*.css` | ★★★ 六套设计语言的完整实现（铅字印刷 / 夜航仪表 / 学术海报 / 木牍竖排 / 孔版双色 / 索引档案） |
+| `src/styles/base.css` + `panels.css` | ★★★ 共享底座与次级面板（只吃皮肤令牌，六套皮肤自动适配） |
+| `src/fx.css` + `src/fx.js` | ★★★ 动效层：入场编排 / 指针特效 / 氛围 / 高光时刻，JS 工具箱与样式分家 |
+| `src/landing/shared.{js,css}` | ★★★ 六张落地页的共享行为与样式（切换器 / 彩蛋三门 / 落笔处） |
+| `index.html` + `landing-{b…f}.html` | ★★★ 六张落地页（每套皮肤一张，vite 七入口构建） |
+| `src/demo.js` | ★★ 开发预览数据：`npm run dev` 后访问 `app.html?demo=1` 可无后端逐套核对皮肤 |
+| `design-samples/` | ★ v15 设计档案（历史参照，不参与构建） |
+| `scripts/shot-app.mjs` | ★ 回归脚本 |
+
+> **改皮肤时要同步的位置**：① `src/skins/<皮肤>.css`（观感）② `src/skins/registry.js`（名称 / 色点 / 落地页）
+> ③ 对应的落地页 HTML（`index.html` 或 `landing-*.html`）④ 落地页里的 `--lb-*` 令牌。
+> 新增皮肤还需扩 `vite.config.js` 的入口、`src/main.jsx` 的样式引入，并在 `CONTRACT.md` 记录。
 
 ---
 
@@ -134,10 +148,16 @@ frontend/
 ## 5. 维护注意事项（约定）
 
 1. **不要提交** `envs/`、`frontend/dist/`、`frontend/node_modules/`、`.env`、`.workbuddy/`（均已 gitignore）。
-2. 新增主题背景图：PNG 源图放 `design-concepts/`（正本），用 `frontend/scripts/compress-bg-to-webp.py` 转 WebP 到 `frontend/public/bg/`（仅适用于有背景图的主题；v13 起的 E-K 均为无图实色主题）。
-3. 改/增主题需同步四处：`src/styles.css` 的对应 `body[data-theme]` token 块（现 11 个）+ `src/hooks/useTheme.js` THEMES/VALID_THEMES + `public/console/tuner.html`（THEMES 表/tab/CSS 覆盖）+ 落地页（landing.css 令牌映射；涉及时）。
-4. 主题截图验证：`npm run dev` 后跑 `node scripts/shot-app.mjs`，输出到 `_theme-shots/`（用后归档或删除）；亦可用 Playwright（`channel=msedge` + mock `/api/**`）按主题截全页。
-5. 前端改动后需同步 `public/console/tuner.html`（它是主应用 1:1 预览）。
+2. **v18 起的皮肤不使用背景图**：材质一律由 CSS（渐变 / 重复纹理 / 噪点 data-uri / 硬阴影）承担，
+   `public/bg/` 与配套的图片转换脚本已随主题体系一并删除。新增皮肤不需要任何图片资产。
+3. **改 / 增皮肤需同步四处**：① `src/skins/<皮肤>.css`（观感）② `src/skins/registry.js`（名称 / 色点 / 落地页路径）
+   ③ 对应的落地页 HTML（`index.html` 或 `landing-*.html`）④ 落地页 `<style>` 里的 `--lb-*` 令牌。
+   新增皮肤还要扩 `vite.config.js` 的入口与 `src/main.jsx` 的样式引入，并在 `src/skins/CONTRACT.md` 留下记录。
+4. **皮肤回归验证**：`npm run dev` 后跑 `node scripts/shot-app.mjs`；
+   另一个更轻的办法是访问 `app.html?demo=1`（仅 DEV 生效的演示数据），
+   不起后端即可逐套核对六种设计语言。
+5. `npm run lint` + `npm run build` 必须通过（CI 会执行，见 `.github/workflows/deploy.yml`）——
+   产物含七个入口（站根落地页 / 工作台 / 五张皮肤落地页），改 `vite.config.js` 的 `input` 时注意同步。
 
 ---
 

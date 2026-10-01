@@ -1,0 +1,275 @@
+/* ============================================================================
+   v18 · 落地页共享样式
+   —— 六张落地页（index.html + landing-b…f.html）各自有独立的版式与配色，
+      这个文件只负责「六页都有、但必须长得像同一套语言」的三件共享物：
+
+        1. 皮肤切换器  .sw        —— 固定左下角，点开选六套设计语言
+        2. 落笔处      .ink-pad   —— 彩蛋「书写门」的砚纸（JS 注入）
+        3. 彩蛋确认层  .egg-veil  —— 三门手势共用的弹层（JS 注入）
+
+      它们全部通过「落地页令牌」取色，所以每页只要在自己的 <style> 里
+      定义下面这组变量，就能让共享物融入本页的设计语言：
+
+        --lb-bg      页面底色        --lb-surface 浮层底色
+        --lb-fg      正文色          --lb-muted   弱化色
+        --lb-line    描边色          --lb-accent  强调色
+        --lb-mono / --lb-sans / --lb-serif   字族
+        --lb-r       圆角（0 表示直角语言）
+        --lb-shadow  浮层阴影
+       ============================================================================ */
+
+/* ============================================================ 1. 皮肤切换器 */
+.sw {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 90;
+  font-family: var(--lb-mono, ui-monospace, monospace);
+}
+
+.sw-trigger {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  border: 1px solid var(--lb-line, #999);
+  border-radius: var(--lb-r, 2px);
+  background: var(--lb-surface, #fff);
+  color: var(--lb-fg, #111);
+  font-size: 11px;
+  letter-spacing: .14em;
+  cursor: pointer;
+  box-shadow: var(--lb-shadow, 0 6px 20px rgba(0, 0, 0, .16));
+  transition: transform .22s var(--lb-ease, cubic-bezier(.19, 1, .22, 1)),
+              border-color .22s var(--lb-ease, ease);
+}
+.sw-trigger:hover { border-color: var(--lb-accent, #333); transform: translateY(-2px); }
+.sw-dot {
+  width: 9px;
+  height: 9px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--sw-c, var(--lb-accent, #333));
+}
+.sw-caret { font-size: 9px; opacity: .55; }
+
+.sw-pop {
+  position: absolute;
+  left: 0;
+  bottom: calc(100% + 10px);
+  width: 268px;
+  padding: 12px;
+  border: 1px solid var(--lb-line, #999);
+  border-radius: var(--lb-r, 2px);
+  background: var(--lb-surface, #fff);
+  box-shadow: var(--lb-shadow, 0 10px 30px rgba(0, 0, 0, .2));
+  animation: sw-in .3s var(--lb-ease, cubic-bezier(.2, 1.2, .4, 1)) both;
+}
+@keyframes sw-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+.sw-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--lb-line, #999);
+  font-size: 9.5px;
+  letter-spacing: .18em;
+  color: var(--lb-muted, #777);
+}
+.sw-head b { color: var(--lb-fg, #111); font-weight: 500; }
+
+.sw-list { padding: 8px 0 2px; }
+.sw-item {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 8px 8px;
+  border: 0;
+  border-left: 2px solid transparent;
+  background: none;
+  color: var(--lb-fg, #111);
+  text-align: left;
+  cursor: pointer;
+  font-size: 12px;
+  letter-spacing: .02em;
+  transition: background .18s var(--lb-ease, ease), border-color .18s var(--lb-ease, ease);
+}
+.sw-item:hover { background: color-mix(in srgb, var(--lb-accent, #333) 12%, transparent); }
+.sw-item[aria-current="true"] {
+  border-left-color: var(--lb-accent, #333);
+  background: color-mix(in srgb, var(--lb-accent, #333) 8%, transparent);
+}
+.sw-item .sw-dot { border-radius: 50%; }
+.sw-item em {
+  margin-left: auto;
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: .1em;
+  color: var(--lb-muted, #777);
+}
+
+/* ============================================================ 2. 落笔处（彩蛋·书写门）
+   默认为左下角切换器旁的固定小砚纸；hover 进入宽容判定，写成一个字即触发。 */
+.ink-pad {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 88;
+  width: 148px;
+  height: 148px;
+  border: 1px solid var(--lb-line, #999);
+  border-radius: var(--lb-r, 2px);
+  background: color-mix(in srgb, var(--lb-surface, #fff) 88%, transparent);
+  box-shadow: var(--lb-shadow, 0 6px 20px rgba(0, 0, 0, .14));
+  cursor: crosshair;
+  touch-action: none;
+  transition: opacity .3s var(--lb-ease, ease), border-color .3s var(--lb-ease, ease);
+}
+.ink-pad canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.ink-pad .ip-label {
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  transform: translateX(-50%);
+  font-family: var(--lb-mono, monospace);
+  font-size: 9px;
+  letter-spacing: .22em;
+  color: var(--lb-muted, #888);
+  pointer-events: none;
+}
+/* 田字格暗示：一横一竖两条极淡的虚线 */
+.ink-pad .ip-g { position: absolute; background: none; border-color: var(--lb-line, #ccc); opacity: .5; }
+.ink-pad .ip-g.h { left: 10%; right: 10%; top: 50%; border-top: 1px dashed; }
+.ink-pad .ip-g.v { top: 10%; bottom: 10%; left: 50%; border-left: 1px dashed; }
+/* 快成字：边框给出「快了」的反馈 */
+.ink-pad.half { border-color: color-mix(in srgb, var(--lb-accent, #333) 55%, var(--lb-line, #999)); }
+.ink-pad.easy { border-color: color-mix(in srgb, var(--lb-accent, #333) 75%, transparent); }
+.ink-pad.count-3 { animation: ip-pulse .24s var(--lb-ease, ease) 1; }
+@keyframes ip-pulse {
+  50% { transform: scale(1.035); border-color: var(--lb-accent, #333); }
+}
+
+/* ============================================================ 3. 彩蛋确认层 */
+.egg-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: color-mix(in srgb, var(--lb-bg, #000) 74%, transparent);
+  backdrop-filter: blur(3px);
+  transition: opacity .42s var(--lb-ease, ease), visibility .42s;
+}
+.egg-veil.hide { opacity: 0; visibility: hidden; pointer-events: none; }
+.egg-veil.gone { opacity: 0; transition-duration: .4s; }
+
+.egg-card {
+  position: relative;
+  width: min(560px, 100%);
+  padding: 40px 42px 34px;
+  border: 1px solid var(--lb-line, #999);
+  border-radius: var(--lb-r, 2px);
+  background: var(--lb-surface, #fff);
+  color: var(--lb-fg, #111);
+  box-shadow: var(--lb-shadow, 0 20px 60px rgba(0, 0, 0, .3));
+  text-align: center;
+  animation: egg-pop .5s cubic-bezier(.2, 1.3, .4, 1) both;
+}
+@keyframes egg-pop {
+  0%   { opacity: 0; transform: scale(.92) translateY(14px); }
+  65%  { opacity: 1; transform: scale(1.015); }
+  100% { transform: none; }
+}
+.egg-seal {
+  display: grid;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 22px;
+  border-radius: var(--lb-r, 2px);
+  background: var(--lb-accent, #333);
+  color: var(--lb-bg, #fff);
+  font-family: var(--lb-serif, var(--lb-sans, serif));
+  font-size: 26px;
+  font-weight: 900;
+}
+.egg-line {
+  margin: 0 0 10px;
+  font-family: var(--lb-serif, var(--lb-sans, sans-serif));
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.6;
+  letter-spacing: .01em;
+}
+.egg-sub {
+  margin: 0 0 28px;
+  font-family: var(--lb-mono, monospace);
+  font-size: 10.5px;
+  letter-spacing: .18em;
+  color: var(--lb-muted, #888);
+}
+.egg-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.egg-go,
+.egg-later {
+  padding: 13px 26px;
+  border-radius: var(--lb-r, 2px);
+  font-family: inherit;
+  font-size: 13.5px;
+  letter-spacing: .1em;
+  cursor: pointer;
+  transition: background .22s var(--lb-ease, ease), color .22s var(--lb-ease, ease);
+}
+.egg-go {
+  border: 1px solid var(--lb-accent, #333);
+  background: var(--lb-accent, #333);
+  color: var(--lb-bg, #fff);
+}
+.egg-go:hover { background: var(--lb-fg, #111); border-color: var(--lb-fg, #111); }
+.egg-later {
+  border: 1px solid var(--lb-line, #999);
+  background: transparent;
+  color: var(--lb-muted, #777);
+}
+.egg-later:hover { color: var(--lb-fg, #111); border-color: var(--lb-fg, #111); }
+.egg-ink {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .5;
+  background: radial-gradient(circle at 50% 45%,
+    color-mix(in srgb, var(--lb-accent, #333) 18%, transparent), transparent 62%);
+}
+
+/* ============================================================ 4. 入场揭示
+   页面里给元素加 data-reveal，进入视口后由 shared.js 打上 .in。 */
+[data-reveal] {
+  opacity: 0;
+  translate: 0 18px;
+  transition: opacity .8s var(--lb-ease, cubic-bezier(.19, 1, .22, 1)),
+              translate .8s var(--lb-ease, cubic-bezier(.19, 1, .22, 1));
+}
+[data-reveal].in { opacity: 1; translate: 0 0; }
+/* 无脚本时不能把内容永远藏起来 */
+html.no-js [data-reveal] { opacity: 1; translate: none; }
+
+/* ============================================================ 5. 弱动效降级 */
+@media (prefers-reduced-motion: reduce) {
+  .sw-pop,
+  .egg-card,
+  .ink-pad.count-3 { animation: none !important; }
+  [data-reveal] { opacity: 1 !important; translate: none !important; transition: none !important; }
+  .ink-pad { transition: none !important; }
+}
+
+/* ============================================================ 6. 窄屏 */
+@media (max-width: 640px) {
+  .sw { left: 14px; bottom: 14px; }
+  .ink-pad { width: 116px; height: 116px; right: 14px; bottom: 14px; }
+  .egg-card { padding: 30px 24px 26px; }
+  .egg-line { font-size: 18px; }
+}
