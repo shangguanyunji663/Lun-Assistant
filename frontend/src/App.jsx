@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { api } from './api.js'
-import { Seal, Markdown } from './components/decor.jsx'
+import { Seal, Markdown, AmbientLines } from './components/decor.jsx'
 import AuthPage from './components/AuthPage.jsx'
 import Timeline from './components/Timeline.jsx'
 import TracePanel from './components/TracePanel.jsx'
@@ -8,6 +8,7 @@ import KnowledgePanel from './components/KnowledgePanel.jsx'
 import ProjectArchive from './components/ProjectArchive.jsx'
 import ProjectDialog from './components/ProjectDialog.jsx'
 import ThemePicker from './components/ThemePicker.jsx'
+import { initPointerFx, toast } from './fx.js'
 import { useChat } from './hooks/useChat.js'
 import { useProjects } from './hooks/useProjects.js'
 import { useSessions } from './hooks/useSessions.js'
@@ -56,6 +57,18 @@ export default function App() {
     }).finally(() => setBooting(false))
   }, [])
 
+  /* ---- v17 指针特效：3D 倾斜 / 按钮磁吸 / 光标拖尾 / 点击粒子 ---- */
+  useEffect(() => initPointerFx(), [])
+
+  /* ---- 对话落档后的成就提示（首次挂载不提示） ---- */
+  const archiveSeen = useRef(archiveKey)
+  useEffect(() => {
+    if (archiveKey > archiveSeen.current) {
+      toast('项目档案已同步', '结构化记忆已随本轮对话更新')
+    }
+    archiveSeen.current = archiveKey
+  }, [archiveKey])
+
   /* ---- 会话增删（生成中锁定）---- */
   const newSession = () => {
     if (streaming) return
@@ -97,10 +110,11 @@ export default function App() {
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, timeline])
 
   if (booting) return <div className="boot muted">加载中…</div>
-  if (!user) return <AuthPage onLogin={setUser} themeCtl={themeCtl} />
+  if (!user) return <><AmbientLines /><AuthPage onLogin={setUser} themeCtl={themeCtl} /></>
 
   return (
     <div className="app">
+      <AmbientLines />
       <header className="topbar">
         <h1 className="brand">
           <Seal size={26} />
@@ -161,7 +175,7 @@ export default function App() {
           <aside className="sessions card">
             <div className="sess-head">
               <span className="t">会话卷册</span>
-              <button className="btn btn-ghost btn-sm" onClick={newSession}
+              <button className="btn btn-ghost btn-sm" onClick={newSession} data-burst
                       disabled={streaming} title="新建会话">新建</button>
             </div>
             <div className="sess-list">
@@ -170,6 +184,7 @@ export default function App() {
                 <div key={s.id}
                      className={`sess-item${s.id === active?.id ? ' on' : ''}`}
                      role="button" tabIndex={0}
+                     data-tilt
                      aria-pressed={s.id === active?.id}
                      onClick={() => selectSession(s.id)}
                      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectSession(s.id) } }}
@@ -184,7 +199,7 @@ export default function App() {
             </div>
           </aside>
 
-          <section className="chat-col card">
+          <section className={`chat-col card${streaming ? ' streaming' : ''}`}>
             <div className="messages">
               <div className="msgs-inner">
                 {messages.length === 0 && (
@@ -224,7 +239,7 @@ export default function App() {
                 <span className="ib-q">{interrupt.question || '请确认下一步操作'}</span>
                 <div className="ib-opts">
                   {(interrupt.options || []).map(op => (
-                    <button key={op} className="btn btn-ghost btn-sm" onClick={() => send(op, op)} disabled={streaming}>{op}</button>
+                    <button key={op} className="btn btn-ghost btn-sm" onClick={() => send(op, op)} data-burst disabled={streaming}>{op}</button>
                   ))}
                 </div>
                 <div className="free-form">
@@ -242,7 +257,8 @@ export default function App() {
                           disabled={streaming || !!interrupt}
                           onChange={e => setInput(e.target.value)}
                           onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey && input.trim()) { e.preventDefault(); send(input.trim()) } }} />
-                <button className="btn btn-ink send" disabled={streaming || !input.trim() || !!interrupt}
+                <button className={`btn btn-ink send${streaming ? ' is-busy' : ''}`} data-burst data-magnet
+                        disabled={streaming || !input.trim() || !!interrupt}
                         onClick={() => send(input.trim())}>
                   {streaming ? '生成中…' : '发送'}
                 </button>

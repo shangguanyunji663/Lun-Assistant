@@ -1,3 +1,5 @@
+import { initPointerFx, themeFlash, toast, reduceMotion } from './fx.js'
+
 /* 论匠 LunJiang · v16 落地页：与工作台共用 tokens.css 主题令牌
    ---------------------------------------------------------------------------
    原生零依赖：主题选择器 / 柔化开关（写回 localStorage.lj_theme / lj_soft，
@@ -98,7 +100,15 @@
         btn.appendChild(chip)
         btn.appendChild(nm)
         btn.appendChild(ck)
-        btn.addEventListener('click', function () { setTheme(t.id) })
+        btn.setAttribute('data-burst', '')
+        btn.addEventListener('click', function () {
+          var box = btn.getBoundingClientRect()
+          var cx = box.left + box.width / 2
+          var cy = box.top + box.height / 2
+          if (reduceMotion()) { setTheme(t.id); return }   /* 减动效：直接切，不遮罩 */
+          /* 全屏遮罩从条目中心扩散，盖满瞬间再换主题（揭幕） */
+          themeFlash(cx, cy, function () { setTheme(t.id) })
+        })
         grid.appendChild(btn)
         itemEls.push({ id: t.id, el: btn })
       })(THEMES[ti])
@@ -218,6 +228,55 @@
   var yearEl = document.getElementById('lj-year')
   if (yearEl) yearEl.textContent = String(new Date().getFullYear())
 
+  /* ---- 英雄区打字机：逐字浮现（约 45ms/字，含闪烁光标，结束后移除）----
+     · 把标题展平成字符序列，<em>「论文」的强调色在打字过程中保留
+     · reduced-motion 环境：不拆分、不改 DOM，完整标题直接可见 */
+  var heroTitle = document.querySelector('.hero h1')
+  function heroFlat(node, isEm, out) {
+    var kids = node.childNodes
+    for (var i = 0; i < kids.length; i++) {
+      var c = kids[i]
+      if (c.nodeType === 3) {
+        var s = c.nodeValue
+        for (var j = 0; j < s.length; j++) out.push({ ch: s.charAt(j), em: isEm })
+      } else if (c.nodeType === 1) {
+        heroFlat(c, isEm || c.tagName === 'EM', out)
+      }
+    }
+  }
+  function heroType() {
+    if (!heroTitle) return
+    var flat = []
+    heroFlat(heroTitle, false, flat)
+    if (reduceMotion() || !flat.length) return
+
+    heroTitle.setAttribute('aria-label', heroTitle.textContent)   /* 打字期间无障碍读全文 */
+    heroTitle.textContent = ''
+    var caret = document.createElement('i')
+    caret.className = 'type-caret'
+    caret.setAttribute('aria-hidden', 'true')
+
+    var holder = null
+    var holderEm = false
+    var k = 0
+    var timer = setInterval(function () {
+      if (k >= flat.length) {
+        clearInterval(timer)
+        caret.remove()
+        return
+      }
+      var it = flat[k++]
+      if (!holder || holderEm !== it.em) {
+        holder = document.createElement(it.em ? 'em' : 'span')
+        holderEm = it.em
+        heroTitle.appendChild(holder)
+      }
+      holder.appendChild(document.createTextNode(it.ch))
+      heroTitle.appendChild(caret)
+    }, 45)
+  }
+  setTimeout(heroType, 360)
+
   /* ============================================================
      彩蛋机关（三门 · 语义化触发）
      手速门：主题按钮 5 秒内连点 ≥6 下        → 编队调度局
@@ -252,6 +311,9 @@
       list.push(key)
       try { localStorage.setItem(EGG_KEY, list.join(',')) } catch (e) { /* 忽略 */ }
       eggsRender()
+      /* 解锁即弹成就提示：名字取现有文案（sub 中段） */
+      var eggName = String((EGGS[key] || {}).sub || '').split(' · ')[1] || ''
+      toast('解锁彩蛋 · ' + eggName, '页边三则 · 集齐有惊喜')
     }
   }
   function eggLocked(key) { return Date.now() < (eggCool[key] || 0) }
@@ -482,4 +544,9 @@
       if (padCur) padUp()   /* capture 未生效时兜底结笔 */
     })
   }
+
+  /* ---- 指针特效：3D 倾斜 [data-tilt] / 按钮磁吸 [data-magnet] / 点击粒子 [data-burst]
+     与以上滚动揭示、彩蛋机关互不干扰，仅在末尾追加初始化。
+     注：不含任何跟随光标的拖尾 / 光晕 —— 光标样式留给后续自定义需求。 */
+  initPointerFx()
 })()

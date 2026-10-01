@@ -72,8 +72,10 @@ code {
 }
 
 /* 入场动画 */
-.lj-js .lj-reveal { opacity: 0; transform: translateY(12px); transition: opacity .68s var(--ease), transform .68s var(--ease); }
-.lj-js .lj-reveal.lj-in { opacity: 1; transform: none; }
+/* 滚动揭示用独立 translate 属性做上浮（而非 transform），
+   避免终态 transform: none 永久压掉卡片的 hover 位移与 [data-tilt] 的 3D 倾斜。 */
+.lj-js .lj-reveal { opacity: 0; translate: 0 12px; transition: opacity .68s var(--ease), translate .68s var(--ease); }
+.lj-js .lj-reveal.lj-in { opacity: 1; translate: 0 0; }
 
 /* 3. 通用件：文字链 / 按钮 */
 .tlink { position: relative; font-size: var(--fs-sm); color: var(--text-2); letter-spacing: .02em; transition: color var(--dur) var(--ease); }
@@ -991,7 +993,7 @@ code {
 /* ---------------------------------------------------- 14. 降级 · 减动效 */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .lj-js .lj-reveal { opacity: 1; transform: none; transition: none; }
+  .lj-js .lj-reveal { opacity: 1; translate: none; transition: none; }
   .blob, .cursor, .ev.live .glow, .fst .pulse { animation: none; }
   .tp-pop.open { animation: none; }
   *, *::before, *::after {
@@ -999,4 +1001,115 @@ code {
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+
+/* ============================================================
+   15. v17 动效接入（落地页专用样式；与工作台是两个入口，样式不共享）
+     A 特效图层：点击粒子 / 主题遮罩（类名对齐 fx.js）
+     B 指针特效：卡片 3D 倾斜 [data-tilt] / 按钮磁吸 [data-magnet]
+     C 高光时刻：成就提示条 .ach-bar
+     D 英雄区打字机光标 .type-caret
+     颜色一律取 tokens 变量，不硬编码主题色；
+     不做跟随光标的拖尾 / 光晕，光标样式留给后续自定义需求
+   ============================================================ */
+
+/* ---- A · 特效图层宿主（粒子 / 主题遮罩统一挂载） ---- */
+.fx-layer { position: fixed; inset: 0; z-index: 70; pointer-events: none; overflow: hidden; }
+
+/* 点击粒子：自点击点向四周迸发并淡出（方向 / 距离由 --tx --ty 给定） */
+.fx-spark {
+  position: absolute; border-radius: 50%;
+  pointer-events: none; will-change: transform, opacity;
+  animation: fxSpark .62s var(--ease) forwards;
+}
+@keyframes fxSpark {
+  from { transform: translate(-50%, -50%) translate(0, 0) scale(1); opacity: 1; }
+  to   { transform: translate(-50%, -50%) translate(var(--tx, 0), var(--ty, 0)) scale(.25); opacity: 0; }
+}
+
+/* 主题切换全屏遮罩：约 230ms 盖满（此刻回调换主题）再收回 */
+.fx-flash {
+  position: absolute; border-radius: 50%;
+  pointer-events: none; opacity: 0; transform: scale(0);
+  background: var(--flash-c, var(--accent));
+  will-change: transform, opacity;
+  animation: fxFlash .52s var(--ease) forwards;
+}
+@keyframes fxFlash {
+  0%   { transform: scale(0); opacity: 0; }
+  44%  { transform: scale(1); opacity: .32; }
+  68%  { transform: scale(1); opacity: .14; }
+  100% { transform: scale(0); opacity: 0; }
+}
+
+/* ---- B · 卡片 3D 倾斜 + 高光扫过 ---- */
+[data-tilt] {
+  position: relative;
+  transition: transform .5s var(--ease), box-shadow var(--dur) var(--ease);
+  will-change: transform;
+}
+/* 仅在指针进入（.tilt-on）时接管 transform：静态时把 transform 留给卡片自身的
+   hover 位移与滚动揭示（.lj-reveal.lj-in 的 transform: none）。
+   此处 !important 是必需的——揭示终态选择器特异性高于本规则，不夺回所有权倾斜不生效。 */
+[data-tilt].tilt-on {
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) !important;
+  transition: transform 80ms linear, box-shadow var(--dur) var(--ease);
+}
+[data-tilt]::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  pointer-events: none; opacity: 0; transition: opacity var(--dur) var(--ease);
+  background: radial-gradient(220px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--accent) 16%, transparent), transparent 62%);
+}
+[data-tilt].tilt-on::after { opacity: 1; }
+
+/* ---- B · 按钮磁吸（位移由 fx.js 限幅在 8px 内，仅微调 hover 抬升） ---- */
+[data-magnet] {
+  transform: translate3d(var(--mgx, 0px), var(--mgy, 0px), 0);
+  transition: transform 160ms var(--ease), box-shadow var(--dur) var(--ease);
+  will-change: transform;
+}
+.btn[data-magnet]:hover,
+.btn[data-magnet]:active {
+  transform: translate3d(var(--mgx, 0px), calc(var(--mgy, 0px) - 2px), 0);
+}
+
+/* ---- C · 成就提示条（顶部滑入，自动滑出） ---- */
+.ach-bar {
+  position: fixed; top: 86px; left: 50%; z-index: 90;
+  display: flex; align-items: center; gap: 11px;
+  padding: 11px 20px; border-radius: var(--r-btn);
+  background: var(--surface); color: var(--text);
+  box-shadow: var(--shadow-pop);
+  border: 1.5px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  transform: translate(-50%, -180%); opacity: 0; pointer-events: none;
+  max-width: min(92vw, 460px);
+  transition: transform .5s var(--ease), opacity .5s var(--ease);
+}
+.ach-bar.show { transform: translate(-50%, 0); opacity: 1; }
+.ach-dot {
+  width: 9px; height: 9px; flex: none; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+.ach-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.ach-main { font-size: var(--fs-sm); font-weight: 700; letter-spacing: .02em; }
+.ach-sub { font-style: normal; font-size: var(--fs-micro); color: var(--text-3); letter-spacing: .02em; }
+
+/* ---- D · 英雄区打字机光标 ---- */
+.type-caret {
+  display: inline-block; width: 2px; height: .92em; margin-left: 3px;
+  vertical-align: -.08em; border-radius: 1px; background: var(--accent);
+  animation: typeCaret .9s steps(1) infinite;
+}
+@keyframes typeCaret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+/* ---- E · 降级：减少动态效果时关闭以上全部动效，保留最终可见状态 ---- */
+@media (prefers-reduced-motion: reduce) {
+  .fx-layer { display: none; }
+  [data-tilt], [data-tilt]:hover { transform: none; }
+  [data-tilt]::after { display: none; }
+  [data-magnet], .btn[data-magnet]:hover, .btn[data-magnet]:active { transform: none; }
+  .ach-bar { transition: none; }
+  .type-caret { display: none; }
 }

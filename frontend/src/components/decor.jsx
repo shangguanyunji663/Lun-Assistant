@@ -19,6 +19,20 @@ export function Rule({ width = 96 }) {
   return <span className="rule" style={{ width }} aria-hidden="true" />
 }
 
+/* 背景氛围：三条缓慢流动的曲线（v17 动效层；样式见 styles.css · 背景氛围动效）
+   纯装饰，fixed 定位且不接收指针事件，不参与任何布局。 */
+export function AmbientLines() {
+  return (
+    <div className="ambient-lines" aria-hidden="true">
+      <svg viewBox="0 0 1440 900" preserveAspectRatio="none">
+        <path className="flow-1" d="M-40 220 C 260 120, 520 340, 820 250 S 1300 120, 1480 230" />
+        <path className="flow-2" d="M-40 520 C 300 430, 560 640, 900 540 S 1320 420, 1480 520" />
+        <path className="flow-3" d="M-40 760 C 240 690, 600 830, 900 740 S 1340 660, 1480 750" />
+      </svg>
+    </div>
+  )
+}
+
 /* markdown 渲染：助手消息支持标题/列表/表格/代码块 */
 export function Markdown({ children }) {
   return (

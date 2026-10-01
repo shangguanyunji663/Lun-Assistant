@@ -1320,3 +1320,393 @@ img, svg { display: block; max-width: 100%; }
 
 /* 双线椭圆「已入库」橡皮章（lab 主题显示） */
 .stamp { display: none; }
+
+/* ============================================================================
+   v17 · 动效样式层（fx motion layer）—— 追加于文件末尾
+   —— 四类动效：入场编排 / 鼠标交互 / 背景氛围 / 高光时刻。
+      配套 JS 工具箱见 src/fx.js；背景流动线节点见 decor.jsx(<AmbientLines/>)。
+      约定：颜色 / 圆角 / 阴影 / 字体 / 时长一律取 tokens.css 变量（零硬编码主题色）；
+            动画只用 transform / opacity / filter；固定层不参与布局。
+   ============================================================================ */
+
+/* ============================================================ 1. fx 工具箱样式
+   承载 fx.js 动态创建的节点：
+     .fx-layer  固定全屏容器（粒子 / 遮罩，纯展示不接收事件）
+     .fx-spark  点击粒子（内联 --tx / --ty 决定飞散位移）
+     .fx-flash  主题切换全屏遮罩（内联 --flash-c 着色）
+     .ach-bar   顶部成就提示条（结构 .ach-dot + .ach-body > .ach-main / .ach-sub）
+   注：不做跟随光标的拖尾 / 光晕，光标样式留给后续自定义需求。 */
+
+.fx-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 120;
+  overflow: hidden;
+}
+
+/* 粒子：自定位点向外飞散并缩小淡出 */
+.fx-spark {
+  position: absolute;
+  border-radius: var(--r-pill);
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: fx-spark-fly .62s var(--ease) forwards;
+}
+@keyframes fx-spark-fly {
+  from {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translate(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, 0px))) scale(.2);
+    opacity: 0;
+  }
+}
+
+/* 主题切换遮罩：圆形自触发点扩散盖满（22%）→ 保持（52%）→ 继续放大淡出 */
+.fx-flash {
+  position: absolute;
+  border-radius: var(--r-pill);
+  pointer-events: none;
+  will-change: transform, opacity;
+  /* 中心实色 → 边缘透明；--flash-c 由 fx.js 按当前主题写入 */
+  background: radial-gradient(circle at 50% 50%,
+    var(--flash-c, var(--accent)) 0%,
+    var(--flash-c, var(--accent)) 58%,
+    color-mix(in srgb, var(--flash-c, var(--accent)) 0%, transparent) 100%);
+  transform: scale(0);
+  opacity: 0;
+  animation: fx-flash-pulse .66s var(--ease) forwards;
+}
+@keyframes fx-flash-pulse {
+  0%   { transform: scale(0);    opacity: 0; }
+  22%  { transform: scale(1);    opacity: .92; }
+  52%  { transform: scale(1);    opacity: .92; }
+  100% { transform: scale(1.18); opacity: 0; }
+}
+
+/* 成就提示条：顶部居中胶囊；默认收在屏外，.show 时滑入 */
+.ach-bar {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  z-index: 130;
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-5) var(--s-2) var(--s-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  box-shadow: var(--shadow-pop);
+  color: var(--text);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -140%);
+  transition: transform var(--dur-slow) var(--ease), opacity var(--dur-slow) var(--ease);
+}
+.ach-bar.show { transform: translate(-50%, 0); opacity: 1; }
+
+/* 金色描边小圆点（--accent-2 为多数主题的次强调 / 点缀色） */
+.ach-dot {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--r-pill);
+  background: var(--accent-2);
+  box-shadow:
+    0 0 0 1px var(--accent-2),
+    0 0 0 4px color-mix(in srgb, var(--accent-2) 18%, transparent);
+}
+.ach-body { display: flex; flex-direction: column; line-height: 1.25; }
+.ach-main { font-family: var(--font-display); font-size: var(--fs-sm); font-weight: 700; color: var(--text); }
+.ach-sub { margin-top: 2px; font-style: normal; font-size: var(--fs-micro); color: var(--text-3); }
+
+/* ============================================================ 2. 鼠标交互特效
+   3D 倾斜（含高光扫过）与按钮磁吸——由 fx.js 写入 --rx/--ry/--mx/--my/--mgx/--mgy。
+   注意：高光为「倾斜卡片自身的高光」，不是鼠标跟随光晕。 */
+
+[data-tilt] {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform var(--dur) var(--ease);
+  will-change: transform;
+}
+/* 仅在指针进入（.tilt-on）时接管 transform：静态时保留各主题自带的微旋转
+   （如 lab 的索引卡倾斜），互不打架。此处用 !important 是必需的——主题层
+   （lab / blueprint 等）会以更高特异性声明 .sess-item:hover 的 transform，
+   若不夺回所有权，倾斜在悬停瞬间反而会被主题的 hover 位移覆盖。 */
+[data-tilt].tilt-on {
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) !important;
+  transition: transform 80ms var(--ease);
+}
+
+/* 高光扫过：跟随指针在元素内的相对位置（--mx/--my） */
+[data-tilt]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+  background: radial-gradient(220px circle at var(--mx, 50%) var(--my, 50%),
+    color-mix(in srgb, var(--accent) 16%, transparent),
+    transparent 62%);
+}
+[data-tilt].tilt-on::after { opacity: 1; }
+
+/* 按钮磁吸：朝指针方向轻微位移（上限由 JS 控制在 8px） */
+[data-magnet] {
+  transform: translate(var(--mgx, 0px), var(--mgy, 0px));
+  transition: transform 140ms var(--ease);
+  will-change: transform;
+}
+
+/* ============================================================ 3. 入场编排
+   统一 fx-rise：淡入 + 上浮；both 保证延迟期间保持首帧（不闪）。高特异性
+   选择器（.app xxx）用于覆盖潜在的旧入场声明。 */
+
+@keyframes fx-rise {
+  /* 用独立 translate 属性做上浮（而非 transform），
+     否则 animation-fill-mode: both 会永久占用 transform，
+     压掉 [data-tilt] 的 3D 倾斜与各主题自带的微旋转。 */
+  from { opacity: 0; translate: 0 16px; }
+  to   { opacity: 1; translate: 0 0; }
+}
+
+.app .topbar { animation: fx-rise .52s var(--ease) both; }
+.app .bench-deco { animation: fx-rise .52s var(--ease) 40ms both; }
+.app .chat-layout > .sessions { animation: fx-rise .52s var(--ease) 80ms both; }
+.app .chat-layout > .chat-col { animation: fx-rise .52s var(--ease) 150ms both; }
+.app .chat-layout > .side-col { animation: fx-rise .52s var(--ease) 220ms both; }
+
+/* 消息逐条浮现（新消息无延迟；both 防止首帧闪烁） */
+.msg { animation: fx-rise .52s var(--ease) both; }
+
+/* 时间线逐条阶梯 40ms */
+.tl-item { animation: fx-rise .52s var(--ease) both; }
+.tl-item:nth-child(1) { animation-delay: 0ms; }
+.tl-item:nth-child(2) { animation-delay: 40ms; }
+.tl-item:nth-child(3) { animation-delay: 80ms; }
+.tl-item:nth-child(4) { animation-delay: 120ms; }
+.tl-item:nth-child(5) { animation-delay: 160ms; }
+.tl-item:nth-child(6) { animation-delay: 200ms; }
+.tl-item:nth-child(7) { animation-delay: 240ms; }
+.tl-item:nth-child(8) { animation-delay: 280ms; }
+
+/* 会话行阶梯 60ms（取前 6 条） */
+.sess-item { animation: fx-rise .52s var(--ease) both; }
+.sess-item:nth-child(1) { animation-delay: 0ms; }
+.sess-item:nth-child(2) { animation-delay: 60ms; }
+.sess-item:nth-child(3) { animation-delay: 120ms; }
+.sess-item:nth-child(4) { animation-delay: 180ms; }
+.sess-item:nth-child(5) { animation-delay: 240ms; }
+.sess-item:nth-child(6) { animation-delay: 300ms; }
+
+/* 可观测页两栏 */
+.trace-panel > * { animation: fx-rise .52s var(--ease) both; }
+.trace-panel > *:nth-child(2) { animation-delay: 90ms; }
+
+/* ============================================================ 4. 背景氛围动效
+   .ambient-lines 为 decor.jsx(<AmbientLines/>) 输出的固定装饰层（含 .flow-1/2/3 三条曲线）。
+   注：噪点层未挂 .app::before——该伪元素在 styles.css 基线里已是「有机光斑层」
+       （带 filter: blur(80px)），叠加噪点会被模糊成灰雾，故改挂到本氛围层，避免破坏既有材质。 */
+
+.ambient-lines {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  opacity: .5;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ambient-lines svg { width: 100%; height: 100%; display: block; }
+.ambient-lines path { fill: none; stroke: var(--line-2); stroke-width: 1.2; }
+
+/* 三条曲线：虚线错峰流动，时长/方向各不相同（flow-2 反向） */
+.ambient-lines .flow-1 { stroke-dasharray: 26 22; animation: fx-flow 18s linear infinite; }
+.ambient-lines .flow-2 { stroke-dasharray: 34 26; animation: fx-flow 26s linear infinite reverse; }
+.ambient-lines .flow-3 { stroke-dasharray: 20 30; animation: fx-flow 34s linear infinite; }
+@keyframes fx-flow {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -900; }
+}
+
+/* 细密噪点（data-uri SVG feTurbulence）：缓慢抖动；父层 opacity .5 → 实际峰值约 .06 */
+.ambient-lines::before {
+  content: "";
+  position: absolute;
+  inset: -60px;
+  opacity: .12;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  animation: fx-noise 1.1s steps(3) infinite;
+}
+@keyframes fx-noise {
+  0%   { transform: translate3d(0, 0, 0); }
+  33%  { transform: translate3d(-9px, 6px, 0); }
+  66%  { transform: translate3d(7px, -8px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+/* 极细扫描线（周期 ~9s，峰值透明度 ≤ .06，fixed 不参与布局）。
+   冲突规避：ops 已有 .chat-layout::after 扫描线，blueprint / press / soft-mist
+   已各自占用 .app::after（噪点暗角 / folio 页码 / 有机 blob），故本扫描线仅在
+   未被上述主题占用的 lab 与 soft-cream 下生效，既不叠加也不覆盖它们。 */
+html:not([data-theme="ops"]):not([data-theme="blueprint"]):not([data-theme="press"]):not([data-theme="soft-mist"]) .app::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(90deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 30%, transparent),
+    transparent);
+  animation: fx-scan 9s linear infinite;
+}
+@keyframes fx-scan {
+  0%   { transform: translateY(0);     opacity: 0; }
+  8%   { opacity: .06; }
+  50%  { opacity: .05; }
+  92%  { opacity: .02; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+/* 图标微动画：品牌印章呼吸 / 空态印章浮动 / 文档图标 hover 弹跳 */
+.app .brand .seal { animation: fx-seal-breathe 6s var(--ease) infinite; }
+@keyframes fx-seal-breathe {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.03); }
+}
+.app .empty-state .seal { animation: fx-seal-float 4.5s var(--ease) infinite; }
+@keyframes fx-seal-float {
+  0%, 100% { transform: translateY(-3px); }
+  50%      { transform: translateY(3px); }
+}
+.app .kb-doc:hover .kd-icon { animation: fx-icon-pop var(--dur-slow) var(--ease); }
+@keyframes fx-icon-pop {
+  0%   { transform: translateY(0); }
+  40%  { transform: translateY(-4px); }
+  70%  { transform: translateY(1px); }
+  100% { transform: translateY(0); }
+}
+
+/* ============================================================ 5. 高光时刻 */
+
+/* 生成中：输入框边框呼吸光晕 + 提示行轻微脉动 */
+.chat-col.streaming .composer {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  animation: fx-composer-glow 1.8s var(--ease) infinite;
+}
+@keyframes fx-composer-glow {
+  0%, 100% { box-shadow: var(--shadow-card); }
+  50%      { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 16%, transparent), var(--shadow-glow); }
+}
+.chat-col.streaming .composer textarea,
+.chat-col.streaming .input-hint { animation: fx-soft-pulse 1.8s var(--ease) infinite; }
+@keyframes fx-soft-pulse {
+  0%, 100% { opacity: .78; }
+  50%      { opacity: 1; }
+}
+
+/* 发送按钮生成中：强调色光晕扩散呼吸 */
+.btn-ink.is-busy,
+.send.is-busy { animation: fx-btn-busy 1.5s var(--ease) infinite; }
+@keyframes fx-btn-busy {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent); }
+  50%      { box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 18%, transparent), var(--shadow-glow); }
+}
+
+/* .theme-trigger 的 hover 上浮已有 .btn:hover 兜底，此处不重复声明。 */
+
+/* 主题下拉项 hover：右侧掠过高光（斜向渐变扫过） */
+.theme-pop .tp-item { position: relative; overflow: hidden; }
+.theme-pop .tp-item::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -60%;
+  width: 45%;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(100deg,
+    transparent,
+    color-mix(in srgb, var(--accent) 20%, transparent),
+    transparent);
+}
+.theme-pop .tp-item:hover::after { animation: fx-sheen 620ms var(--ease); }
+@keyframes fx-sheen {
+  0%   { opacity: 0; transform: translateX(0) skewX(-14deg); }
+  15%  { opacity: 1; }
+  100% { opacity: 0; transform: translateX(360%) skewX(-14deg); }
+}
+
+/* ============================================================ 6. 弱动效降级
+   关闭本层全部动画与位移/缩放/旋转，但保留最终可见状态（opacity:1 / transform:none）。
+   说明：本块内的 !important 仅用于压过本文件上文更高特异性的选择器（如扫描线的
+   :not() 链），是「减少动态效果」下的必要强制降级。 */
+
+@media (prefers-reduced-motion: reduce) {
+  /* 纯氛围层：无信息价值，整体隐藏 */
+  .fx-layer,
+  .ambient-lines { display: none !important; }
+
+  /* fx 工具箱：fx.js 侧已按 reduceMotion() 拦截，这里双保险 */
+  .fx-spark,
+  .fx-flash,
+  .ach-bar { animation: none !important; }
+  .fx-spark,
+  .fx-flash { transform: none !important; }
+
+  /* 入场编排：停用动画并固定为最终态 */
+  .app .topbar,
+  .app .bench-deco,
+  .app .chat-layout > .sessions,
+  .app .chat-layout > .chat-col,
+  .app .chat-layout > .side-col,
+  .msg,
+  .tl-item,
+  .sess-item,
+  .trace-panel > * {
+    animation: none !important;
+    transform: none !important;
+    translate: none !important;
+    opacity: 1 !important;
+  }
+
+  /* 鼠标交互：取消倾斜 / 磁吸 / 高光 */
+  [data-tilt],
+  [data-magnet] { transform: none !important; transition: none !important; }
+  [data-tilt]::after { display: none !important; }
+
+  /* 背景氛围：流动线 / 噪点 / 扫描线全停 */
+  .ambient-lines .flow-1,
+  .ambient-lines .flow-2,
+  .ambient-lines .flow-3 { animation: none !important; }
+  .ambient-lines::before { animation: none !important; }
+  .app::after { animation: none !important; }
+
+  /* 图标与高光时刻：去掉所有持续动画 */
+  .app .brand .seal,
+  .app .empty-state .seal,
+  .app .kb-doc:hover .kd-icon,
+  .chat-col.streaming .composer,
+  .chat-col.streaming .composer textarea,
+  .chat-col.streaming .input-hint,
+  .btn-ink.is-busy,
+  .send.is-busy,
+  .theme-pop .tp-item:hover::after { animation: none !important; }
+  .chat-col.streaming .composer textarea,
+  .chat-col.streaming .input-hint { opacity: 1 !important; }
+}

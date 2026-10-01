@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { api } from '../api.js'
+import { toast } from '../fx.js'
 
 const FMT_ICON = { pdf: 'PDF', docx: 'DOC', txt: 'TXT', md: 'MD' }
 
@@ -55,6 +56,7 @@ export default function KnowledgePanel({ projectId }) {
         setUploadMsg(`新入库 ${r.ready}/${arr.length} 份` +
           (skipped ? `，${skipped} 份已存在自动跳过` : '') +
           (failed ? `，${failed} 份解析失败` : ''))
+        toast('资料已入库', `${r.ready} 份已解析完成，可参与检索`)
       } else if (skipped === arr.length) {
         setUploadMsg(`本次 ${arr.length} 份均已存在（自动去重），无需重复入库`)
       } else {

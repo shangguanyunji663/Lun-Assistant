@@ -1,16 +1,25 @@
 import React, { useEffect, useRef, useState } from 'react'
+import { themeFlash } from '../fx.js'
 
 /* ============================================================
    主题选择器（顶栏）：6 主题 + 柔化开关
      · 6 主题：暗色指挥舱 / 蓝图工程 / 实验记录本 / 学术期刊 / 暖云手稿 / 晨雾有机
      · 前四个各带「锐 / 柔」两态；柔化开关只切材质与配色，不动结构
      · soft-cream / soft-mist 天生即柔，开关置灰不可用
+     · v17：切换主题时以点击处为圆心播放全屏遮罩过渡，遮罩盖满瞬间换肤
    ============================================================ */
 export default function ThemePicker({ theme, setTheme, soft, toggleSoft, alwaysSoft, THEMES }) {
   const [open, setOpen] = useState(false)
   const boxRef = useRef(null)
 
   const current = THEMES.find(t => t.id === theme) || THEMES[0]
+
+  /* 点主题：遮罩盖满的一瞬再换肤，形成「揭幕」效果（减少动态效果环境则直接切） */
+  const chooseTheme = (e, id) => {
+    if (id === theme) return
+    const r = e.currentTarget.getBoundingClientRect()
+    themeFlash(r.left + r.width / 2, r.top + r.height / 2, () => setTheme(id))
+  }
 
   /* 点击外部 / Esc 关闭 */
   useEffect(() => {
@@ -24,7 +33,7 @@ export default function ThemePicker({ theme, setTheme, soft, toggleSoft, alwaysS
 
   return (
     <div className="theme-picker" ref={boxRef}>
-      <button className="theme-trigger btn btn-ghost btn-sm" onClick={() => setOpen(o => !o)}
+      <button className="theme-trigger btn btn-ghost btn-sm" onClick={() => setOpen(o => !o)} data-magnet
               aria-expanded={open} aria-haspopup="true" title="切换主题 / 柔化">
         <span className="chip" style={{ background: current.chip }} />
         <span className="tt-label">{current.label}</span>
@@ -44,7 +53,8 @@ export default function ThemePicker({ theme, setTheme, soft, toggleSoft, alwaysS
                       aria-checked={theme === t.id}
                       className={`tp-item${theme === t.id ? ' on' : ''}`}
                       title={t.label}
-                      onClick={() => { setTheme(t.id); }}>
+                      data-burst
+                      onClick={(e) => chooseTheme(e, t.id)}>
                 <span className="chip" style={{ background: t.chip }} />
                 <span className="tp-name">{t.label}</span>
                 {theme === t.id && <span className="tp-check" aria-hidden="true">✓</span>}

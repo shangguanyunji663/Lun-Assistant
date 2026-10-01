@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 
 import { api } from '../api.js'
+import { toast } from '../fx.js'
 
 /**
  * 论文项目管理：
@@ -29,6 +30,7 @@ export function useProjects(user) {
   const createProject = async (title, major, requirement) => {
     const p = await api.createProject(title, major, requirement)
     setProjects(ps => [p, ...ps]); setProjectId(p.id); setProjectsErr('')
+    toast('项目已创建', `#${p.id} ${p.title}`)
   }
 
   const patchProject = async (patch) => {
