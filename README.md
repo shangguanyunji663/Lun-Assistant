@@ -493,6 +493,7 @@ Lun-Assistant/
 | v15 | [变更](docs/frontend-versions/CHANGELOG-v15.md) · [Round 17](docs/frontend-versions/OPTIMIZATION_ROUND17.md) | 现代艺术四主题 H 墨格编辑部 / I 新构成主义 / J 夜航诗意 / K 拓印套色（工作台 11 主题共存）· 落地页编辑部双结构（6 主题）· web 字体接入 |
 | R18 | [Round 18](docs/frontend-versions/OPTIMIZATION_ROUND18.md) | 落地页一致性修复（编辑部版式补齐 · 导航 / 主题入口 / 锚点 / 顶栏对齐）· 三枚彩蛋机关（编队调度局 / 查重捉虫 / 临帖墨试） |
 | v18 | [变更](docs/frontend-versions/CHANGELOG-v18.md) | **六套设计语言（推翻重来）**：铅字印刷 / 夜航仪表 / 学术海报 / 木牍竖排 / 孔版双色 / 索引档案。旧的「11 主题 + 柔化开关」体系整体删除，改为 `<html data-skin>` + 每皮肤一份完整样式；落地页每皮肤一个独立 HTML；业务逻辑与后端零改动 |
+| R19 | [Round 19](docs/frontend-versions/OPTIMIZATION_ROUND19.md) | **六套皮肤可读性与信息层次**：89 处小字提到 11px（中文 ClearType 可读性下限）· 正文列落到每行 40±5 字 · 命中区补到 30–32px · 六套各以**自身视觉语言**重做顶栏分组 / 待确认条 / 时间线标记 / 空态（C 巨幅 64px 海报标题、D 整块竖排竹简、F 档案字段名分组、E 错位套印等）；工作台 React / 后端 / 落地页零改动 |
 
 ---
 

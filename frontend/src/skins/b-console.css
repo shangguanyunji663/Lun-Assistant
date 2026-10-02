@@ -67,7 +67,7 @@ html[data-skin="b"] {
   --s-5: 22px;
   --s-6: 28px;
 
-  --fs-micro: 10.5px;
+  --fs-micro: 11px;
   --fs-sm: 13px;
   --fs-md: 14.5px;
   --fs-lg: 16px;
@@ -139,7 +139,7 @@ html[data-skin="b"] .wb-brand-text b {
 html[data-skin="b"] .wb-brand-text i {
   margin-top: 3px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   font-style: normal;
   letter-spacing: .16em;
   text-transform: uppercase;
@@ -174,7 +174,7 @@ html[data-skin="b"] .wb-user {
 html[data-skin="b"] .wb-user b { font-weight: 400; color: var(--text); }
 html[data-skin="b"] .wb-user i {
   font-style: normal;
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .16em;
   text-transform: uppercase;
   color: var(--accent);
@@ -251,7 +251,7 @@ html[data-skin="b"] .sp-chip {
   border-radius: 0;
 }
 html[data-skin="b"] .sp-label { font-size: 11px; letter-spacing: .1em; }
-html[data-skin="b"] .sp-caret { font-size: 9px; opacity: .6; }
+html[data-skin="b"] .sp-caret { font-size: 11px; opacity: .6; }
 
 html[data-skin="b"] .skin-pop {
   position: absolute;
@@ -285,7 +285,7 @@ html[data-skin="b"] .sp-title {
 html[data-skin="b"] .sp-hint {
   margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .12em;
   color: var(--text-3);
 }
@@ -314,7 +314,7 @@ html[data-skin="b"] .sp-name {
 html[data-skin="b"] .sp-name em {
   margin-left: 7px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   font-style: normal;
   font-weight: 400;
   letter-spacing: .12em;
@@ -463,7 +463,7 @@ html[data-skin="b"] .wb-vol.is-on .wb-vol-title { color: var(--accent); }
 html[data-skin="b"] .wb-vol-meta {
   margin-top: 5px;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .08em;
   text-transform: uppercase;
   color: var(--text-3);
@@ -546,7 +546,7 @@ html[data-skin="b"] .wb-msg-name {
    不再另加描边——方括号本身已经框住了它，双层装饰反而变噪 */
 html[data-skin="b"] .wb-msg-role {
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .16em;
   text-transform: uppercase;
   color: var(--text-3);
@@ -562,7 +562,7 @@ html[data-skin="b"] .wb-msg-time {
   width: 56px;
   text-align: right;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .06em;
   color: var(--text-3);
 }
@@ -666,7 +666,7 @@ html[data-skin="b"] .wb-break-badge {
   text-transform: uppercase;
 }
 html[data-skin="b"] .wb-break-note {
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .16em;
   text-transform: uppercase;
   color: var(--text-3);
@@ -766,7 +766,7 @@ html[data-skin="b"] .wb-compose-hint {
   max-width: 760px;
   margin: 9px auto 0;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .1em;
   text-transform: uppercase;
   color: var(--text-3);
@@ -837,7 +837,7 @@ html[data-skin="b"] .wb-tl-no {
   grid-row: 1;
   padding-top: 1px;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .1em;
   color: var(--text-3);
 }
@@ -862,7 +862,7 @@ html[data-skin="b"] .wb-tl-title::before {
 }
 html[data-skin="b"] .wb-tl-meta {
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .06em;
   text-transform: uppercase;
   color: var(--text-3);
@@ -944,4 +944,89 @@ html[data-skin="b"] .lat { font-family: var(--font-mono); }
    确保 reduce 环境下不留下持续动画（皮肤不得反向覆盖） */
 @media (prefers-reduced-motion: reduce) {
   html[data-skin="b"] .wb-tl-item.is-interrupt .wb-tl-title::before { animation: none !important; }
+}
+
+/* ============================================================================
+   § 15 · 可读性与信息层次（v18.1）—— 专属于皮肤 B · 夜航仪表
+   —— 与 §1–§14 同特异性，置于文件末尾以覆盖旧值；要回退，删掉本段即可。
+   本段不与其他皮肤共用写法：仪表台——读数块化、分区状态灯、告警框、闪烁遥测灯、待机画面的快捷指令
+   ============================================================================ */
+html[data-skin="b"] {
+  /* 仪表读数本来就该比正文大：这套皮肤的小字下限抬到 12.5px */
+  --fs-micro: 12.5px; --fs-sm: 14px; --fs-md: 15.5px;
+}
+html[data-skin="b"] .wb-body { grid-template-columns: 244px minmax(0, 1fr) 296px; }
+html[data-skin="b"] .wb-msg + .wb-msg { margin-top: 36px; }
+/* ② 消息 = 读数板：带边框与角标的仪表读数块，不是纯文字流 */
+html[data-skin="b"] .wb-msg.is-ai .wb-bubble {
+  font-size: 16.5px; line-height: 1.85;
+  border: 1px solid var(--line-2);
+  border-left: 2px solid var(--accent);
+  border-radius: 2px;
+  padding: 14px 16px;
+  background: var(--surface);
+}
+html[data-skin="b"] .wb-msg.is-user .wb-bubble { font-size: 15.5px; }
+html[data-skin="b"] .wb-msg-role { font-size: 12.5px; padding: 2px 8px; }
+html[data-skin="b"] .wb-msg-time { font-size: 12.5px; }
+
+/* ③ 顶栏分组 = 仪表盘的分区灯：每组前一颗发光的状态灯 */
+html[data-skin="b"] .skin-picker { padding-right: 20px; }
+html[data-skin="b"] .wb-views { padding-left: 20px; }
+html[data-skin="b"] .skin-picker::before,
+html[data-skin="b"] .wb-views::before {
+  content: ""; display: inline-block; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 8px var(--accent); margin-right: 9px;
+  vertical-align: middle;
+}
+html[data-skin="b"] .wb-view { padding: 8px 2px; font-size: 14px; }
+html[data-skin="b"] .wb-user { padding-left: 20px; }
+
+/* ④ 中断条 = 仪表的告警框：发光描边而非实底（实底荧光青在暗底上刺眼且抢戏） */
+html[data-skin="b"] .wb-break { border-top: 1px solid var(--line-2); }
+html[data-skin="b"] .wb-break-badge {
+  background: var(--surface-2); color: var(--accent-hi);
+  box-shadow: inset 0 0 0 1px var(--ring), 0 0 10px rgba(63, 224, 196, .18);
+}
+html[data-skin="b"] .wb-break-ask { font-size: 17.5px; }
+html[data-skin="b"] .wb-break-op { font-size: 13px; padding: 10px 16px; }
+
+/* ⑤ 时间线 = 遥测灯：interrupt 的编号变成闪烁的告警灯（不是静态色条） */
+html[data-skin="b"] .wb-tl-item { border-left: 0; padding-left: 0; }
+html[data-skin="b"] .wb-tl-item.is-interrupt .wb-tl-no {
+  color: var(--accent); animation: b-alarm 1.15s steps(1, end) infinite;
+}
+/* @keyframes 必须位于顶层，不能嵌在 html[data-skin="b"] 里 */
+@keyframes b-alarm { 0%, 60% { opacity: 1 } 61%, 100% { opacity: .25 } }
+html[data-skin="b"] .wb-tl-item.is-interrupt .wb-tl-title { color: var(--accent); font-weight: 700; }
+html[data-skin="b"] .wb-tl-title { font-size: 14px; }
+
+/* ⑥ 命中区 */
+html[data-skin="b"] .wb-vol-del { width: 30px; height: 30px; display: grid; place-items: center; }
+html[data-skin="b"] .wb-side-tab { padding: 14px 0; font-size: 13.5px; }
+
+/* ⑦ 空态 = 仪表待机画面：提示词是快捷指令，带 / 前缀与终端光标 */
+html[data-skin="b"] .wb-empty { text-align: left; padding: 64px 0 30px; }
+html[data-skin="b"] .wb-empty .seal { margin: 0 0 20px; }
+html[data-skin="b"] .wb-empty-lead { margin: 14px 0 0; max-width: 34em; }
+html[data-skin="b"] .wb-prompts {
+  counter-reset: wb-prompt; flex-direction: column; align-items: stretch;
+  justify-content: flex-start; gap: 0; margin-top: 30px;
+  border-top: 1px solid var(--line-2);
+}
+html[data-skin="b"] .wb-prompt {
+  position: relative; display: block; width: 100%; text-align: left;
+  border: 0; border-bottom: 1px solid var(--line-2);
+  padding: 13px 2px 13px 30px; font-family: var(--font-mono); font-size: 14.5px;
+  letter-spacing: .02em;
+}
+html[data-skin="b"] .wb-prompt::before {
+  content: "/"; position: absolute; left: 4px; top: 13px;
+  color: var(--accent); font-weight: 700;
+}
+html[data-skin="b"] .wb-prompt:hover {
+  background: var(--accent-sel); color: var(--accent-hi); padding-left: 34px;
+}
+html[data-skin="b"] .wb-prompt:hover::after {
+  content: "\25B8"; position: absolute; left: 16px; top: 13px; color: var(--accent);
 }

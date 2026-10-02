@@ -141,7 +141,7 @@ html[data-skin="d"] .wb-brand-text b {
 html[data-skin="d"] .wb-brand-text i {
   margin-top: 4px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   font-style: normal;
   letter-spacing: .18em;
   color: var(--text-3);
@@ -195,7 +195,7 @@ html[data-skin="d"] .wb-user b { font-weight: 400; color: var(--text); }
 html[data-skin="d"] .wb-user i {
   padding: 2px 6px;
   border: 1px solid var(--line-2);
-  font-size: 9px;
+  font-size: 11px;
   font-style: normal;
   letter-spacing: .16em;
   text-transform: uppercase;
@@ -247,7 +247,7 @@ html[data-skin="d"] .sp-chip {
   border: 1px solid rgba(26, 36, 30, .5);
 }
 html[data-skin="d"] .sp-label { font-size: var(--fs-sm); }
-html[data-skin="d"] .sp-caret { font-size: 9px; opacity: .6; }
+html[data-skin="d"] .sp-caret { font-size: 11px; opacity: .6; }
 
 /* 弹层做成一张「米色签纸」：压过竹青底，墨边 + 硬位移阴影 */
 html[data-skin="d"] .skin-pop {
@@ -278,7 +278,7 @@ html[data-skin="d"] .sp-title {
 html[data-skin="d"] .sp-hint {
   margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .12em;
   color: var(--text-3);
 }
@@ -305,7 +305,7 @@ html[data-skin="d"] .sp-name { font-size: var(--fs-sm); font-weight: 700; }
 html[data-skin="d"] .sp-name em {
   margin-left: 7px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   font-style: normal;
   font-weight: 400;
   letter-spacing: .12em;
@@ -367,7 +367,7 @@ html[data-skin="d"] .wb-side {
 html[data-skin="d"] .wb-ch-en,
 html[data-skin="d"] .wb-ch-cn {
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .22em;
   text-transform: uppercase;
   color: var(--text-3);
@@ -481,7 +481,7 @@ html[data-skin="d"] .wb-vol-no {
   flex: none;
   padding-top: 2px;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .1em;
   color: var(--text-3);
 }
@@ -498,7 +498,7 @@ html[data-skin="d"] .wb-vol-title {
 html[data-skin="d"] .wb-vol-meta {
   margin-top: 5px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: .1em;
   color: var(--text-3);
   overflow: hidden;
@@ -593,13 +593,13 @@ html[data-skin="d"] .wb-msg-role {
   padding: 1px 7px;
   border: 1px solid var(--line-2);
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 11px;
   letter-spacing: .2em;
   color: var(--text-3);
 }
 html[data-skin="d"] .wb-msg-time {
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .08em;
   color: var(--text-3);
 }
@@ -668,12 +668,12 @@ html[data-skin="d"] .wb-break-badge {
   background: var(--accent);
   color: var(--accent-ink);
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .2em;
 }
 html[data-skin="d"] .wb-break-note {
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .18em;
   color: var(--text-2);
 }
@@ -751,7 +751,7 @@ html[data-skin="d"] .wb-compose-hint {
   max-width: 720px;
   margin: 10px auto 0;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .1em;
   color: var(--text-3);
 }
@@ -811,7 +811,7 @@ html[data-skin="d"] .wb-tl-no {
   flex: none;
   padding-top: 3px;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .1em;
   color: var(--text-3);
 }
@@ -826,7 +826,7 @@ html[data-skin="d"] .wb-tl-title {
 html[data-skin="d"] .wb-tl-meta {
   margin-top: 6px;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .08em;
   color: var(--text-3);
   word-break: break-word;
@@ -890,3 +890,82 @@ html[data-skin="d"] .auth-card { border-radius: 0; box-shadow: var(--shadow-pop)
   html[data-skin="d"] .wb-side { padding-left: 0; }
   html[data-skin="d"] .wb-side::before { display: none; }
 }
+
+/* ============================================================================
+   § 15 · 可读性与信息层次（v18.1）—— 专属于皮肤 D · 木牍竖排
+   —— 与 §1–§14 同特异性，置于文件末尾以覆盖旧值；要回退，删掉本段即可。
+   本段不与其他皮肤共用写法：简牍——方框分组、朱印方章、竖排编号、整块竖排的空态
+   ============================================================================ */
+html[data-skin="d"] {
+  /* 竖排文字比横排更吃字号：这套皮肤下限抬到 12px */
+  --fs-micro: 12px; --fs-sm: 14px; --fs-md: 15.5px;
+}
+/* D 是两栏（卷册已改为顶部横排书签栏），只收窄右栏 */
+html[data-skin="d"] .wb-body { grid-template-columns: minmax(0, 1fr) 280px; }
+html[data-skin="d"] .wb-msg + .wb-msg { margin-top: 36px; }
+html[data-skin="d"] .wb-msg.is-ai .wb-bubble { font-size: 17px; line-height: 1.9; }
+html[data-skin="d"] .wb-msg.is-user .wb-bubble { font-size: 16px; }
+html[data-skin="d"] .wb-msg-role { font-size: 12px; }
+
+/* ③ 顶栏分组 = 方框：简牍的形制是方裁，用两只方框隔开两组，不用线 */
+html[data-skin="d"] .skin-picker { padding: 5px 12px; border: 1px solid var(--line-2); }
+html[data-skin="d"] .wb-views { padding: 5px 12px; border: 1px solid var(--line-2); }
+html[data-skin="d"] .wb-user { padding-left: 20px; }
+html[data-skin="d"] .wb-view { padding: 5px 2px; font-size: 14.5px; }
+
+/* ④ 中断条 = 简牍上的朱印：描边方印，与顶栏品牌印同族 */
+html[data-skin="d"] .wb-break { border-top: 1px solid var(--line-2); }
+html[data-skin="d"] .wb-break-badge {
+  background: transparent; color: var(--accent);
+  border: 1.5px solid var(--accent); padding: 3px 9px; font-size: 12px;
+}
+html[data-skin="d"] .wb-break-ask { font-size: 18px; }
+html[data-skin="d"] .wb-break-op { font-size: 13.5px; padding: 10px 18px; border-width: 1px; }
+
+/* ⑤ 时间线编号 = 竖排方框签：数字竖排在木框里 */
+html[data-skin="d"] .wb-tl-item { border-left: 0; padding-left: 0; }
+html[data-skin="d"] .wb-tl-no {
+  writing-mode: vertical-rl; border: 1px solid var(--line-2);
+  padding: 6px 2px; font-size: 12px; align-self: stretch;
+}
+html[data-skin="d"] .wb-tl-item.is-interrupt { background: rgba(168, 64, 44, .07); }
+html[data-skin="d"] .wb-tl-item.is-interrupt .wb-tl-no { border-color: var(--accent); color: var(--accent); }
+html[data-skin="d"] .wb-tl-item.is-interrupt .wb-tl-title { color: var(--accent); font-weight: 700; }
+html[data-skin="d"] .wb-tl-title { font-size: 14.5px; }
+
+/* ⑥ 命中区 */
+html[data-skin="d"] .wb-vol-del { width: 30px; height: 30px; display: grid; place-items: center; }
+html[data-skin="d"] .wb-side-tab { padding: 15px 0; font-size: 13.5px; }
+
+/* ⑦ 空态 = 一片竖排的竹简：六套里唯一整块改 writing-mode 的皮肤 */
+html[data-skin="d"] .wb-empty {
+  /* vertical-rl 下 flex 的主轴是行内轴（从右向左），故用 row 而非 row-reverse：
+     这样 seal → 标题 → 说明 → 提纲 的顺序正好是传统竖排的从右往左。 */
+  writing-mode: vertical-rl; text-orientation: upright;
+  /* vertical-rl 下 row 的主轴是行内轴（竖直），column 才是块轴（水平向右→左）：
+     故用 column 才能把 seal/标题/说明/提纲 排成从右向左的一排竹简。 */
+  display: flex; flex-direction: column; align-items: flex-start; gap: 30px;
+  height: 330px; margin: 40px 0 40px auto; padding-left: 28px;
+}
+html[data-skin="d"] .wb-empty .seal { margin: 0; }
+html[data-skin="d"] .wb-empty h2 { font-size: 32px; letter-spacing: .18em; text-align: left; margin: 0; }
+html[data-skin="d"] .wb-empty .seal { align-self: flex-start; }
+html[data-skin="d"] .wb-empty-lead { margin: 0; max-width: none; font-size: 14px; line-height: 2.2; color: var(--text-2); }
+html[data-skin="d"] .wb-prompts {
+  counter-reset: wb-prompt; flex-direction: column; align-items: stretch;
+  justify-content: flex-start; gap: 0; margin-top: 0;
+  border-top: 0; border-left: 2px solid var(--text);
+}
+html[data-skin="d"] .wb-prompt {
+  position: relative; display: block; width: auto; text-align: left;
+  border: 0; border-left: 1px solid var(--line);
+  padding: 18px 8px; font-family: var(--font-display); font-size: 16px;
+  writing-mode: vertical-rl; letter-spacing: .16em; line-height: 1.9;
+}
+html[data-skin="d"] .wb-prompt::before {
+  content: counter(wb-prompt, decimal-leading-zero); counter-increment: wb-prompt;
+  writing-mode: horizontal-tb; position: absolute; left: 50%; bottom: 4px;
+  transform: translateX(-50%); font-family: var(--font-mono);
+  font-size: 11px; color: var(--accent);
+}
+html[data-skin="d"] .wb-prompt:hover { background: rgba(26, 36, 30, .06); color: var(--accent); }

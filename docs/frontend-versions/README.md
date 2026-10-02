@@ -60,6 +60,11 @@ v18  六套设计语言（推翻重来）        → CHANGELOG-v18.md（版本�
      铅字印刷 / 夜航仪表 / 学术海报 / 木牍竖排 / 孔版双色 / 索引档案
      视觉层整体重写：数据-theme 换肤体系（11 主题 + 柔化开关）删除，
      改为 <html data-skin> + 每皮肤一份完整样式；落地页每皮肤一个独立 HTML
+   │
+   ▼
+R19  六套皮肤可读性与信息层次（ROUND19） → OPTIMIZATION_ROUND19.md（轮次记录）
+     89 处小字提到 11px / 正文列落到每行 40±5 字 / 命中区补到 30–32px
+     六套各以自己的视觉语言重做顶栏分组、待确认条、时间线标记与空态
 ```
 
 > v16（6 主题 + 柔化开关）与 v17（动效层）落在 v15 与 v18 之间，作为**过程版本**
@@ -89,6 +94,7 @@ v18  六套设计语言（推翻重来）        → CHANGELOG-v18.md（版本�
 | v15      | [`OPTIMIZATION_ROUND17.md`](./OPTIMIZATION_ROUND17.md)               | 轮次记录 | ROUND17 · 落地页编辑部双结构 · 字体接入 · tuner 追平 |
 | v15      | [`OPTIMIZATION_ROUND18.md`](./OPTIMIZATION_ROUND18.md)               | 轮次记录 | ROUND18 · 落地页一致性修复 + 三枚彩蛋机关（调度局 / 捉虫 / 临帖） |
 | v18      | [`CHANGELOG-v18.md`](./CHANGELOG-v18.md)                             | 版本变更 | v18 六套设计语言推翻重来（皮肤契约 / 工作台换肤 / 落地页每皮肤一页） |
+| v18      | [`OPTIMIZATION_ROUND19.md`](./OPTIMIZATION_ROUND19.md)               | 轮次记录 | ROUND19 · 六套皮肤可读性与信息层次（89 处小字提到 11px · 六套各以自身视觉语言重做空态与状态标记） |
 
 ***
 
@@ -118,7 +124,7 @@ v18  六套设计语言（推翻重来）        → CHANGELOG-v18.md（版本�
 
 ***
 
-## 六、本目录文件清单（17 份正文 + 本索引 + 模板 + v11/v13 截图目录）
+## 六、本目录文件清单（18 份正文 + 本索引 + 模板 + v11/v13/v18 截图目录）
 
 ```
 docs/frontend-versions/
@@ -142,7 +148,9 @@ docs/frontend-versions/
 ├── OPTIMIZATION_ROUND17.md      ← ROUND17 落地页编辑部双结构
 ├── OPTIMIZATION_ROUND18.md      ← ROUND18 落地页一致性修复 + 三枚彩蛋
 ├── CHANGELOG-v18.md             ← v18 六套设计语言（推翻重来）
+├── OPTIMIZATION_ROUND19.md      ← ROUND19 六套皮肤可读性与信息层次
 ├── v11-screenshots/             ← v11 实拍截图
-└── v13-screenshots/             ← v13 七主题实拍截图（theme-a~g.png）
+├── v13-screenshots/             ← v13 七主题实拍截图（theme-a~g.png）
+└── v18-screenshots/             ← ROUND19 六套实机截图（skin-a~f · 三套空态 · A 的优化前基线）
 ```
 

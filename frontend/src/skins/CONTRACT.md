@@ -146,6 +146,12 @@ main.wb-trace-main > .trace-panel       可观测视图
    `top` / `left`（会触发布局重排）。
 8. **不要**写跟随光标的拖尾 / 光晕（`fx.js` 已明确不做，属「AI 味」重灾区）。
 9. 注释用中文，写「为什么」而不是「做了什么」。
+10. **文件末尾保留「§ 15 · 可读性与信息层次」段**，集中处理六件事：元信息字号下限、
+    正文行宽、命中区、顶栏分组、待确认条降权、时间线分主次、空态去对称居中。
+    该段与前文同特异性、置于末尾以便覆盖旧值，**回退只需删除本段**。
+    六套的写法**互不相同**（各自用自身的视觉语言实现，如 A 用校对方块、D 用竖排方框签、
+    F 用字段名、E 用错位套印）——**新增皮肤须自行编写，不得从任一套复制**。
+    详见 [`docs/frontend-versions/OPTIMIZATION_ROUND19.md`](../../../docs/frontend-versions/OPTIMIZATION_ROUND19.md)。
 
 ---
 
@@ -159,3 +165,7 @@ main.wb-trace-main > .trace-panel       可观测视图
 - [ ] 长标题在 `.wb-vol-title` / `.wb-tl-title` 内不溢出（ellipsis 或换行）
 - [ ] `prefers-reduced-motion: reduce` 下无持续动画（fx.css 已兜底，皮肤不得反向覆盖）
 - [ ] 无硬编码主题色（颜色只走变量或本皮肤独有的具名值）
+- [ ] 元信息字号 ≥ 11px（中文在 Windows ClearType 下的可读性下限）
+- [ ] 可点击元素命中区 ≥ 30×30px（`.wb-vol-del` / `.wb-view` / `.wb-side-tab`）
+- [ ] 空态不是「印章 + 标题 + 说明 + 三个胶囊」的对称居中模板
+- [ ] 文件末尾有 § 15 段，且写法为本皮肤独有（未被其它皮肤复制）

@@ -52,7 +52,7 @@ html[data-skin="e"] {
   --s-5: 22px;
   --s-6: 28px;
 
-  --fs-micro: 10.5px;
+  --fs-micro: 11px;
   --fs-sm: 13px;
   --fs-md: 14.5px;
   --fs-lg: 16.5px;
@@ -141,7 +141,7 @@ html[data-skin="e"] .wb-brand-text b {
 html[data-skin="e"] .wb-brand-text i {
   margin-top: 2px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   font-style: normal;
   letter-spacing: .1em;
   color: var(--text-3);
@@ -181,7 +181,7 @@ html[data-skin="e"] .wb-user b {
 html[data-skin="e"] .wb-user i {
   padding: 2px 6px;
   border: 1.5px solid var(--text);
-  font-size: 9px;
+  font-size: 11px;
   font-style: normal;
   letter-spacing: .14em;
   text-transform: uppercase;
@@ -264,7 +264,7 @@ html[data-skin="e"] .sp-chip {
   border-radius: var(--r-pill);
 }
 html[data-skin="e"] .sp-label { font-size: var(--fs-sm); }
-html[data-skin="e"] .sp-caret { font-size: 9px; opacity: .6; }
+html[data-skin="e"] .sp-caret { font-size: 11px; opacity: .6; }
 
 html[data-skin="e"] .skin-pop {
   position: absolute;
@@ -289,7 +289,7 @@ html[data-skin="e"] .sp-title { font-size: var(--fs-md); font-weight: 900; lette
 html[data-skin="e"] .sp-hint {
   margin-left: auto;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .1em;
   color: var(--text-3);
 }
@@ -318,7 +318,7 @@ html[data-skin="e"] .sp-name { font-size: var(--fs-sm); font-weight: 800; }
 html[data-skin="e"] .sp-name em {
   margin-left: 7px;
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   font-style: normal;
   font-weight: 400;
   letter-spacing: .1em;
@@ -430,7 +430,7 @@ html[data-skin="e"] .wb-vol-no {
   flex: none;
   padding-top: 3px;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .08em;
   color: var(--text-3);
 }
@@ -446,7 +446,7 @@ html[data-skin="e"] .wb-vol-title {
 html[data-skin="e"] .wb-vol-meta {
   margin-top: 6px;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .08em;
   color: var(--text-3);
 }
@@ -491,13 +491,13 @@ html[data-skin="e"] .wb-msg-role {
   padding: 1px 6px;
   border: 1.5px solid var(--text);
   font-family: var(--font-mono);
-  font-size: 8.5px;
+  font-size: 11px;
   letter-spacing: .14em;
   color: var(--text-2);
 }
 html[data-skin="e"] .wb-msg-time {
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .08em;
   color: var(--text-3);
 }
@@ -576,12 +576,12 @@ html[data-skin="e"] .wb-break-badge {
   background: var(--text);
   color: var(--accent);
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .18em;
 }
 html[data-skin="e"] .wb-break-note {
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .14em;
   color: var(--text);
   opacity: .78;
@@ -667,7 +667,7 @@ html[data-skin="e"] .wb-compose-hint {
   max-width: 760px;
   margin: 10px auto 0;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .1em;
   color: var(--text-3);
 }
@@ -717,7 +717,7 @@ html[data-skin="e"] .wb-tl-no {
   flex: none;
   padding-top: 3px;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .12em;
   color: var(--text-3);
 }
@@ -726,7 +726,7 @@ html[data-skin="e"] .wb-tl-title { font-size: var(--fs-sm); font-weight: 800; wo
 html[data-skin="e"] .wb-tl-meta {
   margin-top: 5px;
   font-family: var(--font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   letter-spacing: .08em;
   color: var(--text-3);
   word-break: break-word;
@@ -777,3 +777,89 @@ html[data-skin="e"] .auth-card { box-shadow: var(--shadow-pop); }
   html[data-skin="e"] .wb-proj-sel { max-width: 150px; }
   html[data-skin="e"] .wb-msg { max-width: 92%; }
 }
+
+/* ============================================================================
+   § 15 · 可读性与信息层次（v18.1）—— 专属于皮肤 E · 孔版双色
+   —— 与 §1–§14 同特异性，置于文件末尾以覆盖旧值；要回退，删掉本段即可。
+   本段不与其他皮肤共用写法：孔版套印——错位双色块、硬阴影方章、撞色高亮、拼贴卡片
+   ============================================================================ */
+html[data-skin="e"] {
+  --fs-micro: 11px; --fs-sm: 14px; --fs-md: 15.5px;
+}
+html[data-skin="e"] .wb-body { grid-template-columns: 240px minmax(0, 1fr) 292px; }
+html[data-skin="e"] .wb-inner { max-width: 790px; }
+html[data-skin="e"] .wb-msg + .wb-msg { margin-top: 36px; }
+/* ② 消息 = 套印的两色片：右缘留一道错位的青色边 */
+html[data-skin="e"] .wb-msg.is-ai .wb-bubble {
+  font-size: 16.5px; line-height: 1.85;
+  border: 2px solid var(--text);
+  box-shadow: 5px 5px 0 var(--text);
+}
+html[data-skin="e"] .wb-msg.is-user .wb-bubble { font-size: 15.5px; box-shadow: 5px 5px 0 var(--accent-2); }
+html[data-skin="e"] .wb-msg-role { font-size: 12px; text-transform: uppercase; }
+
+/* ③ 顶栏分组 = 错位套印：粉块偏右 2px、青块偏左 2px，套印故意不对齐 */
+html[data-skin="e"] .skin-picker { padding-right: 20px; }
+html[data-skin="e"] .wb-views { padding-left: 20px; }
+html[data-skin="e"] .skin-picker::before {
+  content: ""; display: inline-block; width: 11px; height: 11px; margin-right: 10px;
+  background: var(--accent); transform: translate(2px, -2px); vertical-align: middle;
+}
+html[data-skin="e"] .wb-views::before {
+  content: ""; display: inline-block; width: 11px; height: 11px; margin-right: 10px;
+  background: var(--accent-2); transform: translate(-2px, 2px); vertical-align: middle;
+}
+html[data-skin="e"] .wb-view { padding: 8px 2px; font-size: 14.5px; font-weight: 700; }
+html[data-skin="e"] .wb-user { padding-left: 20px; }
+
+/* ④ 中断条 = 硬阴影方块：错位套印的招牌手法 */
+html[data-skin="e"] .wb-break {
+  border-left: 4px solid var(--accent);
+  background: var(--bg);
+}
+html[data-skin="e"] .wb-break-badge {
+  background: var(--accent); color: #fff;
+  border: 2px solid var(--text); box-shadow: 4px 4px 0 var(--accent-2);
+  padding: 3px 10px; font-size: 12px; font-weight: 700;
+}
+html[data-skin="e"] .wb-break-ask { font-size: 19px; font-weight: 700; }
+html[data-skin="e"] .wb-break-op { font-size: 14px; padding: 11px 20px; border-width: 2px; box-shadow: 4px 4px 0 var(--text); }
+
+/* ⑤ 时间线 = 撞色：待确认那条整块翻成粉，编号用青色 */
+html[data-skin="e"] .wb-tl-item { border-left: 0; padding-left: 0; }
+html[data-skin="e"] .wb-tl-no { color: var(--accent-2); font-size: 12px; font-weight: 700; }
+html[data-skin="e"] .wb-tl-item.is-interrupt {
+  border-left: 4px solid var(--accent); padding-left: 11px;
+  background: rgba(255, 77, 157, .12);
+}
+html[data-skin="e"] .wb-tl-item.is-interrupt .wb-tl-title,
+html[data-skin="e"] .wb-tl-item.is-interrupt .wb-tl-no { font-weight: 700; }
+html[data-skin="e"] .wb-tl-title { font-size: 14.5px; font-weight: 700; }
+
+/* ⑥ 命中区 */
+html[data-skin="e"] .wb-vol-del { width: 32px; height: 32px; display: grid; place-items: center; }
+html[data-skin="e"] .wb-side-tab { padding: 15px 0; font-size: 14px; font-weight: 700; }
+
+/* ⑦ 空态 = 三张错位拼贴卡：硬阴影 + 撞色边 */
+html[data-skin="e"] .wb-empty { text-align: left; padding: 64px 0 30px; }
+html[data-skin="e"] .wb-empty .seal { margin: 0 0 22px; }
+html[data-skin="e"] .wb-empty h2 { text-align: left; font-size: 34px; }
+html[data-skin="e"] .wb-empty-lead { margin: 14px 0 0; max-width: 32em; font-weight: 500; }
+html[data-skin="e"] .wb-prompts {
+  counter-reset: wb-prompt; flex-direction: column; align-items: stretch;
+  justify-content: flex-start; gap: 14px; margin-top: 32px;
+}
+html[data-skin="e"] .wb-prompt {
+  position: relative; display: block; width: 100%; text-align: left;
+  border: 2px solid var(--text); background: var(--surface);
+  box-shadow: 6px 6px 0 var(--accent-2);
+  padding: 16px 18px 16px 56px; font-size: 16px; font-weight: 700;
+}
+html[data-skin="e"] .wb-prompt:nth-child(even) { box-shadow: 6px 6px 0 var(--accent); }
+html[data-skin="e"] .wb-prompt::before {
+  content: counter(wb-prompt, decimal-leading-zero); counter-increment: wb-prompt;
+  position: absolute; left: 14px; top: 14px;
+  font-size: 26px; line-height: 1; font-weight: 900; color: var(--accent);
+}
+html[data-skin="e"] .wb-prompt:nth-child(even)::before { color: var(--accent-2); }
+html[data-skin="e"] .wb-prompt:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--accent); }
