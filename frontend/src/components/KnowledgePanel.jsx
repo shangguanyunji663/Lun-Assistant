@@ -45,6 +45,8 @@ export default function KnowledgePanel({ projectId, demo = false }) {
   }
   useEffect(() => {
     if (demo) { setDocs(DEMO_KNOWLEDGE); return }
+    /* 切项目时一并复位：否则 A 项目的报错/检索命中会留在 B 项目的面板上 */
+    setErr(''); setSummary(null); setSearching(false)
     load(); setHits(null); setUploadMsg('')
     // demo 为常量开关，不随渲染变化
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -88,12 +90,20 @@ export default function KnowledgePanel({ projectId, demo = false }) {
     if (demo) { setUploadMsg('演示模式：未接入后端，检索不可用。'); return }
     const query = q.trim()
     if (!query || searching) return
+    /* 未关联项目时后端会 404/422（路径里 project_id 为空），提前挡住 */
+    if (!projectId) { setErr('请先选择论文项目再检索。'); return }
     setSearching(true); setErr(''); setFallback(false)
     try {
-      let results = (await api.searchKnowledge(projectId, query, 5, mode)).results
+      const res = await api.searchKnowledge(projectId, query, 5, mode)
+      let results = res.results || []
+      /* mode=project 且库内无命中 → 回退到混合检索。
+         后端在「项目知识库为空」时会直接返回空结果（见 api/knowledge/router.py），
+         此时回退无意义且提示文案会误导，故用 count 区分两种空。 */
       if (mode === 'project' && !results.length) {
-        results = (await api.searchKnowledge(projectId, query, 5, 'hybrid')).results
-        setFallback(true)
+        if (docs.length) {
+          results = (await api.searchKnowledge(projectId, query, 5, 'hybrid')).results || []
+          setFallback(true)
+        }
       }
       setHits(results)
     } catch (e) { setErr(String(e.message || e)) }
@@ -141,7 +151,8 @@ export default function KnowledgePanel({ projectId, demo = false }) {
             <option value="builtin">仅内置</option>
             <option value="project">仅库内</option>
           </select>
-          <button className="btn btn-ink" onClick={search} disabled={searching || !q.trim()}>{searching ? '…' : '检索'}</button>
+          <button className="btn btn-ink" onClick={search}
+                  disabled={searching || !q.trim() || !projectId}>{searching ? '…' : '检索'}</button>
         </div>
 
         {hits !== null && (

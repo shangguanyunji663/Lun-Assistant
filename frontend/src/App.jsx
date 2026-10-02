@@ -15,6 +15,7 @@ import { useChat } from './hooks/useChat.js'
 import { useProjects } from './hooks/useProjects.js'
 import { useSessions } from './hooks/useSessions.js'
 import { useSkin } from './hooks/useSkin.js'
+import { useStickyScroll } from './hooks/useStickyScroll.js'
 
 /* ============================================================
    主应用 · v18「六套设计语言」
@@ -137,9 +138,37 @@ export default function App() {
 
   // ---- 会话卷册 ----
   const {
-    sessions, active, setActiveId, messages, timeline, bottomRef,
+    sessions, active, setActiveId, messages, timeline,
     patchSession, newSession: createSession, removeSession: deleteSession, reorderSessions,
   } = useSessions(DEMO ? DEMO_SESSIONS : null)
+
+  /* 粘底滚动：贴底时跟随流式输出；用户上翻历史时暂停跟随，
+     并暴露 atBottom 供渲染「回到底部」悬浮按钮。
+     依赖用消息/时间线的长度而非数组本身：
+     数组身份每轮渲染都变，会让跟随逻辑与滚动位置互相干扰。 */
+  const { scrollRef, onScroll, atBottom, scrollToBottom } =
+    useStickyScroll([messages.length, timeline.length], active?.id)
+
+  /* 把顶栏实测高度写进 --wb-top-h。
+     窄屏（≤820px）下顶栏会换行，各皮肤高度本就不同（实测 165px ~ 234px），
+     CSS 里写死任何 vh 数值都会在某个机型上失效——390×844 就曾因此把输入框
+     顶出首屏。这里用 ResizeObserver 量出真实高度交给样式层，
+     换行、换肤、字号变化都会自动重算。 */
+  const topRef = useRef(null)
+  useEffect(() => {
+    const el = topRef.current
+    if (!el) return
+    const root = document.documentElement
+    const apply = () => root.style.setProperty('--wb-top-h', `${Math.round(el.getBoundingClientRect().height)}px`)
+    apply()
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', apply)
+      return () => window.removeEventListener('resize', apply)
+    }
+    const ro = new ResizeObserver(apply)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   // ---- 项目 ----
   const {
@@ -179,7 +208,6 @@ export default function App() {
   const newSession = () => {
     if (streaming) return
     createSession()
-    setInterrupt(null)
     setInput('')
   }
 
@@ -191,7 +219,6 @@ export default function App() {
   const selectSession = (id) => {
     if (streaming) return
     setActiveId(id)
-    setInterrupt(null)
   }
 
   const fmtTime = (ts) => {
@@ -211,14 +238,21 @@ export default function App() {
     return `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
   }
 
-  // bottomRef 为自定义 hook 返回的稳定 ref，无需加入依赖
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages, timeline])
-
   /* 采纳类操作：在点击落点砸一枚图章（可玩性反馈，替代平淡的 toast） */
   const answerInterrupt = (e, op) => {
     if (/采纳|通过|确认/.test(op)) stampAt(e.clientX, e.clientY, '匠')
     send(op, op)
+  }
+
+  /* 确认反馈：send 的 resume 分支不会清空 input（它只清普通发送的草稿），
+     所以这里显式清一次，否则上一条反馈会留在框里，
+     下次误按 Enter 就会把旧反馈再发一遍。 */
+  const sendBreak = (text, e) => {
+    const t = String(text || '').trim()
+    if (!t) return
+    if (e && /采纳|通过|确认/.test(t)) stampAt(e.clientX, e.clientY, '匠')
+    setInput('')
+    send(t, t)
   }
 
   if (booting) return <div className="wb-boot">加载中…</div>
@@ -229,7 +263,7 @@ export default function App() {
       <AmbientLines />
 
       {/* ============================================================ 顶栏 */}
-      <header className="wb-top">
+      <header className="wb-top" ref={topRef}>
         <span className="wb-brand">
           <Seal size={26} />
           <span className="wb-brand-text">
@@ -313,7 +347,7 @@ export default function App() {
 
           {/* ---------- 中 · 对话主区 ---------- */}
           <section className={`wb-col wb-main${streaming ? ' is-streaming' : ''}`}>
-            <div className="wb-stream">
+            <div className="wb-stream" ref={scrollRef} onScroll={onScroll}>
               <div className="wb-inner">
                 {messages.length === 0 && (
                   <div className="wb-empty">
@@ -356,8 +390,16 @@ export default function App() {
                     </article>
                   )
                 })}
-                <div ref={bottomRef} />
               </div>
+
+              {/* 用户上翻历史时给出的回底入口 ——
+                  粘底 hook 判定离开底部才出现，不打断正常阅读 */}
+              {!atBottom && (
+                <button type="button" className="wb-jump" data-magnet
+                        onClick={() => scrollToBottom('smooth')}>
+                  <span aria-hidden="true">↓</span> 回到底部
+                </button>
+              )}
             </div>
 
             {/* 中断确认条 */}
@@ -379,9 +421,14 @@ export default function App() {
                   <input className="wb-break-input" placeholder="或输入你的反馈…"
                          value={input}
                          onChange={e => setInput(e.target.value)}
-                         onKeyDown={e => { if (e.key === 'Enter' && input.trim()) send(input.trim(), input.trim()) }} />
+                         onKeyDown={e => {
+                           if (e.key === 'Enter' && input.trim()) {
+                             e.preventDefault()
+                             sendBreak(input.trim())
+                           }
+                         }} />
                   <button className="wb-btn wb-btn-ink"
-                          onClick={e => answerInterrupt(e, input.trim())}
+                          onClick={e => sendBreak(input.trim(), e)}
                           disabled={streaming || !input.trim()}>发送反馈</button>
                 </div>
               </div>

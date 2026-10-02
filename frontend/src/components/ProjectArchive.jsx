@@ -16,7 +16,12 @@ export default function ProjectArchive({ projectId, onEdit, refreshKey, demo = f
     catch (e) { setErr(String(e.message || e)) }
     finally { setLoading(false) }
   }
-  useEffect(() => { load() }, [projectId, refreshKey]) // eslint-disable-line react-hooks/exhaustive-deps
+  /* 切项目时先清错误：否则 A 项目加载失败的红条会挂在 B 项目的档案上。
+     clearErr 放在 effect 内、load 之前，保证每次数据源变化都复位。 */
+  useEffect(() => {
+    setErr('')
+    load()
+  }, [projectId, refreshKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!projectId) return <p className="muted empty-tip">未关联项目。在顶部新建或选择一个论文项目后，这里会显示它的档案与结构化记忆。</p>
   if (loading) return <p className="muted empty-tip">读取中…</p>

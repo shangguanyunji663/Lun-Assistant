@@ -19,5 +19,8 @@ import './skins/c-poster.css'
 import './skins/d-bamboo.css'
 import './skins/e-riso.css'
 import './skins/f-archive.css'
+/* 工作台外壳与滚动契约：必须放在 skins/*.css 之后——
+   各皮肤都把 .wb 写成 min-height:100vh，本文件负责收敛为视口高度 + 区内滚动 */
+import './styles/layout.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(<App />)

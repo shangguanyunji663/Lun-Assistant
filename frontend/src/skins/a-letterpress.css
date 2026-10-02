@@ -280,7 +280,7 @@ html[data-skin="a"] .wb-body {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 262px minmax(0, 1fr) 322px;
+  grid-template-columns: 240px minmax(0, 1fr) 272px;
 }
 html[data-skin="a"] .wb-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 html[data-skin="a"] .wb-volumes,
@@ -652,8 +652,7 @@ html[data-skin="a"] .auth-card { border-radius: 0; box-shadow: var(--shadow-pop)
 html[data-skin="a"] {
   /* 报纸的正文列比网页宽：旁注栏收窄，正文放宽 */
   --fs-sm: 14px; --fs-md: 15.5px; --fs-lg: 18px;
-}
-html[data-skin="a"] .wb-body { grid-template-columns: 240px minmax(0, 1fr) 272px; }
+}
 html[data-skin="a"] .wb-inner { max-width: 760px; }
 html[data-skin="a"] .wb-msg + .wb-msg { margin-top: 38px; }
 html[data-skin="a"] .wb-msg.is-ai .wb-bubble { font-size: 17px; line-height: 1.9; }

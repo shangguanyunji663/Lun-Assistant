@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 
 import { sse } from '../api.js'
 import { DEMO_INTERRUPT, demoReply } from '../demo.js'
@@ -21,7 +21,11 @@ async function demoChat(sid, text, resume, { feedTyper, patchSession, setInterru
     await new Promise(r => setTimeout(r, 26))
   }
   setInterrupt(DEMO_INTERRUPT)
-  patchSession(sid, s => ({ ...s, timeline: [...s.timeline, { type: 'interrupt', payload: DEMO_INTERRUPT }] }))
+  patchSession(sid, s => ({
+    ...s,
+    interrupt: DEMO_INTERRUPT,
+    timeline: [...s.timeline, { type: 'interrupt', payload: DEMO_INTERRUPT }],
+  }))
   return out
 }
 
@@ -35,14 +39,30 @@ async function demoChat(sid, text, resume, { feedTyper, patchSession, setInterru
  */
 export function useChat({ active, patchSession, projectId, setArchiveKey, demo = null }) {
   const [streaming, setStreaming] = useState(false)
-  const [interrupt, setInterrupt] = useState(null)
   const [input, setInput] = useState('')
+  /* 重入锁：send 是 async，streaming 是 render 闭包里的快照。
+     连按两次「发送」时两次调用读到的都是同一个 false，
+     会并发开两条 SSE 流并往同一条消息里交叉写入。ref 是同步的，可作闸门。 */
+  const inFlight = useRef(false)
+
+  /* interrupt（待确认项）按会话存放，不再是全局单值。
+     原实现挂在 hook 级 state 上：会话 A 挂起后切到 B，
+     setInterrupt(null) 会把 A 的待确认项一起抹掉——而后端图仍停在
+     interrupt 节点等待 resume，切回去已无任何入口，链路就此卡死。
+     存进会话对象后，它随会话走，切换与刷新都不丢。 */
+  const interrupt = active?.interrupt ?? null
+  const setInterrupt = useCallback((value) => {
+    const sid = active?.id
+    if (!sid) return
+    patchSession(sid, s => ({ ...s, interrupt: value }))
+  }, [active?.id, patchSession])
 
   const send = async (text, resume = null) => {
-    if (streaming || !active) return
+    if (inFlight.current || !active) return
     const sid = active.id
     const body = resume ? `[确认反馈] ${resume}` : text
 
+    inFlight.current = true
     setStreaming(true)
     setInterrupt(null)
     if (!resume) setInput('')
@@ -101,24 +121,54 @@ export function useChat({ active, patchSession, projectId, setArchiveKey, demo =
           : { session_id: sid, message: text, project_id: projectId },
         (type, payload, node) => {
           if (type === 'token') { feedTyper(payload || '') }
-          else if (type === 'final') { if (payload?.output) { target = payload.output; startTyper() } }
+          else if (type === 'final') {
+            /* final.output 用来兜底「token 丢帧」的情况。
+               只有当它比我们已收到的更长时才采纳——否则会把已上屏的
+               内容截断成最后一个节点的 final_output（多智能体场景）。 */
+            const out = payload?.output
+            if (out && out.length > target.length) { target = out; startTyper() }
+          }
           else if (type === 'interrupt') {
             setInterrupt(payload)
-            patchSession(sid, s => ({ ...s, timeline: [...s.timeline, { type: 'interrupt', payload, node }] }))
+            /* 专项节点走非流式 chat_tools，挂起前不会下发任何 token，
+               占位助手消息会留成空泡。把待确认内容写进气泡，
+               用户不必只盯着下方确认条才知道 agent 说了什么。 */
+            if (!target.trim()) {
+              const proposal = payload?.proposal
+              const question = payload?.question || '请确认下一步操作'
+              target = proposal ? `${question}\n\n${proposal}` : question
+              startTyper()
+            }
+            patchSession(sid, s => ({
+              ...s,
+              interrupt: payload,
+              timeline: [...s.timeline, { type: 'interrupt', payload, node }],
+            }))
           } else if (type === 'error') {
+            /* error 事件后没有 final，占位消息会留空；
+               直接把后端 message 写进气泡，避免「什么都没有」。 */
+            target = `请求出错：${payload?.message || '未知错误'}`
+            startTyper()
             patchSession(sid, s => ({ ...s, timeline: [...s.timeline, { type: 'error', payload, node }] }))
           } else if (['node_start', 'node_end', 'intent', 'route', 'plan', 'step_event'].includes(type)) {
             patchSession(sid, s => ({ ...s, timeline: [...s.timeline, { type, payload, node }] }))
           }
         })
-      if (finalText) target = finalText
+      if (finalText && finalText.length > target.length) target = finalText
       flushTyper()
       if (projectId) setArchiveKey(k => k + 1)
     } catch (e) {
       stopTyper()
       patchLast(`请求失败：${e.message || e}`)
       console.warn('[chat]', e)
-    } finally { stopTyper(); setStreaming(false) }
+    } finally {
+      stopTyper()
+      /* 流已结束但一条 token 都没收到（例如后端直接判定挂起或出错）：
+         占位助手消息会是空的，补一句说明而不是留白泡。 */
+      if (!target.trim()) patchLast('（本轮没有产出内容）')
+      inFlight.current = false
+      setStreaming(false)
+    }
   }
 
   return { streaming, interrupt, setInterrupt, input, setInput, send }

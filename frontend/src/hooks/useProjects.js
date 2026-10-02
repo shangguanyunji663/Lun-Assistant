@@ -29,6 +29,10 @@ export function useProjects(user, demo = null) {
     }
   }, [user, demo])
 
+  /* 以下三个写操作一律「显式传 id」而不是读闭包里的 projectId。
+     原实现读的是渲染时快照：用户在「项目设置」弹窗打开期间
+     用顶栏下拉切换了项目，PATCH/DELETE 会打到新项目上——
+     改 A 的标题却写进 B，或直接删掉刚切换过去的项目。 */
   const createProject = async (title, major, requirement) => {
     if (demo) return
     const p = await api.createProject(title, major, requirement)
@@ -36,18 +40,21 @@ export function useProjects(user, demo = null) {
     toast('项目已创建', `#${p.id} ${p.title}`)
   }
 
-  const patchProject = async (patch) => {
+  const patchProject = async (id, patch) => {
     if (demo) return
-    await api.patchProject(projectId, patch)
-    setProjects(ps => ps.map(p => p.id === projectId ? { ...p, ...patch } : p))
+    if (id == null) throw new Error('未选择项目')
+    await api.patchProject(id, patch)
+    setProjects(ps => ps.map(p => p.id === id ? { ...p, ...patch } : p))
     setArchiveKey(k => k + 1)
   }
 
-  const deleteProject = async () => {
+  const deleteProject = async (id) => {
     if (demo) return
-    await api.deleteProject(projectId)
-    setProjects(ps => ps.filter(p => p.id !== projectId))
-    setProjectId(null); setDialog(null)
+    if (id == null) throw new Error('未选择项目')
+    await api.deleteProject(id)
+    setProjects(ps => ps.filter(p => p.id !== id))
+    setProjectId(cur => (cur === id ? null : cur))
+    setDialog(null)
   }
 
   const currentProject = projects.find(p => p.id === projectId) || null

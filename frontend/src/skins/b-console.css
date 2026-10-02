@@ -369,7 +369,7 @@ html[data-skin="b"] .wb-body {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 252px minmax(0, 1fr) 312px;
+  grid-template-columns: 244px minmax(0, 1fr) 296px;
 }
 html[data-skin="b"] .wb-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 html[data-skin="b"] .wb-volumes,
@@ -954,8 +954,7 @@ html[data-skin="b"] .lat { font-family: var(--font-mono); }
 html[data-skin="b"] {
   /* 仪表读数本来就该比正文大：这套皮肤的小字下限抬到 12.5px */
   --fs-micro: 12.5px; --fs-sm: 14px; --fs-md: 15.5px;
-}
-html[data-skin="b"] .wb-body { grid-template-columns: 244px minmax(0, 1fr) 296px; }
+}
 html[data-skin="b"] .wb-msg + .wb-msg { margin-top: 36px; }
 /* ② 消息 = 读数板：带边框与角标的仪表读数块，不是纯文字流 */
 html[data-skin="b"] .wb-msg.is-ai .wb-bubble {

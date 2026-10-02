@@ -357,7 +357,7 @@ html[data-skin="e"] .wb-body {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 262px minmax(0, 1fr) 322px;
+  grid-template-columns: 240px minmax(0, 1fr) 292px;
 }
 html[data-skin="e"] .wb-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 /* 栏间用 2.5px 墨线分隔（而非细线），强化「版口」的硬边 */
@@ -785,8 +785,7 @@ html[data-skin="e"] .auth-card { box-shadow: var(--shadow-pop); }
    ============================================================================ */
 html[data-skin="e"] {
   --fs-micro: 11px; --fs-sm: 14px; --fs-md: 15.5px;
-}
-html[data-skin="e"] .wb-body { grid-template-columns: 240px minmax(0, 1fr) 292px; }
+}
 html[data-skin="e"] .wb-inner { max-width: 790px; }
 html[data-skin="e"] .wb-msg + .wb-msg { margin-top: 36px; }
 /* ② 消息 = 套印的两色片：右缘留一道错位的青色边 */

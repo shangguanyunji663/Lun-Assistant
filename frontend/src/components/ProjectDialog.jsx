@@ -23,7 +23,8 @@ export default function ProjectDialog({ mode, initial, onClose, onCreate, onPatc
     if (!t) return
     setBusy(true); setErr('')
     try {
-      if (editing) await onPatch({ title: t, major: major.trim(), requirement: requirement.trim(), status })
+      // 透传被编辑项目的 id：编辑期间顶栏可能已切到别的项目
+      if (editing) await onPatch(initial?.id, { title: t, major: major.trim(), requirement: requirement.trim(), status })
       else await onCreate(t, major.trim(), requirement.trim())
       onClose()
     } catch (e) { setErr(String(e.message || e)) }
@@ -33,7 +34,7 @@ export default function ProjectDialog({ mode, initial, onClose, onCreate, onPatc
   const doDelete = async () => {
     if (!window.confirm(`确定删除项目「${initial?.title || ''}」？其下的知识库文档与结构化记忆将一并移除，且不可恢复。`)) return
     setBusy(true); setErr('')
-    try { await onDelete() } catch (e) { setErr(String(e.message || e)); setBusy(false) }
+    try { await onDelete(initial?.id) } catch (e) { setErr(String(e.message || e)); setBusy(false) }
   }
 
   return (

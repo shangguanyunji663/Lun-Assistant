@@ -349,7 +349,7 @@ html[data-skin="d"] .wb-body {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 302px;
+  grid-template-columns: minmax(0, 1fr) 280px;
   grid-template-rows: auto minmax(0, 1fr);
 }
 html[data-skin="d"] .wb-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
@@ -900,8 +900,7 @@ html[data-skin="d"] {
   /* 竖排文字比横排更吃字号：这套皮肤下限抬到 12px */
   --fs-micro: 12px; --fs-sm: 14px; --fs-md: 15.5px;
 }
-/* D 是两栏（卷册已改为顶部横排书签栏），只收窄右栏 */
-html[data-skin="d"] .wb-body { grid-template-columns: minmax(0, 1fr) 280px; }
+/* D 是两栏（卷册已改为顶部横排书签栏），只收窄右栏 */
 html[data-skin="d"] .wb-msg + .wb-msg { margin-top: 36px; }
 html[data-skin="d"] .wb-msg.is-ai .wb-bubble { font-size: 17px; line-height: 1.9; }
 html[data-skin="d"] .wb-msg.is-user .wb-bubble { font-size: 16px; }

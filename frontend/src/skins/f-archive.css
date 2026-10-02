@@ -359,7 +359,7 @@ html[data-skin="f"] .wb-body {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 250px minmax(0, 1fr) 286px;
+  grid-template-columns: 238px minmax(0, 1fr) 276px;
 }
 html[data-skin="f"] .wb-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 html[data-skin="f"] .wb-volumes,
@@ -922,8 +922,7 @@ html[data-skin="f"] .wb-boot {
    ============================================================================ */
 html[data-skin="f"] {
   --fs-micro: 11px; --fs-sm: 13.5px; --fs-md: 15px;
-}
-html[data-skin="f"] .wb-body { grid-template-columns: 238px minmax(0, 1fr) 276px; }
+}
 html[data-skin="f"] .wb-msg + .wb-msg { margin-top: 34px; }
 /* ② 消息 = 打印纸上的段落：等宽正文 + 左侧走纸虚线 */
 html[data-skin="f"] .wb-msg.is-ai .wb-bubble {

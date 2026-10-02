@@ -329,7 +329,7 @@ html[data-skin="c"] .wb-body {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 236px minmax(0, 1fr) 292px;
+  grid-template-columns: 224px minmax(0, 1fr) 280px;
 }
 html[data-skin="c"] .wb-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 html[data-skin="c"] .wb-volumes,
@@ -821,8 +821,7 @@ html[data-skin="c"] .auth-card { border-radius: 0; box-shadow: var(--shadow-pop)
    ============================================================================ */
 html[data-skin="c"] {
   --fs-micro: 11.5px; --fs-sm: 14.5px; --fs-md: 16px;
-}
-html[data-skin="c"] .wb-body { grid-template-columns: 224px minmax(0, 1fr) 280px; }
+}
 html[data-skin="c"] .wb-msg + .wb-msg { margin-top: 36px; }
 /* ② 海报是满幅的——保留满幅，只限制单行行宽（海报的文字块也是限宽的） */
 html[data-skin="c"] .wb-bubble { max-width: 66ch; }

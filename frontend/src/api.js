@@ -10,7 +10,10 @@ async function req(path, options = {}) {
       ...(options.headers || {}),
     },
   })
-  if (res.status === 401) { localStorage.removeItem('lj_token'); window.location.reload() }
+  /* 401 且此前带着 token 才视为登录态失效。
+     登录/注册在口令错误时同样返回 401（见 api/auth/router.py），
+     那种情况不能重载——否则刚输入的账号与「用户名或密码错误」提示会被一起冲掉。 */
+  if (res.status === 401 && token) { localStorage.removeItem('lj_token'); window.location.reload() }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new Error(body.detail || `${res.status}`)
@@ -39,7 +42,9 @@ export const api = {
       headers: { Authorization: `Bearer ${localStorage.getItem('lj_token')}` }, // 不设 Content-Type，由浏览器生成 boundary
       body: fd,
     })
-    if (res.status === 401) { localStorage.removeItem('lj_token'); window.location.reload() }
+    if (res.status === 401 && localStorage.getItem('lj_token')) {
+      localStorage.removeItem('lj_token'); window.location.reload()
+    }
     if (!res.ok) {
       const body = await res.json().catch(() => ({}))
       throw new Error(body.detail || `${res.status}`)
@@ -63,10 +68,14 @@ export async function sse(path, body, onEvent) {
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     body: JSON.stringify(body),
   })
+  /* 流式请求同样要处理登录态失效：此前漏了它，token 过期时
+     只会抛一个裸的「401」，用户看不出该重新登录。 */
+  if (res.status === 401) { localStorage.removeItem('lj_token'); window.location.reload() }
   if (!res.ok) {
     const eb = await res.json().catch(() => ({}))
     throw new Error(eb.detail || `${res.status}`)
   }
+  if (!res.body) throw new Error('响应流为空')
   const reader = res.body.getReader()
   const decoder = new TextDecoder()
   let buf = ''

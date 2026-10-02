@@ -16,19 +16,31 @@ function renderTree(nodes, depth) {
   ))
 }
 
+/* 成本列格式化：后端 TraceListItem.total_cost_usd 虽声明为 float，
+   但 SQL SUM 在无任何成本记录时可能给出 null（见 services/observability/trace.py），
+   直接 .toFixed 会抛 TypeError 把整个面板打空。 */
+const fmtCost = (v) => `$${(Number(v) || 0).toFixed(6)}`
+
 export default function TracePanel({ demo = false }) {
   const [traces, setTraces] = useState(demo ? DEMO_TRACES : [])
   const [detail, setDetail] = useState(null)
   const [err, setErr] = useState('')
+  const [loading, setLoading] = useState(false)
 
   const load = async () => {
     if (demo) { setTraces(DEMO_TRACES); return }
-    try { setTraces((await api.traces(30)).items); setErr('') } catch (e) { setErr(String(e.message || e)) }
+    setLoading(true)
+    try { setTraces((await api.traces(30)).items || []); setErr('') }
+    catch (e) { setErr(String(e.message || e)) }
+    finally { setLoading(false) }
   }
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const open = async (id) => {
     if (demo) { setErr('演示模式：未接入后端，行为回放不可用。'); return }
+    /* 先清错误：否则上一次加载失败的红条会一直挂在列表上方，
+       让人误以为这次的回放也失败了。 */
+    setErr('')
     try { setDetail(await api.trace(id)) } catch (e) { setErr(String(e.message || e)) }
   }
 
@@ -44,13 +56,14 @@ export default function TracePanel({ demo = false }) {
           <div key={t.trace_id} className={`trace-item ${detail?.trace_id === t.trace_id ? 'active' : ''}`}
                onClick={() => open(t.trace_id)}>
             <div className="tid">{t.trace_id.slice(0, 12)}…</div>
-            <div className="meta">{t.spans} spans · {t.total_latency_ms}ms · ${t.total_cost_usd.toFixed(6)}</div>
+            <div className="meta">{t.spans} spans · {t.total_latency_ms}ms · {fmtCost(t.total_cost_usd)}</div>
           </div>
         ))}
-        {!traces.length && <p className="muted empty-tip">暂无 Trace</p>}
+        {loading && <p className="muted empty-tip">读取中…</p>}
+        {!loading && !traces.length && <p className="muted empty-tip">暂无 Trace</p>}
       </div>
       <div className="trace-detail">
-        {detail ? (
+        {loading && !detail ? <p className="muted empty-tip">读取中…</p> : detail ? (
           <>
             <div className="panel-head">
               <h3>行为回放 · {detail.trace_id.slice(0, 12)}…</h3>

@@ -1,0 +1,148 @@
+/* ============================================================================
+   工作台外壳与滚动契约（v18 修复轮 · 单一真源）
+   —— 放在 skins/*.css 之后加载：各皮肤都把 .wb 写成 `min-height: 100vh`，
+      而 min-height 只给「下限」——容器高度仍由内容决定，于是
+        .wb-body(flex:1,min-height:0) → .wb-main → .wb-stream(flex:1,overflow-y:auto)
+      这条链上的 flex:1 与 overflow-y:auto 全部失效（父高 auto，撑不出滚动容器），
+      消息区随内容无限长高，整页滚动、输入框被顶走。
+
+   本文件把这三件事收敛到一处，不再让 8 份皮肤各写一遍：
+     ① .wb 锁定为视口高度并裁剪溢出 → 页面本身不滚；
+     ② .wb-stream 成为唯一的消息滚动容器（各皮肤已声明 overflow-y:auto）；
+     ③ .wb-compose / .wb-break 留在流内底部 → 输入框固定在底部。
+
+   宽屏（>1080px）为「应用式固定窗口」；≤1080px 退化为整页滚动 + 主区限高，
+   因为窄屏下三栏折行、各皮肤自带 max-height 断点规则，强行锁高会被裁掉。
+   ============================================================================ */
+
+html,
+body { height: 100%; }
+
+/* 根容器锁定视口高度。dvh 优先（移动端地址栏收起时不跳动），
+   100vh 兜底旧浏览器；两者都写，后者被前者覆盖。 */
+html[data-skin] .wb {
+  height: 100vh;
+  height: 100dvh;
+  /* 覆盖各皮肤的 min-height: 100vh——min-height 会让容器随内容继续长高 */
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* 主区：占满顶栏以下的剩余高度，并让 .wb-stream 拿到确定高度。
+   min-height:0 是 flex/grid 子项能收缩的前提，缺它则整列被内容顶开。 */
+html[data-skin] .wb-body { min-height: 0; }
+html[data-skin] .wb-main,
+html[data-skin] .wb-volumes,
+html[data-skin] .wb-side { min-height: 0; }
+
+/* 消息滚动容器：吃掉剩余空间并独立滚动。
+   overscroll-behavior 阻断滚动穿透——否则滚到顶/底会把外层一起带起来。 */
+html[data-skin] .wb-stream {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* 锚点补偿：f 皮肤在流内做了 sticky 定位的印章/图注，
+     scroll-padding 顶值可避免贴顶时被盖住（各皮肤值不同，用 em 近似）。 */
+  scroll-padding-top: 12px;
+}
+
+/* 输入区固定在底部：不给它任何可伸展的高度，多余内容一律让给消息区 */
+html[data-skin] .wb-compose,
+html[data-skin] .wb-break { flex: none; }
+
+/* 中断确认条出现时不让它把消息区挤没：自身可滚动 */
+html[data-skin] .wb-break { max-height: 42%; overflow-y: auto; }
+
+/* ---------- 窄屏：退化为整页滚动 ----------
+   ≤1080px 时右栏折到下方、≤820px 时三栏纵向堆叠，各皮肤都给了 max-height。
+   此时若继续锁 .wb 高度，内容会被 overflow:hidden 裁掉且无法滚到。
+   故放开高度，改用「主区保底高度 + 消息区内部滚动」。 */
+@media (max-width: 1080px) {
+  html[data-skin] .wb {
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  /* 窄屏三栏纵向堆叠：卷册(34vh) + 主区 + 右栏依次向下。
+     主区给保底高度，且限制消息区最大高度：
+     min-height 保证短会话时输入框就在屏内；max-height 保证长会话时
+     输入框不会被几千像素的消息顶到屏幕外——否则用户每发一条都要
+     手动滚回底部才能继续输入。超出部分由 .wb-stream 自身滚动。 */
+  html[data-skin] .wb-main { min-height: 68vh; }
+  html[data-skin] .wb-stream {
+    min-height: 42vh;
+    max-height: 62vh;
+  }
+}
+
+/* 手机竖屏（≤820px）：三栏折成单列纵向排列，卷册与右栏各占一截高度，
+   主区若只给 min-height 会被消息内容顶到首屏之外——实测 430×860 下
+   输入框落在 y=903，完全够不着；360×640 更早失效。
+
+   这里不用「算高度」而用 flex 直接分配：
+     .wb（min-height:100dvh，flex 列） → .wb-body（flex:1）拿到顶栏以下的全部剩余高度
+     → 网格行 auto / minmax(0,1fr) / auto 让主区吃掉卷册与右栏之外的空间。
+   各皮肤顶栏在窄屏会换行、高度本就不同，写死任何 vh 数值都会在某个尺寸上失效
+   （实测 58vh 在 430×860 恰好，在 390×844 就溢出）。交给 flex 就没有这个魔法数。 */
+@media (max-width: 820px) {
+  html[data-skin] .wb-body {
+    /* 卷册 auto / 主区 1fr / 右栏 auto —— 主区优先拿到剩余高度 */
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    /* 关键：.wb-body 虽是 flex 子项，但只有 min-height 会被内容撑开，
+       必须给 max-height 封顶，minmax(0,1fr) 才不会退化成「内容高度」。 */
+    max-height: calc(100dvh - var(--wb-top-h, 116px));
+  }
+  html[data-skin] .wb-main {
+    min-height: 0;
+    max-height: none;
+  }
+  html[data-skin] .wb-stream {
+    min-height: 0;
+    max-height: none;
+  }
+  /* 卷册栏在窄屏是「头部 + 列表」两段，占 34vh 会把对话区整体顶出首屏。
+     压到 22vh：仍可滚动浏览会话，又把空间还给对话。 */
+  html[data-skin] .wb-volumes { max-height: 22vh; }
+}
+
+/* ============================================================
+   「回到底部」悬浮按钮
+   —— 仅在用户上翻历史、离开底部时出现（由 useStickyScroll 判定）。
+   放在 .wb-stream 内而非 .wb-main 外层：这样它随消息区滚动容器定位，
+   天然贴在可视区底部，且不侵占输入区的位置。
+   ============================================================ */
+.wb-jump {
+  position: sticky;
+  bottom: 14px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  /* 居中悬浮：left 50% + translate，父级需为 position:relative（见下） */
+  margin: -46px auto 14px;
+  padding: 7px 15px;
+  border: 1px solid var(--line-2, #ccc);
+  border-radius: 99px;
+  background: var(--surface, #fff);
+  color: var(--text-2, #555);
+  font-size: var(--fs-sm, 13px);
+  line-height: 1.2;
+  box-shadow: var(--shadow-pop, 0 6px 18px rgba(0, 0, 0, .14));
+  cursor: pointer;
+  animation: wb-jump-in .2s var(--ease, ease) both;
+  transition: color var(--dur, .22s) var(--ease, ease),
+              border-color var(--dur, .22s) var(--ease, ease);
+}
+.wb-jump:hover { color: var(--text, #111); border-color: var(--accent, #333); }
+.wb-jump span { font-size: 1.1em; line-height: 1; }
+
+@keyframes wb-jump-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wb-jump { animation: none; }
+}
