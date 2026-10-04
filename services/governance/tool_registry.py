@@ -4,6 +4,12 @@
   1. YAML RBAC 鉴权 → 2. Redis 滑动窗口限流 → 3. 三态熔断检查（before_call）
   → 4. 三级容错执行（指数退避重试→默认参数降级→人机兜底）→ 5. 审计留痕 + 6. 行为观测
 
+Redis 不可用时的策略（fail-closed，与登录限流的 fail-open 不同）：
+- 限流 / 熔断 / 分布式锁无法履职时**拒绝**工具调用，抛 `GovernanceUnavailable`。
+  三者的 fail-closed 恰好等价于「不超额 / 不打下游 / 不并发」，即保护生效的方向；
+- 但审计**一定**落库（try/finally 保证），被拒事件同样留痕（ok=False），
+  不因基础设施故障而丢失安全记录。
+
 注册约定：
 - handler 支持同步与异步两种实现；同步 handler 在线程池执行（规则型/CPU 密集
   工具不再阻塞事件循环）；
@@ -20,6 +26,7 @@ from functools import lru_cache
 from typing import Any, Callable, Coroutine, cast
 
 import yaml
+from redis.exceptions import RedisError
 
 from infrastructure.audit import write_audit
 from infrastructure.db import get_session_factory
@@ -27,11 +34,24 @@ from infrastructure.paths import PROJECT_ROOT
 from infrastructure.rbac import policy as rbac_policy
 from services.governance.circuit_breaker import CircuitBreaker, CircuitOpenError
 from services.governance.dist_lock import DistributedLock, LockNotAcquired
-from services.governance.rate_limiter import RateLimitExceeded, check_rate
+from services.governance.rate_limiter import check_rate
 from services.governance.retry import HumanInterventionRequired, resilient_call
 from services.governance.skill import BehaviorTracker
 
 logger = logging.getLogger("lunjiang.governance")
+
+
+class GovernanceUnavailable(RuntimeError):
+    """治理基础设施（Redis）不可用，工具调用按 fail-closed 策略被拒绝。
+
+    与「工具自身执行失败」区分开：这表示限流 / 熔断 / 分布式锁无法履职，
+    治理层选择不放行，而不是工具本身出问题。调用方可据此给出运维向的提示。
+    """
+
+
+_REDIS_HINT = ("[{name}] 限流 / 熔断 / 分布式锁依赖的 Redis 不可用，已按 fail-closed 拒绝本次调用。"
+               "请确认 redis-server 已启动（端口见 .env 的 REDIS_PORT），"
+               "或用 scripts/dev_up.ps1 -infra-only 拉起依赖")
 
 
 @lru_cache(maxsize=1)
@@ -96,51 +116,86 @@ class ToolRegistry:
         self, name: str, *, user_id: int | None, user_role: str,
         call_context: dict | None = None, **kwargs: Any
     ) -> Any:
+        """治理流水线统一入口。
+
+        失败语义（fail-closed）：限流 / 熔断 / 分布式锁任一环节因 Redis 不可用而失败时，
+        **拒绝**本次调用——「限不住就不放行」是治理层既定立场。三者的 fail-closed 恰好
+        等价于「不超额 / 不打下游 / 不并发」，即保护生效的方向，故不做 fail-open。
+
+        留痕语义：无论成功、被拒还是失败，`_finalize()` 审计写库由 try/finally 保证
+        **一定执行**。此前 Redis 故障会从三条路径绕过审计（限流异常直接逃逸、
+        on_failure 二次抛、锁异常未被捕获），安全留痕丢失。
+        """
         spec = self.get(name)
         started = time.perf_counter()
+        ok, error = False, ""
 
-        # 1-2. 鉴权 / 限流：被拒也统一写审计（安全相关事件，不可遗漏）
         try:
-            if not rbac_policy.check_tool_permission(user_role, name):
-                raise PermissionError(f"角色 {user_role} 无权调用工具 {name}")
-            await check_rate(f"{name}:{user_id}", spec.rate_limit_rpm)
-        except (PermissionError, RateLimitExceeded) as e:
-            await self._finalize(name, user_id, user_role, call_context, started, False, spec, kwargs, error=str(e))
-            raise
+            # 1-2. 鉴权 / 限流（被拒也统一写审计，安全相关事件不可遗漏）
+            try:
+                if not rbac_policy.check_tool_permission(user_role, name):
+                    raise PermissionError(f"角色 {user_role} 无权调用工具 {name}")
+                await check_rate(f"{name}:{user_id}", spec.rate_limit_rpm)
+            except RedisError as e:
+                error = f"限流不可用（Redis）：{e}"
+                logger.warning("Redis 不可用，限流无法履职，按 fail-closed 拒绝: tool=%s", name)
+                raise GovernanceUnavailable(_REDIS_HINT.format(name=name)) from e
+            except Exception as e:
+                error = str(e)
+                raise
 
-        breaker = self._breakers[spec.breaker]
+            breaker = self._breakers[spec.breaker]
 
-        # 3-4. 熔断检查 + 三级容错执行（重试→降级→人机兜底），互斥工具加分布式锁
+            # 3-4. 熔断检查 + 三级容错执行（重试→降级→人机兜底），互斥工具加分布式锁
+            try:
+                await breaker.before_call()
+
+                async def _run(**kw):
+                    return await self._invoke_handler(spec, **kw)
+
+                lock = DistributedLock(spec.lock_key) if spec.lock_key else None
+                cm = lock if lock is not None else nullcontext()
+                async with cm:
+                    result = await resilient_call(
+                        _run, tool_name=name,
+                        fallback_kwargs=spec.fallback_kwargs or None,
+                        **kwargs,
+                    )
+                await breaker.on_success()
+                ok = True
+                return result
+            except RedisError as e:
+                error = f"熔断/分布式锁不可用（Redis）：{e}"
+                logger.warning("Redis 不可用，熔断或锁无法履职，按 fail-closed 拒绝: tool=%s", name)
+                await self._breaker_fail(breaker)
+                raise GovernanceUnavailable(_REDIS_HINT.format(name=name)) from e
+            except (CircuitOpenError, HumanInterventionRequired, LockNotAcquired) as e:
+                error = str(e)
+                if isinstance(e, HumanInterventionRequired):
+                    await self._breaker_fail(breaker)
+                raise
+            except Exception as e:
+                error = str(e)
+                await self._breaker_fail(breaker)
+                raise
+        finally:
+            await self._finalize(name, user_id, user_role, call_context,
+                                 started, ok, spec, kwargs, error=error)
+
+    async def _breaker_fail(self, breaker: CircuitBreaker) -> None:
+        """熔断失败记账：回写失败只记日志，绝不二次抛出。
+
+        Redis 不可用时 on_failure 必然连不上；若在此抛出，既会顶掉真实异常，
+        也会让 finally 中的审计语义失真（异常替换）。
+        """
         try:
-            await breaker.before_call()
-
-            async def _run(**kw):
-                return await self._invoke_handler(spec, **kw)
-
-            lock = DistributedLock(spec.lock_key) if spec.lock_key else None
-            cm = lock if lock is not None else nullcontext()
-            async with cm:
-                result = await resilient_call(
-                    _run, tool_name=name,
-                    fallback_kwargs=spec.fallback_kwargs or None,
-                    **kwargs,
-                )
-            await breaker.on_success()
-            await self._finalize(name, user_id, user_role, call_context, started, True, spec, kwargs)
-            return result
-        except (CircuitOpenError, HumanInterventionRequired, LockNotAcquired) as e:
-            if isinstance(e, HumanInterventionRequired):
-                await breaker.on_failure()
-            await self._finalize(name, user_id, user_role, call_context, started, False, spec, kwargs, error=str(e))
-            raise
-        except Exception as e:
             await breaker.on_failure()
-            await self._finalize(name, user_id, user_role, call_context, started, False, spec, kwargs, error=str(e))
-            raise
+        except Exception:
+            logger.warning("熔断状态回写失败（Redis 不可用时属预期行为）", exc_info=True)
 
     async def _finalize(self, name, user_id, user_role, call_context, started, ok, spec, kwargs, error=""):
         duration_ms = int((time.perf_counter() - started) * 1000)
-        # 5. 审计留痕
+        # 5. 审计留痕（写 PG，不受 Redis 故障影响）
         try:
             async with get_session_factory()() as db:
                 await write_audit(
@@ -150,11 +205,14 @@ class ToolRegistry:
                 )
         except Exception:
             logger.exception("工具审计写库失败")
-        # 6. 行为观测（Skill 动态生成数据源）
-        await self._tracker.observe(
-            agent=call_context.get("agent", "system") if call_context else "system",
-            tool=name, params=kwargs, ok=ok, user_id=user_id,
-        )
+        # 6. 行为观测（Skill 动态生成数据源，走 Redis；失败只记日志，不掩盖原始异常）
+        try:
+            await self._tracker.observe(
+                agent=call_context.get("agent", "system") if call_context else "system",
+                tool=name, params=kwargs, ok=ok, user_id=user_id,
+            )
+        except Exception:
+            logger.warning("行为观测写入失败（Redis 不可用时属预期行为）", exc_info=True)
 
 
 # 全局单例

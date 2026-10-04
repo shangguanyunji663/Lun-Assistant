@@ -5,6 +5,8 @@
   不依赖任何运行中的 Redis / DB 实例，可在 CI 与本地无环境一键执行。
 - 覆盖治理契约的关键分支：RBAC 拒绝、限流拒绝、熔断打开、三级容错耗尽（人机兜底）、
   通用异常、同步/异步 handler 接入、分布式锁装配、行为观测上下文透传、审计留痕 ok 标志。
+- Redis 不可用时的 fail-closed 契约（第 10-13 例）：调用**必须失败**，但审计**必须落库**；
+  且 on_failure / observe 的 Redis 故障不得替换原始异常。
 - 不重复验证 resilient_call 自身的重试/降级逻辑（由 services/governance/tests 单独覆盖），
   这里只验证 call() 对各环节的「编排与异常传播」是否正确。
 
@@ -25,11 +27,16 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from redis.exceptions import ConnectionError as RedisConnectionError
 
 from services.governance.circuit_breaker import CircuitOpenError
 from services.governance.rate_limiter import RateLimitExceeded
 from services.governance.retry import HumanInterventionRequired
-from services.governance.tool_registry import ToolRegistry, ToolSpec
+from services.governance.tool_registry import (
+    GovernanceUnavailable,
+    ToolRegistry,
+    ToolSpec,
+)
 
 
 @pytest.fixture
@@ -235,3 +242,72 @@ async def test_call_observes_agent_from_call_context(reg):
     assert kw["tool"] == "t_ctx"
     assert kw["user_id"] == 7
     assert kw["ok"] is True
+
+
+# ---------- 10-13. Redis 不可用：fail-closed 拒绝，但审计留痕不丢 ----------
+#
+# 治理层既定立场是 fail-closed（限不住就不放行），因此 Redis 故障时工具调用**必须失败**；
+# 但「调用被拒」本身是安全相关事件，审计**必须落库**。此前三条路径会绕过 _finalize()：
+# 限流异常直接逃逸、on_failure 二次抛、锁异常未被捕获。以下用例锁定修复后的行为。
+
+async def test_call_redis_down_at_rate_limit_still_audits(reg):
+    """限流阶段 Redis 故障 → 抛 GovernanceUnavailable，但审计不得丢失。"""
+    async def tool():
+        return 1
+    _register(reg, "t_redis_rl", tool)
+
+    reg._mocks.check_rate.side_effect = RedisConnectionError("Redis 连不上")
+    with pytest.raises(GovernanceUnavailable):
+        await reg.call("t_redis_rl", user_id=1, user_role="student")
+
+    reg._mocks.resilient.assert_not_awaited()      # 未进入执行阶段
+    reg._mocks.write_audit.assert_awaited_once()   # 审计已落库（修复前此处为 0 次）
+    detail = reg._mocks.write_audit.call_args.kwargs["detail"]
+    assert detail["ok"] is False
+    assert "Redis" in detail["error"]
+
+
+async def test_call_redis_down_at_breaker_still_audits(reg):
+    """熔断阶段 Redis 故障 → 同样拒绝调用并落审计，且不掩盖故障原因。"""
+    async def tool():
+        return 1
+    _register(reg, "t_redis_cb", tool)
+
+    reg._mocks.breaker.before_call.side_effect = RedisConnectionError("Redis 连不上")
+    with pytest.raises(GovernanceUnavailable):
+        await reg.call("t_redis_cb", user_id=1, user_role="student")
+
+    reg._mocks.resilient.assert_not_awaited()
+    reg._mocks.write_audit.assert_awaited_once()
+    assert reg._mocks.write_audit.call_args.kwargs["detail"]["ok"] is False
+
+
+async def test_call_breaker_writeback_failure_does_not_mask_original_error(reg):
+    """on_failure 二次抛（Redis 不可用）时，原始异常不得被替换，审计仍写。"""
+    async def tool():
+        return 1
+    _register(reg, "t_breaker_boom", tool)
+
+    reg._mocks.resilient.side_effect = ValueError("原始错误")
+    reg._mocks.breaker.on_failure.side_effect = RedisConnectionError("Redis 连不上")
+
+    with pytest.raises(ValueError) as exc:        # 仍是原始异常，未被 Redis 报错顶掉
+        await reg.call("t_breaker_boom", user_id=1, user_role="student")
+    assert "原始错误" in str(exc.value)
+
+    reg._mocks.write_audit.assert_awaited_once()  # 熔断记账失败不影响审计
+
+
+async def test_call_observe_failure_does_not_mask_original_error(reg):
+    """行为观测走 Redis，其失败不得顶掉原始异常，也不得阻断审计。"""
+    async def tool():
+        return 1
+    _register(reg, "t_observe_boom", tool)
+
+    reg._mocks.resilient.side_effect = ValueError("原始错误")
+    reg._mocks.tracker.observe.side_effect = RedisConnectionError("Redis 连不上")
+
+    with pytest.raises(ValueError):
+        await reg.call("t_observe_boom", user_id=1, user_role="student")
+
+    reg._mocks.write_audit.assert_awaited_once()
