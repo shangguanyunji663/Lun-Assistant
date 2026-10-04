@@ -18,10 +18,10 @@
 
 | 优先级  | 内容                                                                                | 面试收益             | 关键文件（代码证据）                                                                                                                                                               |
 | ---- | --------------------------------------------------------------------------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P0-1 | 审计参数合规：超 200 字符截断 + sha256 指纹 + 摘要（唯一落库口统一净化）                                     | 合规硬约束 / 安全严谨度    | [audit.py](file:///d:/PythonProject/Lun-Assistant/infrastructure/audit.py)                                                                                               |
-| P0-2 | Query 改写三级模式 `off/auto/on`：`is_rewrite_worthwhile` 难度判定，简单查询跳过 LLM（strategy=skip） | 简历"自适应"表述有真实实现支撑 | [query\_rewrite.py](file:///d:/PythonProject/Lun-Assistant/services/rag/query_rewrite.py)、[pipeline.py](file:///d:/PythonProject/Lun-Assistant/services/rag/pipeline.py) |
-| P0-3 | 长期记忆召回改「距离×重要度」加权混合排序（select 带距离列 + hybrid\_rank 纯函数）                             | 召回质量修正           | [long\_term.py](file:///d:/PythonProject/Lun-Assistant/services/memory/long_term.py)                                                                                     |
-| P1-4 | Dockerfile + compose `app` 服务：多实例部署载体，dist\_lock/熔断可现场验证                          | "多实例互斥"从代码变为可见部署 | [Dockerfile](file:///d:/PythonProject/Lun-Assistant/Dockerfile)、[docker-compose.yml](file:///d:/PythonProject/Lun-Assistant/docker-compose.yml)                          |
+| P0-1 | 审计参数合规：超 200 字符截断 + sha256 指纹 + 摘要（唯一落库口统一净化）                                     | 合规硬约束 / 安全严谨度    | [audit.py](../infrastructure/audit.py)                                                                                               |
+| P0-2 | Query 改写三级模式 `off/auto/on`：`is_rewrite_worthwhile` 难度判定，简单查询跳过 LLM（strategy=skip） | 简历"自适应"表述有真实实现支撑 | [query\_rewrite.py](../services/rag/query_rewrite.py)、[pipeline.py](../services/rag/pipeline.py) |
+| P0-3 | 长期记忆召回改「距离×重要度」加权混合排序（select 带距离列 + hybrid\_rank 纯函数）                             | 召回质量修正           | [long\_term.py](../services/memory/long_term.py)                                                                                     |
+| P1-4 | Dockerfile + compose `app` 服务：多实例部署载体，dist\_lock/熔断可现场验证                          | "多实例互斥"从代码变为可见部署 | [Dockerfile](../Dockerfile)、[docker-compose.yml](../docker-compose.yml)                          |
 
 ## 二、文件级变更摘要
 
@@ -49,7 +49,7 @@
 
 ### 3.2 实现
 
-[audit.py](file:///d:/PythonProject/Lun-Assistant/infrastructure/audit.py#L23) `_sanitize_value` 递归净化：
+[audit.py](../infrastructure/audit.py#L23) `_sanitize_value` 递归净化：
 
 ```python
 if isinstance(value, str) and len(value) > chars:
@@ -79,7 +79,7 @@ AB\_REPORT 结论：改写对简单术语查询零召回增益（纯开销 2.2s�
 
 ### 4.2 实现
 
-- [query\_rewrite.py](file:///d:/PythonProject/Lun-Assistant/services/rag/query_rewrite.py#L137) 新增零 LLM 的难度判定：
+- [query\_rewrite.py](../services/rag/query_rewrite.py#L137) 新增零 LLM 的难度判定：
 
 ```python
 _COLLOQUIAL_MARKERS = ("怎么破", "站不住脚", "没底", "太像", "怕过不了", "嫌我",
@@ -119,7 +119,7 @@ def is_rewrite_worthwhile(query):
 
 ### 5.2 实现
 
-[long\_term.py](file:///d:/PythonProject/Lun-Assistant/services/memory/long_term.py#L16)：
+[long\_term.py](../services/memory/long_term.py#L16)：
 
 ```python
 def hybrid_rank(rows_dists, alpha, top_k):
@@ -144,11 +144,11 @@ def hybrid_rank(rows_dists, alpha, top_k):
 
 ### 6.2 实现
 
-- [Dockerfile](file:///d:/PythonProject/Lun-Assistant/Dockerfile)：`python:3.12-slim` + torch 运行最小系统库
+- [Dockerfile](../Dockerfile)：`python:3.12-slim` + torch 运行最小系统库
   （libgomp1/libglib2.0-0，不含编译链）+ 依赖层缓存 + 非 root 用户 + urllib `/health` 健康检查；
   `.dockerignore` 排除 .env/venv/event 目录/前端 node\_modules 等，缩小构建上下文。
 
-- [docker-compose.yml](file:///d:/PythonProject/Lun-Assistant/docker-compose.yml#L46) 新增 `app` 服务：
+- [docker-compose.yml](../docker-compose.yml#L46) 新增 `app` 服务：
 
 ```yaml
 app:

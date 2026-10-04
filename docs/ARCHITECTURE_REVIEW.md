@@ -11,6 +11,17 @@
 > 范围：全项目目录结构合理性评估（只读审查，未改动任何代码）。从职责划分 / 命名规范 / 职责重叠 / 层级深浅 / 最佳实践五个维度评估，并给出问题清单与优化建议。
 >
 > 方法：`git ls-files` 与 `find` 生成完整目录树；grep 验证 api→services→infrastructure 依赖方向；逐个读取关键模块 docstring 核实职责；对照 README 声明的架构核查。
+>
+> ⚠️ **变更标注（2026-10-04 · 代码同步审计）**：本报告为 2026-09-01 的只读快照，以下事实已随代码演进变化，阅读时以现状为准（历史正文保留不改）：
+>
+> - 顶层 `design-concepts/` 已删除，设计资产归入 `docs/design-concepts/`（仅 4 张 PNG + 1 张 JPG，无 preview/tuner.html）；
+> - 学习文档已由 `docs/LEARNING_GUIDE.md` + `docs/LEARNING_PATH.md` 合并为根目录 `论匠学习指南.md`；
+> - `frontend/src/InkBackground.jsx` 已随 v18 皮肤重构删除（§五 问题 5、§六 第二批建议 2 不再适用）；
+> - 离线单测由 59 → **89** 用例（15 个测试文件）；
+> - `docs/` 后端轮次现为 ROUND1-6 / ROUND12 / ROUND13；前端版本线归入 `docs/frontend-versions/`（v8→v18）；
+> - `services/governance/artifacts.py` 已于 ROUND6 迁入 governance（§五 问题 8 属有意妥协）。
+>
+> 分层结论（services/infrastructure 0 处反向 import、api 只向下依赖）经复核**仍然成立**。
 
 ## 一、总体结论
 

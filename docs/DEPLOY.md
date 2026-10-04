@@ -17,7 +17,7 @@
 https://shangguanyunji663.github.io/Lun-Assistant/
 ```
 
-> 公网预览仅展示**前端视觉**（主题切换 UI / 装饰元素 / 配色 / 排版）。
+> 公网预览仅展示**前端视觉**（皮肤切换 UI / 装饰元素 / 配色 / 排版）。
 > **不包含后端功能**（登录 / 对话 / 知识库检索需要本地启 FastAPI）。
 
 ## 二、首次启用 GitHub Pages（仓库管理员操作）
@@ -91,7 +91,7 @@ cat dist/index.html | head -20                    # 看 base href 和资源路�
 同一 workflow 内并行运行 `test-backend` job（跑在云端 Ubuntu，与本机 Windows 无关）：
 1. **Setup Python 3.11** —— `pip install -r requirements.txt ruff`
 2. **Lint (ruff)** —— `ruff check .`（规则见根目录 `ruff.toml`）
-3. **Run unit tests** —— `pytest tests/ -q`（59 个离线单测，全部 mock 外部依赖；`.env` 缺失时配置层自动回退 `.env.example` 占位值，无需在 CI 造 `.env`）
+3. **Run unit tests** —— `pytest tests/ -q`（89 个离线单测，全部 mock 外部依赖；`.env` 缺失时配置层自动回退 `.env.example` 占位值，无需在 CI 造 `.env`）
 
 ### 关键设计
 - **不用 gh-pages 分支 / actions-gh-pages**：直接用官方 `actions/deploy-pages@v4` + `actions/upload-pages-artifact@v3`，更安全（OIDC token，无 write 权限泄露）
@@ -123,7 +123,7 @@ const REPO_NAME = 'lun-jiang'  // 改这里
 
 | 方向                  | 价值                          | 工作量  |
 | ------------------- | --------------------------- | ---- |
-| GitHub Actions 跑截图脚本 | CI 自动验证 3 主题（节省手动截图）     | 中    |
+| GitHub Actions 跑截图脚本 | CI 自动验证八套皮肤（节省手动截图）     | 中    |
 | 加自定义域名             | `shangguanyunji663.github.io/Lun-Assistant` → `lun-jiang.shangguanyunji663.com` | 低    |
 | Vercel / Netlify 部署   | 比 GitHub Pages 更快（CDN + Edge）+ 自动 preview PR | 中    |
 
@@ -140,7 +140,7 @@ const REPO_NAME = 'lun-jiang'  // 改这里
 push 后：
 1. `https://github.com/shangguanyunji663/Lun-Assistant/actions` 显示 ✅
 2. `https://shangguanyunji663.github.io/Lun-Assistant/` 可访问
-3. 主题切换 UI（顶部"柔雾青蓝 / 水墨留白 / 暗墨柔化"三按钮）可见
-4. 单击切换能看到配色、卷轴/中缝/钤印变化
+3. 皮肤切换 UI（工作台右上「皮肤」选择器，八套设计语言：铅字印刷 / 夜航仪表 / 学术海报 / 木牍竖排 / 孔版双色 / 索引档案 / 编队总谱 / 论文底片）可见
+4. 单击切换能看到配色、字体、排版与材质变化（各皮肤一份完整样式，`<html data-skin>` 驱动）
 
 完成！🎉

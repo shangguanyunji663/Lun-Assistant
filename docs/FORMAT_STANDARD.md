@@ -13,9 +13,9 @@
 | 前端版本线             | **frontend-versions**                         | `docs/frontend-versions/` | ROUND7-11 / DESIGN\_SPEC / CHANGELOG-v11/v12  |
 | 后端工程线             | backend                                       | `docs/`                   | ROUND2 / ROUND4 / ARCHITECTURE\_REVIEW        |
 | 混合轮次（前端小节 + 后端主体） | **main-location 归后端 / frontend-versions 挂指针** | 原位保留于 `docs/`，文档头加归属标注    | ROUND1 / ROUND3 / ROUND5                      |
-| 通用治理线             | general                                       | `docs/`                   | ROUND6 / PROJECT\_STRUCTURE / LEARNING\_GUIDE |
+| 通用治理线             | general                                       | `docs/`                   | ROUND6 / PROJECT\_STRUCTURE / 论匠学习指南.md      |
 | 部署运维线             | ops                                           | `docs/`                   | DEPLOY                                        |
-| 设计稿资源（非 md）       | assets                                        | `design-concepts/`        | preview\.html / tuner.html / \*.png           |
+| 设计稿资源（非 md）       | assets                                        | `docs/design-concepts/`   | 山水参考图 \*.png / \*.jpg（顶层 `design-concepts/` 已删除） |
 
 > **归类判定规则**：内容主体 >50% 为前端版本/主题演进的 → frontend-versions；主体为后端功能/架构 → backend 线留 `docs/` 根；同时含前后端的轮次文档 → 按主体保留在 `docs/`，但其前端小节在文档头明确标注「前端小节归属 frontend-versions」。
 
@@ -82,7 +82,7 @@
      - `## N-1、已知边界 / 未覆盖项`
 
      - `## N、追溯 / 关联文档`
-4. **跨文档链接统一相对路径**：`docs/` 内互链用相对路径（如 `[ROUND11](../frontend-versions/OPTIMIZATION_ROUND11.md)`），旧路径的迁移 stub 已清理，链接一律指向新位置。
+4. **跨文档链接统一相对路径**：`docs/` 内互链用相对路径（如 `[ROUND11](frontend-versions/OPTIMIZATION_ROUND11.md)`），旧路径的迁移 stub 已清理，链接一律指向新位置。
 
 ***
 
@@ -92,10 +92,10 @@
 | ------------- | ---------------------------------------------- | --------------------------------- |
 | 轮次            | `ROUND{N}`（如 ROUND11）                          | `round 11` / `第十一轮（无ROUND前缀）` 混用  |
 | 版本            | `v{N}`（如 v12）                                  | `版本 12` / `V12`                   |
-| 主题切换 tab      | `主题切换 tab` / `.theme-tabs`                     | `主题标签`                            |
+| 皮肤切换器         | `皮肤选择器` / `.skin-picker`                      | 旧称 `主题切换 tab` / `.theme-tabs`（v18 已废弃） |
 | 前端/后端 目录      | `frontend/` / `api/ services/ infrastructure/` | —                                 |
-| 主/次/低强调 token | `--jade / --pine / --seal`                     | 混用 `--gold` 指代强调（gold 仅 D 主题金泥专用） |
-| 背景图           | `--ink-bg-url` / `ink-photo`                   | `bg-图`                            |
+| 皮肤令牌          | `--bg / --surface / --text / --accent`（`html[data-skin]` 作用域） | 旧主题令牌 `--jade / --pine / --seal`（v18 已删除） |
+| 皮肤持久化键        | `lj_skin`                                      | `lj_theme` / `lj_soft`（v18 已废弃）    |
 
 ***
 

@@ -15,12 +15,12 @@
 
 | 模块     | 内容                                                        | 关键文件                                                                                                                                                      |
 | ------ | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 学术工具生态 | 学术翻译 / 润色 / 研究方法推荐 / 参考文献格式化 / 摘要生成 / 术语解析                | [academic\_tools](file:///d:/PythonProject/Lun-Assistant/services/governance/academic_tools.py)                                                           |
-| 治理接入   | 6 工具全部经 ToolRegistry（RBAC/限流/熔断/审计），tools.yaml 补齐配置       | [tools.yaml](file:///d:/PythonProject/Lun-Assistant/configs/tools.yaml)                                                                                   |
-| 并发压测   | 知识库检索 QPS / 延迟 P50·P95 / 服务端内存采样，报告落盘                     | [load\_test](file:///d:/PythonProject/Lun-Assistant/scripts/load_test.py)                                                                                 |
-| 对话底座   | 新增 agnes-2.5-flash（OpenAI 兼容）；**对话与嵌入底座解耦**，嵌入仍走本地 bge-m3 | [provider](file:///d:/PythonProject/Lun-Assistant/services/llm/provider.py)、[settings.yaml](file:///d:/PythonProject/Lun-Assistant/configs/settings.yaml) |
-| 前端改造   | 知识库 UI 补齐（上传/列表/删除/检索+未命中回退）、Planner 事件渲染、**文墨山水画主题** | [App.jsx](file:///d:/PythonProject/Lun-Assistant/frontend/src/App.jsx)、[api.js](file:///d:/PythonProject/Lun-Assistant/frontend/src/api.js)、[styles.css](file:///d:/PythonProject/Lun-Assistant/frontend/src/styles.css) |
-| 测试骨架/审计 | 治理层 call 流水线离线 pytest（9 用例）+ 发现 RBAC/限流拒绝不落审计盲区 → **已并入第六轮** | [OPTIMIZATION\_ROUND6](file:///d:/PythonProject/Lun-Assistant/docs/OPTIMIZATION_ROUND6.md) |
+| 学术工具生态 | 学术翻译 / 润色 / 研究方法推荐 / 参考文献格式化 / 摘要生成 / 术语解析                | [academic\_tools](../services/governance/academic_tools.py)                                                           |
+| 治理接入   | 6 工具全部经 ToolRegistry（RBAC/限流/熔断/审计），tools.yaml 补齐配置       | [tools.yaml](../configs/tools.yaml)                                                                                   |
+| 并发压测   | 知识库检索 QPS / 延迟 P50·P95 / 服务端内存采样，报告落盘                     | [load\_test](../scripts/load_test.py)                                                                                 |
+| 对话底座   | 新增 agnes-2.5-flash（OpenAI 兼容）；**对话与嵌入底座解耦**，嵌入仍走本地 bge-m3 | [provider](../services/llm/provider.py)、[settings.yaml](../configs/settings.yaml) |
+| 前端改造   | 知识库 UI 补齐（上传/列表/删除/检索+未命中回退）、Planner 事件渲染、**文墨山水画主题** | [App.jsx](../frontend/src/App.jsx)、[api.js](../frontend/src/api.js)、`styles.css`（v18 已删除） |
+| 测试骨架/审计 | 治理层 call 流水线离线 pytest（9 用例）+ 发现 RBAC/限流拒绝不落审计盲区 → **已并入第六轮** | [OPTIMIZATION\_ROUND6](OPTIMIZATION_ROUND6.md) |
 
 ## 二、学术工具生态（P2-1）
 

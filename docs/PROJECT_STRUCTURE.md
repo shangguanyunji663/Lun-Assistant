@@ -12,7 +12,9 @@
 >
 > ⚠️ **变更标注（2026-09-30 · v14/v15 同步轮）**：随前端 v14（顶栏修复/落地页 mock 化）与 v15（现代艺术四主题/落地页编辑部双结构）落地，§2/§3/§5 的主题数量、frontend 结构树与维护约定已按当前代码同步更新；§4 清理记录为 2026-09-02 历史快照，保持原样。
 >
-> ⚠️ **变更标注（2026-10-01 · 落地页一致性修复 + 彩蛋轮）**：随前端 ROUND18（落地页双结构一致性修复 + 三枚彩蛋机关）落地，§3 frontend 结构树已补 `public/easter/`、`src/landing.js` 彩蛋机关说明与 `index.html` 入口说明；工作台与后端零改动。轮次详情见 [`frontend-versions/OPTIMIZATION_ROUND18.md`](frontend-versions/OPTIMIZATION_ROUND18.md)。
+> ⚠️ **变更标注（2026-10-01 · 落地页一致性修复 + 彩蛋轮）**：随前端 ROUND18（落地页双结构一致性修复 + 三枚彩蛋机关）落地，§3 frontend 结构树已补 `public/easter/`、彩蛋机关说明与 `index.html` 入口说明；工作台与后端零改动。轮次详情见 [`frontend-versions/OPTIMIZATION_ROUND18.md`](frontend-versions/OPTIMIZATION_ROUND18.md)。（注：彩蛋机关脚本在 v18 皮肤重构中已由 `src/landing.js` 迁移至 `src/landing/shared.js`。）
+>
+> ⚠️ **变更标注（2026-10-03 · 八套皮肤轮）**：随 ROUND20 补记（两页新语言落地为第 7/8 套皮肤）与 v18 皮肤体系定稿，§2/§3/§5 的皮肤数量、frontend 结构树与维护约定已按当前代码同步：皮肤 6 → **8 套**（新增 `g-score.css` / `h-contact.css`），落地页 6 → **8 张**（新增 `how-it-works.html` / `dossier.html`），vite 入口 7 → **9 个**；`docs/design-concepts/` 与 `frontend/design-samples/` 的实际内容亦按当前目录订正。轮次详情见 [`frontend-versions/ROUND20-ADDENDUM.md`](frontend-versions/ROUND20-ADDENDUM.md)。
 
 ---
 
@@ -36,14 +38,14 @@
 | `services/` | 业务层（agent/llm/rag/memory/checkpoint/governance/classifier/observability/streaming） | ★★★ | 核心业务逻辑 |
 | `infrastructure/` | 基础设施（models 模型定义 / rbac 权限） | ★★★ | 数据模型与权限 |
 | `configs/` | 配置（settings.yaml / rbac.yaml / tools.yaml / ollama Modelfile） | ★★★ | 运行时配置 |
-| `scripts/` | 运维/冒烟脚本（check_env / smoke_* / ingest_corpus / load_test） | ★★ | 手动运维用 |
+| `scripts/` | 运维/冒烟脚本（check_env / preflight / smoke_* / ingest_corpus / load_test + dev_up / dev_down 启停） | ★★ | 手动运维用 |
 | `tests/` | pytest 测试（89 用例） | ★★★ | 新增 `test_audit_sanitize.py`（R13）；含治理/模型/改写/API 集成/评测口径等 |
 | `evals/` | 评测（harness / ab / regression + datasets + 报告） | ★★ | 含 `__init__.py` 为包 |
 | `data/` | 语料库（corpus 81 个 txt）+ 运行时上传目录（uploads） | ★★★ | uploads 已 gitignore |
 | `docs/` | 架构 / 部署 / 学习 / 优化记录 / 格式规范 | ★★★ | 后端线 ROUND1-13 + 通用文档留在根；前端版本线文档见 `frontend-versions/` |
-| `docs/frontend-versions/` | 前端版本演进文档（v8→v15 全部版本档案 + 索引 + 模板） | ★★★ | 前端文档单一真源（文档治理轮新建） |
-| `docs/design-concepts/` | 前端设计基线资产（preview.html / tuner.html / 4 张山水 PNG + JPG） | ★★ | 设计基线，非生产代码；版本线正文见 frontend-versions/ |
-| `frontend/design-samples/` | v15 四方向设计样图（A 墨格编辑部 / B 新构成主义 / C 夜航诗意 / D 拓印套色，零依赖静态 HTML） | ★★ | 设计档案，未进 vite 构建；样图→生产还原差异见 CHANGELOG-v15 |
+| `docs/frontend-versions/` | 前端版本演进文档（v8→v18 全部版本档案 + 索引 + 模板） | ★★★ | 前端文档单一真源（文档治理轮新建） |
+| `docs/design-concepts/` | 前端设计基线资产（4 张山水 PNG + 1 张 JPG） | ★★ | 设计基线，非生产代码；版本线正文见 frontend-versions/ |
+| `frontend/design-samples/` | 设计档案（v15 proposal-1…10 + sample-a…d + round20-pages 样张，零依赖静态 HTML） | ★★ | 设计档案，未进 vite 构建；样图→生产还原差异见 CHANGELOG-v15 / ROUND20 |
 | `frontend/` | React 前端（Vite） | ★★★ | 见 §3 |
 | `envs/` | 本地运行环境：`lunjiang`(venv) + `ollama_models`(模型) + `pkgs_cache`(conda 缓存) | ★★★ | **全部 gitignore**，勿提交 |
 | `.github/workflows/` | GitHub Pages CI | ★★★ | 自动构建部署 |
@@ -57,42 +59,47 @@
 
 ---
 
-## 3. frontend/ 结构（React + Vite · v18 六套设计语言）
+## 3. frontend/ 结构（React + Vite · v18 八套设计语言）
 
 ```
 frontend/
 ├── src/
-│   ├── main.jsx           # React 入口；样式加载顺序：base → panels → fx → skins/*
+│   ├── main.jsx           # React 入口；样式加载顺序：base → panels → fx → skins/*（八份）→ layout
 │   ├── App.jsx            # 工作台主壳（.wb-* 语义标记）：三栏 + 皮肤接入 + 会话拖拽重排 + 采纳盖章
 │   ├── fx.js              # 动效工具箱（粒子 / 换肤遮罩 / 成就条 / 3D 倾斜 / 磁吸 / 盖章）
 │   ├── fx.css             # 动效层样式（入场编排 / 指针特效 / 氛围 / 高光时刻 / 弱动效降级）
 │   ├── api.js             # REST + SSE 封装
 │   ├── constants.js       # 状态枚举文案映射
 │   ├── demo.js            # 仅 DEV 的演示数据（?demo=1，生产不进入该分支）
-│   ├── hooks/             # useChat / useProjects / useSessions / useSkin
+│   ├── hooks/             # useChat / useProjects / useSessions / useSkin / useStickyScroll
 │   ├── components/        # AuthPage / Timeline / TracePanel / KnowledgePanel
 │   │                      # ProjectArchive / ProjectDialog / SkinPicker / decor(Seal·Rule·AmbientLines·Markdown)
-│   ├── skins/             # ★ 皮肤（单一真源注册 + 6 套完整设计语言 + 契约文档）
-│   │   ├── registry.js    #   6 套皮肤注册（id / 名称 / 色点 / 落地页 / theme-color）
+│   ├── skins/             # ★ 皮肤（单一真源注册 + 八套完整设计语言 + 契约文档）
+│   │   ├── registry.js    #   八套皮肤注册（id / 名称 / 色点 / 落地页 / theme-color）
 │   │   ├── CONTRACT.md    #   皮肤契约：令牌表 + 类名表 + 书写规范 + 自检清单
-│   │   └── a-letterpress / b-console / c-poster / d-bamboo / e-riso / f-archive .css
+│   │   ├── patterns/      #   可选 CSS/SVG 纹样素材（lotus-scroll.svg / meander.svg）
+│   │   └── a-letterpress / b-console / c-poster / d-bamboo / e-riso / f-archive / g-score / h-contact .css
 │   ├── styles/            # 共享底座（与皮肤无关）
 │   │   ├── base.css       #   重置 / 焦点 / 滚动条 / 弹窗骨架 / markdown 结构 / 令牌契约说明
-│   │   └── panels.css     #   共享组件层：知识库 / 档案 / 可观测 / 登录页（只吃皮肤令牌）
-│   └── landing/           # 落地页共享行为与样式（六页共用）
+│   │   ├── panels.css     #   共享组件层：知识库 / 档案 / 可观测 / 登录页（只吃皮肤令牌）
+│   │   └── layout.css     #   工作台外壳与滚动契约（须置于 skins/*.css 之后）
+│   └── landing/           # 落地页共享行为与样式（八页共用）
 │       ├── shared.js      #   皮肤切换器 / 入场编排 / 数字滚动 / 打字机 / 彩蛋三门 / 落笔处
 │       └── shared.css     #   上述共享物的样式（取色走 --lb-* 落地页令牌）
 ├── index.html             # 落地页 · 皮肤 A「铅字印刷」（站根；含皮肤记忆跳转）
-├── landing-b…f.html       # 落地页 · 皮肤 B–F（六种版式无法靠 CSS 换肤，故每皮肤一页）
+├── landing-b…f.html       # 落地页 · 皮肤 B–F（每皮肤一页）
+├── how-it-works.html      # 落地页 · 皮肤 G「编队总谱」（第 7 套，含出声音符 / 演奏全曲 / fermata 停拍）
+├── dossier.html           # 落地页 · 皮肤 H「论文底片」（第 8 套，含逐条解密 / 阵风 / 打字机音效）
 ├── app.html               # 工作台入口（首帧前写入 <html data-skin>）
 ├── public/
 │   ├── fig/              # 落地页配图（3 张黑白摄影，本地资产，不依赖外部出图接口）
 │   └── easter/            # 彩蛋页：dispatch / hunt / brush（落地页三门触发的独立静态页，不进构建）
-├── design-samples/        # 设计档案（v15 proposal-1…10 + sample-a…d，零依赖静态 HTML，不参与构建）
+├── design-samples/        # 设计档案（v15 proposal-1…10 + sample-a…d + round20-pages，零依赖静态 HTML，不参与构建）
 ├── scripts/
 │   ├── shot-app.mjs             # 主应用回归（mock 登录 + 截图）
+│   ├── shot-audit.mjs / verify-*.mjs   # 皮肤与响应式回归
 │   └── verify-upload-msg.mjs    # 上传提示验证
-├── vite.config.js         # base=/Lun-Assistant/（GitHub Pages）+ 七入口（站根 / 工作台 / 5 张皮肤落地页）
+├── vite.config.js         # base=/Lun-Assistant/（GitHub Pages）+ 九入口（站根 / 工作台 / 8 张落地页）
 ├── package.json / package-lock.json
 └── node_modules/          # gitignore，勿提交
 ```
@@ -102,18 +109,18 @@ frontend/
 | 文件 | 价值 |
 |------|------|
 | `src/skins/CONTRACT.md` | ★★★ **皮肤契约单一真源**：令牌表 / 类名表 / 书写规范 / 自检清单 |
-| `src/skins/registry.js` | ★★★ 皮肤注册单一真源（6 套：id / 名称 / 色点 / 落地页 / theme-color） |
-| `src/skins/*.css` | ★★★ 六套设计语言的完整实现（铅字印刷 / 夜航仪表 / 学术海报 / 木牍竖排 / 孔版双色 / 索引档案） |
-| `src/styles/base.css` + `panels.css` | ★★★ 共享底座与次级面板（只吃皮肤令牌，六套皮肤自动适配） |
+| `src/skins/registry.js` | ★★★ 皮肤注册单一真源（八套：id / 名称 / 色点 / 落地页 / theme-color） |
+| `src/skins/*.css` | ★★★ 八套设计语言的完整实现（铅字印刷 / 夜航仪表 / 学术海报 / 木牍竖排 / 孔版双色 / 索引档案 / 编队总谱 / 论文底片） |
+| `src/styles/base.css` + `panels.css` + `layout.css` | ★★★ 共享底座与次级面板（只吃皮肤令牌，八套皮肤自动适配） |
 | `src/fx.css` + `src/fx.js` | ★★★ 动效层：入场编排 / 指针特效 / 氛围 / 高光时刻，JS 工具箱与样式分家 |
-| `src/landing/shared.{js,css}` | ★★★ 六张落地页的共享行为与样式（切换器 / 彩蛋三门 / 落笔处） |
-| `index.html` + `landing-{b…f}.html` | ★★★ 六张落地页（每套皮肤一张，vite 七入口构建） |
+| `src/landing/shared.{js,css}` | ★★★ 八张落地页的共享行为与样式（切换器 / 彩蛋三门 / 落笔处） |
+| `index.html` + `landing-{b…f}.html` + `how-it-works.html` + `dossier.html` | ★★★ 八张落地页（每套皮肤一张，vite 九入口构建） |
 | `src/demo.js` | ★★ 开发预览数据：`npm run dev` 后访问 `app.html?demo=1` 可无后端逐套核对皮肤 |
-| `design-samples/` | ★ v15 设计档案（历史参照，不参与构建） |
+| `design-samples/` | ★ v15/v18 设计档案（历史参照，不参与构建） |
 | `scripts/shot-app.mjs` | ★ 回归脚本 |
 
 > **改皮肤时要同步的位置**：① `src/skins/<皮肤>.css`（观感）② `src/skins/registry.js`（名称 / 色点 / 落地页）
-> ③ 对应的落地页 HTML（`index.html` 或 `landing-*.html`）④ 落地页里的 `--lb-*` 令牌。
+> ③ 对应的落地页 HTML（`index.html` / `landing-*.html` / `how-it-works.html` / `dossier.html`）④ 落地页里的 `--lb-*` 令牌。
 > 新增皮肤还需扩 `vite.config.js` 的入口、`src/main.jsx` 的样式引入，并在 `CONTRACT.md` 记录。
 
 ---
@@ -155,9 +162,9 @@ frontend/
    新增皮肤还要扩 `vite.config.js` 的入口与 `src/main.jsx` 的样式引入，并在 `src/skins/CONTRACT.md` 留下记录。
 4. **皮肤回归验证**：`npm run dev` 后跑 `node scripts/shot-app.mjs`；
    另一个更轻的办法是访问 `app.html?demo=1`（仅 DEV 生效的演示数据），
-   不起后端即可逐套核对六种设计语言。
+   不起后端即可逐套核对八套设计语言。
 5. `npm run lint` + `npm run build` 必须通过（CI 会执行，见 `.github/workflows/deploy.yml`）——
-   产物含七个入口（站根落地页 / 工作台 / 五张皮肤落地页），改 `vite.config.js` 的 `input` 时注意同步。
+   产物含九个入口（站根落地页 / 工作台 / 8 张皮肤落地页），改 `vite.config.js` 的 `input` 时注意同步。
 
 ---
 

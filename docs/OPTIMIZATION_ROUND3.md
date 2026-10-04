@@ -240,7 +240,7 @@ const addProject = async () => {
 )}
 ```
 
-CSS 样式在 [styles.css](../frontend/src/styles.css#L105-L115)，保持论匠原设计风格（圆角卡片、
+CSS 样式在 `styles.css`（v18 已删除），保持论匠原设计风格（圆角卡片、
 主色调按钮、半透明遮罩阴影），**零依赖**。
 
 #### 4.4 student 角色看可观测 Tab 无任何提示（P1）
@@ -263,7 +263,7 @@ CSS 样式在 [styles.css](../frontend/src/styles.css#L105-L115)，保持论匠�
 
 ### 5. 前端样式补齐：顶部 banner / 模态弹窗 / 主按钮（视觉）
 
-[styles.css](../frontend/src/styles.css#L103-L115) 新增三组样式：
+`styles.css`（v18 已删除）新增三组样式：
 
 ```css
 /* 顶部提示条：err 红 / warn 黄 */

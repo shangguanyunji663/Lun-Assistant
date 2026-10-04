@@ -15,14 +15,14 @@
 
 | 模块 | 内容 | 关键文件（代码证据） |
 | --- | --- | --- |
-| 治理层 | ToolRegistry 六步治理流水线（RBAC/限流/熔断/锁/容错/审计/观测） | [tool\_registry](file:///d:/PythonProject/Lun-Assistant/services/governance/tool_registry.py) |
-| 可测性 | 同步 handler 线程池适配（修复 P0-1）+ 离线 pytest 测试骨架（9 用例） | [tool\_registry:88](file:///d:/PythonProject/Lun-Assistant/services/governance/tool_registry.py)、[test\_tool\_registry\_call](file:///d:/PythonProject/Lun-Assistant/tests/test_tool_registry_call.py) |
-| 路径单一真源 | 收敛 `PROJECT_ROOT`（消除 12 处重复定义 + sys.path hack） | [paths](file:///d:/PythonProject/Lun-Assistant/infrastructure/paths.py) |
-| 数据模型 | embedding 维度解耦（修复 P0-2）+ Project.status 前后端对齐（修复 P0-3） | [memory](file:///d:/PythonProject/Lun-Assistant/infrastructure/models/memory.py)、[project](file:///d:/PythonProject/Lun-Assistant/infrastructure/models/project.py)、[constants](file:///d:/PythonProject/Lun-Assistant/frontend/src/constants.js) |
-| 注册幂等 | `register_all` 幂等 + tools.yaml 单次加载（lru_cache） | [tools\_impl:153](file:///d:/PythonProject/Lun-Assistant/services/governance/tools_impl.py) |
-| API 契约/分层 | 主要路由补 `response_model`；agent 路由收敛为校验+SSE，编排下沉 | [projects/router](file:///d:/PythonProject/Lun-Assistant/api/projects/router.py)、[agent/router:8](file:///d:/PythonProject/Lun-Assistant/api/agent/router.py) |
-| 清理 | tools.yaml 死配置移除；`retriever.py` 不规范 logger 清理 | [tools.yaml](file:///d:/PythonProject/Lun-Assistant/configs/tools.yaml)、[retriever:10](file:///d:/PythonProject/Lun-Assistant/services/rag/retriever.py) |
-| 依赖解环 | **打破 agent↔governance 双向依赖**：`artifacts.py`（结构化产物生成）从 agent 层下沉至 governance 层，治理层不再反向依赖编排层 | [artifacts](file:///d:/PythonProject/Lun-Assistant/services/governance/artifacts.py)、[tools\_impl:4](file:///d:/PythonProject/Lun-Assistant/services/governance/tools_impl.py) |
+| 治理层 | ToolRegistry 六步治理流水线（RBAC/限流/熔断/锁/容错/审计/观测） | [tool\_registry](../services/governance/tool_registry.py) |
+| 可测性 | 同步 handler 线程池适配（修复 P0-1）+ 离线 pytest 测试骨架（9 用例） | [tool\_registry:88](../services/governance/tool_registry.py)、[test\_tool\_registry\_call](../tests/test_tool_registry_call.py) |
+| 路径单一真源 | 收敛 `PROJECT_ROOT`（消除 12 处重复定义 + sys.path hack） | [paths](../infrastructure/paths.py) |
+| 数据模型 | embedding 维度解耦（修复 P0-2）+ Project.status 前后端对齐（修复 P0-3） | [memory](../infrastructure/models/memory.py)、[project](../infrastructure/models/project.py)、[constants](../frontend/src/constants.js) |
+| 注册幂等 | `register_all` 幂等 + tools.yaml 单次加载（lru_cache） | [tools\_impl:153](../services/governance/tools_impl.py) |
+| API 契约/分层 | 主要路由补 `response_model`；agent 路由收敛为校验+SSE，编排下沉 | [projects/router](../api/projects/router.py)、[agent/router:8](../api/agent/router.py) |
+| 清理 | tools.yaml 死配置移除；`retriever.py` 不规范 logger 清理 | [tools.yaml](../configs/tools.yaml)、[retriever:10](../services/rag/retriever.py) |
+| 依赖解环 | **打破 agent↔governance 双向依赖**：`artifacts.py`（结构化产物生成）从 agent 层下沉至 governance 层，治理层不再反向依赖编排层 | [artifacts](../services/governance/artifacts.py)、[tools\_impl:4](../services/governance/tools_impl.py) |
 
 ## 二、治理层与可测性（修复 P0-1）
 

@@ -73,7 +73,7 @@
 
 - [README.md](../README.md) 精简为入口页（120 行内）：快速开始 / 核心特性 / 目录简览 / API 速览 / FAQ；
 
-- 新增 [docs/LEARNING\_GUIDE.md](../docs/LEARNING_GUIDE.md)：15 课教学式学习文档（从零重建思维）；
+- 新增 `docs/LEARNING_GUIDE.md`（2026-09-30 与《学习路径》合并为根目录 [论匠学习指南.md](../论匠学习指南.md)）：15 课教学式学习文档（从零重建思维）；
 
 - 新增本文档；`docs/OPTIMIZATION_ROUND1.md` 路径随重构同步修正；
 

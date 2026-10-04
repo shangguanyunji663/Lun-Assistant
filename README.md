@@ -65,8 +65,8 @@
 | 能力 | 说明 | 关键实现 |
 | :--- | :--- | :--- |
 | **多智能体编排** | 1 个 Supervisor 调度 **6 类专项 Agent**（选题 / 文献 / 写作 / 格式 / 查重 / AI 检测）+ Plan-Execute-Replan 规划器，最大 3 跳防回环 | `services/agent/` |
-| **三级意图分类** | 规则 → 向量原型 → LLM 兜底；实测 **22/22 = 100%**（规则层 16 / 向量层 6，LLM 未触发），平均 **56 ms/条** | `services/classifier/intent.py` |
-| **项目级知识库** | 多格式上传 → 解析 → 分块 → 向量化入库；MD5 去重 / 扫描件拒绝 / 跨项目隔离；`project` 与 `hybrid` 双检索模式 | `services/rag/ingest/` |
+| **三级意图分类** | 规则 → 向量原型 → LLM 兜底；实测 **50/50 = 100%**（规则层 16 / 向量层 34，LLM 未触发），平均 **56 ms/条** | `services/classifier/intent.py` |
+| **项目级知识库** | 多格式上传 → 解析 → 分块 → 向量化入库；MD5 去重 / 扫描件拒绝 / 跨项目隔离；`hybrid`（默认，公共语料 + 库内融合）/ `project`（仅库内）/ `builtin`（仅公共语料）三检索模式 | `services/rag/ingest/` |
 | **三阶段 RAG** | 难度自适应 Query 改写（`off/auto/on` + 规则兜底 + 防漂移）→ 稠密 + 稀疏 + **相邻窗口**多路 RRF 融合 → 交叉精排降噪 | `services/rag/` |
 | **结构化产物** | 文献综述初稿 / 开题报告 / 答辩大纲：模板骨架 + RAG 证据注入，而非自由生成 | `services/governance/artifacts.py` |
 | **学术工具生态** | 翻译 / 润色 / 方法推荐 / 参考文献格式化（GB7714）/ 摘要生成 / 术语解析 | `services/governance/academic_tools.py` |
@@ -104,7 +104,7 @@
 ```mermaid
 flowchart TB
     subgraph FE["前端 Frontend · React 18 + Vite"]
-        UI["对话流 / 时间线 / 知识库面板 / Trace 回放 / 六套设计语言切换"]
+        UI["对话流 / 时间线 / 知识库面板 / Trace 回放 / 八套设计语言切换"]
     end
 
     subgraph API["接口层 api/"]
@@ -178,99 +178,58 @@ sequenceDiagram
 
 ## 四、快速开始 Quick Start
 
-### 4.0 环境依赖
+> **两句话版本**：第一次部署走完「第 0 步」（只做一次，约 30 分钟）；以后**每次开机只有两个动作**——① 起 3 个依赖 → ② 起后端和前端，然后打开 <http://localhost:5173>。
+> 一键党：`scripts\dev_up.ps1` 全包（起依赖 + 后端 + 前端，各开独立窗口），`scripts\dev_down.ps1` 一键全停。
 
-| 依赖 | 版本要求 | 用途 | 默认连接地址 |
+### 第 0 步 · 只做一次：装环境（约 30 分钟）
+
+**0.1 装 5 样软件**（装完跑一遍检查命令确认）：
+
+| 依赖 | 版本要求 | 检查命令 | 用途 |
 | :--- | :--- | :--- | :--- |
-| Python | 3.11（推荐 conda 环境 `envs/lunjiang`） | 后端运行时 | — |
-| Node.js | 18+（CI 用 22） | 前端构建（Vite 5） | — |
-| PostgreSQL | 15+（含 **pgvector** 扩展） | 业务表 + 向量记忆 + 知识库 | `127.0.0.1:5433` |
-| Redis | 6+ | 短期记忆 / 限流窗口 / 分布式锁 | `127.0.0.1:6379` |
-| Ollama | 最新版 | 本地对话与嵌入模型 | `127.0.0.1:11434` |
+| Python（推荐 conda） | 3.11 | `conda --version` | 后端运行时 |
+| Node.js | 18+（CI 用 22） | `node -v` | 前端构建（Vite 5） |
+| PostgreSQL（含 **pgvector** 扩展） | 15+（实测基线 16） | `psql --version` | 业务表 + 向量记忆 + 知识库，端口 **5433** |
+| Redis | 6+ | `redis-server --version` | 短期记忆 / 限流窗口 / 分布式锁，端口 6379 |
+| Ollama | 最新版 | `ollama --version` | 本地对话与嵌入模型，端口 11434 |
 
-> ⚠️ **必须先启动数据库**：应用启动时会在 lifespan 中立即连接 PostgreSQL 建表，否则后端直接失败（`ConnectionRefusedError: [WinError 1225]`）。
-
-<details>
-<summary><strong>方式 A：Docker 一键起依赖（推荐）</strong></summary>
-
-```bash
-docker compose up -d              # 启动 PostgreSQL(pgvector) + Redis
-docker compose down               # 停止
-docker compose down -v            # 停止并清空数据卷
-```
-
-起后端多实例（验证分布式锁与熔断状态共享）：
-
-```bash
-docker compose up -d --scale app=2   # 端口 8001 / 8002
-```
-
-</details>
-
-<details>
-<summary><strong>方式 B：本机原生启动（Windows / PowerShell 实测基线）</strong></summary>
-
-```powershell
-# 1) PostgreSQL（独立实例，端口 5433）
-D:\Develop\DB\PostgreSQL16\Library\bin\pg_ctl -D D:\Develop\DB\PostgreSQL16\data start
-
-# 2) Redis
-redis-server
-
-# 3) Ollama：新开窗口常驻
-ollama serve
-ollama pull bge-m3
-ollama pull qwen3:4b
-ollama create qwen3:4b-ctx4096 -f configs\ollama\Modelfile.qwen3-ctx4096
-```
-
-> `qwen3:4b-ctx4096` 是用 Modelfile 固化 `num_ctx=4096` 的镜像副本（blob 复用，几乎不占额外磁盘），用于防止 16 GB 内存机器上 KV Cache OOM。
-
-连通性自检：`netstat -ano | findstr ":5433 :6379 :11434"` —— 看到 `LISTENING` 即正常。
-
-</details>
-
-### 4.1 安装
+**0.2 安装项目依赖**：
 
 ```powershell
 conda create -p envs\lunjiang python=3.11 -y
 conda run -p envs\lunjiang pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-copy .env.example .env        # 按需修改 PG / Redis 连接与 SECRET_KEY
+copy .env.example .env
+cd frontend; npm install; cd ..
 ```
 
-前端依赖：
+**0.3 配置 `.env`**（模板默认值已与 `docker-compose.yml` 对齐，按你的路径二选一微调）：
 
-```bash
-cd frontend && npm install
-```
+| 你的路径 | 需要改什么 |
+| :--- | :--- |
+| 原生 PostgreSQL（本文档主路径） | `PG_PASSWORD` 改成你自己的 postgres 密码；`PG_PORT` 保持 **5433** 不动 |
+| Docker（下方分支 A） | 默认值即用，不用改 |
+| 切换云端 LLM 底座 | 填对应 `*_API_KEY`（默认 `ollama` 本地方案无需任何密钥） |
 
-### 4.2 初始化数据
+> ⚠️ 全仓库 PostgreSQL 口径是 **5433**（README / 学习指南 / docker-compose 一致）。`.env` 里写成 5432 是本项目最高频的启动报错来源。
+
+**0.4 准备 Ollama 模型**（三个都要；缺任何一个，下一步自检必挂）：
 
 ```powershell
-envs\lunjiang\python.exe scripts/check_env.py        # 连通性自检（Ollama/Redis/PG/pgvector）
-envs\lunjiang\python.exe scripts/ingest_corpus.py    # data/corpus/*.txt 入库（--force 重建）
+ollama pull bge-m3                # 嵌入模型，1024 维
+ollama pull qwen3:4b              # 对话底座基座模型
+ollama create qwen3:4b-ctx4096 -f configs\ollama\Modelfile.qwen3-ctx4096
 ```
 
-### 4.3 启动
+> `qwen3:4b-ctx4096` 是用 Modelfile 固化 `num_ctx=4096` 的镜像副本（blob 复用，几乎不占额外磁盘），用于防止 16 GB 内存机器上 KV Cache OOM。**没建这个镜像**：自检第一项与后端对话都会报 404 model not found。
+
+**0.5 自检 + 语料入库**（这两条需要 PG / Redis / Ollama 已经在跑——还没有的话，先去做第 1 步再回来）：
 
 ```powershell
-# 终端 1 · 后端
-envs\lunjiang\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
-
-# 终端 2 · 前端（PowerShell 用 ; 分隔，不要用 &&）
-cd frontend; npm run dev
+envs\lunjiang\python.exe scripts/check_env.py        # ① 连通性自检 → 必须 5/5 全绿
+envs\lunjiang\python.exe scripts/ingest_corpus.py    # ② 语料入库（data/corpus/*.txt，--force 重建）
 ```
 
-打开 <http://localhost:5173> → 注册 → 登录 → 新建项目 → 发起对话。Swagger 文档：<http://127.0.0.1:8000/docs>。
-
-### 4.4 验证安装
-
-```powershell
-envs\lunjiang\python.exe -m pytest tests/ -q        # 89 个离线用例，无需外部依赖
-envs\lunjiang\python.exe scripts/smoke_governance.py # 治理栈自检（需 PG/Redis/Ollama）
-```
-
-预期输出（`check_env.py` 全绿基线）：
+`check_env.py` 全绿基线（**不绿不要往下走**，按失败项回到 0.1~0.4 排查）：
 
 ```text
 == 论匠环境检查（LLM provider: ollama）==
@@ -282,10 +241,79 @@ envs\lunjiang\python.exe scripts/smoke_governance.py # 治理栈自检（需 PG/
 结果: 5/5 通过
 ```
 
-<details>
-<summary><strong>展开：全部冒烟与评测命令</strong></summary>
+### 第 1 步 · 每次开机：起 3 个依赖（顺序 PG → Redis → Ollama）
 
 ```powershell
+# 1) PostgreSQL（独立实例，端口 5433；路径按你的安装位置替换）
+<你的PG安装目录>\Library\bin\pg_ctl -D <你的PG数据目录> start
+
+# 2) Redis
+redis-server                       # 或 net start Redis（已注册为服务时）
+
+# 3) Ollama（新开窗口常驻）
+ollama serve
+```
+
+> 示例（作者机器实测基线）：`D:\Develop\DB\PostgreSQL16\Library\bin\pg_ctl -D D:\Develop\DB\PostgreSQL16\data start`
+
+连通性自检：`netstat -ano | findstr ":5433 :6379 :11434"` —— 三个端口都看到 `LISTENING` 再继续。
+
+**一键替代**：`powershell -ExecutionPolicy Bypass -File scripts\dev_up.ps1 -infra-only`（幂等：已监听的端口自动跳过）。
+
+> ⚠️ 为什么必须先起依赖：后端启动时 lifespan 会**立即**连接 PostgreSQL 建表，依赖没起就直接 `ConnectionRefusedError: [WinError 1225]`。
+
+**这一步挂了？** → [PG/Redis 连接被拒](#faq) · [pg_ctl 提示 another server might be running](#faq) · [端口被占用](#faq)
+
+### 第 2 步 · 每次开机：起后端 + 前端（两个终端窗口）
+
+```powershell
+# 终端 1 · 后端
+envs\lunjiang\python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000
+
+# 终端 2 · 前端（PowerShell 用 ; 分隔，不要用 &&）
+cd frontend; npm run dev
+```
+
+**一键替代**：`powershell -ExecutionPolicy Bypass -File scripts\dev_up.ps1`（起依赖 + 后端 + 前端；收工用 `scripts\dev_down.ps1` 全停，`-keep-infra` 只停前后端）。
+
+### 第 3 步 · 验证
+
+打开 <http://localhost:5173> → 注册 → 登录 → 新建项目 → 发起对话。Swagger 文档：<http://127.0.0.1:8000/docs>。
+
+想要秒级快检（只读、不建表、不调模型，逐项给出修复指引）：
+
+```powershell
+envs\lunjiang\python.exe scripts\preflight.py
+```
+
+| 症状 | 去哪查 |
+| :--- | :--- |
+| 检索一直为空（不报错） | [FAQ：检索永远返回空](#faq) —— 多半没跑 0.5 的语料入库，或预热未完成 |
+| 对话报 404 model not found | 第 0.4 步的 `ctx4096` 镜像没建，[FAQ](#faq) |
+| 第一次检索特别慢 | 正常：交叉编码器 CPU 首载 10~60s，看日志「预热完成」 |
+
+<details>
+<summary><strong>分支 A：Docker 一键起依赖（不想装原生 PostgreSQL / Redis 时）</strong></summary>
+
+```bash
+docker compose up -d              # 启动 PostgreSQL(pgvector) + Redis（宿主端口 5433）
+docker compose down               # 停止
+docker compose down -v            # 停止并清空数据卷
+```
+
+`.env` 保持模板默认值（`PG_PORT=5433` / `PG_PASSWORD=local-trust`）即可，无需修改。起后端多实例（验证分布式锁与熔断状态共享）：
+
+```bash
+docker compose up -d --scale app=2   # 端口 8001 / 8002
+```
+
+</details>
+
+<details>
+<summary><strong>深度自检（可选）：离线单测与全部冒烟脚本</strong></summary>
+
+```powershell
+envs\lunjiang\python.exe -m pytest tests/ -q        # 89 个离线用例，无需外部依赖
 envs\lunjiang\python.exe scripts/smoke_memory.py       # 四层记忆 + 压缩（需 PG）
 envs\lunjiang\python.exe scripts/smoke_rag.py          # 三阶段检索（需 PG+Ollama，语料已入库）
 envs\lunjiang\python.exe scripts/smoke_governance.py   # 治理栈（需 PG/Redis/Ollama）
@@ -360,7 +388,7 @@ envs\lunjiang\python.exe -m ruff check .               # 静态检查
 POST /api/projects/{id}/knowledge            # 上传（PDF/DOCX/TXT/MD，支持多文件）
 GET  /api/projects/{id}/knowledge            # 文档列表
 DELETE /api/projects/{id}/knowledge/{doc_id} # 删除
-POST /api/projects/{id}/knowledge/search     # 检索：mode=project（仅库内）| hybrid（公共语料 + 库内融合）
+POST /api/projects/{id}/knowledge/search     # 检索：mode=hybrid（默认，公共语料+库内融合）| project（仅库内）| builtin（仅公共语料）
 ```
 
 上传后自动完成解析 → 分块 → 向量化入库。详细调用示例见 [学习指南第 20 课](论匠学习指南.md)。
@@ -404,9 +432,9 @@ Lun-Assistant/
 ├── configs/                 settings.yaml · rbac.yaml · tools.yaml · ollama/Modelfile
 ├── data/                    corpus/（公共语料）+ uploads/（知识库原始文件，已 gitignore）
 ├── evals/                   评测 Harness + A/B + 七大场景回归 + 报告图表
-├── scripts/                 初始化 + 冒烟 + 压测脚本
+├── scripts/                 初始化 + 冒烟 + 压测 + 一键启停（dev_up / dev_down / preflight）
 ├── tests/                   离线单元测试（89 用例，无外部依赖）
-├── frontend/                React 18 + Vite（落地页 ×6 + 工作台 / SSE 对话 / 时间线 / 知识库 / Trace / 六套设计语言）
+├── frontend/                React 18 + Vite（落地页 ×8 + 工作台 / SSE 对话 / 时间线 / 知识库 / Trace / 八套设计语言）
 ├── docs/                    文档（学习指南 / 优化记录 / 前端版本线 frontend-versions/）
 ├── alembic/                 SQLAlchemy 迁移（异步 env.py 聚合全部模型）
 ├── docker-compose.yml       PostgreSQL(pgvector) + Redis + app 编排（--scale app=2 起多实例）
@@ -441,7 +469,7 @@ Lun-Assistant/
 | :--- | :--- | :--- |
 | 离线单测 | **89 passed** | `pytest tests/ -q`，无外部依赖 |
 | 冒烟脚本 | **11 / 11 通过** | check_env 5/5；记忆 / RAG / 治理 / Trace / 图 / API 全绿 |
-| 意图分类准确率 | **22 / 22 = 100%** | 规则层 16 / 向量层 6 / LLM 兜底 0；平均 56 ms/条 |
+| 意图分类准确率 | **50 / 50 = 100%** | 规则层 16 / 向量层 34 / LLM 兜底 0；平均 56 ms/条 |
 | RAG Recall@5（简单集） | **100%** | 含主题关键词的查询 |
 | RAG Recall@5（口语长尾集） | **80%** | 刻意避开语料关键词；引入 `_TOPIC_POOL` 主题词表后由 62.5% 提升 |
 | RAG Recall@5（学术刁钻集） | **95%** | 学术表述 + 术语改写 |
@@ -458,7 +486,7 @@ Lun-Assistant/
 
 ## 十、文档导航 Documentation
 
-> ⚠️ **变更标注（2026-09-02 · 文档治理轮）**：前端版本演进文档（v8 → v15）已统一归入 [`docs/frontend-versions/`](docs/frontend-versions/README.md)。统一格式规范见 [`docs/FORMAT_STANDARD.md`](docs/FORMAT_STANDARD.md)。
+> ⚠️ **变更标注（2026-09-02 · 文档治理轮）**：前端版本演进文档（v8 → v18）已统一归入 [`docs/frontend-versions/`](docs/frontend-versions/README.md)。统一格式规范见 [`docs/FORMAT_STANDARD.md`](docs/FORMAT_STANDARD.md)。
 
 **入门必读**
 
@@ -478,7 +506,7 @@ Lun-Assistant/
 | [🛠 优化记录](docs/OPTIMIZATION_ROUND1.md) | Round 1–6：性能 / OOM / 前端排障 / RAG / 学术工具 / 工程化治理 |
 | [🛠 优化记录十二 / 十三](docs/OPTIMIZATION_ROUND12.md) | CI 静态检查 / 依赖锁定 / 前端 Hooks / 可移植性；审计合规 / 改写自适应 / 记忆排序 / 多实例部署 |
 
-**前端版本线**（[总索引](docs/frontend-versions/README.md) · v8 → v15）
+**前端版本线**（[总索引](docs/frontend-versions/README.md) · v8 → v18）
 
 | 版本 | 文档 | 内容 |
 | :--- | :--- | :--- |
@@ -494,6 +522,8 @@ Lun-Assistant/
 | R18 | [Round 18](docs/frontend-versions/OPTIMIZATION_ROUND18.md) | 落地页一致性修复（编辑部版式补齐 · 导航 / 主题入口 / 锚点 / 顶栏对齐）· 三枚彩蛋机关（编队调度局 / 查重捉虫 / 临帖墨试） |
 | v18 | [变更](docs/frontend-versions/CHANGELOG-v18.md) | **六套设计语言（推翻重来）**：铅字印刷 / 夜航仪表 / 学术海报 / 木牍竖排 / 孔版双色 / 索引档案。旧的「11 主题 + 柔化开关」体系整体删除，改为 `<html data-skin>` + 每皮肤一份完整样式；落地页每皮肤一个独立 HTML；业务逻辑与后端零改动 |
 | R19 | [Round 19](docs/frontend-versions/OPTIMIZATION_ROUND19.md) | **六套皮肤可读性与信息层次**：89 处小字提到 11px（中文 ClearType 可读性下限）· 正文列落到每行 40±5 字 · 命中区补到 30–32px · 六套各以**自身视觉语言**重做顶栏分组 / 待确认条 / 时间线标记 / 空态（C 巨幅 64px 海报标题、D 整块竖排竹简、F 档案字段名分组、E 错位套印等）；工作台 React / 后端 / 落地页零改动 |
+| R20 | [Round 20](docs/frontend-versions/OPTIMIZATION_ROUND20.md) | **横切设计审计修复 + 时间线跳转**：字体自托管（@fontsource 九字重，Google Fonts 请求归零，内网不掉 900 字重）· 全量按钮按下反馈（独立 `scale` 属性，不与 fx 层 transform 打架）· favicon + og meta · boot 屏品牌化 + 面板骨架屏 · tabular-nums / 标题孤字 / 气泡 66ch 行宽 · z-index 七档规约入契约 · 时间线事件点击跳转到对应消息（intent 分轮推断，渲染期零 schema 变更，旧会话全量可跳）；八套皮肤仅 e-riso 一行 dvh 兜底 |
+| R20·补 | [Round 20 补记](docs/frontend-versions/ROUND20-ADDENDUM.md) | **两页新语言落地为第 7/8 套皮肤（八套体系）**：编队总谱（钴蓝谱纸 + 出声音符/演奏全曲/fermata 停拍）与论文底片（暗房单色 + 逐条解密/阵风/打字机音效）从样张正式落地为独立页面与工作台皮肤 `g-score.css` / `h-contact.css`；废稿金碧/青花删除；六张落地页 + 工作台换肤器全站扩容为八套 |
 
 ---
 
@@ -548,21 +578,35 @@ conda run -p envs/lunjiang pip install -r requirements.txt
 <details>
 <summary><strong>后端启动报 <code>ConnectionRefusedError: [WinError 1225]</code></strong></summary>
 
-应用启动时会立即连接 PostgreSQL 建表，该错误说明 **PostgreSQL（或 Redis）未启动**。按 [快速开始 4.0](#quickstart) 的连通性自检确认监听，依次启动依赖后重启。
+应用启动时会立即连接 PostgreSQL 建表，该错误说明 **PostgreSQL（或 Redis）未启动**。按 [快速开始第 1 步](#quickstart) 的连通性自检确认监听，依次启动依赖后重启；日常可直接 `scripts\dev_up.ps1 -infra-only`。另一高频同症状原因：`.env` 里 `PG_PORT` 写成了 5432（全仓库口径是 5433）。
 
 </details>
 
 <details>
 <summary><strong><code>pg_ctl start</code> 提示 another server might be running 并卡住</strong></summary>
 
-多为异常退出残留 `postmaster.pid`。确认 5433 无监听、无 postgres 进程后，删除 `D:\Develop\DB\PostgreSQL16\data\postmaster.pid` 再启动。
+多为异常退出残留 `postmaster.pid`。确认 5433 无监听、无 postgres 进程后，删除你的 PG 数据目录下（示例：`D:\Develop\DB\PostgreSQL16\data\`）`postmaster.pid` 再启动。
+
+</details>
+
+<details>
+<summary><strong>对话或自检报 404 model not found</strong></summary>
+
+缺 `qwen3:4b-ctx4096` 镜像。跑[第 0 步 0.4](#quickstart) 的三条命令（pull bge-m3 / pull qwen3:4b / create ctx4096）后重启后端。学习指南第 4 课曾漏掉这步，已补全。
+
+</details>
+
+<details>
+<summary><strong>服务起来了但检索永远返回空</strong></summary>
+
+不是报错，是「安静地查不到」。两个最常见原因：① 没跑 `scripts/ingest_corpus.py` 语料入库（[第 0 步 0.5](#quickstart)）；② BM25 / 交叉编码器还在后台预热——看日志里有没有「预热完成：BM25 索引 N 篇文档」。
 
 </details>
 
 <details>
 <summary><strong>Ollama 返回 500（KV Cache OOM）</strong></summary>
 
-确认使用的是 `qwen3:4b-ctx4096` 镜像（Modelfile 固化 `num_ctx=4096`）而非裸 `qwen3:4b`。创建命令见 [4.0 方式 B](#quickstart)。
+确认使用的是 `qwen3:4b-ctx4096` 镜像（Modelfile 固化 `num_ctx=4096`）而非裸 `qwen3:4b`。创建命令见[第 0 步 0.4](#quickstart)。
 
 </details>
 

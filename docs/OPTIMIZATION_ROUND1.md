@@ -48,7 +48,7 @@
 - [frontend/src/App.jsx](../frontend/src/App.jsx)：引入 `react-markdown` + `remark-gfm`，
   助手气泡走 Markdown 渲染（用户消息保持纯文本），外链默认新窗口打开；
 
-- [frontend/src/styles.css](../frontend/src/styles.css)：补齐标题/列表/表格/代码块/
+- `frontend/src/styles.css`（v18 已删除）：补齐标题/列表/表格/代码块/
   引用块/分割线样式，代码块采用深色主题。
 
 **验证**：`npm run build` 通过（310KB → gzip 97KB）。

@@ -13,7 +13,7 @@
 
 ## 一、本目录作用
 
-1. **前端版本线单一真源**：v8 → v15 每个版本的提案 / 设计规范 / 变更档案 / 工程落档全部收敛于此，形成完整版本时间线。
+1. **前端版本线单一真源**：v8 → v18 每个版本的提案 / 设计规范 / 变更档案 / 工程落档全部收敛于此，形成完整版本时间线。
 2. **后续版本扩展锚点**：新增版本（如 v14）时，复制 [`TEMPLATE.md`](./TEMPLATE.md) 起步，按 `CHANGELOG-v{N}.md` 命名，并在「三、版本索引」追加一行。
 
 ***
@@ -65,6 +65,15 @@ v18  六套设计语言（推翻重来）        → CHANGELOG-v18.md（版本�
 R19  六套皮肤可读性与信息层次（ROUND19） → OPTIMIZATION_ROUND19.md（轮次记录）
      89 处小字提到 11px / 正文列落到每行 40±5 字 / 命中区补到 30–32px
      六套各以自己的视觉语言重做顶栏分组、待确认条、时间线标记与空态
+   │
+   ▼
+R20  横切设计审计修复 + 时间线跳转（ROUND20） → OPTIMIZATION_ROUND20.md（轮次记录）
+     字体自托管（Google Fonts 请求归零）/ 全量按下态 / favicon+og / 骨架屏
+     tabular-nums / z-index 规约入契约 / 时间线事件点击跳转到对应消息
+   │
+   ▼
+R20·补 两页新语言落地为第 7/8 套皮肤（八套体系） → ROUND20-ADDENDUM.md（补记）
+     编队总谱（g-score.css / how-it-works.html）+ 论文底片（h-contact.css / dossier.html）
 ```
 
 > v16（6 主题 + 柔化开关）与 v17（动效层）落在 v15 与 v18 之间，作为**过程版本**
@@ -95,6 +104,8 @@ R19  六套皮肤可读性与信息层次（ROUND19） → OPTIMIZATION_ROUND19.
 | v15      | [`OPTIMIZATION_ROUND18.md`](./OPTIMIZATION_ROUND18.md)               | 轮次记录 | ROUND18 · 落地页一致性修复 + 三枚彩蛋机关（调度局 / 捉虫 / 临帖） |
 | v18      | [`CHANGELOG-v18.md`](./CHANGELOG-v18.md)                             | 版本变更 | v18 六套设计语言推翻重来（皮肤契约 / 工作台换肤 / 落地页每皮肤一页） |
 | v18      | [`OPTIMIZATION_ROUND19.md`](./OPTIMIZATION_ROUND19.md)               | 轮次记录 | ROUND19 · 六套皮肤可读性与信息层次（89 处小字提到 11px · 六套各以自身视觉语言重做空态与状态标记） |
+| v18      | [`OPTIMIZATION_ROUND20.md`](./OPTIMIZATION_ROUND20.md)               | 轮次记录 | ROUND20 · 横切设计审计修复 + 时间线跳转（字体自托管 · 按下态 · favicon/og · 骨架屏 · 时间线事件点击跳转） |
+| v18      | [`ROUND20-ADDENDUM.md`](./ROUND20-ADDENDUM.md)                     | 补记 | 两页新语言落地为第 7/8 套皮肤（编队总谱 / 论文底片 · 八套体系 · 废稿金碧/青花删除） |
 
 ***
 
@@ -102,10 +113,10 @@ R19  六套皮肤可读性与信息层次（ROUND19） → OPTIMIZATION_ROUND19.
 
 | 类型              | 位置                                                           |
 | --------------- | ------------------------------------------------------------ |
-| 设计稿资源（HTML/PNG） | `design-concepts/`（preview\.html / 参考图）                       |
-| 设计样图（v15 历史档案） | `frontend/design-samples/`（proposal-1…10 · sample-{a-editorial,b-konstrukt,c-nightflight,d-riso}.html，不参与构建） |
+| 设计稿资源（HTML/PNG） | `docs/design-concepts/`（山水参考图 \*.png / \*.jpg；顶层 `design-concepts/` 已删除）      |
+| 设计样图（v15/v18 历史档案） | `frontend/design-samples/`（proposal-1…10 · sample-{a-editorial,b-konstrukt,c-nightflight,d-riso}.html · round20-pages/，不参与构建） |
 | **皮肤契约（v18 起单一真源）** | `frontend/src/skins/CONTRACT.md`（令牌表 + 类名表 + 书写规范 + 自检清单） |
-| **生产代码（v18）** | 工作台样式 `frontend/src/skins/{a-letterpress…f-archive}.css` + 共享底座 `src/styles/{base,panels}.css` + 动效层 `src/fx.css`；皮肤注册 `src/skins/registry.js`；落地页 `frontend/index.html` + `landing-{b…f}.html` + 共享行为 `src/landing/shared.{js,css}` |
+| **生产代码（v18 · 八套）** | 工作台样式 `frontend/src/skins/{a-letterpress…h-contact}.css` + 共享底座 `src/styles/{base,panels,layout}.css` + 动效层 `src/fx.css`；皮肤注册 `src/skins/registry.js`；落地页 `frontend/index.html` + `landing-{b…f}.html` + `how-it-works.html` + `dossier.html` + 共享行为 `src/landing/shared.{js,css}` |
 | 彩蛋页（落地页入口） | `frontend/public/easter/`（dispatch · hunt · brush，落地页三门触发的独立静态页，见 ROUND18） |
 | 后端 / 通用轮次       | `docs/OPTIMIZATION_ROUND{1-6}.md` 等                          |
 
@@ -120,11 +131,11 @@ R19  六套皮肤可读性与信息层次（ROUND19） → OPTIMIZATION_ROUND19.
 3. 在「三、版本索引」追加一行（版本 / 文件 / 文档类型 / 角色）。
 4. 若改动既涉及设计稿又涉及生产代码，保留**双档案模式**（design 侧 + frontend 侧各一份）。
 5. 按 [`../FORMAT_STANDARD.md`](../FORMAT_STANDARD.md) §二 填写 front-matter，正文用「## 一、总览（结论先行）」骨架。
-6. 同步更新根 [`../README.md`](../README.md) 文档导航表。
+6. 同步更新根 [`../../README.md`](../../README.md) 文档导航表。
 
 ***
 
-## 六、本目录文件清单（18 份正文 + 本索引 + 模板 + v11/v13/v18 截图目录）
+## 六、本目录文件清单（21 份正文 + 本索引 + 模板 + v11/v13/v18 截图目录）
 
 ```
 docs/frontend-versions/
@@ -149,6 +160,8 @@ docs/frontend-versions/
 ├── OPTIMIZATION_ROUND18.md      ← ROUND18 落地页一致性修复 + 三枚彩蛋
 ├── CHANGELOG-v18.md             ← v18 六套设计语言（推翻重来）
 ├── OPTIMIZATION_ROUND19.md      ← ROUND19 六套皮肤可读性与信息层次
+├── OPTIMIZATION_ROUND20.md      ← ROUND20 横切设计审计修复 + 时间线跳转
+├── ROUND20-ADDENDUM.md          ← ROUND20 补记 · 八套体系落地
 ├── v11-screenshots/             ← v11 实拍截图
 ├── v13-screenshots/             ← v13 七主题实拍截图（theme-a~g.png）
 └── v18-screenshots/             ← ROUND19 六套实机截图（skin-a~f · 三套空态 · A 的优化前基线）
