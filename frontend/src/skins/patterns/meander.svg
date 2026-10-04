@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="132" height="14" viewBox="0 0 132 14">
+  <title>雷纹 · 断续留白版</title>
+  <desc>
+    传统雷纹（回字纹）的自主重构变体，非复刻任何具体文物图样。
+    两处改动服从「金碧山水」的用金法则与传统装饰的留白原则：
+    ① **断续不等长**——三段方折长短不一，非等距重复，避免机械平铺感；
+    ② **大留白**——段间留 32–40px 空白，模拟「笔断意连」，
+       而不是把纹样填满整个边缘。
+    颜色为单色描边，由 CSS 着色（currentColor 语境下用固定金值便于直接使用）。
+  </desc>
+  <g fill="none" stroke="#E3B23C" stroke-width="1.15" stroke-linecap="square">
+    <path d="M2 12V3h11V9h7V3"/>
+    <path d="M62 12V5h9V11h8"/>
+    <path d="M104 12V3h8v7h6"/>
+  </g>
+</svg>

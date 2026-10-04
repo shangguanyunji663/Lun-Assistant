@@ -4,7 +4,7 @@
 
    一套「皮肤」= 一种完整的设计语言（配色 / 字体 / 排版 / 材质 / 动效性格），
      · 工作台：<html data-skin="..."> 切换，样式见 src/skins/*.css
-     · 落地页：每套皮肤一个独立 HTML（六种结构差异过大，无法靠 CSS 换肤），
+     · 落地页：每套皮肤一个独立 HTML（八种结构差异过大，无法靠 CSS 换肤），
        见 landing 字段；两侧共用同一份 localStorage.lj_skin 保持同步。
    ============================================================ */
 
@@ -62,6 +62,24 @@ export const SKINS = [
     desc: '档案纸灰绿 + 打字机字 + 图章红，索引卡与连续打印纸',
     landing: './landing-f.html',
     themeColor: '#E1E2DD',
+  },
+  {
+    id: 'g',
+    label: '编队总谱',
+    en: 'Score Ensemble',
+    chip: '#2E4FA3',
+    desc: '冷白谱纸 + 墨黑 + 钴蓝，五线谱底纹与 fermata 中断条',
+    landing: './how-it-works.html',
+    themeColor: '#F3F3EE',
+  },
+  {
+    id: 'h',
+    label: '论文底片',
+    en: 'Contact Sheet',
+    chip: '#E8E7E2',
+    desc: '暗房炭黑 + 复印纸白 + 墨章单色，撕边纸屑与接触印样',
+    landing: './dossier.html',
+    themeColor: '#141416',
   },
 ]
 

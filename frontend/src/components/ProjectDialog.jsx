@@ -72,7 +72,7 @@ export default function ProjectDialog({ mode, initial, onClose, onCreate, onPatc
 
         <div className="modal-actions">
           {editing && <button className="btn btn-danger btn-sm" onClick={doDelete} disabled={busy}>删除项目</button>}
-          <span style={{ flex: 1 }} />
+          <span className="wb-fill" />
           <button className="btn btn-ghost" onClick={onClose} disabled={busy}>取消</button>
           <button className="btn btn-ink" onClick={submit} disabled={busy || !title.trim()}>
             {editing ? '保存' : '创建'}

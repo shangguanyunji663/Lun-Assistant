@@ -24,7 +24,7 @@ const LABEL = {
   error: (p) => ({ kind: 'error', text: '错误', meta: p?.message || '—' }),
 }
 
-export default function Timeline({ events }) {
+export default function Timeline({ events, turnOf, onJump }) {
   if (!events.length) return null
   return (
     <ol className="wb-tl">
@@ -32,8 +32,21 @@ export default function Timeline({ events }) {
         const make = LABEL[ev.type]
         if (!make) return null
         const d = make(ev.payload, ev.node)
+        /* turnOf[i] ≥ 0 表示推断出了对应的 assistant 消息，可点击跳转；
+           -1（无消息可锚定）保持纯展示，不给手势也不给焦点。 */
+        const target = turnOf?.[i] ?? -1
+        const clickable = target >= 0 && typeof onJump === 'function'
         return (
-          <li key={i} className={`wb-tl-item is-${d.kind}`}>
+          <li key={i}
+              className={`wb-tl-item is-${d.kind}${clickable ? ' is-clickable' : ''}`}
+              role={clickable ? 'button' : undefined}
+              tabIndex={clickable ? 0 : undefined}
+              aria-label={clickable ? `跳转到对应的回答消息` : undefined}
+              title={clickable ? '点击跳转到这条事件对应的回答' : undefined}
+              onClick={clickable ? () => onJump(i) : undefined}
+              onKeyDown={clickable ? (e => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onJump(i) }
+              }) : undefined}>
             <span className="wb-tl-no" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
             <span className="wb-tl-body">
               <span className="wb-tl-title">{d.text}</span>

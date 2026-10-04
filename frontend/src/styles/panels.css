@@ -6,15 +6,22 @@
       这样做的前提是所有面板只使用下列语义类名（组件侧已按此契约改造）。
    ============================================================================ */
 
-/* ============================================================ 启动态 */
+/* ============================================================ 启动态
+   品牌化首屏：印章 + 一行提示（JSX 侧结构见 App.jsx），
+   dvh 与 100vh 成对写，移动端地址栏收起时不跳。 */
 .wb-boot {
   display: grid;
   place-items: center;
+  align-content: center;
+  gap: 16px;
   min-height: 100vh;
+  min-height: 100dvh;
   color: var(--text-3, #888);
   font-size: var(--fs-sm, 14px);
   letter-spacing: .1em;
 }
+.wb-boot .seal { opacity: .9; }
+.wb-boot p { margin: 0; }
 
 /* ============================================================ 1. 项目知识库 */
 .kb-panel { display: flex; flex-direction: column; gap: var(--s-4, 16px); }
@@ -323,6 +330,7 @@
   align-items: center;
   gap: var(--s-6, 28px);
   min-height: 100vh;
+  min-height: 100dvh;
   padding: var(--s-6, 28px) 8vw;
 }
 .auth-skin { position: absolute; top: var(--s-5, 22px); right: 8vw; }

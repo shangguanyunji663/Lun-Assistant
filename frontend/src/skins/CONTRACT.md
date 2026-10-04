@@ -1,14 +1,20 @@
 # 皮肤契约（skins/CONTRACT.md）
 
-> v18 前端 · 六套设计语言的实现规约
+> v18 前端 · 八套设计语言的实现规约
 > 本文件是**单一时真源**：新增皮肤、修改皮肤、审查皮肤，一律以本文件为准。
 
 ## 一、两套作用域
 
 | 作用域 | 载体 | 实现方式 |
 | --- | --- | --- |
-| 工作台 | `app.html`（React SPA） | `<html data-skin="a…f">` + `src/skins/*.css` 换肤 |
-| 落地页 | `landing-*.html`（6 个独立静态页） | 每套皮肤一个 HTML。六种版式结构差异过大，**无法**靠 CSS 换肤 |
+| 工作台 | `app.html`（React SPA） | `<html data-skin="a…h">` + `src/skins/*.css` 换肤（八套） |
+| 落地页 | `landing-*.html`（6 个）+ `how-it-works.html` / `dossier.html` | 前六套每套一个独立 HTML；第 7/8 套是带独立机制的完整页面（编队总谱 / 论文底片） |
+
+> **第 7/8 套的机制归属**：编队总谱（出声音符 / 演奏全曲 / fermata 停拍）与论文底片
+> （逐条解密 / 阵风 / 打字机音效）是**页面级机制**，绑定在 `how-it-works.html` /
+> `dossier.html` 两个独立页面，**不进工作台皮肤**。工作台的 `g-score.css` /
+> `h-contact.css` 只实现这两套语言的**视觉**（令牌 / 材质 / 排版 / 交互态），
+> 三栏结构与 JSX 契约不变，符合 §四第 2 条「只写 CSS」。
 
 两侧共用 `localStorage.lj_skin` 保持同步（落地页切了皮肤，工作台跟着切）。
 
@@ -37,6 +43,25 @@
 
 `--accent` / `--accent-2` 会被 `fx.js` 直接读取（粒子、遮罩、印章、光晕），必须给值。
 
+> 皮肤 G（总谱）`--accent` 为钴蓝 `#2E4FA3`、`--accent-2` 为墨黑；皮肤 H（底片）
+> `--accent` 为纸白 `#E8E7E2`、`--accent-2` 为弱化灰——两套都是无彩或单彩语言，
+> `--danger` 分别取钴蓝系深红与暗房淡红。
+
+### 层级（z-index）规约
+
+z-index 不走皮肤令牌，用下面的固定档位；新增浮层时从档位表取最近的档，
+不要发明新数值（当前散落的 88 / 90 属历史遗留，允许保留但不新增）：
+
+```
+ 0        背景氛围层（.ambient-lines / .wb::after 扫描线）
+ 5        流内 sticky 元素（.wb-jump）与拖拽中的会话行
+ 20       列头 / 卷册等局部粘性元素（各皮肤自定）
+ 60       顶栏与皮肤弹层（.wb-top / .skin-pop）
+ 100      模态遮罩（.modal-mask，base.css）
+ 120      fx 全屏层（.fx-layer：粒子 / 换肤遮罩）
+ 130      顶部成就条（.ach-bar，最高优先展示层）
+```
+
 ---
 
 ## 三、DOM 与类名契约
@@ -49,7 +74,8 @@
 ```
 .wb                        应用根（建议 flex column / min-height 100vh）
 .wb-fill                   弹性占位（flex: 1 1 auto）
-.wb-boot                   启动态（「加载中…」）
+.wb-boot                   启动态（.seal + p，印章由 fx.css 做浮动呼吸）
+.skl / .skl-line           骨架屏原子（base.css，面板加载中替代纯文本）
 ```
 
 ### 顶栏 `.wb-top`
@@ -102,7 +128,7 @@ aside.wb-col.wb-volumes
 section.wb-col.wb-main(.is-streaming)
   .wb-stream > .wb-inner
     .wb-empty > .seal + h2 + p.wb-empty-lead + .wb-prompts > button.wb-prompt ×3
-    article.wb-msg(.is-user / .is-ai)
+    article.wb-msg(.is-user / .is-ai / .is-jump-hl)   data-midx=消息序号（跳转定位锚）
       .wb-msg-head > .wb-msg-mark + .wb-msg-name + .wb-msg-role + .wb-fill + time.wb-msg-time
       .wb-bubble            markdown 渲染结果（结构见 base.css 第 7 节）
   .wb-break
@@ -118,6 +144,8 @@ aside.wb-col.wb-side
   .wb-side-body
     ol.wb-tl > li.wb-tl-item
         .is-start .is-end .is-intent .is-route .is-plan .is-step .is-interrupt .is-error
+        (.is-clickable + role=button + tabIndex —— 推断出对应消息的条目可点击，
+         点击跳转并高亮对话区的目标气泡；皮肤可覆写手势观感，不得移除 role/tabIndex)
       > span.wb-tl-no + span.wb-tl-body > span.wb-tl-title + span.wb-tl-meta
     （另两个 tab 的内容由 panels.css 实现）
 ```
@@ -149,9 +177,11 @@ main.wb-trace-main > .trace-panel       可观测视图
 10. **文件末尾保留「§ 15 · 可读性与信息层次」段**，集中处理六件事：元信息字号下限、
     正文行宽、命中区、顶栏分组、待确认条降权、时间线分主次、空态去对称居中。
     该段与前文同特异性、置于末尾以便覆盖旧值，**回退只需删除本段**。
-    六套的写法**互不相同**（各自用自身的视觉语言实现，如 A 用校对方块、D 用竖排方框签、
+    八套的写法**互不相同**（各自用自身的视觉语言实现，如 A 用校对方块、D 用竖排方框签、
     F 用字段名、E 用错位套印）——**新增皮肤须自行编写，不得从任一套复制**。
     详见 [`docs/frontend-versions/OPTIMIZATION_ROUND19.md`](../../../docs/frontend-versions/OPTIMIZATION_ROUND19.md)。
+11. 按下反馈由 `base.css` 统一提供（`:active { scale: .97 }`，scale 为独立属性，
+    与 fx 层的 transform 所有权互不冲突）；皮肤自带的 hover 位移**无需重复声明**按下态。
 
 ---
 
@@ -164,6 +194,8 @@ main.wb-trace-main > .trace-panel       可观测视图
 - [ ] 中断确认条（`.wb-break`）在长问题文本下不破版
 - [ ] 长标题在 `.wb-vol-title` / `.wb-tl-title` 内不溢出（ellipsis 或换行）
 - [ ] `prefers-reduced-motion: reduce` 下无持续动画（fx.css 已兜底，皮肤不得反向覆盖）
+- [ ] 皮肤 G/H 的视觉语言与其独立页面（`how-it-works.html` / `dossier.html`）的机制语义一致：
+      总谱看谱线底纹 / fermata 中断条，底片看撕边纸条 / 接触印样帧
 - [ ] 无硬编码主题色（颜色只走变量或本皮肤独有的具名值）
 - [ ] 元信息字号 ≥ 11px（中文在 Windows ClearType 下的可读性下限）
 - [ ] 可点击元素命中区 ≥ 30×30px（`.wb-vol-del` / `.wb-view` / `.wb-side-tab`）

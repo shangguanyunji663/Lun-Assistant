@@ -59,7 +59,7 @@ function mountSkinSwitcher() {
     pop.className = 'sw-pop'
     pop.setAttribute('role', 'menu')
     pop.innerHTML = `
-      <div class="sw-head"><b>设计语言</b><span>整套视觉 · 6 选 1</span></div>
+      <div class="sw-head"><b>设计语言</b><span>整套视觉 · ${SKINS.length} 选 1</span></div>
       <div class="sw-list">
         ${SKINS.map(s => `
           <button class="sw-item" type="button" role="menuitemradio"

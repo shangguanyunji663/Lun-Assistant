@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="180" viewBox="0 0 240 180">
+  <title>缠枝莲 · 自主重构版</title>
+  <desc>
+    依传统缠枝莲纹三条造型规律自主重构，非复刻任何具体文物图样：
+    ① 枝茎作「切圆式」转折——主蔓走半圆弧，与分枝穿插形成切圆空间；
+    ② 莲花突出中心莲蓬，花瓣取九片（传统区间 8–12）；
+    ③ 叶片三歧分叉，尺寸约为花头径的三分之一。
+    构图遵「同花异向」：相邻两朵莲花在藤蔓中呈相反朝向，使循环中保持变化。
+    主蔓在左右边界等高收笔，可无缝平铺；坐标与线宽为手工设定，未用程序化对称或随机。
+  </desc>
+  <g fill="none" stroke="#1B4B8F" stroke-linecap="round" stroke-linejoin="round">
+    <path stroke-width="1.7" d="M0 116C26 116 34 72 66 72s42 44 74 44 42-44 74-44c14 0 26 24 26 44"/>
+    <g stroke-width="1.35">
+      <g transform="translate(66 62)">
+        <path d="M0 2C-6.4-3-6.4-13.4 0-18.6c6.4 5.2 6.4 15.6 0 20.6Z"/>
+        <path d="M0 2C-6.4-3-6.4-13.4 0-18.6c6.4 5.2 6.4 15.6 0 20.6Z" transform="rotate(40.6)"/>
+        <path d="M0 2C-6.4-3-6.4-13.4 0-18.6c6.4 5.2 6.4 15.6 0 20.6Z" transform="rotate(81.1)"/>
+        <path d="M0 2C-6.4-3-6.4-13.4 0-18.6c6.4 5.2 6.4 15.6 0 20.6Z" transform="rotate(121.7)"/>
+        <path d="M0 2C-6.4-3-6.4-13.4 0-18.6c6.4 5.2 6.4 15.6 0 20.6Z" transform="rotate(162.2)"/>
+        <path d="M0 2C-6.4-3-6.4-13.4 0-18.6c6.4 5.2 6.4 15.6 0 20.6Z" transform="rotate(202.8)"/>
+        <path d="M0 2C-6.4-3-6.4-13.4 0-18.6c6.4 5.2 6.4 15.6 0 20.6Z" transform="rotate(243.3)"/>
+        <path d="M0 2C-6.4-3-6.4-13.4 0-18.6c6.4 5.2 6.4 15.6 0 20.6Z" transform="rotate(283.9)"/>
+        <path d="M0 2C-6.4-3-6.4-13.4 0-18.6c6.4 5.2 6.4 15.6 0 20.6Z" transform="rotate(324.4)"/>
+        <circle r="3.2" fill="#1B4B8F" stroke="none"/>
+      </g>
+      <g transform="translate(140 126) rotate(183.4)">
+        <path d="M0 2C-6-3.2-6-13 0-18c6 4.8 6 14.8 0 20Z"/>
+        <path d="M0 2C-6-3.2-6-13 0-18c6 4.8 6 14.8 0 20Z" transform="rotate(40.9)"/>
+        <path d="M0 2C-6-3.2-6-13 0-18c6 4.8 6 14.8 0 20Z" transform="rotate(81.6)"/>
+        <path d="M0 2C-6-3.2-6-13 0-18c6 4.8 6 14.8 0 20Z" transform="rotate(122.4)"/>
+        <path d="M0 2C-6-3.2-6-13 0-18c6 4.8 6 14.8 0 20Z" transform="rotate(163.1)"/>
+        <path d="M0 2C-6-3.2-6-13 0-18c6 4.8 6 14.8 0 20Z" transform="rotate(203.7)"/>
+        <path d="M0 2C-6-3.2-6-13 0-18c6 4.8 6 14.8 0 20Z" transform="rotate(244.3)"/>
+        <path d="M0 2C-6-3.2-6-13 0-18c6 4.8 6 14.8 0 20Z" transform="rotate(285)"/>
+        <path d="M0 2C-6-3.2-6-13 0-18c6 4.8 6 14.8 0 20Z" transform="rotate(325.6)"/>
+        <circle r="3" fill="#1B4B8F" stroke="none"/>
+      </g>
+    </g>
+    <g stroke-width="1.15">
+      <path d="M28 92c9-7 18-5 23 3M33 87c1-6 5-9 11-8M38 89c2-5 8-7 13-5"/>
+      <path d="M104 106c8-6 16-5 21 3M109 101c1-6 5-9 10-8M113 103c2-5 7-6 12-4"/>
+      <path d="M212 82c-9-7-18-5-23 3M207 77c-1-6-5-9-11-8M202 79c-2-5-8-7-13-5"/>
+    </g>
+  </g>
+</svg>

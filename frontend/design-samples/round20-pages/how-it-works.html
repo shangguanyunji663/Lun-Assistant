@@ -1,0 +1,986 @@
+<!doctype html>
+<!-- 设计样张 · 非构建产物（design-samples 不参与 vite build）
+     「工作原理」页 · 设计语言「可演奏的总谱 The Playable Score」（最终整合版）
+     主题「钴蓝总谱」theme-factory 自建：冷白谱纸 + 墨黑 + 单一钴蓝 accent。
+     机制清单：
+       1. 滚动即演奏：视口中线演奏指针，谱线随乐章入画连续生长，音符依次点亮
+       2. 音符即内容：四分/二分/八分(旗尾)/二连音/全音符五种形态按语义分配，
+          点击出声（Web Audio 五声音阶，默认静音）并更新悬浮批注签
+       3. 演奏全曲：自动推进，延长记号必停，给拍才继续（HITL 的可玩化）
+       4. 调音台：六声部静音联动谱面；排练记号 A/B 可点击导航；
+          谱表聚光（hover 乐章其余降透明）；力度记号 p/mp/mf/cresc./f 随演奏点亮；
+          D.C. 反复记号回封面重奏
+     动效均为 transform/opacity，prefers-reduced-motion 全部降级。
+     注：本文件曾因迁移脚本故障损坏（文档重复两份），此版本为完整重建。 -->
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#F3F3EE" />
+    <meta name="description" content="论匠工作原理：一份可以演奏的总谱。六个环节一支编队，产出经你确认才落稿。" />
+    <title>可演奏的总谱 · 论匠工作原理</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="stylesheet" href="/src/fonts/fonts.css" />
+    <style>
+      :root {
+        --paper: #F3F3EE;
+        --paper-2: #EAEAE3;
+        --ink: #17181A;
+        --ink-2: #4A4B4E;
+        --ink-3: #84857F;
+        --acc: #2E4FA3;
+        --acc-deep: #24408A;
+        --acc-wash: rgba(46, 79, 163, .08);
+        --staff: rgba(23, 24, 26, .18);
+        --staff-soft: rgba(23, 24, 26, .1);
+        --staff-strong: rgba(23, 24, 26, .4);
+        --fs-hero: clamp(2.6rem, 6.4vw, 5.2rem);
+        --fs-h2: clamp(1.9rem, 3.6vw, 2.9rem);
+        --dur: .3s;
+        --ease: cubic-bezier(.22, .9, .3, 1);
+        --acc-text: #2E4FA3;
+        --on-acc: #F6F6F1;
+        --f-display: "Noto Sans SC", sans-serif;
+        --f-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+        --f-mono: "IBM Plex Mono", ui-monospace, monospace;
+        --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+      body {
+        background: var(--paper); background-image: var(--grain);
+        color: var(--ink);
+        font-family: var(--f-body);
+        font-size: 16.5px; line-height: 1.8;
+        -webkit-font-smoothing: antialiased;
+        overflow-x: hidden;
+      }
+      :focus { outline: none; }
+      :focus-visible { outline: 2.5px solid var(--acc); outline-offset: 3px; }
+      a { color: inherit; text-decoration: none; }
+      h1, h2, h3, p { margin: 0; }
+      h1, h2, h3 { font-family: var(--f-display); }
+      .wrap { max-width: 1240px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
+      .mono { font-family: var(--f-mono); }
+
+      /* ============ 顶栏 ============ */
+      .top { display: flex; align-items: center; gap: 28px; height: 70px; border-bottom: 1.5px solid var(--staff); }
+      .brand { display: flex; align-items: center; gap: 11px; font-weight: 900; font-size: 19px; }
+      .brand em {
+        font-style: normal; display: inline-grid; place-items: center;
+        width: 30px; height: 30px; border-radius: 8px;
+        background: var(--acc); color: var(--on-acc); font-size: 15px;
+      }
+      .top nav { margin-left: auto; display: flex; gap: 26px; font-size: 14.5px; }
+      .top nav a { color: var(--ink-2); transition: color var(--dur) var(--ease); }
+      .top nav a:hover { color: var(--acc-text); }
+      .top .enter {
+        padding: 9px 20px; border: 1.5px solid var(--ink); border-radius: 9px;
+        font-weight: 700; font-size: 14px;
+        transition: background var(--dur) var(--ease), color var(--dur) var(--ease), scale 90ms var(--ease);
+      }
+      .top .enter:hover { background: var(--ink); color: var(--paper); }
+      .top .enter:active { scale: .97; }
+      @media (max-width: 720px) { .top nav { display: none; } }
+
+      /* ============ 总谱封面 ============ */
+      .cover {
+        min-height: min(92dvh, 840px);
+        display: grid; place-content: center; text-align: center;
+        padding: clamp(48px, 7vw, 96px) 0;
+        position: relative;
+      }
+      .cover-frame {
+        border: 2.5px solid var(--ink); border-radius: 20px;
+        outline: 1.5px solid var(--ink); outline-offset: 7px;
+        padding: clamp(40px, 7vw, 96px) clamp(26px, 6vw, 90px);
+        background-image: var(--grain);
+        position: relative; overflow: hidden;
+      }
+      .cover-frame::before {
+        content: "𝄞"; position: absolute; left: 4%; top: 2%;
+        font-size: clamp(7rem, 14vw, 12rem); line-height: 1;
+        color: transparent; -webkit-text-stroke: 2px rgba(23,24,26,.08);
+        pointer-events: none;
+      }
+      .cover-frame::after {
+        content: "𝄢"; position: absolute; right: 3%; bottom: -6%;
+        font-size: clamp(7rem, 14vw, 12rem); line-height: 1;
+        color: transparent; -webkit-text-stroke: 2px rgba(46,79,163,.14);
+        pointer-events: none;
+      }
+      .cover .edition { font-family: var(--f-mono); font-size: 13px; color: var(--ink-3); letter-spacing: .1em; }
+      .cover h1 {
+        font-size: var(--fs-hero); font-weight: 900; line-height: 1.12;
+        letter-spacing: -.01em; margin: 26px 0 10px;
+      }
+      .cover .dedication { color: var(--ink-2); font-size: clamp(1rem, 1.5vw, 1.2rem); max-width: 30em; margin: 0 auto; }
+      .cover .title-staff {
+        height: 84px; margin: 18px auto 0; max-width: 560px;
+        background: repeating-linear-gradient(to bottom, transparent 0 19px, var(--staff-soft) 19px 20.5px);
+        border-block: 1.5px solid var(--staff);
+        display: grid; place-items: center; position: relative;
+      }
+      .cover .title-staff span {
+        background: var(--paper); padding: 0 18px;
+        font-family: var(--f-mono); font-weight: 700; font-size: 14px;
+        color: var(--acc-text);
+      }
+      .cover .composer { margin-top: 34px; font-size: 14.5px; color: var(--ink-2); }
+      .cover .composer b { font-weight: 900; color: var(--ink); }
+      .cover .controls { margin-top: 40px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+      .ctl {
+        display: inline-flex; align-items: center; gap: 10px;
+        padding: 14px 26px; border-radius: 999px; border: 1.5px solid var(--ink);
+        font-weight: 900; font-size: 15px; line-height: 1.2; cursor: pointer;
+        background: var(--paper); color: var(--ink); font-family: inherit;
+        transition: background var(--dur) var(--ease), color var(--dur) var(--ease),
+                    border-color var(--dur) var(--ease), scale 90ms var(--ease);
+      }
+      .ctl:hover { border-color: var(--acc-text); color: var(--acc-text); }
+      .ctl:active { scale: .97; }
+      .ctl-play { background: var(--acc); border-color: var(--acc-text); color: var(--on-acc); padding-inline: 34px; }
+      .ctl-play:hover { background: var(--acc-deep); border-color: var(--acc-deep); color: var(--on-acc); }
+      .ctl .dot-on {
+        width: 9px; height: 9px; border-radius: 50%; background: currentColor; opacity: .35;
+        transition: opacity var(--dur) var(--ease);
+      }
+      .ctl[aria-pressed="true"] .dot-on { opacity: 1; box-shadow: 0 0 0 4px var(--acc-wash); }
+      .cover .hint { margin-top: 26px; font-size: 13px; color: var(--ink-3); }
+
+      /* ============ 排练记号（可点击导航） ============ */
+      .reh {
+        display: inline-grid; place-items: center; flex: none;
+        width: 46px; height: 46px;
+        border: 2.5px solid var(--ink); border-radius: 10px;
+        font-weight: 900; font-size: 23px;
+        margin-bottom: 20px;
+        background: var(--paper);
+        box-shadow: 4px 4px 0 var(--acc);
+        cursor: pointer; font-family: inherit;
+        transition: background var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+      }
+      .reh:hover { border-color: var(--acc-text); color: var(--acc-text); }
+      .reh.on { background: var(--acc); border-color: var(--acc-text); color: var(--on-acc); box-shadow: 4px 4px 0 var(--ink); }
+
+      section { padding: clamp(56px, 9vw, 120px) 0; position: relative; }
+      section h2 { font-size: var(--fs-h2); font-weight: 900; line-height: 1.18; letter-spacing: -.01em; }
+      section .lead { color: var(--ink-2); max-width: 60ch; margin-top: 18px; font-size: 17px; }
+      .sec-head { display: flex; align-items: center; gap: 22px; margin-bottom: 14px; }
+      .sec-lead { color: var(--ink-2); max-width: 60ch; font-size: 17px; margin-bottom: 40px; }
+
+      /* ============ 谱册（开放纸面，无框） ============ */
+      .scorebook {
+        border-block: 1px solid var(--staff);
+        background:
+          linear-gradient(var(--paper-2), var(--paper-2)),
+          var(--grain);
+        position: relative;
+      }
+      .playhead {
+        position: fixed; left: 0; right: 0; top: 50%; height: 0;
+        z-index: 5; pointer-events: none; opacity: 0;
+        transition: opacity .4s var(--ease);
+      }
+      .playhead.on { opacity: 1; animation: ph-breathe 2.8s ease-in-out infinite; }
+      .playhead::before {
+        content: ""; position: absolute; left: 0; right: 0; top: -1px;
+        border-top: 2px dashed var(--acc);
+      }
+      .playhead::after {
+        content: "▶"; position: absolute; left: 12px; top: -13px;
+        color: var(--acc-text); font-size: 15px;
+      }
+      @keyframes ph-breathe { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+
+      .system { padding: clamp(30px, 4.5vw, 60px) 0 clamp(22px, 3vw, 40px); transition: opacity .45s var(--ease); }
+      .scorebook:has(.system:hover) .system:not(:hover) { opacity: .5; }
+      .system + .system { border-top: 1.5px solid var(--staff); }
+      .sys-head { display: flex; align-items: baseline; gap: 18px; flex-wrap: wrap; margin-bottom: 16px; }
+      .sys-head h3 { font-size: clamp(1.25rem, 2.2vw, 1.7rem); font-weight: 900; }
+      .sys-head .tempo { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-3); }
+      .sys-grid { display: grid; gap: clamp(18px, 3vw, 40px); align-items: start; }
+      .system.mix .sys-grid { grid-template-columns: minmax(0, 1fr) 180px; }
+      .system.offset-r .sys-score { max-width: 86%; margin-left: auto; }
+      .system.narrow .sys-score { max-width: 88%; margin-inline: auto; }
+      @media (max-width: 920px) {
+        .system.mix .sys-grid { grid-template-columns: 1fr; }
+        .lane-mixer { position: static; flex-direction: row; flex-wrap: wrap; }
+      }
+      .sys-score {
+        padding: clamp(14px, 2vw, 26px) clamp(14px, 2vw, 26px) clamp(14px, 2vw, 26px) clamp(34px, 3vw, 46px);
+        overflow-x: auto;
+        position: relative;
+      }
+      .sys-score .brace {
+        position: absolute; left: 6px; top: 50%; translate: 0 -50%;
+        font-family: var(--f-display);
+        font-size: clamp(56px, 7vw, 84px); line-height: 1;
+        color: var(--ink); opacity: .75; user-select: none;
+      }
+      .sys-score svg { min-width: 480px; width: 100%; height: auto; display: block; }
+      .slur { fill: none; stroke: var(--ink); stroke-width: 1.8; opacity: .5; stroke-linecap: round; }
+      .dyn {
+        font-family: var(--f-display); font-style: italic; font-weight: 900;
+        font-size: 16px; fill: var(--ink-3); transition: fill .5s var(--ease);
+      }
+      svg.played .dyn { fill: var(--acc-text); }
+      .lane { transition: stroke-dashoffset .65s var(--ease); }
+
+      /* 音符：五种形态，实心倾斜椭圆符头 */
+      .note { cursor: pointer; transform-box: fill-box; animation: note-bob 4.2s ease-in-out infinite; }
+      .note .hit { cursor: pointer; }
+      .note .head {
+        fill: var(--ink); stroke: var(--ink); stroke-width: 1.6;
+        transform-box: fill-box; transform-origin: center;
+        rotate: -18deg; rx: 13px; ry: 9.2px;
+        transition: fill .3s var(--ease), stroke .3s var(--ease), transform .3s var(--ease);
+      }
+      .note.hollow .head { fill: var(--paper); stroke-width: 2.6; }
+      .note .stem { stroke: var(--ink); stroke-width: 2.4; transition: stroke .3s var(--ease); }
+      .note .flag { fill: var(--ink); transition: fill .3s var(--ease); }
+      .note .beam { stroke: var(--ink); transition: stroke .3s var(--ease); }
+      .note text.lbl { font-size: 12.5px; fill: var(--ink-2); font-family: var(--f-mono); transition: fill .3s var(--ease); }
+      .note:hover .head, .note:focus-visible .head, .note.is-now .head { fill: var(--acc); stroke: var(--acc); animation: note-ping .5s var(--ease); }
+      .note:hover .stem, .note:focus-visible .stem, .note.is-now .stem { stroke: var(--acc); }
+      .note:hover text.lbl, .note:focus-visible text.lbl, .note.is-now text.lbl { fill: var(--acc-text); font-weight: 700; }
+      .note.hollow:hover .head, .note.hollow.is-now .head { fill: var(--acc-wash); }
+      .note.is-done .head { fill: var(--acc-wash); stroke: var(--acc); }
+      .note.is-done .stem { stroke: var(--acc); }
+      .note.muted { opacity: .28; pointer-events: none; }
+      @keyframes note-ping { 0% { transform: scale(1); } 45% { transform: scale(1.32); } 100% { transform: scale(1); } }
+      /* 环境动效：音符悬振（页面无人操作也在呼吸） */
+      @keyframes note-bob { 0%, 100% { translate: 0 0; } 50% { translate: 0 -3px; } }
+      .lane-flow {
+        stroke: var(--acc); stroke-width: 2.2; fill: none; opacity: 0;
+        stroke-linecap: round; stroke-dasharray: 4 18;
+        animation: lane-flow 1.4s linear infinite;
+      }
+      @keyframes lane-flow { to { stroke-dashoffset: -22; } }
+      .hairpin { fill: none; stroke: var(--ink); stroke-width: 1.8; opacity: .5; stroke-linejoin: round; }
+
+      /* 悬浮批注签 */
+      .anno-float {
+        position: fixed; right: 26px; bottom: 26px; z-index: 30;
+        width: min(340px, 80vw);
+        border: 1.5px solid var(--ink); border-radius: 4px 16px 16px 16px;
+        background: var(--paper); padding: 16px 18px 14px;
+        box-shadow: 8px 10px 0 var(--acc-wash);
+        opacity: 0; translate: 0 14px; pointer-events: none;
+        transition: opacity .35s var(--ease), translate .35s var(--ease);
+      }
+      .anno-float.on { opacity: 1; translate: 0 0; }
+      .anno-float .anno-key {
+        font-family: var(--f-mono); font-size: 11.5px; color: var(--acc-text);
+        font-weight: 700; letter-spacing: .04em; display: block; margin-bottom: 6px;
+      }
+      .anno-float p { font-size: 14px; color: var(--ink-2); margin: 0; }
+
+      /* 调音台（竖排乐器组） */
+      .lane-mixer { display: flex; flex-direction: column; gap: 8px; position: sticky; top: 76px; }
+      .ch-knob {
+        display: flex; align-items: center; gap: 9px;
+        border: 1.5px solid var(--ink); border-radius: 999px;
+        background: var(--paper); padding: 8px 13px;
+        font-family: inherit; font-size: 13px; font-weight: 700; color: var(--ink);
+        cursor: pointer; transition: opacity var(--dur) var(--ease), border-color var(--dur) var(--ease);
+      }
+      .ch-knob i { width: 8px; height: 8px; border-radius: 50%; background: var(--acc); flex: none; }
+      .ch-knob:hover { border-color: var(--acc-text); }
+      .ch-knob[aria-pressed="true"] { opacity: .4; border-style: dashed; }
+      .ch-knob[aria-pressed="true"] span { text-decoration: line-through; text-decoration-thickness: 2px; }
+      .ch-knob[aria-pressed="true"] i { background: var(--ink-3); }
+
+      /* 延长记号面板 */
+      .fermata-wrap { padding: clamp(28px, 4vw, 52px) 0 clamp(40px, 5vw, 64px); }
+      .fermata-panel {
+        border: 2.5px solid var(--acc); border-radius: 30px 120px 30px 120px;
+        background: var(--acc); color: var(--on-acc);
+        padding: clamp(28px, 4.6vw, 56px);
+        display: grid; grid-template-columns: auto 1fr auto; gap: clamp(20px, 3.4vw, 48px);
+        align-items: center; position: relative; overflow: hidden;
+      }
+      .fermata-panel::after {
+        content: "𝄐"; position: absolute; right: -2%; bottom: -40%;
+        font-size: clamp(10rem, 20vw, 17rem); line-height: 1; color: rgba(246,246,241,.1);
+        pointer-events: none;
+        animation: ghost-drift 9s ease-in-out infinite;
+      }
+      @keyframes ghost-drift { 0%, 100% { translate: 0 0; } 50% { translate: -16px 10px; } }
+      .fermata-panel .fg { font-size: clamp(3.6rem, 7vw, 6rem); font-weight: 900; line-height: 1; position: relative; z-index: 1; }
+      .fermata-panel h3 { font-size: clamp(1.3rem, 2.3vw, 1.8rem); font-weight: 900; margin-bottom: 8px; position: relative; z-index: 1; }
+      .fermata-panel p { color: rgba(246,246,241,.88); font-size: 15px; max-width: 52ch; position: relative; z-index: 1; }
+      .give-beat {
+        position: relative; z-index: 1;
+        padding: 14px 28px; border-radius: 999px; border: 2px solid #F6F6F1;
+        background: #F6F6F1; color: var(--acc-deep);
+        font-weight: 900; font-size: 15px; cursor: pointer; font-family: inherit;
+        transition: scale 90ms var(--ease), background var(--dur) var(--ease);
+      }
+      .give-beat:hover { background: transparent; color: var(--on-acc); }
+      .give-beat:active { scale: .97; }
+      @media (max-width: 880px) { .fermata-panel { grid-template-columns: 1fr; } }
+
+      /* 数字：基线横排 */
+      .facts {
+        display: flex; flex-wrap: wrap; align-items: baseline;
+        gap: clamp(22px, 4.5vw, 70px);
+        border-top: 3px solid var(--ink); margin-top: 48px; padding-top: 20px;
+      }
+      .fact { display: flex; align-items: baseline; gap: 12px; }
+      .fact b { font-size: clamp(2.7rem, 5.4vw, 4.3rem); font-weight: 900; line-height: 1; letter-spacing: -.02em; }
+      .fact span { font-size: 14px; color: var(--ink-2); }
+
+      /* 收尾 + D.C. */
+      .end { text-align: left; }
+      .end h2 { max-width: 18em; font-size: clamp(2.1rem, 4.6vw, 3.4rem); }
+      .end .cta-row { margin-top: 34px; display: flex; gap: 14px; flex-wrap: wrap; }
+      .dc {
+        display: inline-flex; align-items: center; gap: 8px; margin-top: 26px;
+        padding: 0 0 3px; border: 0; border-bottom: 1px solid var(--staff-strong);
+        background: none; cursor: pointer;
+        font-family: var(--f-mono); font-size: 13px; color: var(--ink-3);
+        transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+      }
+      .dc:hover { color: var(--acc-text); border-color: var(--acc-text); }
+
+      footer { border-top: 1.5px solid var(--staff); padding: 26px 0 36px; font-size: 13px; color: var(--ink-2); display: flex; gap: 22px; flex-wrap: wrap; }
+      footer a:hover { color: var(--acc-text); }
+
+      .rise { opacity: 0; translate: 0 18px; transition: opacity .8s var(--ease), translate .8s var(--ease); }
+      .risen { opacity: 1; translate: 0 0; }
+
+      /* 皮肤切换器 */
+      .sw { position: fixed; left: 18px; bottom: 18px; z-index: 40; font-family: var(--f-mono); }
+      .sw-trigger {
+        display: flex; align-items: center; gap: 9px;
+        padding: 10px 14px; border: 1.5px solid var(--staff-strong); border-radius: 10px;
+        background: var(--paper); color: var(--ink);
+        font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit;
+        box-shadow: 4px 4px 0 var(--acc-wash);
+        transition: border-color var(--dur) var(--ease);
+      }
+      .sw-trigger:hover { border-color: var(--acc-text); }
+      .sw-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--sw-dot, var(--acc)); flex: none; }
+      .sw-pop {
+        position: absolute; left: 0; bottom: calc(100% + 10px); width: 224px;
+        border: 1.5px solid var(--staff-strong); border-radius: 12px;
+        background: var(--paper); padding: 8px;
+        box-shadow: 8px 10px 0 var(--acc-wash);
+      }
+      .sw-item {
+        display: flex; width: 100%; align-items: center; gap: 10px;
+        padding: 9px 10px; border: 0; background: none; border-radius: 8px;
+        cursor: pointer; font-family: inherit; font-size: 13px; color: var(--ink);
+        transition: background var(--dur) var(--ease);
+      }
+      .sw-item:hover { background: var(--acc-wash); }
+      .sw-item.on { font-weight: 900; color: var(--acc-text); }
+      .sw-item i { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+      .sw-item small { margin-left: auto; font-size: 10px; color: var(--ink-3); letter-spacing: .08em; }
+
+      /* 乐章解说栏（密度补全） */
+      .sys-grid.wide { grid-template-columns: minmax(0, 1fr) 250px; }
+      .mv-note { border-left: 2px solid var(--staff); padding-left: 18px; font-size: 14px; color: var(--ink-2); align-self: center; }
+      .mv-note b { display: block; font-weight: 900; font-size: 15px; color: var(--ink); margin-bottom: 6px; }
+      @media (max-width: 920px) { .sys-grid.wide { grid-template-columns: 1fr; } .mv-note { margin-top: 14px; } }
+
+      /* ============ 弱动效降级 ============ */
+      @media (prefers-reduced-motion: reduce) {
+        .note, .playhead.on, .fermata-panel::after { animation: none; }
+        .lane-flow { display: none; }
+        .lane { transition: none; }
+        .rise { opacity: 1; translate: none; transition: none; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <span class="brand"><em>论</em>论匠 LunJiang</span>
+        <nav aria-label="页面导航">
+          <a href="/">落地页</a>
+          <a href="/design-samples/round20-pages/sample-dossier.html">解密卷宗</a>
+          <a href="/app.html?demo=1">工作台预览</a>
+        </nav>
+        <a class="enter" href="/app.html?demo=1">进入工作台</a>
+      </header>
+    </div>
+
+    <!-- 封面 -->
+    <div class="wrap">
+      <section class="cover">
+        <div class="cover-frame rise">
+          <p class="edition">LUNJIANG ENSEMBLE · OP.6</p>
+          <h1>六个环节，<br />一支编队。</h1>
+          <div class="title-staff" aria-hidden="true"><span>工作原理 · 一份可以演奏的总谱</span></div>
+          <p class="dedication">总谱上的每个音符，是编队里一次真实的调度。滚动即演奏；点上两下，它会出声。</p>
+          <p class="composer">作曲 <b>论匠编队</b>　指挥 <b>正在读这行的你</b></p>
+          <div class="controls">
+            <button class="ctl ctl-play" id="playAll" type="button">▶ 演奏全曲</button>
+            <button class="ctl" id="soundToggle" type="button" aria-pressed="false">
+              <span class="dot-on" aria-hidden="true"></span>声音：关
+            </button>
+          </div>
+          <p class="hint">开声音后点谱面上的音符试试。演奏到延长记号时，整支编队会停下来等你。</p>
+        </div>
+      </section>
+    </div>
+
+    <!-- 谱面 -->
+    <div class="playhead" id="playhead" aria-hidden="true"></div>
+    <section class="scorebook" id="score">
+      <div class="wrap">
+        <div class="sec-head rise">
+          <button class="reh" type="button" data-goto="#score" aria-label="回到总谱开头">A</button>
+          <h2>五个乐章，一条旋律</h2>
+        </div>
+        <p class="sec-lead rise">
+          视口中间的虚线是演奏指针：往下滚，指针扫过哪里，哪里的音符就被奏响。
+          每个音符都值得一按：它会出声，也会把注解写进右下角的批注签。
+        </p>
+
+        <!-- 乐章 I -->
+        <div class="system">
+          <div class="sys-head"><h3>第一乐章 · 提出需求</h3><span class="tempo">♩ = 96 · 一次对话的起点</span></div>
+          <div class="sys-grid wide">
+            <div class="sys-score"><span class="brace" aria-hidden="true">{</span>
+              <svg viewBox="0 0 760 150" role="img" aria-label="谱表：三个音符，分别是你说出目标、附上约束、选定环节">
+                <g stroke="#17181A" stroke-width="1.1" opacity=".45">
+                  <line x1="16" y1="16" x2="744" y2="16"/><line x1="16" y1="42" x2="744" y2="42"/>
+                  <line x1="16" y1="68" x2="744" y2="68"/><line x1="16" y1="94" x2="744" y2="94"/>
+                  <line x1="16" y1="120" x2="744" y2="120"/>
+                </g>
+                <line x1="16" y1="16" x2="16" y2="120" stroke="#17181A" stroke-width="2"/>
+                <line x1="744" y1="16" x2="744" y2="120" stroke="#17181A" stroke-width="2"/>
+                <path class="lane" d="M120 68 C 200 58, 280 100, 360 94 S 520 38, 600 55" stroke="#17181A" stroke-width="3" fill="none" stroke-linecap="round" opacity=".9"/>
+                <path class="slur" d="M100 44 Q 360 6, 622 36" />
+                <text class="dyn" x="44" y="112">p</text>
+                <g class="note" data-note="说出目标" data-anno="开场白就是需求陈述：论匠把第一句话当作整份总谱的主题。标题自动取前 18 个字，之后随时可改。" tabindex="0" role="button" aria-label="音符：说出目标">
+                  <ellipse class="head" cx="120" cy="68" rx="12" ry="8.6" />
+                  <line class="stem" x1="131" y1="65" x2="131" y2="14" />
+                  <rect class="hit" x="90" y="16" width="60" height="110" fill="none" pointer-events="all" />
+                  <text class="lbl" x="96" y="142">说出目标</text>
+                </g>
+                <g class="note" data-note="附上约束" data-anno="约束是关键的强拍：数据集必须公开、方法要三个月做得完，这类要求会在后续每一稿里被反复校验。" tabindex="0" role="button" aria-label="音符：附上约束">
+                  <ellipse class="head" cx="360" cy="94" rx="12" ry="8.6" />
+                  <line class="stem" x1="371" y1="91" x2="371" y2="40" />
+                  <rect class="hit" x="330" y="40" width="60" height="86" fill="none" pointer-events="all" />
+                  <text class="lbl" x="336" y="142">附上约束</text>
+                </g>
+                <g class="note" data-note="选定环节" data-anno="也可以直接点名为某一环节下单：只查文献、只核格式，编队按需出谱，不强凑全套。" tabindex="0" role="button" aria-label="音符：选定环节">
+                  <ellipse class="head" cx="600" cy="55" rx="12" ry="8.6" />
+                  <line class="stem" x1="611" y1="52" x2="611" y2="4" />
+                  <path class="flag" d="M611 4 c 17 7, 20 22, 11 38 c 6 -18, -1 -30, -11 -30 z" />
+                  <rect class="hit" x="570" y="4" width="60" height="112" fill="none" pointer-events="all" />
+                  <text class="lbl" x="576" y="142">选定环节</text>
+                </g>
+              </svg>
+            </div>
+            <aside class="mv-note"><b>你的开场白就是主题</b>第一句话自动提炼成会话标题，约束语句成为后续每一稿都要复核的强拍。</aside>
+          </div>
+        </div>
+
+        <!-- 乐章 II -->
+        <div class="system offset-r">
+          <div class="sys-head"><h3>第二乐章 · 意图识别</h3><span class="tempo">♩ = 96 · 主控的第一判断</span></div>
+          <div class="sys-grid wide">
+            <div class="sys-score"><span class="brace" aria-hidden="true">{</span>
+              <svg viewBox="0 0 760 150" role="img" aria-label="谱表：三个音符，意图标签、置信度、闲聊直答">
+                <g stroke="#17181A" stroke-width="1.1" opacity=".45">
+                  <line x1="16" y1="16" x2="744" y2="16"/><line x1="16" y1="42" x2="744" y2="42"/>
+                  <line x1="16" y1="68" x2="744" y2="68"/><line x1="16" y1="94" x2="744" y2="94"/>
+                  <line x1="16" y1="120" x2="744" y2="120"/>
+                </g>
+                <line x1="16" y1="16" x2="16" y2="120" stroke="#17181A" stroke-width="2"/>
+                <line x1="744" y1="16" x2="744" y2="120" stroke="#17181A" stroke-width="2"/>
+                <path class="lane" d="M130 81 C 220 90, 300 48, 390 55 S 560 120, 628 107" stroke="#17181A" stroke-width="3" fill="none" stroke-linecap="round" opacity=".9"/>
+                <path class="slur" d="M110 58 Q 380 18, 648 86" />
+                <text class="dyn" x="44" y="112">mp</text>
+                <g class="note" data-note="意图标签" data-anno="每次请求先分类：选题咨询、文献检索、写作推进、格式核对……标签决定由哪个声部接手。" tabindex="0" role="button" aria-label="音符：意图标签">
+                  <ellipse class="head" cx="130" cy="81" rx="12" ry="8.6" />
+                  <line class="stem" x1="141" y1="78" x2="141" y2="27" />
+                  <rect class="hit" x="100" y="27" width="60" height="90" fill="none" pointer-events="all" />
+                  <text class="lbl" x="106" y="142">意图标签</text>
+                </g>
+                <g class="note hollow" data-note="置信度" data-anno="分类带置信度上屏，在工作台时间线里可见。低置信的请求不会硬派，会先回来问清楚。" tabindex="0" role="button" aria-label="音符：置信度">
+                  <ellipse class="head" cx="390" cy="55" rx="12" ry="8.6" />
+                  <line class="stem" x1="401" y1="52" x2="401" y2="1" />
+                  <rect class="hit" x="360" y="1" width="60" height="86" fill="none" pointer-events="all" />
+                  <text class="lbl" x="366" y="142">置信度</text>
+                </g>
+                <g class="note" data-note="闲聊直答" data-anno="「你好」「谢谢」不进文献库：主控自己接住闲聊，不打扰各声部。" tabindex="0" role="button" aria-label="音符：闲聊直答">
+                  <ellipse class="head" cx="628" cy="107" rx="12" ry="8.6" />
+                  <line class="stem" x1="639" y1="104" x2="639" y2="53" />
+                  <path class="flag" d="M639 53 c 17 7, 20 22, 11 38 c 6 -18, -1 -30, -11 -30 z" />
+                  <rect class="hit" x="598" y="53" width="60" height="82" fill="none" pointer-events="all" />
+                  <text class="lbl" x="598" y="142">闲聊直答</text>
+                </g>
+              </svg>
+            </div>
+            <aside class="mv-note"><b>主控的第一判断有据可查</b>意图与置信度上屏进时间线；低置信的请求会被反问，而不是硬派给声部。</aside>
+          </div>
+        </div>
+
+        <!-- 乐章 III -->
+        <div class="system">
+          <div class="sys-head"><h3>第三乐章 · 路由分派</h3><span class="tempo">♩ = 96 · 复杂任务先拆步</span></div>
+          <div class="sys-grid wide">
+            <div class="sys-score"><span class="brace" aria-hidden="true">{</span>
+              <svg viewBox="0 0 760 150" role="img" aria-label="谱表：单声部直派、规划器拆步（旗尾）、声部合奏（连梁双音）">
+                <g stroke="#17181A" stroke-width="1.1" opacity=".45">
+                  <line x1="16" y1="16" x2="744" y2="16"/><line x1="16" y1="42" x2="744" y2="42"/>
+                  <line x1="16" y1="68" x2="744" y2="68"/><line x1="16" y1="94" x2="744" y2="94"/>
+                  <line x1="16" y1="120" x2="744" y2="120"/>
+                </g>
+                <line x1="16" y1="16" x2="16" y2="120" stroke="#17181A" stroke-width="2"/>
+                <line x1="744" y1="16" x2="744" y2="120" stroke="#17181A" stroke-width="2"/>
+                <path class="lane" d="M140 68 C 230 76, 310 102, 396 94 S 520 90, 566 84 S 630 66, 656 60" stroke="#17181A" stroke-width="3" fill="none" stroke-linecap="round" opacity=".9"/>
+                <path class="slur" d="M118 44 Q 380 12, 642 46" />
+                <text class="dyn" x="44" y="112">mf</text>
+                <g class="note" data-note="单声部直派" data-anno="简单的单动作请求直接路由到对应助手，一步到位，不多绕小节。" tabindex="0" role="button" aria-label="音符：单声部直派">
+                  <ellipse class="head" cx="140" cy="68" rx="12" ry="8.6" />
+                  <line class="stem" x1="151" y1="65" x2="151" y2="14" />
+                  <rect class="hit" x="110" y="14" width="60" height="110" fill="none" pointer-events="all" />
+                  <text class="lbl" x="106" y="142">单声部直派</text>
+                </g>
+                <g class="note" data-note="规划器拆步" data-anno="复合任务先进规划器：目标拆成带步骤的计划，每一步谁来做、先做谁，都在时间线上排好。" tabindex="0" role="button" aria-label="音符：规划器拆步">
+                  <ellipse class="head" cx="396" cy="94" rx="12" ry="8.6" />
+                  <line class="stem" x1="407" y1="91" x2="407" y2="40" />
+                  <path class="flag" d="M407 40 c 17 7, 20 22, 11 38 c 6 -18, -1 -30, -11 -30 z" />
+                  <rect class="hit" x="366" y="40" width="60" height="86" fill="none" pointer-events="all" />
+                  <text class="lbl" x="356" y="142">规划器拆步</text>
+                </g>
+                <g class="note" data-note="声部合奏" data-anno="多环节任务可以接力：文献的产出直接成为写作的输入，调子不散。" tabindex="0" role="button" aria-label="音符：声部合奏，两个声部合响">
+                  <ellipse class="head" cx="566" cy="84" rx="12" ry="8.6" />
+                  <line class="stem" x1="577" y1="81" x2="577" y2="30" />
+                  <ellipse class="head" cx="656" cy="60" rx="12" ry="8.6" />
+                  <line class="stem" x1="667" y1="57" x2="667" y2="18" />
+                  <line class="beam" x1="577" y1="30" x2="667" y2="18" stroke-width="7" />
+                  <rect class="hit" x="540" y="16" width="150" height="96" fill="none" pointer-events="all" />
+                  <text class="lbl" x="590" y="142">声部合奏</text>
+                </g>
+              </svg>
+            </div>
+            <aside class="mv-note"><b>分派方式决定执行形状</b>单动作直派，复合任务拆步；跨环节接力时，上游产出直接成为下游输入。</aside>
+          </div>
+        </div>
+
+        <!-- 乐章 IV：六声部 + 调音台 -->
+        <div class="system mix">
+          <div class="sys-head"><h3>第四乐章 · 六个声部</h3><span class="tempo">♩ = 96 · 谱面最密的一段</span></div>
+          <div class="sys-grid">
+            <div class="sys-score"><span class="brace" aria-hidden="true">{</span>
+              <svg viewBox="0 0 760 150" role="img" aria-label="谱表：六个音符构成音阶，配渐强记号，对应六个专项声部">
+                <g stroke="#17181A" stroke-width="1.1" opacity=".45">
+                  <line x1="16" y1="16" x2="744" y2="16"/><line x1="16" y1="42" x2="744" y2="42"/>
+                  <line x1="16" y1="68" x2="744" y2="68"/><line x1="16" y1="94" x2="744" y2="94"/>
+                  <line x1="16" y1="120" x2="744" y2="120"/>
+                </g>
+                <line x1="16" y1="16" x2="16" y2="120" stroke="#17181A" stroke-width="2"/>
+                <line x1="744" y1="16" x2="744" y2="120" stroke="#17181A" stroke-width="2"/>
+                <path class="lane" d="M80 81 C 120 60, 152 55, 188 55 S 262 102, 296 94 S 372 58, 404 68 S 482 102, 512 94 S 592 46, 620 55" stroke="#17181A" stroke-width="3" fill="none" stroke-linecap="round" opacity=".9"/>
+                <path class="slur" d="M60 58 Q 172 30, 292 74 M378 44 Q 502 22, 642 32" />
+                <path class="hairpin" d="M330 12 L420 2 L510 12" />
+                <text class="dyn" x="382" y="34">cresc.</text>
+                <text class="dyn" x="652" y="16">f</text>
+                <g class="note" data-ch="topic" data-note="选题" data-anno="从模糊方向到可做的题目：数据可得性、工作量、创新点三道关，逐稿收窄。" tabindex="0" role="button" aria-label="音符：选题">
+                  <ellipse class="head" cx="80" cy="81" rx="12" ry="8.6" />
+                  <line class="stem" x1="91" y1="78" x2="91" y2="27" />
+                  <rect class="hit" x="50" y="27" width="60" height="90" fill="none" pointer-events="all" />
+                  <text class="lbl" x="62" y="142">选题</text>
+                </g>
+                <g class="note" data-ch="lit" data-note="文献" data-anno="近三年文献检索、去重、按主题分簇，引用格式随写随核。" tabindex="0" role="button" aria-label="音符：文献">
+                  <ellipse class="head" cx="188" cy="55" rx="12" ry="8.6" />
+                  <line class="stem" x1="199" y1="52" x2="199" y2="1" />
+                  <rect class="hit" x="158" y="1" width="60" height="86" fill="none" pointer-events="all" />
+                  <text class="lbl" x="170" y="142">文献</text>
+                </g>
+                <g class="note" data-ch="writing" data-note="写作" data-anno="按章推进：初稿、按批注改写、采纳后沉淀为档案。" tabindex="0" role="button" aria-label="音符：写作">
+                  <ellipse class="head" cx="296" cy="94" rx="12" ry="8.6" />
+                  <line class="stem" x1="307" y1="91" x2="307" y2="40" />
+                  <rect class="hit" x="266" y="40" width="60" height="86" fill="none" pointer-events="all" />
+                  <text class="lbl" x="278" y="142">写作</text>
+                </g>
+                <g class="note" data-ch="format" data-note="格式" data-anno="校规模板逐项核对：图表编号、标题层级、著录格式。" tabindex="0" role="button" aria-label="音符：格式">
+                  <ellipse class="head" cx="404" cy="68" rx="12" ry="8.6" />
+                  <line class="stem" x1="415" y1="65" x2="415" y2="14" />
+                  <path class="flag" d="M415 14 c 17 7, 20 22, 11 38 c 6 -18, -1 -30, -11 -30 z" />
+                  <rect class="hit" x="374" y="14" width="60" height="112" fill="none" pointer-events="all" />
+                  <text class="lbl" x="386" y="142">格式</text>
+                </g>
+                <g class="note" data-ch="check" data-note="查重" data-anno="定位表述过近的段落并给出改写建议，复检值才作数。" tabindex="0" role="button" aria-label="音符：查重">
+                  <ellipse class="head" cx="512" cy="94" rx="12" ry="8.6" />
+                  <line class="stem" x1="523" y1="91" x2="523" y2="40" />
+                  <path class="flag" d="M523 40 c 17 7, 20 22, 11 38 c 6 -18, -1 -30, -11 -30 z" />
+                  <rect class="hit" x="482" y="40" width="60" height="86" fill="none" pointer-events="all" />
+                  <text class="lbl" x="494" y="142">查重</text>
+                </g>
+                <g class="note hollow" data-ch="defense" data-note="答辩" data-anno="预演问答按评委视角分组，创新点与局限性各备口径。" tabindex="0" role="button" aria-label="音符：答辩">
+                  <ellipse class="head" cx="620" cy="55" rx="12" ry="8.6" />
+                  <line class="stem" x1="631" y1="52" x2="631" y2="1" />
+                  <rect class="hit" x="590" y="1" width="60" height="86" fill="none" pointer-events="all" />
+                  <text class="lbl" x="602" y="142">答辩</text>
+                </g>
+              </svg>
+            </div>
+            <div class="lane-mixer" role="group" aria-label="声部静音控制">
+              <button class="ch-knob" data-ch="topic" data-name="选题" aria-pressed="false" type="button"><i aria-hidden="true"></i><span>选题</span></button>
+              <button class="ch-knob" data-ch="lit" data-name="文献" aria-pressed="false" type="button"><i aria-hidden="true"></i><span>文献</span></button>
+              <button class="ch-knob" data-ch="writing" data-name="写作" aria-pressed="false" type="button"><i aria-hidden="true"></i><span>写作</span></button>
+              <button class="ch-knob" data-ch="format" data-name="格式" aria-pressed="false" type="button"><i aria-hidden="true"></i><span>格式</span></button>
+              <button class="ch-knob" data-ch="check" data-name="查重" aria-pressed="false" type="button"><i aria-hidden="true"></i><span>查重</span></button>
+              <button class="ch-knob" data-ch="defense" data-name="答辩" aria-pressed="false" type="button"><i aria-hidden="true"></i><span>答辩</span></button>
+            </div>
+          </div>
+          <p class="sys-note">批注：这六个音符接在右侧调音台上——把某路拉下来，谱面上它的音符就哑了。</p>
+        </div>
+
+        <!-- 乐章 V：延长记号 -->
+        <div class="system narrow">
+          <div class="sys-head"><h3>第五乐章 · 确认与交付</h3><span class="tempo">♩ = 停 · 这一拍由你决定</span></div>
+          <div class="sys-grid wide">
+            <div class="sys-score"><span class="brace" aria-hidden="true">{</span>
+              <svg viewBox="0 0 760 150" role="img" aria-label="谱表：延长记号停在谱面中央，随后是采纳落稿与档案沉淀">
+                <g stroke="#17181A" stroke-width="1.1" opacity=".45">
+                  <line x1="16" y1="16" x2="744" y2="16"/><line x1="16" y1="42" x2="744" y2="42"/>
+                  <line x1="16" y1="68" x2="744" y2="68"/><line x1="16" y1="94" x2="744" y2="94"/>
+                  <line x1="16" y1="120" x2="744" y2="120"/>
+                </g>
+                <line x1="16" y1="16" x2="16" y2="120" stroke="#17181A" stroke-width="2"/>
+                <line x1="744" y1="16" x2="744" y2="120" stroke="#17181A" stroke-width="2"/>
+                <path class="lane" d="M330 81 C 392 72, 442 64, 500 68 S 612 90, 648 94" stroke="#17181A" stroke-width="3" fill="none" stroke-linecap="round" opacity=".9"/>
+                <path class="slur" d="M298 28 Q 430 2, 562 34" />
+                <g class="note" data-fermata data-note="延长记号" data-anno="关键产出走到这里，全队停拍：采纳、修改后采纳、重新生成，或者直接输入你的反馈。" tabindex="0" role="button" aria-label="音符：延长记号，演奏在此停止">
+                  <ellipse class="head" cx="330" cy="81" rx="13" ry="9.4" style="fill:#2E4FA3;stroke:#2E4FA3" />
+                  <path d="M304 60 A 26 22 0 0 1 356 60" stroke="#2E4FA3" stroke-width="4" fill="none" stroke-linecap="round"/>
+                  <circle cx="330" cy="50" r="4.5" fill="#2E4FA3" />
+                  <rect class="hit" x="296" y="30" width="68" height="80" fill="none" pointer-events="all" />
+                  <text class="lbl" x="288" y="142" style="fill:#2E4FA3;font-weight:700">延长记号</text>
+                </g>
+                <g class="note" data-note="采纳落稿" data-anno="确认过的稿子写入项目档案；未经采纳的产出永远停在草稿态。" tabindex="0" role="button" aria-label="音符：采纳落稿">
+                  <ellipse class="head" cx="500" cy="68" rx="12" ry="8.6" />
+                  <line class="stem" x1="511" y1="65" x2="511" y2="14" />
+                  <rect class="hit" x="470" y="14" width="60" height="110" fill="none" pointer-events="all" />
+                  <text class="lbl" x="466" y="142">采纳落稿</text>
+                </g>
+                <g class="note hollow" data-note="档案沉淀" data-anno="档案是后续环节的锚：文献簇、写作定稿、查重值，全从这里长出来。" tabindex="0" role="button" aria-label="音符：档案沉淀，全音符">
+                  <ellipse class="head" cx="648" cy="94" rx="13" ry="9" />
+                  <rect class="hit" x="618" y="62" width="60" height="64" fill="none" pointer-events="all" />
+                  <text class="lbl" x="610" y="142">档案沉淀</text>
+                </g>
+              </svg>
+            </div>
+            <aside class="mv-note"><b>时间线是这场演出的谱面标记</b>工作台右侧实时记录每一次调度，点击任意一条跳回它对应的回答。</aside>
+          </div>
+        </div>
+
+        <!-- 延长记号面板 -->
+        <div class="fermata-wrap">
+          <div class="fermata-panel" id="fermataPanel">
+            <span class="fg" aria-hidden="true">𝄐</span>
+            <div>
+              <h3 id="fermataTitle">延长记号，就是你的裁决权</h3>
+              <p id="fermataText">乐谱里，延长记号停多久由指挥决定。论匠把同样的权力交给你：确认条上四个动作，编队按你的拍子继续。整支编队停下来等一个人，这个设计是故意的。</p>
+            </div>
+            <button class="give-beat" id="giveBeat" type="button" hidden>给拍，继续 ▶</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 数字 -->
+    <section id="fact-block">
+      <div class="wrap">
+        <div class="sec-head rise">
+          <button class="reh" type="button" data-goto="#fact-block" aria-label="跳到关键数字">B</button>
+          <h2>几个真实的数字</h2>
+        </div>
+        <p class="sec-lead rise">来自当前版本的实现参数，不是宣传话术。</p>
+        <div class="facts rise">
+          <div class="fact"><b>6</b><span>个专项环节：选题、文献、写作、格式、查重、答辩</span></div>
+          <div class="fact"><b>30</b><span>个会话的本地卷册容量，拖拽即可重排</span></div>
+          <div class="fact"><b>1</b><span>次确认落一稿：未经采纳的产出不会沉淀</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 收尾 -->
+    <section class="end" style="border-top: 1.5px solid var(--staff)">
+      <div class="wrap">
+        <h2>谱子已经摊开，<br />指挥棒在你手里。</h2>
+        <div class="cta-row">
+          <a class="btn ctl-play" style="border-radius:12px" href="/app.html?demo=1">进入工作台</a>
+          <a class="ctl" style="text-decoration:none" href="/design-samples/round20-pages/sample-dossier.html">看解密卷宗</a>
+        </div>
+        <button class="dc" id="dcMark" type="button"><span aria-hidden="true">⟲</span> D.C. al Copertina · 回到封面，再奏一遍</button>
+      </div>
+    </section>
+
+    <div class="wrap">
+      <footer>
+        <span>论匠 LunJiang</span>
+        <a href="/">落地页</a>
+        <a href="/design-samples/round20-pages/sample-dossier.html">解密卷宗</a>
+        <a href="/app.html?demo=1">工作台预览</a>
+      </footer>
+    </div>
+
+    <div class="sw">
+      <button class="sw-trigger" id="swTrigger" type="button" aria-expanded="false" aria-haspopup="true">
+        <i class="sw-dot" aria-hidden="true"></i><span id="swLabel">六套语言 · 站点完整版</span><span aria-hidden="true">▾</span>
+      </button>
+      <div class="sw-pop" id="swPop" hidden>
+        <a class="sw-item" href="/landing-a.html"><i style="background:#C0332A"></i>铅字印刷<small>A</small></a>
+        <a class="sw-item" href="/landing-b.html"><i style="background:#3FE0C4"></i>夜航仪表<small>B</small></a>
+        <a class="sw-item" href="/landing-c.html"><i style="background:#CCFF00"></i>学术海报<small>C</small></a>
+        <a class="sw-item" href="/landing-d.html"><i style="background:#A8402C"></i>木牍竖排<small>D</small></a>
+        <a class="sw-item" href="/landing-e.html"><i style="background:#FF4D9D"></i>孔版双色<small>E</small></a>
+        <a class="sw-item" href="/landing-f.html"><i style="background:#A33B2A"></i>索引档案<small>F</small></a>
+      </div>
+    </div>
+
+    <div class="anno-float" id="annoFloat" role="status" aria-live="polite">
+      <span class="anno-key">批注</span>
+      <p>滚到谱面上，或点一颗音符：解释会写在这里。</p>
+    </div>
+
+    <script>
+      /* ============ 声音：Web Audio 五声音阶，默认静音 ============ */
+      let ac = null
+      let soundOn = false
+      const SCALE = [261.63, 293.66, 329.63, 392.0, 440.0, 523.25, 587.33, 659.25, 784.0]
+      function ping(idx) {
+        if (!soundOn) return
+        try {
+          ac = ac || new (window.AudioContext || window.webkitAudioContext)()
+          if (ac.state === 'suspended') ac.resume()
+          const t = ac.currentTime, f = SCALE[idx % SCALE.length]
+          ;[[1, 'triangle', .3], [2, 'sine', .09]].forEach(([mult, type, peak]) => {
+            const o = ac.createOscillator(), g = ac.createGain()
+            o.type = type
+            o.frequency.value = f * mult
+            g.gain.setValueAtTime(0, t)
+            g.gain.linearRampToValueAtTime(peak, t + .02)
+            g.gain.exponentialRampToValueAtTime(.0001, t + .78)
+            o.connect(g).connect(ac.destination)
+            o.start(t); o.stop(t + .82)
+          })
+        } catch (e) { /* 音频失败绝不阻断页面 */ }
+      }
+      const soundBtn = document.getElementById('soundToggle')
+      soundBtn.addEventListener('click', () => {
+        soundOn = !soundOn
+        soundBtn.setAttribute('aria-pressed', String(soundOn))
+        soundBtn.lastChild.textContent = soundOn ? '声音：开' : '声音：关'
+        if (soundOn) ping(0)
+      })
+
+      /* ============ 批注签 + 谱线生长 + 流光 ============ */
+      function setAnso(key, text) {
+        const f = document.getElementById('annoFloat')
+        f.querySelector('.anno-key').textContent = '批注 · ' + key
+        f.querySelector('p').textContent = text
+        f.classList.add('on')
+      }
+      const sysInfo = new Map()
+      const svgLanes = new Map()
+      document.querySelectorAll('.system').forEach(sys => {
+        const svg = sys.querySelector('svg')
+        const lane = svg ? svg.querySelector('.lane') : null
+        const ns = [...sys.querySelectorAll('.note')]
+        if (lane) {
+          const L = lane.getTotalLength()
+          lane.style.strokeDasharray = L
+          lane.style.strokeDashoffset = L
+          const flow = lane.cloneNode()
+          flow.classList.add('lane-flow')
+          flow.removeAttribute('style')
+          flow.style.strokeDasharray = '4 18'
+          lane.after(flow)
+          svgLanes.set(svg, { lane, L, flow })
+          ns.forEach((n, i) => sysInfo.set(n, { lane, L, flow, i, total: ns.length }))
+        }
+      })
+      function setFlow(info, frac) {
+        if (!info.flow) return
+        info.flow.style.opacity = (frac * .55).toFixed(3)
+        info.flow.style.clipPath = 'inset(-30% ' + (100 - frac * 100).toFixed(2) + '% -30% 0)'
+      }
+      function extendLane(n) {
+        const info = sysInfo.get(n)
+        if (!info || !info.lane) return
+        const frac = (info.i + 1) / info.total
+        info.lane.style.strokeDashoffset = info.L * (1 - frac)
+        setFlow(info, frac)
+      }
+      if (matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.querySelectorAll('svg .lane').forEach(l => { l.style.strokeDashoffset = 0 })
+      }
+
+      /* ============ 音符交互 ============ */
+      document.querySelectorAll('.note').forEach((n, i) => {
+        const act = () => {
+          n.classList.add('is-now')
+          extendLane(n)
+          setAnso(n.dataset.note, n.dataset.anno)
+          ping(+n.dataset.pitch || i % SCALE.length)
+        }
+        n.addEventListener('click', act)
+        n.addEventListener('keydown', e => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); act() }
+        })
+      })
+
+      /* ============ 演奏指针 + 谱线随乐章生长 ============ */
+      const playhead = document.getElementById('playhead')
+      const book = document.getElementById('score')
+      new IntersectionObserver((es) => {
+        es.forEach(e => playhead.classList.toggle('on', e.isIntersecting))
+      }, { threshold: 0 }).observe(book)
+
+      let playing = false
+      document.querySelectorAll('.note').forEach((n, i) => {
+        n.dataset.pitch = i % SCALE.length
+        n.style.animationDelay = ((i % 7) * .42).toFixed(2) + 's'
+        if (i % 2) n.style.animationDuration = '5.1s'
+      })
+      const sysIo = new IntersectionObserver((es) => {
+        if (playing) return
+        es.forEach(e => {
+          if (!e.isIntersecting) return
+          const info = svgLanes.get(e.target)
+          if (!info) return
+          const frac = Math.min(1, e.intersectionRatio * 1.12)
+          info.lane.style.strokeDashoffset = info.L * (1 - frac)
+          setFlow(info, frac)
+          e.target.classList.toggle('played', frac > .3)
+          const ns = [...e.target.querySelectorAll('.note')]
+          let lastLit = null
+          ns.forEach((n, i) => {
+            const lit = frac >= (i + 0.5) / ns.length
+            n.classList.toggle('is-now', lit)
+            if (lit) lastLit = n
+          })
+          if (lastLit) {
+            setAnso(lastLit.dataset.note, lastLit.dataset.anno)
+            pingThrottled(+lastLit.dataset.pitch || 0)
+          }
+        })
+      }, { threshold: Array.from({ length: 41 }, (_, i) => i / 40) })
+      document.querySelectorAll('.sys-score svg').forEach(svg => sysIo.observe(svg))
+
+      let lastPingAt = 0
+      function pingThrottled(idx) {
+        const now = Date.now()
+        if (now - lastPingAt > 160) { lastPingAt = now; ping(idx) }
+      }
+
+      /* ============ 演奏全曲：延长记号必停 ============ */
+      const notes = [...document.querySelectorAll('.note')]
+      const giveBeat = document.getElementById('giveBeat')
+      const fermataText = document.getElementById('fermataText')
+      let timers = []
+      let scrRaf = 0
+      function scrollCenter(el) {
+        const r = el.getBoundingClientRect()
+        const to = window.scrollY + r.top + r.height / 2 - window.innerHeight / 2
+        const from = window.scrollY, d = to - from, t0 = performance.now(), dur = 640
+        cancelAnimationFrame(scrRaf)
+        const ease = t => (t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+        ;(function step(now) {
+          const p = Math.min(1, (now - t0) / dur)
+          window.scrollTo(0, from + d * ease(p))
+          if (p < 1) scrRaf = requestAnimationFrame(step)
+        })(t0)
+      }
+      document.getElementById('playAll').addEventListener('click', () => {
+        if (playing) { timers.forEach(clearTimeout); timers = []; playing = false; return }
+        playing = true
+        let delay = 300
+        for (const n of notes) {
+          timers.push(setTimeout(() => {
+            scrollCenter(n)
+            n.classList.add('is-now')
+            extendLane(n)
+            setAnso(n.dataset.note, n.dataset.anno)
+            ping(+n.dataset.pitch || 0)
+          }, delay))
+          delay += n.hasAttribute('data-fermata') ? 860 : 660
+          if (n.hasAttribute('data-fermata')) {
+            timers.push(setTimeout(() => {
+              giveBeat.hidden = false
+              fermataText.textContent = '演奏停在这里了。编队也在同样的地方停：你给拍，它才继续。'
+              giveBeat.focus()
+            }, delay - 500))
+            delay += 400
+          }
+        }
+        timers.push(setTimeout(() => {
+          playing = false
+          fermataText.textContent = '演奏结束：产出已写进档案。这就是一次完整推进的样子。'
+        }, delay))
+      })
+      giveBeat.addEventListener('click', () => { giveBeat.hidden = true })
+
+      /* ============ 调音台：静音联动谱面 ============ */
+      document.querySelectorAll('.ch-knob').forEach(f => {
+        f.addEventListener('click', () => {
+          const on = f.getAttribute('aria-pressed') !== 'true'
+          f.setAttribute('aria-pressed', String(on))
+          f.querySelector('span').textContent = on ? f.dataset.name + '（静音）' : f.dataset.name
+          document.querySelectorAll(`.note[data-ch="${f.dataset.ch}"]`)
+            .forEach(n => n.classList.toggle('muted', on))
+        })
+      })
+
+      /* ============ 排练记号导航 ============ */
+      document.querySelectorAll('.reh[data-goto]').forEach(b => {
+        b.addEventListener('click', () => {
+          document.querySelector(b.dataset.goto)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        })
+      })
+      const markIo = new IntersectionObserver((es) => {
+        es.forEach(e => {
+          const mark = document.querySelector(`.reh[data-goto="#${e.target.id}"]`)
+          if (mark) mark.classList.toggle('on', e.isIntersecting && e.intersectionRatio > .15)
+        })
+      }, { threshold: [.15] })
+      ;['score', 'fact-block'].forEach(id => {
+        const el = document.getElementById(id)
+        if (el) markIo.observe(el)
+      })
+
+      /* ============ D.C. 反复记号：回封面重奏 ============ */
+      document.getElementById('dcMark').addEventListener('click', () => {
+        svgLanes.forEach(info => {
+          info.lane.style.strokeDashoffset = info.L
+          if (info.flow) info.flow.style.opacity = 0
+        })
+        document.querySelectorAll('.note').forEach(n => n.classList.remove('is-now', 'is-done'))
+        giveBeat.hidden = true
+        fermataText.textContent = '乐谱里，延长记号停多久由指挥决定。论匠把同样的权力交给你：确认条上四个动作，编队按你的拍子继续。整支编队停下来等一个人，这个设计是故意的。'
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+      })
+
+      /* ============ 皮肤导航：跳到六套语言在完整站点的落地页（本页配色独立不受其影响） ============ */
+      const swTrigger = document.getElementById('swTrigger')
+      const swPop = document.getElementById('swPop')
+      swTrigger.addEventListener('click', () => {
+        const open = swPop.hidden
+        swPop.hidden = !open
+        swTrigger.setAttribute('aria-expanded', String(open))
+      })
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.sw')) { swPop.hidden = true; swTrigger.setAttribute('aria-expanded', 'false') }
+      })
+
+      /* ============ 入场浮现 ============ */
+      const io = new IntersectionObserver((es) => {
+        es.forEach(e => { if (e.isIntersecting) { e.target.classList.add('risen'); io.unobserve(e.target) } })
+      }, { threshold: 0.15 })
+      document.querySelectorAll('.rise').forEach(el => io.observe(el))
+    </script>
+  </body>
+</html>

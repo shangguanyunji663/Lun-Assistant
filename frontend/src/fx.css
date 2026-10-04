@@ -263,7 +263,8 @@
   0%, 100% { transform: scale(1); }
   50%      { transform: scale(1.03); }
 }
-.wb-empty .seal { animation: fx-seal-float 4.5s var(--ease, ease) infinite; }
+.wb-empty .seal,
+.wb-boot .seal { animation: fx-seal-float 4.5s var(--ease, ease) infinite; }
 @keyframes fx-seal-float {
   0%, 100% { transform: translateY(-3px); }
   50%      { transform: translateY(3px); }
@@ -409,6 +410,7 @@
   .ambient-lines::before,
   .wb-brand .seal,
   .wb-empty .seal,
+  .wb-boot .seal,
   .kb-doc:hover .kd-icon,
   .wb-main.is-streaming .wb-compose,
   .wb-main.is-streaming .wb-compose-ta,

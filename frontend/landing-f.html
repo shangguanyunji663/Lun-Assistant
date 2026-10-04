@@ -9,13 +9,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#E1E2DD" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <!-- 字体自托管：见 src/fonts/fonts.css（替代 fonts.googleapis.com，内网不掉字重） -->
+    <link rel="stylesheet" href="/src/fonts/fonts.css" />
     <meta name="description"
       content="论匠 LunJiang —— 多智能体论文全流程工作台。选题、文献、写作、格式、查重、答辩，六个环节一支编队，产出经你确认后落稿。" />
     <title>论匠 LunJiang · 多智能体论文全流程工作台</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet" />
 
     <link rel="stylesheet" href="/src/landing/shared.css" />
     <style>
@@ -279,6 +278,8 @@
       /* ---------------------------------------------------- 页脚 */
       .foot { margin-top: 84px; border-top: 3px solid var(--ink); position: relative; }
       .foot::before { content: ""; position: absolute; left: 0; right: 0; top: 4px; height: 1px; background: var(--ink); }
+      .foot-nav a { color: var(--ink2, #888); }
+      .foot-nav a:hover { color: var(--stamp, #a33b2a); }
       .foot-in { display: flex; flex-wrap: wrap; align-items: center; gap: 18px; padding: 22px 0 10px; }
       .foot-brand { font-family: var(--lb-serif); font-weight: 900; letter-spacing: .18em; }
       .foot-stack, .foot-lic { font-family: var(--lb-mono); font-size: 10px; letter-spacing: .14em; color: var(--ink3); }
@@ -324,6 +325,8 @@
           <span><b>论匠</b><small>LunJiang · No.18</small></span>
         </span>
         <nav class="mnav" aria-label="主导航">
+          <a href="/how-it-works.html">编队总谱</a>
+          <a href="/dossier.html">论文底片</a>
           <a href="#stages">六个环节</a>
           <a href="#arch">架构与评测</a>
           <a href="#synergy">人机协同</a>
@@ -567,6 +570,7 @@
       <div class="wrap">
         <div class="foot-in">
           <span class="foot-brand">论匠 LUNJIANG</span>
+          <span class="foot-nav"><a href="/how-it-works.html">编队总谱</a> · <a href="/dossier.html">论文底片</a></span>
           <span class="foot-stack">FastAPI · LangGraph · PostgreSQL + pgvector · Redis · React 18</span>
           <span class="fill"></span>
           <span class="foot-lic">MIT License · © <span id="lj-year">2026</span></span>

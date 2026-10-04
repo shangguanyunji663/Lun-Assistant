@@ -115,7 +115,8 @@ code, pre, kbd { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Men
   line-height: 1.2;
   transition: background var(--dur, .22s) var(--ease, ease),
               border-color var(--dur, .22s) var(--ease, ease),
-              transform var(--dur, .22s) var(--ease, ease);
+              transform var(--dur, .22s) var(--ease, ease),
+              scale 90ms var(--ease, ease);
 }
 .btn:hover:not(:disabled) { border-color: var(--accent, #333); }
 .btn:disabled { opacity: .5; }
@@ -126,6 +127,22 @@ code, pre, kbd { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Men
 .btn-ghost { background: transparent; }
 .btn-danger { border-color: var(--danger, #b3402f); color: var(--danger, #b3402f); background: transparent; }
 .btn-danger:hover:not(:disabled) { background: var(--danger, #b3402f); color: var(--bg, #fff); }
+
+/* 按下反馈：统一用独立 scale 属性而非 transform——
+   transform 的所有权归 fx 层（[data-tilt].tilt-on 会以 !important 接管、
+   [data-magnet] 常驻 translate 位移），scale/translate 是独立属性，互不覆盖。
+   按下是离散状态而非动画，prefers-reduced-motion 下保留（见 §8 注）。 */
+.btn:active:not(:disabled),
+.wb-btn:active:not(:disabled),
+.wb-jump:active,
+.wb-view:active,
+.wb-side-tab:active,
+.wb-new:active,
+.wb-prompt:active,
+.wb-break-op:active:not(:disabled),
+.wb-vol-del:active,
+.wb-tl-item.is-clickable:active,
+.sp-item:active { scale: .97; }
 
 /* 卡片：皮肤可整体弃用（例如 A/F 用「纸块」而非卡片） */
 .card {
@@ -178,6 +195,23 @@ code, pre, kbd { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Men
 
 /* 语义文本 */
 .muted { color: var(--text-3, #888); }
+
+/* 数字等宽（tabular figures）：时间戳 / 序号 / 计数 / 分数在比例字体里
+   每帧刷新都会横向跳动，数据型文本必须锁定等宽数字。 */
+time,
+.wb-msg-time,
+.wb-vol-meta,
+.wb-vol-no,
+.kh-score { font-variant-numeric: tabular-nums; }
+
+/* 中文标题孤字抑制：最后一行只剩一个字时宽度自动重排 */
+.wb-empty h2,
+.modal-card h3,
+.wb-break-ask,
+.wb-bubble h1,
+.wb-bubble h2,
+.wb-bubble h3,
+.wb-bubble h4 { text-wrap: balance; }
 .err {
   margin-top: var(--s-3, 12px);
   padding: 10px 13px;
@@ -189,6 +223,20 @@ code, pre, kbd { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Men
 .link { cursor: pointer; border-bottom: 1px solid currentColor; }
 .link:hover { color: var(--accent, #333); }
 .empty-tip { font-size: var(--fs-sm, 13.5px); line-height: 1.85; color: var(--text-3, #888); }
+
+/* 骨架屏原子：面板加载中用「版式同形的占位条」替代纯文本「读取中」，
+   宽度错落 + 错峰脉动暗示内容正在到来。reduced-motion 下脉动停在一帧。 */
+.skl { display: grid; gap: 10px; padding: 4px 0; }
+.skl-line {
+  display: block;
+  height: 12px;
+  border-radius: var(--r-btn, 6px);
+  background: var(--surface-2, #f0f0f0);
+  animation: skl-pulse 1.4s ease-in-out infinite;
+}
+.skl-line:nth-child(2) { width: 82%; animation-delay: .12s; }
+.skl-line:nth-child(3) { width: 64%; animation-delay: .24s; }
+@keyframes skl-pulse { 50% { opacity: .5; } }
 
 /* ============================================================ 6. 弹窗骨架 */
 .modal-mask {
@@ -254,7 +302,7 @@ code, pre, kbd { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Men
    气泡内 markdown 的结构性排版（颜色 / 字体由皮肤决定） */
 .wb-bubble > :first-child { margin-top: 0; }
 .wb-bubble > :last-child { margin-bottom: 0; }
-.wb-bubble p { margin: 0 0 .72em; }
+.wb-bubble p { margin: 0 0 .72em; max-width: 66ch; text-wrap: pretty; }
 .wb-bubble ul,
 .wb-bubble ol { margin: .5em 0 .8em; padding-left: 1.35em; }
 .wb-bubble li { list-style: inherit; margin: .22em 0; }
@@ -322,6 +370,23 @@ code, pre, kbd { font-family: var(--font-mono, ui-monospace, SFMono-Regular, Men
   animation: cursor-blink 1.05s steps(1, end) infinite;
 }
 @keyframes cursor-blink { 50% { opacity: 0; } }
+
+/* ============================================================ 7b. 时间线跳转
+   点时间线事件 → 滚到对应气泡。样式全走令牌，皮肤零改动即得各自配色：
+   可点条目只给「指针 + 标题提色」的最小手势；到位后目标气泡用
+   --accent 淡色环脉冲一次（box-shadow 不与皮肤的气泡底色打架）。 */
+.wb-tl-item.is-clickable { cursor: pointer; }
+.wb-tl-item.is-clickable:hover .wb-tl-title,
+.wb-tl-item.is-clickable:focus-visible .wb-tl-title { color: var(--accent, #333); }
+
+.wb-msg.is-jump-hl .wb-bubble {
+  animation: wb-jump-hl 1.2s var(--ease, ease) 1;
+}
+@keyframes wb-jump-hl {
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent, #333) 0%, transparent); }
+  30%  { box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent, #333) 26%, transparent); }
+  100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent, #333) 0%, transparent); }
+}
 
 /* ============================================================ 8. 弱动效降级
    系统开启「减少动态效果」时，全局关掉动画与位移，但保留最终可见态。 */

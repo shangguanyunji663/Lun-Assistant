@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { api } from './api.js'
 import { DEMO_INTERRUPT, DEMO_PROJECTS, DEMO_SESSIONS, DEMO_USER, isDemo } from './demo.js'
@@ -149,6 +149,47 @@ export default function App() {
   const { scrollRef, onScroll, atBottom, scrollToBottom } =
     useStickyScroll([messages.length, timeline.length], active?.id)
 
+  /* ---- 时间线 → 消息 跳转锚 ----
+     后端每轮在首次进入 supervisor 时发一次 intent（services/agent/supervisor.py
+     的 not visited 分支），node_start 却是每个节点都发——所以 intent 是唯一
+     可靠的轮边界。渲染期推断，不动持久化结构：第 k 段事件 → 第 k 条
+     assistant 消息（msgs 按 用户/助手 成对追加，助手在奇数下标）。
+     首个 intent 之前的事件（error/interrupt 兜底轮）归最后一条消息；
+     resume 反馈轮可能不发 intent，其事件会落进上一段——渲染期推断的固有
+     边界，收益（老会话全量可跳）大于代价。推断失败返回 -1（不可点）。 */
+  const turnOfEvent = useMemo(() => {
+    const out = new Array(timeline.length)
+    let seg = -1
+    for (let i = 0; i < timeline.length; i++) {
+      if (timeline[i].type === 'intent') seg += 1
+      if (seg < 0) { out[i] = messages.length ? messages.length - 1 : -1; continue }
+      const idx = 2 * seg + 1
+      out[i] = idx < messages.length ? idx : -1
+    }
+    return out
+  }, [timeline, messages.length])
+
+  /* 点击时间线事件：滚动到对应气泡并脉冲高亮一次。
+     流式中目标就是最后一条时直接走粘底的 scrollToBottom，不打断跟随；
+     高亮带会话 id，切会话后残留的清理定时器不会错标新会话的气泡。
+     注意：scrollRef 是 useStickyScroll 的 callback ref（无 .current），
+     查询 DOM 要用这里另挂的 streamElRef——两个 ref 合并挂在同一节点上。 */
+  const [jumpHl, setJumpHl] = useState(null) // { sid, idx }
+  const hlTimer = useRef(0)
+  const streamElRef = useRef(null)
+  const attachStream = useCallback((node) => { streamElRef.current = node; scrollRef(node) }, [scrollRef])
+  const jumpToMsg = (idx) => {
+    if (idx < 0 || idx >= messages.length) return
+    if (streaming && idx === messages.length - 1) scrollToBottom('smooth')
+    else streamElRef.current
+      ?.querySelector(`[data-midx="${idx}"]`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    setJumpHl({ sid: active?.id, idx })
+    window.clearTimeout(hlTimer.current)
+    hlTimer.current = window.setTimeout(() => setJumpHl(null), 1300)
+  }
+  useEffect(() => () => window.clearTimeout(hlTimer.current), [])
+
   /* 把顶栏实测高度写进 --wb-top-h。
      窄屏（≤820px）下顶栏会换行，各皮肤高度本就不同（实测 165px ~ 234px），
      CSS 里写死任何 vh 数值都会在某个机型上失效——390×844 就曾因此把输入框
@@ -255,7 +296,14 @@ export default function App() {
     send(t, t)
   }
 
-  if (booting) return <div className="wb-boot">加载中…</div>
+  if (booting) {
+    return (
+      <div className="wb-boot">
+        <Seal size={40} />
+        <p>正在铺纸研墨…</p>
+      </div>
+    )
+  }
   if (!user) return <AuthPage onLogin={setUser} skinCtl={skinCtl} />
 
   return (
@@ -347,7 +395,7 @@ export default function App() {
 
           {/* ---------- 中 · 对话主区 ---------- */}
           <section className={`wb-col wb-main${streaming ? ' is-streaming' : ''}`}>
-            <div className="wb-stream" ref={scrollRef} onScroll={onScroll}>
+            <div className="wb-stream" ref={attachStream} onScroll={onScroll}>
               <div className="wb-inner">
                 {messages.length === 0 && (
                   <div className="wb-empty">
@@ -370,8 +418,10 @@ export default function App() {
                 {messages.map((m, i) => {
                   const isUser = m.role === 'user'
                   const last = i === messages.length - 1
+                  const hl = jumpHl && jumpHl.sid === active?.id && jumpHl.idx === i
                   return (
-                    <article key={i} className={`wb-msg ${isUser ? 'is-user' : 'is-ai'}`}>
+                    <article key={i} data-midx={i}
+                             className={`wb-msg ${isUser ? 'is-user' : 'is-ai'}${hl ? ' is-jump-hl' : ''}`}>
                       <div className="wb-msg-head">
                         <span className="wb-msg-mark" aria-hidden="true">{isUser ? '言' : '匠'}</span>
                         <span className="wb-msg-name">{isUser ? user.username : '匠'}</span>
@@ -475,7 +525,8 @@ export default function App() {
             <div className="wb-side-body">
               {sideTab === 'timeline' && (
                 timeline.length
-                  ? <Timeline events={timeline} />
+                  ? <Timeline events={timeline} turnOf={turnOfEvent}
+                              onJump={i => jumpToMsg(turnOfEvent[i] ?? -1)} />
                   : <p className="empty-tip">
                       发起对话后，这里展示主控调度 / 意图识别 / 路由 / 工具调用
                       （含 Planner 规划与步骤）。

@@ -44,6 +44,12 @@
               border-color .22s var(--lb-ease, ease);
 }
 .sw-trigger:hover { border-color: var(--lb-accent, #333); transform: translateY(-2px); }
+
+/* 按下反馈：scale 是独立属性，不与 hover 的 transform 位移打架 */
+.sw-trigger:active,
+.sw-item:active,
+.egg-go:active,
+.egg-later:active { scale: .97; }
 .sw-dot {
   width: 9px;
   height: 9px;

@@ -1,0 +1,710 @@
+/* ============================================================================
+   皮肤 H · 论文底片（Contact Sheet）—— 第 8 套设计语言
+   —— 暗房炭黑 + 复印纸白 + 墨黑单色（无彩色）。撕边纸屑、片孔条、印章、
+   打字机体。设计性格：黑箱的反面——全部可溯源。
+   来源：design-samples/round20-pages 的「解密卷宗」页（该页是本语言的完整
+   演示，含逐条解密与打字机音效机制）。
+
+   骨架与皮肤 A 同构；次级面板由 styles/panels.css 吃令牌自动适配。
+   与皮肤 B（夜航仪表）的区别：B 是荧光青的仪器台，H 是无彩的胶片与纸。
+   ============================================================================ */
+
+/* ============================================================ 1. 令牌 */
+html[data-skin="h"] {
+  --bg: #141416;
+  --surface: #232529;
+  --surface-2: #1B1D21;
+
+  --text: #ECEAE4;
+  --text-2: #B9B7B0;
+  --text-3: #8B8A85;
+
+  --line: rgba(236, 234, 228, .12);
+  --line-2: rgba(236, 234, 228, .3);
+
+  --accent: #E8E7E2;
+  --accent-2: #8B8A85;
+  --accent-ink: #141416;
+  --danger: #C98274;
+
+  --font-display: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-body: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --ease: cubic-bezier(.22, .9, .3, 1);
+  --dur: .26s;
+  --dur-slow: .42s;
+
+  --r-card: 3px;
+  --r-btn: 3px;
+  --r-pill: 3px;
+
+  --shadow-card: none;
+  --shadow-pop: 0 18px 40px rgba(0, 0, 0, .5);
+  --shadow-glow: 0 0 20px rgba(236, 234, 228, .12);
+
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 22px;
+  --s-6: 28px;
+
+  --fs-micro: 11px;
+  --fs-sm: 13.5px;
+  --fs-md: 15px;
+  --fs-lg: 17px;
+  --fs-xl: 20px;
+  --fs-2xl: 28px;
+
+  --stamp-display: inline;
+  --stamp-text-display: none;
+
+  --scan-display: none;
+}
+
+/* 桌面颗粒：暗房的空气感 */
+html[data-skin="h"] body {
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='.11'/></svg>");
+}
+
+/* ============================================================ 2. 外壳 */
+html[data-skin="h"] .wb {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+}
+html[data-skin="h"] .ambient-lines { display: none; }
+
+/* ============================================================ 3. 顶栏
+   片基顶栏：细线 + 右侧一段片孔条 */
+html[data-skin="h"] .wb-top {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  padding: 12px 26px;
+  border-bottom: 1px solid var(--line-2);
+  background: var(--bg);
+}
+html[data-skin="h"] .wb-top::after {
+  content: "";
+  position: absolute;
+  right: 26px; bottom: -7px;
+  width: 180px; height: 8px;
+  background: repeating-linear-gradient(90deg,
+    var(--line) 0 10px, transparent 10px 18px);
+}
+
+html[data-skin="h"] .wb-brand { display: flex; align-items: center; gap: 11px; }
+html[data-skin="h"] .wb-brand .seal { border-radius: 3px; }
+html[data-skin="h"] .wb-brand-text { display: flex; flex-direction: column; line-height: 1.15; }
+html[data-skin="h"] .wb-brand-text b {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: .12em;
+}
+html[data-skin="h"] .wb-brand-text i {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: .16em;
+  color: var(--text-3);
+}
+
+html[data-skin="h"] .wb-proj { display: flex; align-items: center; gap: var(--s-2); }
+html[data-skin="h"] .wb-proj-sel {
+  max-width: 260px;
+  padding: 6px 4px;
+  border: 0;
+  border-bottom: 1px solid var(--line-2);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+html[data-skin="h"] .wb-proj-sel:focus { border-color: var(--accent); }
+
+html[data-skin="h"] .wb-user {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--text-2);
+}
+html[data-skin="h"] .wb-user b { font-weight: 700; color: var(--text); }
+html[data-skin="h"] .wb-user i {
+  padding: 2px 6px;
+  border: 1px solid var(--line-2);
+  font-size: 11px;
+  font-style: normal;
+  letter-spacing: .12em;
+}
+
+/* 视图切换：曝光框式，选中反白 */
+html[data-skin="h"] .wb-views { display: flex; gap: var(--s-3); }
+html[data-skin="h"] .wb-view {
+  padding: 4px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--r-btn);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  color: var(--text-3);
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+html[data-skin="h"] .wb-view:hover { color: var(--text); }
+html[data-skin="h"] .wb-view.is-on { color: var(--bg); background: var(--accent); border-color: var(--accent); }
+
+/* ============================================================ 4. 按钮 */
+html[data-skin="h"] .wb-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-btn);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+html[data-skin="h"] .wb-btn-ghost:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+html[data-skin="h"] .wb-btn-ink { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+html[data-skin="h"] .wb-btn-ink:hover:not(:disabled) { background: #F5F4EF; border-color: #F5F4EF; }
+html[data-skin="h"] .wb-btn:disabled { opacity: .38; }
+
+/* ============================================================ 5. 皮肤选择器 */
+html[data-skin="h"] .skin-picker { position: relative; }
+html[data-skin="h"] .skin-trigger { display: inline-flex; align-items: center; gap: 8px; }
+html[data-skin="h"] .sp-chip { width: 11px; height: 11px; flex: none; border-radius: 2px; }
+html[data-skin="h"] .sp-label { font-size: var(--fs-sm); }
+html[data-skin="h"] .sp-caret { font-size: 11px; opacity: .6; }
+
+html[data-skin="h"] .skin-pop {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 60;
+  width: 322px;
+  padding: var(--s-4);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-pop);
+  animation: base-rise var(--dur) var(--ease) both;
+}
+html[data-skin="h"] .sp-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+}
+html[data-skin="h"] .sp-title {
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+html[data-skin="h"] .sp-hint {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .1em;
+  color: var(--text-3);
+}
+html[data-skin="h"] .sp-grid { padding: var(--s-3) 0 var(--s-2); }
+html[data-skin="h"] .sp-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 8px;
+  border-left: 3px solid transparent;
+  text-align: left;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+html[data-skin="h"] .sp-item:hover { background: rgba(236, 234, 228, .06); }
+html[data-skin="h"] .sp-item.on { border-left-color: var(--accent); background: rgba(236, 234, 228, .08); }
+html[data-skin="h"] .sp-item .sp-chip { width: 13px; height: 13px; }
+html[data-skin="h"] .sp-body { display: flex; flex-direction: column; min-width: 0; }
+html[data-skin="h"] .sp-name { font-size: var(--fs-sm); font-weight: 700; }
+html[data-skin="h"] .sp-name em {
+  margin-left: 7px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: .1em;
+  color: var(--text-3);
+}
+html[data-skin="h"] .sp-desc {
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-3);
+}
+html[data-skin="h"] .sp-check { margin-left: auto; color: var(--accent); font-size: 12px; }
+html[data-skin="h"] .sp-foot {
+  display: block;
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: .1em;
+  color: var(--text-3);
+}
+html[data-skin="h"] .sp-foot:hover { color: var(--accent); }
+
+/* ============================================================ 6. 横幅 */
+html[data-skin="h"] .wb-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: 9px 26px;
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+html[data-skin="h"] .wb-banner.is-err { background: rgba(201, 130, 116, .12); color: var(--danger); }
+html[data-skin="h"] .wb-banner.is-warn { background: rgba(236, 234, 228, .07); color: var(--text-2); }
+html[data-skin="h"] .wb-banner-x { margin-left: auto; font-size: 15px; line-height: 1; }
+
+/* ============================================================ 7. 三栏
+   栏头带片孔条（胶片的物理记号） */
+html[data-skin="h"] .wb-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 244px minmax(0, 1fr) 272px;
+}
+html[data-skin="h"] .wb-col { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+html[data-skin="h"] .wb-volumes,
+html[data-skin="h"] .wb-main { border-right: 1px solid var(--line); }
+html[data-skin="h"] .wb-main { background: var(--bg); }
+html[data-skin="h"] .wb-volumes,
+html[data-skin="h"] .wb-side { background: var(--surface-2); }
+
+html[data-skin="h"] .wb-colhead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px 20px 10px;
+  border-bottom: 1px solid var(--line);
+  background:
+    repeating-linear-gradient(90deg, var(--line) 0 9px, transparent 9px 16px) left bottom / 100% 3px no-repeat;
+}
+html[data-skin="h"] .wb-ch-en,
+html[data-skin="h"] .wb-ch-cn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+/* ============================================================ 8. 会话卷册
+   卷册 = 接触印样的帧：每条是一格底片 */
+html[data-skin="h"] .wb-new {
+  margin: 14px 20px 10px;
+  padding: 11px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-btn);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  letter-spacing: .06em;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="h"] .wb-new span { color: var(--accent); }
+html[data-skin="h"] .wb-new:hover:not(:disabled) { background: var(--accent); color: var(--accent-ink); }
+html[data-skin="h"] .wb-new:disabled { opacity: .4; }
+
+html[data-skin="h"] .wb-vollist { flex: 1; min-height: 0; overflow-y: auto; padding-bottom: var(--s-4); }
+html[data-skin="h"] .wb-vol {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 12px 8px;
+  padding: 11px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  cursor: grab;
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+html[data-skin="h"] .wb-vol:hover { border-color: var(--line-2); }
+html[data-skin="h"] .wb-vol.is-on { border-color: var(--accent); background: rgba(236, 234, 228, .07); }
+html[data-skin="h"] .wb-vol-no {
+  flex: none;
+  padding-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+}
+html[data-skin="h"] .wb-vol-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+html[data-skin="h"] .wb-vol-title {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html[data-skin="h"] .wb-vol-meta {
+  margin-top: 5px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+}
+html[data-skin="h"] .wb-vol-del {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--text-3);
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="h"] .wb-vol:hover .wb-vol-del { opacity: 1; }
+html[data-skin="h"] .wb-vol-del:hover { color: var(--danger); }
+html[data-skin="h"] .wb-vol-empty { padding: 20px; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--text-3); }
+
+/* ============================================================ 9. 对话主区
+   用户发言 = 贴在桌上的撕边纸条（反白）；AI 发言 = 暗框胶片 */
+html[data-skin="h"] .wb-stream { flex: 1; min-height: 0; overflow-y: auto; }
+html[data-skin="h"] .wb-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 30px 40px 12px;
+}
+
+html[data-skin="h"] .wb-msg + .wb-msg { margin-top: 30px; }
+html[data-skin="h"] .wb-msg-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+  font-family: var(--font-mono);
+}
+html[data-skin="h"] .wb-msg-mark {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  border: 1.5px solid var(--text-2);
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+html[data-skin="h"] .wb-msg.is-ai .wb-msg-mark { border-color: var(--accent); color: var(--accent); }
+html[data-skin="h"] .wb-msg-name {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+html[data-skin="h"] .wb-msg-role {
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: var(--text-3);
+}
+html[data-skin="h"] .wb-msg-time {
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--text-3);
+}
+/* 用户气泡：撕边纸条，纸上墨字（整页唯一的大面积反白） */
+html[data-skin="h"] .wb-msg.is-user .wb-bubble {
+  padding: 14px 18px;
+  background: #E8E7E2;
+  color: #17181A;
+  border-radius: 2px;
+  clip-path: polygon(0% 4%, 4% 0%, 30% 2%, 60% 0%, 97% 3%, 100% 12%, 99% 46%, 100% 82%, 97% 100%, 62% 98%, 28% 100%, 3% 97%, 0% 62%, 1% 28%);
+  font-size: var(--fs-md);
+  line-height: 1.85;
+}
+html[data-skin="h"] .wb-msg.is-user .wb-bubble :is(a, code) { color: #17181A; }
+/* AI 气泡：暗框胶片帧 */
+html[data-skin="h"] .wb-msg.is-ai .wb-bubble {
+  padding: 14px 18px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  font-size: var(--fs-md);
+  line-height: 1.95;
+}
+
+/* 空态：印样上待曝光的一格 */
+html[data-skin="h"] .wb-empty {
+  padding: 56px 30px 30px;
+  border: 1px dashed var(--line-2);
+  border-radius: var(--r-card);
+  position: relative;
+}
+html[data-skin="h"] .wb-empty::before {
+  content: "";
+  position: absolute; left: 20px; right: 20px; top: 10px; height: 10px;
+  background: repeating-linear-gradient(90deg, var(--line) 0 10px, transparent 10px 18px);
+}
+html[data-skin="h"] .wb-empty .seal { margin: 26px 0 16px; }
+html[data-skin="h"] .wb-empty h2 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+html[data-skin="h"] .wb-empty-lead {
+  max-width: 32em;
+  margin: 12px 0 0;
+  font-size: var(--fs-sm);
+  line-height: 1.95;
+  color: var(--text-2);
+}
+html[data-skin="h"] .wb-prompts { display: flex; flex-direction: column; gap: 0; margin-top: 26px; border-top: 1px solid var(--line-2); }
+html[data-skin="h"] .wb-prompt {
+  position: relative; display: block; width: 100%; text-align: left;
+  border: 0; border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  padding: 13px 2px 13px 34px;
+  font-family: var(--font-mono);
+  font-size: 14.5px;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="h"] .wb-prompt::before {
+  content: "▸"; position: absolute; left: 6px; top: 13px;
+  color: var(--text-3);
+}
+html[data-skin="h"] .wb-prompt:hover { background: rgba(236, 234, 228, .06); color: var(--accent); }
+
+/* ============================================================ 10. 中断确认条
+   印章式确认：整条微倾、白框印边、徽记反白 */
+html[data-skin="h"] .wb-break {
+  margin: 0 40px 8px;
+  padding: 16px 22px 15px;
+  border: 2.5px solid var(--accent);
+  border-radius: var(--r-card);
+  background: var(--surface);
+  transform: rotate(-.5deg);
+}
+html[data-skin="h"] .wb-break-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 11px;
+}
+html[data-skin="h"] .wb-break-badge {
+  padding: 3px 10px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .16em;
+}
+html[data-skin="h"] .wb-break-note {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .14em;
+  color: var(--text-3);
+}
+html[data-skin="h"] .wb-break-ask {
+  margin-bottom: 14px;
+  font-family: var(--font-display);
+  font-size: 16.5px;
+  font-weight: 700;
+}
+html[data-skin="h"] .wb-break-ops { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+html[data-skin="h"] .wb-break-op {
+  padding: 9px 18px;
+  border: 1.5px solid var(--accent);
+  border-radius: var(--r-btn);
+  background: transparent;
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+html[data-skin="h"] .wb-break-op:first-child { background: var(--accent); color: var(--accent-ink); }
+html[data-skin="h"] .wb-break-op:hover:not(:disabled) { background: #F5F4EF; border-color: #F5F4EF; color: var(--accent-ink); }
+html[data-skin="h"] .wb-break-input {
+  flex: 1;
+  min-width: 150px;
+  margin-left: 10px;
+  padding: 9px 2px;
+  border: 0;
+  border-bottom: 1.5px solid var(--line-2);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+html[data-skin="h"] .wb-break-input:focus { border-color: var(--accent); }
+html[data-skin="h"] .wb-break .wb-btn-ink { margin-left: 12px; }
+
+/* ============================================================ 11. 输入区 */
+html[data-skin="h"] .wb-compose {
+  padding: 15px 40px 17px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+}
+html[data-skin="h"] .wb-compose-box {
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+html[data-skin="h"] .wb-compose-ta {
+  flex: 1;
+  resize: none;
+  padding: 8px 2px;
+  border: 0;
+  border-bottom: 1.5px solid var(--line-2);
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-md);
+  line-height: 1.8;
+  transition: border-color var(--dur) var(--ease);
+}
+html[data-skin="h"] .wb-compose-ta:focus { border-color: var(--accent); }
+html[data-skin="h"] .wb-compose-send { padding: 12px 24px; letter-spacing: .1em; }
+html[data-skin="h"] .wb-compose-hint {
+  max-width: 720px;
+  margin: 10px auto 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .06em;
+  color: var(--text-3);
+}
+
+/* ============================================================ 12. 右栏
+   时间线 = 接触印样：每条是一小格帧 */
+html[data-skin="h"] .wb-side-tabs { display: flex; border-bottom: 1px solid var(--line); }
+html[data-skin="h"] .wb-side-tab {
+  flex: 1;
+  padding: 13px 0;
+  border-bottom: 2px solid transparent;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-3);
+  transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease);
+}
+html[data-skin="h"] .wb-side-tab:hover { color: var(--text); }
+html[data-skin="h"] .wb-side-tab.is-on { color: var(--text); border-color: var(--accent); }
+html[data-skin="h"] .wb-side-body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 16px; }
+
+html[data-skin="h"] .wb-tl { display: flex; flex-direction: column; gap: 8px; }
+html[data-skin="h"] .wb-tl-item {
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-card);
+  background: var(--surface);
+}
+html[data-skin="h"] .wb-tl-no {
+  flex: none;
+  padding-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+}
+html[data-skin="h"] .wb-tl-body { display: flex; flex-direction: column; min-width: 0; }
+html[data-skin="h"] .wb-tl-title {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+  word-break: break-word;
+}
+html[data-skin="h"] .wb-tl-meta {
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+  word-break: break-word;
+}
+html[data-skin="h"] .wb-tl-item.is-error { border-color: var(--danger); }
+html[data-skin="h"] .wb-tl-item.is-error .wb-tl-title { color: var(--danger); }
+html[data-skin="h"] .wb-tl-item.is-interrupt { border-color: var(--accent); background: rgba(236, 234, 228, .07); }
+html[data-skin="h"] .wb-tl-item.is-interrupt .wb-tl-title { color: var(--accent); }
+
+/* ============================================================ 13. 次级面板覆写 */
+html[data-skin="h"] .kb-hit,
+html[data-skin="h"] .kb-doc,
+html[data-skin="h"] .trace-item,
+html[data-skin="h"] .prog-item {
+  border-radius: var(--r-card);
+  border-color: var(--line);
+  background: var(--surface);
+}
+html[data-skin="h"] .kb-hit { border-left: 2.5px solid var(--accent); }
+html[data-skin="h"] .kb-drop { border-style: dashed; border-radius: var(--r-card); }
+html[data-skin="h"] .auth-card { border-radius: var(--r-card); box-shadow: var(--shadow-pop); }
+
+/* ============================================================ 14. 响应式 */
+@media (max-width: 1380px) {
+  html[data-skin="h"] .wb-body { grid-template-columns: 238px minmax(0, 1fr) 292px; }
+  html[data-skin="h"] .wb-inner,
+  html[data-skin="h"] .wb-compose-box,
+  html[data-skin="h"] .wb-compose-hint { max-width: none; }
+}
+@media (max-width: 1080px) {
+  html[data-skin="h"] .wb-body { grid-template-columns: 232px minmax(0, 1fr); }
+  html[data-skin="h"] .wb-side { grid-column: 1 / -1; border-top: 1px solid var(--line); max-height: 46vh; }
+  html[data-skin="h"] .wb-break { margin-inline: 24px; }
+  html[data-skin="h"] .wb-inner,
+  html[data-skin="h"] .wb-compose { padding-inline: 24px; }
+}
+@media (max-width: 820px) {
+  html[data-skin="h"] .wb-top { flex-wrap: wrap; gap: var(--s-3); }
+  html[data-skin="h"] .wb-top::after { display: none; }
+  html[data-skin="h"] .wb-body { grid-template-columns: 1fr; }
+  html[data-skin="h"] .wb-volumes { max-height: 34vh; border-right: 0; border-bottom: 1px solid var(--line); }
+  html[data-skin="h"] .wb-main { border-right: 0; }
+  html[data-skin="h"] .wb-proj-sel { max-width: 160px; }
+}
+
+/* ============================================================================
+   § 15 · 可读性与信息层次 —— 专属于皮肤 H · 论文底片
+   —— 写法不与其他皮肤共用：接触印样语言 = 反白纸条、打字机行距、帧式命中区
+   ============================================================================ */
+html[data-skin="h"] {
+  --fs-sm: 14px; --fs-md: 15.5px; --fs-lg: 18px;
+}
+html[data-skin="h"] .wb-inner { max-width: 780px; }
+html[data-skin="h"] .wb-msg.is-ai .wb-bubble { font-size: 15.5px; line-height: 2; }
+html[data-skin="h"] .wb-msg.is-user .wb-bubble { font-size: 16px; }
+
+/* 顶栏分组：mono 全员同字号会糊成一片 → 视图反白加粗、用户名压半档 */
+html[data-skin="h"] .wb-view { font-size: 13.5px; font-weight: 700; }
+html[data-skin="h"] .wb-user b { font-size: 13px; }
+html[data-skin="h"] .sp-label { font-size: 11px; }
+
+/* 中断条 = 盖章时刻：ask 加大，ops 全大写间距 */
+html[data-skin="h"] .wb-break-ask { font-size: 17px; }
+html[data-skin="h"] .wb-break-op { letter-spacing: .08em; }
+
+/* 时间线帧：标题 13.5px、meta 11px 下限，interrupt 帧加印 */
+html[data-skin="h"] .wb-tl-title { font-size: 13.5px; }
+html[data-skin="h"] .wb-tl-item.is-interrupt .wb-tl-title { color: var(--accent); }
+
+/* 命中区：帧式 30px 方块 */
+html[data-skin="h"] .wb-vol-del { width: 30px; height: 30px; display: grid; place-items: center; }
+html[data-skin="h"] .wb-side-tab { padding: 15px 0; font-size: 13px; }
+
+/* 空态：印样待曝光格 —— 提示行是打字机的待打行 */
+html[data-skin="h"] .wb-empty { padding: 60px 30px 30px; }
+html[data-skin="h"] .wb-empty-lead { max-width: 34em; font-size: 14.5px; }
+html[data-skin="h"] .wb-prompt { font-size: 15px; padding-block: 14px; }
+
+@media (max-width: 1380px) {
+  html[data-skin="h"] .wb-inner { max-width: none; }
+}

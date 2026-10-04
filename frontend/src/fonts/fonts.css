@@ -1,0 +1,25 @@
+/* ============================================================================
+   自托管字体入口（v18 字体本地化轮）
+   —— 替代 fonts.googleapis.com：内网 / 离线 / 被墙环境下不再掉 900 字重标题。
+      @fontsource 的 CJK 包按 unicode-range 切成百余个 woff2 子集，
+      浏览器只拉当前页面用到的字符所在子集，无一次性大下载。
+      字族名与 Google Fonts 完全一致（"Noto Sans SC" 等），
+      皮肤令牌 --font-* 的回退链无需任何改动。
+      接线方式：各入口 HTML 以 <link rel="stylesheet" href="/src/fonts/fonts.css">
+      引入，Vite 会像 shared.css 一样打进对应入口的资源图。
+   ============================================================================ */
+
+/* 等宽：标注、数据、B 皮肤展示字体（400–600 三档，与原 Google Fonts 引入一致） */
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+
+/* 黑体：全皮肤正文 + C/E 的展示字体 */
+@import "@fontsource/noto-sans-sc/400.css";
+@import "@fontsource/noto-sans-sc/500.css";
+@import "@fontsource/noto-sans-sc/700.css";
+@import "@fontsource/noto-sans-sc/900.css";
+
+/* 宋体：A/D/F 的展示字体（700 起步，正文不用宋） */
+@import "@fontsource/noto-serif-sc/700.css";
+@import "@fontsource/noto-serif-sc/900.css";

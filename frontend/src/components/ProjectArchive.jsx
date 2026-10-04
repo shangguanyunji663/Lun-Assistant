@@ -24,7 +24,16 @@ export default function ProjectArchive({ projectId, onEdit, refreshKey, demo = f
   }, [projectId, refreshKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!projectId) return <p className="muted empty-tip">未关联项目。在顶部新建或选择一个论文项目后，这里会显示它的档案与结构化记忆。</p>
-  if (loading) return <p className="muted empty-tip">读取中…</p>
+  if (loading) {
+    return (
+      /* 骨架与档案版式同形（标题条 + 两段正文条），替代纯文本「读取中」 */
+      <div className="skl" role="status" aria-label="档案读取中">
+        <span className="skl-line" />
+        <span className="skl-line" />
+        <span className="skl-line" />
+      </div>
+    )
+  }
   if (err) return <div className="err">{err}</div>
   if (!detail) return null
 

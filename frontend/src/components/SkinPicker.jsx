@@ -52,7 +52,7 @@ export default function SkinPicker({ skin, setSkin, skins }) {
         <div className="skin-pop" role="menu">
           <div className="sp-head">
             <span className="sp-title">设计语言</span>
-            <span className="sp-hint">整套视觉 · 6 选 1</span>
+            <span className="sp-hint">整套视觉 · {skins.length} 选 1</span>
           </div>
 
           <div className="sp-grid">
