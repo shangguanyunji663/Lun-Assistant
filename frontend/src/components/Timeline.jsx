@@ -15,11 +15,17 @@ const LABEL = {
   intent: (p) => ({ kind: 'intent', text: `意图 · ${p?.label ?? '—'}`, meta: `${p?.layer ?? ''} · conf ${p?.confidence ?? '—'}` }),
   route: (p) => ({ kind: 'route', text: `路由至 ${p?.next ?? '—'}`, meta: 'route' }),
   plan: (p) => ({ kind: 'plan', text: `规划 · ${p?.goal?.slice(0, 40) || '—'}`, meta: `${p?.steps?.length || 0} 步` }),
-  step_event: (p) => ({
-    kind: 'step',
-    text: `步骤 ${p?.step ?? '—'}/${p?.total ?? '—'} ${p?.action ?? ''}`,
-    meta: p?.status === 'ok' ? '完成' : '异常',
-  }),
+  step_event: (p) => {
+    /* 两种来源：planner 的计划步骤（step/total）与专项节点的工具调用进度
+       （tool + status: running/ok/error + elapsed_s）。 */
+    const text = p?.tool
+      ? (p?.action || p?.tool)
+      : `步骤 ${p?.step ?? '—'}/${p?.total ?? '—'} ${p?.action ?? ''}`
+    const meta = p?.status === 'ok'
+      ? (p?.elapsed_s != null ? `完成 · ${p.elapsed_s}s` : '完成')
+      : (p?.status === 'running' ? '进行中' : '异常')
+    return { kind: 'step', text, meta }
+  },
   interrupt: (p) => ({ kind: 'interrupt', text: '待确认', meta: p?.question || '需要你的决定' }),
   error: (p) => ({ kind: 'error', text: '错误', meta: p?.message || '—' }),
 }

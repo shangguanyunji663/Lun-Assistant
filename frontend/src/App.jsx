@@ -323,7 +323,15 @@ export default function App() {
         <div className="wb-proj">
           <select className="wb-proj-sel"
                   value={projectId ?? ''}
-                  onChange={e => setProjectId(e.target.value ? Number(e.target.value) : null)}
+                  onChange={e => {
+                    const next = e.target.value ? Number(e.target.value) : null
+                    if (next === projectId) return
+                    setProjectId(next)
+                    /* 会话与时间线跟着「当前项目上下文」走：切项目即另起新会话，
+                       上一个项目的对话与执行时间线不再串进新项目视图（旧会话保留
+                       在左侧卷册可切回）。空会话直接沿用；流式期间不动会话。 */
+                    if (!streaming && (active?.msgs.length || active?.timeline.length)) createSession()
+                  }}
                   title="关联的论文项目">
             <option value="">（未关联项目）</option>
             {projects.map(p => <option key={p.id} value={p.id}>{`#${p.id} ${p.title}`}</option>)}

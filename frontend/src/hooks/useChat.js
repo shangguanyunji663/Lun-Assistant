@@ -130,9 +130,9 @@ export function useChat({ active, patchSession, projectId, setArchiveKey, demo =
           }
           else if (type === 'interrupt') {
             setInterrupt(payload)
-            /* 专项节点走非流式 chat_tools，挂起前不会下发任何 token，
-               占位助手消息会留成空泡。把待确认内容写进气泡，
-               用户不必只盯着下方确认条才知道 agent 说了什么。 */
+            /* 正常路径下专项节点的答案已随流式 token 上屏；若本轮一个 token
+               都没收到（异常路径），占位助手消息会留成空泡——把待确认内容
+               写进气泡，用户不必只盯着下方确认条才知道 agent 说了什么。 */
             if (!target.trim()) {
               const proposal = payload?.proposal
               const question = payload?.question || '请确认下一步操作'
