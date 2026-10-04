@@ -39,6 +39,9 @@ frontend/_verify-upload/
 frontend/_theme-shots/
 # 验证脚本产出的截图目录（frontend/scripts/verify-*.mjs 运行时生成）
 frontend/_verify-shots/
+# 设计与审计截图产物（shot-audit / shot-before-after 运行时生成，勿提交）
+frontend/_audit-shots/
+frontend/_design-shots/
 # 浏览器自动化验证产物（playwright-cli 快照/控制台日志，勿提交）
 .playwright-cli/
 
@@ -48,6 +51,7 @@ frontend/_verify-shots/
 
 # 工具数据（WorkBuddy 会话记忆、Mimosa 审计/会话产物等，不入库）
 .workbuddy/
+.workbuddy-ai/
 .mimosa/
 
 # OS

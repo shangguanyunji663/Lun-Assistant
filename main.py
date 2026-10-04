@@ -64,6 +64,19 @@ async def lifespan(app: FastAPI):
     from services.governance.tools_impl import register_all
     register_all()
 
+    # Redis 可达性显式告警：缺失时限流/熔断/短期记忆/分布式锁静默降级，
+    # 服务「看似正常但无记忆」，必须在启动期把这一状态喊出来
+    try:
+        from infrastructure.redis_client import get_redis
+        await get_redis().ping()
+        logger.info("Redis 已连接（短期记忆/限流/熔断/分布式锁 正常）")
+    except Exception:
+        logger.warning(
+            "⚠️ Redis 不可用：短期记忆/限流窗口/熔断状态/分布式锁已静默降级，"
+            "对话将失去上下文记忆。请确认 redis-server 已启动（端口见 .env 的 REDIS_PORT），"
+            "或直接 scripts/dev_up.ps1 -infra-only"
+        )
+
     # 后台预热（不阻塞 HTTP 就绪；首用户请求到来时大概率已完成）
     asyncio.create_task(_warmup_bm25())
     asyncio.create_task(_warmup_reranker())
