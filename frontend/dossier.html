@@ -424,7 +424,6 @@
         <span class="brand"><em>论</em>论匠 LunJiang</span>
         <nav aria-label="页面导航">
           <a href="/">落地页</a>
-          <a href="/how-it-works.html">工作原理</a>
           <a href="/app.html?demo=1">工作台预览</a>
         </nav>
         <a class="enter" href="/app.html?demo=1">进入工作台</a>
@@ -453,7 +452,6 @@
         <p class="hero-stats rise" style="transition-delay:.2s">9 次关键确认 / 42 篇文献入库 / 8.7% 查重复检</p>
         <div class="cta-row rise" style="transition-delay:.24s">
           <a class="btn btn-solid" href="#dossier">翻开卷宗</a>
-          <a class="btn btn-ghost" href="/how-it-works.html">编队怎么运转</a>
         </div>
       </section>
     </div>
@@ -574,28 +572,78 @@
       </div>
 </section>
 
+    <section class="ledger">
+        <i class="flow-line" aria-hidden="true"></i>
+      <div class="wrap">
+        <h2>技术附件</h2>
+        <p class="lead">卷宗记录的不只是产出，还有产出背后那套可复核的机制。</p>
+        <div class="stack" style="margin-top: 44px">
+          <article class="sheet-doc">
+            <i class="clip" aria-hidden="true"></i>
+            <div class="doc-head"><b>技术附件</b><span>FILE 07 · ANNEX</span></div>
+            <div class="doc-body">
+              <span class="nl">编排　LangGraph 主从：主控识别意图、拆解任务、路由给专项角色，以「规划 — 执行 — 校验」闭环推进，单轮最多 3 跳以防回环。</span>
+              <span class="nl">检索　PostgreSQL + pgvector：向量、关键词与相邻句窗三路召回，RRF 融合后交叉编码器精排，引用可溯源到原文段落。</span>
+              <span class="nl">会话　Redis：短期记忆滑动窗口、限流窗口、三态熔断状态与分布式锁，多实例共享同一份治理视图，执行状态可恢复。</span>
+              <span class="nl">底座　Ollama 本地推理：对话模型 + bge-m3 向量化 + 重排，全程可离线，不依赖云端 API，也不产生调用费用。</span>
+              <span class="nl">工具　14 个统一纳管：RBAC 鉴权 → 滑动窗口限流 → 三态熔断 → 三级容错（重试 / 降级 / 人机兜底）→ 分布式锁 → 审计留痕 → 行为观测。</span>
+            </div>
+            <span class="stamp" aria-label="已核对">已核对</span>
+          </article>
+
+          <article class="sheet-doc">
+            <i class="clip" aria-hidden="true"></i>
+            <div class="doc-head"><b>评测留痕</b><span>FILE 08 · EVALUATION</span></div>
+            <div class="doc-body">
+              <span class="nl">意图分类 <span class="rx" tabindex="0">50/50 命中，准确率 100%</span>，平均 56ms/条（规则层 16 / 向量层 34，LLM 未触发）。</span>
+              <span class="nl">检索 Recall@5：简单集 100%、口语长尾集 80%、学术刁钻集 95%，泛化集 6/8。</span>
+              <span class="nl">七大必测场景回归 16/16 全通；上下文压缩率 0.214（9920 → 2121 字）。</span>
+              <span class="nl">离线单测 93 例全绿，全部不依赖 PG / Redis / Ollama，可在无环境机器一键执行。</span>
+            </div>
+            <span class="stamp" aria-label="已核对">已核对</span>
+          </article>
+
+          <article class="sheet-doc">
+            <i class="clip" aria-hidden="true"></i>
+            <div class="doc-head"><b>确认机制</b><span>FILE 09 · SIGN-OFF</span></div>
+            <div class="doc-body">
+              <span class="nl">产出需确认　关键节点主动发起确认，生成内容以「待采纳」状态呈现——采纳才落稿，不满意就重生成。未经采纳的产出永远停在草稿态。</span>
+              <span class="nl">全链路留痕　意图识别、路由决策、工具调用与耗时完整落库，可逐条回放。审计写库与 Redis 解耦，基础设施故障也不会丢掉安全记录。</span>
+              <span class="nl">记忆沉淀　选题结论、论文大纲、写作约束与章节进度沉淀为结构化项目档案，跨会话延续，下一章接着上一章写。</span>
+              <span class="nl">降级边界　Redis 不可用时：对话链路降级跳过（能聊但无上下文），登录限流放行，工具调用按 fail-closed 拒绝并留审计——保护与可用性各有取舍，不静默。</span>
+            </div>
+            <span class="stamp" aria-label="已归档">已归档</span>
+          </article>
+        </div>
+      </div>
+    </section>
+
     <section class="end">
         <i class="flow-line" aria-hidden="true"></i>
       <div class="wrap">
         <h2>你写作的每一稿，<br />都值得这样被记得。</h2>
+        <p class="lead">注册一个账号，选一个课题，看着编队开工——每一段产出、每一个决定，都会像这份卷宗一样被记下来。</p>
         <div class="cta-row">
           <a class="btn btn-solid" href="/app.html?demo=1">进入工作台</a>
-          <a class="btn btn-ghost" href="/how-it-works.html">看编队怎么运转</a>
+          <a class="btn btn-ghost" href="https://github.com/shangguanyunji663/Lun-Assistant" target="_blank" rel="noreferrer">源码仓库</a>
+          <a class="btn btn-ghost" href="https://github.com/shangguanyunji663/Lun-Assistant/blob/main/%E8%AE%BA%E5%8C%A0%E5%AD%A6%E4%B9%A0%E6%8C%87%E5%8D%97.md" target="_blank" rel="noreferrer">学习指南</a>
         </div>
       </div>
     </section>
 
     <div class="sw">
       <button class="sw-trigger" id="swTrigger" type="button" aria-expanded="false" aria-haspopup="true">
-        <i class="sw-dot" aria-hidden="true"></i><span>六套语言 · 站点完整版</span><span aria-hidden="true">▾</span>
+        <i class="sw-dot" aria-hidden="true"></i><span>切换皮肤</span><span aria-hidden="true">▾</span>
       </button>
       <div class="sw-pop" id="swPop" hidden>
-        <a class="sw-item" href="/landing-a.html"><i style="background:#C0332A"></i>铅字印刷<small>A</small></a>
+        <a class="sw-item" href="/index.html"><i style="background:#C0332A"></i>铅字印刷<small>A</small></a>
         <a class="sw-item" href="/landing-b.html"><i style="background:#3FE0C4"></i>夜航仪表<small>B</small></a>
         <a class="sw-item" href="/landing-c.html"><i style="background:#CCFF00"></i>学术海报<small>C</small></a>
         <a class="sw-item" href="/landing-d.html"><i style="background:#A8402C"></i>木牍竖排<small>D</small></a>
         <a class="sw-item" href="/landing-e.html"><i style="background:#FF4D9D"></i>孔版双色<small>E</small></a>
         <a class="sw-item" href="/landing-f.html"><i style="background:#A33B2A"></i>索引档案<small>F</small></a>
+        <a class="sw-item" href="/how-it-works.html"><i style="background:#2E4FA3"></i>编队总谱<small>G</small></a>
+        <a class="sw-item" href="/dossier.html"><i style="background:#E8E7E2"></i>论文底片<small>H</small></a>
       </div>
     </div>
 
@@ -603,7 +651,6 @@
       <footer>
         <span>论匠 LunJiang</span>
         <a href="/">落地页</a>
-        <a href="/how-it-works.html">工作原理</a>
         <a href="/app.html?demo=1">工作台预览</a>
       </footer>
     </div>

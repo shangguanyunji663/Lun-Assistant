@@ -35,7 +35,7 @@ function mountSkinSwitcher() {
   box.innerHTML = `
     <button class="sw-trigger" type="button" aria-haspopup="true" aria-expanded="false">
       <span class="sw-dot" style="--sw-c:${cur.chip}"></span>
-      <span>${cur.label}</span>
+      <span>切换皮肤</span>
       <span class="sw-caret" aria-hidden="true">▴</span>
     </button>`
   document.body.appendChild(box)

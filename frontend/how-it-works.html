@@ -329,8 +329,36 @@
         border-top: 3px solid var(--ink); margin-top: 48px; padding-top: 20px;
       }
       .fact { display: flex; align-items: baseline; gap: 12px; }
-      .fact b { font-size: clamp(2.7rem, 5.4vw, 4.3rem); font-weight: 900; line-height: 1; letter-spacing: -.02em; }
+      .fact b { font-size: clamp(2.4rem, 4.6vw, 3.7rem); font-weight: 900; line-height: 1; letter-spacing: -.02em; }
       .fact span { font-size: 14px; color: var(--ink-2); }
+
+      /* ============ 配器表：技术栈清单 ============ */
+      .orch { margin-top: 34px; border-top: 1.5px solid var(--staff-strong); }
+      .orch-item {
+        display: grid; grid-template-columns: 92px 1fr; gap: 22px;
+        padding: 17px 0; border-bottom: 1px solid var(--staff-soft);
+      }
+      .orch-item b {
+        font-family: var(--f-mono); font-size: 11px; font-weight: 400;
+        letter-spacing: .2em; color: var(--ink-3); padding-top: 4px;
+      }
+      .orch-item span { font-size: 14.5px; line-height: 1.9; color: var(--ink-2); }
+
+      /* ============ 三栏卡（指挥权 / 入席） ============ */
+      .trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 34px; }
+      .trio > article {
+        padding: 22px 22px 24px; border: 1px solid var(--staff-strong); border-radius: 12px;
+        background: var(--paper-2);
+        transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+      }
+      .trio > article:hover { border-color: var(--acc-text); transform: translateY(-2px); }
+      .trio h3 { font-size: 17px; font-weight: 900; letter-spacing: .04em; }
+      .trio p { margin-top: 12px; font-size: 13.5px; line-height: 1.95; color: var(--ink-2); }
+      .trio a { display: inline-block; margin-top: 20px; }
+      @media (max-width: 920px) {
+        .trio { grid-template-columns: 1fr; }
+        .orch-item { grid-template-columns: 1fr; gap: 6px; }
+      }
 
       /* 收尾 + D.C. */
       .end { text-align: left; }
@@ -401,7 +429,6 @@
         <span class="brand"><em>论</em>论匠 LunJiang</span>
         <nav aria-label="页面导航">
           <a href="/">落地页</a>
-          <a href="/dossier.html">解密卷宗</a>
           <a href="/app.html?demo=1">工作台预览</a>
         </nav>
         <a class="enter" href="/app.html?demo=1">进入工作台</a>
@@ -700,8 +727,81 @@
         <p class="sec-lead rise">来自当前版本的实现参数，不是宣传话术。</p>
         <div class="facts rise">
           <div class="fact"><b>6</b><span>个专项环节：选题、文献、写作、格式、查重、答辩</span></div>
-          <div class="fact"><b>30</b><span>个会话的本地卷册容量，拖拽即可重排</span></div>
-          <div class="fact"><b>1</b><span>次确认落一稿：未经采纳的产出不会沉淀</span></div>
+          <div class="fact"><b>14</b><span>个工具统一纳管：鉴权 → 限流 → 熔断 → 三级容错 → 审计</span></div>
+          <div class="fact"><b>4</b><span>层记忆：短期会话 / 结构化档案 / 长期向量 / 写作偏好</span></div>
+          <div class="fact"><b>93</b><span>个离线用例，全部不依赖外部服务</span></div>
+          <div class="fact"><b>138</b><span>条评测样本：意图 50 / 检索 80 / 泛化 8</span></div>
+          <div class="fact"><b>8</b><span>套设计语言，工作台与落地页共用同一套令牌</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 配器表 -->
+    <section id="orch">
+      <div class="wrap">
+        <div class="sec-head rise">
+          <button class="reh" type="button" data-goto="#orch" aria-label="跳到配器表">C</button>
+          <h2>配器表</h2>
+        </div>
+        <p class="sec-lead rise">一支编队要出声，靠的不是一件乐器。全部本地运行，断网也能排练。</p>
+        <div class="orch rise">
+          <div class="orch-item"><b>编排</b><span>LangGraph 主从编排：主控识别意图、拆解任务、路由给专项角色，以「规划 — 执行 — 校验」闭环推进，单轮最多 3 跳以防回环。</span></div>
+          <div class="orch-item"><b>检索</b><span>PostgreSQL + pgvector：向量、关键词与相邻句窗三路召回，RRF 融合后交叉编码器精排，引用的每一段都能溯源到原文。</span></div>
+          <div class="orch-item"><b>会话</b><span>Redis：短期记忆滑动窗口、限流窗口、三态熔断状态与分布式锁，多实例共享同一份治理视图，执行状态可恢复。</span></div>
+          <div class="orch-item"><b>底座</b><span>Ollama 本地推理：对话模型 + bge-m3 向量化 + 重排，全程可离线，不依赖任何云端 API，也不产生调用费用。</span></div>
+          <div class="orch-item"><b>工具</b><span>14 个工具统一纳管：RBAC 鉴权 → 滑动窗口限流 → 三态熔断 → 三级容错（重试 / 降级 / 人机兜底）→ 分布式锁 → 审计留痕 → 行为观测。</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 指挥权 -->
+    <section id="conduct">
+      <div class="wrap">
+        <div class="sec-head rise">
+          <button class="reh" type="button" data-goto="#conduct" aria-label="跳到指挥权">D</button>
+          <h2>指挥权在你手里</h2>
+        </div>
+        <p class="sec-lead rise">多智能体最容易失控的地方是「自作主张」。论匠把拍子交给写作的人。</p>
+        <div class="trio">
+          <article class="rise">
+            <h3>产出需确认</h3>
+            <p>关键节点主动发起确认，生成内容以「待采纳」状态呈现——采纳才落稿，不满意就重生成。未经采纳的产出永远停在草稿态，不会悄悄写进正文。</p>
+          </article>
+          <article class="rise">
+            <h3>全链路留痕</h3>
+            <p>每次执行的意图识别、路由决策、工具调用与耗时完整落库，可逐条回放。审计写库与 Redis 解耦——基础设施故障也不会丢掉安全记录。</p>
+          </article>
+          <article class="rise">
+            <h3>记忆沉淀</h3>
+            <p>选题结论、论文大纲、写作约束与章节进度沉淀为结构化项目档案，跨会话延续。下一章接着上一章写，不用每次重讲一遍背景。</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- 入席 -->
+    <section id="start">
+      <div class="wrap">
+        <div class="sec-head rise">
+          <button class="reh" type="button" data-goto="#start" aria-label="跳到开始使用">E</button>
+          <h2>三种方式，开始排练</h2>
+        </div>
+        <div class="trio">
+          <article class="rise">
+            <h3>在线试用</h3>
+            <p>无需安装，浏览器打开即用。注册一个账号，选一个课题，看着编队开工。</p>
+            <a class="ctl" href="/app.html?demo=1">进入工作台</a>
+          </article>
+          <article class="rise">
+            <h3>源码仓库</h3>
+            <p>FastAPI · LangGraph · PostgreSQL + pgvector · Redis · React 18，MIT License，含部署与评测文档。</p>
+            <a class="ctl" href="https://github.com/shangguanyunji663/Lun-Assistant" target="_blank" rel="noreferrer">前往 GitHub</a>
+          </article>
+          <article class="rise">
+            <h3>学习指南</h3>
+            <p>从零复现多智能体架构：设计认知、模块解剖、动手实现与评测，附可运行骨架。</p>
+            <a class="ctl" href="https://github.com/shangguanyunji663/Lun-Assistant/blob/main/%E8%AE%BA%E5%8C%A0%E5%AD%A6%E4%B9%A0%E6%8C%87%E5%8D%97.md" target="_blank" rel="noreferrer">阅读指南</a>
+          </article>
         </div>
       </div>
     </section>
@@ -712,7 +812,6 @@
         <h2>谱子已经摊开，<br />指挥棒在你手里。</h2>
         <div class="cta-row">
           <a class="btn ctl-play" style="border-radius:12px" href="/app.html?demo=1">进入工作台</a>
-          <a class="ctl" style="text-decoration:none" href="/dossier.html">看解密卷宗</a>
         </div>
         <button class="dc" id="dcMark" type="button"><span aria-hidden="true">⟲</span> D.C. al Copertina · 回到封面，再奏一遍</button>
       </div>
@@ -722,22 +821,23 @@
       <footer>
         <span>论匠 LunJiang</span>
         <a href="/">落地页</a>
-        <a href="/dossier.html">解密卷宗</a>
         <a href="/app.html?demo=1">工作台预览</a>
       </footer>
     </div>
 
     <div class="sw">
       <button class="sw-trigger" id="swTrigger" type="button" aria-expanded="false" aria-haspopup="true">
-        <i class="sw-dot" aria-hidden="true"></i><span id="swLabel">六套语言 · 站点完整版</span><span aria-hidden="true">▾</span>
+        <i class="sw-dot" aria-hidden="true"></i><span id="swLabel">切换皮肤</span><span aria-hidden="true">▾</span>
       </button>
       <div class="sw-pop" id="swPop" hidden>
-        <a class="sw-item" href="/landing-a.html"><i style="background:#C0332A"></i>铅字印刷<small>A</small></a>
+        <a class="sw-item" href="/index.html"><i style="background:#C0332A"></i>铅字印刷<small>A</small></a>
         <a class="sw-item" href="/landing-b.html"><i style="background:#3FE0C4"></i>夜航仪表<small>B</small></a>
         <a class="sw-item" href="/landing-c.html"><i style="background:#CCFF00"></i>学术海报<small>C</small></a>
         <a class="sw-item" href="/landing-d.html"><i style="background:#A8402C"></i>木牍竖排<small>D</small></a>
         <a class="sw-item" href="/landing-e.html"><i style="background:#FF4D9D"></i>孔版双色<small>E</small></a>
         <a class="sw-item" href="/landing-f.html"><i style="background:#A33B2A"></i>索引档案<small>F</small></a>
+        <a class="sw-item" href="/how-it-works.html"><i style="background:#2E4FA3"></i>编队总谱<small>G</small></a>
+        <a class="sw-item" href="/dossier.html"><i style="background:#E8E7E2"></i>论文底片<small>H</small></a>
       </div>
     </div>
 
