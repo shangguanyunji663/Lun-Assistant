@@ -139,5 +139,6 @@ if __name__ == "__main__":
         "main:app",
         host=get_value("app", "host"),
         port=int(get_value("app", "port")),
-        reload=bool(get_value("app", "debug", default=False)),
+        # cast_bool 必须带：${VAR} 插值后是字符串，bool("false") == True
+        reload=get_value("app", "reload", default=False, cast_bool=True),
     )

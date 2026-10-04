@@ -82,7 +82,12 @@ if (Test-Port 5433) {
         Write-Host "[FAIL] 数据目录不存在：$PgData（检查 \$PgData 变量）" -ForegroundColor Red
     } else {
         Write-Host "[START] PostgreSQL（pg_ctl -D $PgData start）"
+        # PS5.1 坑：$ErrorActionPreference='Stop' 时，原生命令的 stderr 经 2>&1 会变成
+        # ErrorRecord 并按「终止错误」中断整个脚本——pg_ctl 的提示性输出（如
+        # "another server might be running"）也会致命。局部降级为 Continue 只打印不中断。
+        $eap = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
         & $PgCtl -D $PgData start 2>&1 | Out-Host
+        $ErrorActionPreference = $eap
         if (-not (Wait-Port 5433 "PostgreSQL")) {
             Write-Host "       常见原因：异常退出残留 postmaster.pid —— 确认 5433 无监听、无 postgres 进程后删除 $PgData\postmaster.pid 再试（README FAQ）" -ForegroundColor DarkYellow
         }
@@ -123,7 +128,7 @@ if (Test-Port 8000) {
     Write-Host "[FAIL] 找不到 $PyExe —— 先完成 README 第 0 步（conda create + pip install）" -ForegroundColor Red
 } else {
     Write-Host "[START] 后端 uvicorn（新窗口）"
-    Start-Process powershell -ArgumentList "-NoExit", "-Command", "& '$PyExe' -m uvicorn main:app --host 127.0.0.1 --port 8000" -WorkingDirectory $Root
+    Start-Process powershell -ArgumentList "-NoExit", "-Command", "& '$PyExe' -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload --reload-exclude envs --reload-exclude frontend" -WorkingDirectory $Root
     Wait-Port 8000 "后端" 30 | Out-Null
 }
 

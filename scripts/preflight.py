@@ -94,7 +94,9 @@ def main() -> int:
     if ollama_up:
         try:
             with urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=5) as resp:
-                models = {m.get("name", "") for m in json.load(resp).get("models", [])}
+                # ollama 会给未显式打 tag 的模型补 ":latest"（如 bge-m3:latest），归一化后再比对
+                models = {m.get("name", "").removesuffix(":latest")
+                          for m in json.load(resp).get("models", [])}
             if CHAT_MODEL in models:
                 ok("对话模型镜像", CHAT_MODEL)
             else:

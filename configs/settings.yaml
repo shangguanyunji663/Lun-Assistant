@@ -8,6 +8,7 @@ app:
   host: ${APP_HOST}
   port: ${APP_PORT}
   debug: ${APP_DEBUG}
+  reload: ${APP_RELOAD}        # uvicorn 热重载（开发用；与 debug/SQL 回显解耦）
   secret_key: ${SECRET_KEY}
 
 # ------------------------------------------------------------
