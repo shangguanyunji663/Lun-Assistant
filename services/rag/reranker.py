@@ -8,6 +8,7 @@ import asyncio
 import logging
 import os
 import threading
+import time
 from pathlib import Path
 
 from infrastructure.config import get_value
@@ -39,9 +40,14 @@ class Reranker:
                 from sentence_transformers import CrossEncoder
                 device = get_value("rerank", "device", default="cpu")
                 logger.info("加载交叉编码器 %s (%s)...", name, device)
+                t0 = time.monotonic()
                 cls._model = CrossEncoder(name, device=device,
                                           max_length=int(get_value("rerank", "max_length", default=512)))
-                logger.info("交叉编码器加载完成")
+                # 首次推理预热：模型加载完成 ≠ 可服务，首跑还有内核编译开销（数秒）。
+                # 不在这里付掉就会转嫁给第一次真实检索（实测冷启动合计可达 90s）。
+                cls._model.predict([("预热", "预热文本")])
+                logger.info("交叉编码器加载完成（%.1fs，含首次推理预热）",
+                            time.monotonic() - t0)
             return cls._model
 
     @staticmethod
@@ -58,15 +64,22 @@ class Reranker:
 
     # ---------- async 侧（对外 API）----------
     @classmethod
-    async def preload(cls) -> None:
-        """后台预加载：启动期调用，避免首次用户请求时阻塞 10~60s。"""
+    async def preload(cls) -> float | None:
+        """后台预加载（含首次推理）：启动期调用，避免首次用户请求时阻塞 10~60s。
+
+        返回加载耗时（秒）；已加载返回 None，失败留痕日志后返回 None（调用方
+        由此区分「预热成功」与「静默失败」——后者意味着每次首检都要付冷启动成本）。
+        """
         async with cls._load_lock:
             if cls._model is not None:
-                return
+                return None
             try:
+                t0 = time.monotonic()
                 await asyncio.to_thread(cls._sync_get_model)
+                return time.monotonic() - t0
             except Exception:
                 logger.warning("交叉编码器预加载失败，将在首次检索时懒加载", exc_info=True)
+                return None
 
     async def rerank(self, query: str, candidates: list[dict], top_k: int = 5,
                      alt_query: str | None = None) -> list[dict]:

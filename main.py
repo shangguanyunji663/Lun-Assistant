@@ -45,13 +45,15 @@ async def _warmup_bm25() -> None:
 
 
 async def _warmup_reranker() -> None:
-    """后台预热：加载交叉编码器模型（CPU 首载 10~60s，线程池内执行，不阻塞启动）。"""
-    try:
-        from services.rag.reranker import reranker
-        await reranker.preload()
-        logger.info("预热完成：交叉编码器已加载")
-    except Exception:
-        logger.warning("交叉编码器预热失败，将在首次精排时懒加载", exc_info=True)
+    """后台预热：加载交叉编码器并完成首次推理（CPU 首载+首跑 10~60s，线程池内执行，不阻塞启动）。
+
+    预热若失败，每一次首次检索都要付同样的冷启动成本（实测可达 90s），
+    因此加载耗时与失败都必须在启动日志里可见。
+    """
+    from services.rag.reranker import reranker
+    elapsed = await reranker.preload()
+    if elapsed is not None:
+        logger.info("预热完成：交叉编码器已加载（%.1fs）", elapsed)
 
 
 @asynccontextmanager
