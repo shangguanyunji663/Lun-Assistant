@@ -79,8 +79,10 @@ def main() -> int:
     if port_open(redis_port):
         ok("Redis 端口", f"127.0.0.1:{redis_port} 监听中")
     else:
-        fail("Redis 端口", f"{redis_port} 无监听。起 Redis：redis-server（第 1 步 2)）。"
-                        "注意：Redis 缺失不会报错，但短期记忆/限流/锁会静默降级")
+        fail("Redis 端口", f"{redis_port} 无监听。起 Redis：redis-server 或 net start Redis（第 1 步 2)）；"
+                        "Windows 若提示命令不存在，说明 Redis 目录未进 PATH（见 README 0.1 的 ⚠️）。"
+                        "注意：Redis 缺失时后端仍可启动——短期记忆与登录限流会降级跳过，"
+                        "但工具调用的限流/熔断/分布式锁会直接报错失败（非静默）")
 
     ollama_up = port_open(11434)
     if ollama_up:

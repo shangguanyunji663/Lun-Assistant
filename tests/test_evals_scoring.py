@@ -2,7 +2,7 @@
 
 harness.py 的评分算术抽为纯函数后，指标口径本身（而不只是"能跑通"）可以被回归：
 - score_intent / score_rag / build_compression_fixture 的算术与边界；
-- 数据集口径锁定：intent 22 条与文档一致、检索集 expected 文件真实存在于语料库，
+- 数据集口径锁定：intent 50 条与文档一致、检索集 expected 文件真实存在于语料库，
   防止"评测集悄悄腐烂"（改了语料文件名但没人发现 Recall 虚降）。
 """
 from evals.harness import _load, build_compression_fixture, score_intent, score_rag
@@ -94,8 +94,9 @@ def _read_jsonl(name):
 def test_intent_dataset_matches_documented_scope():
     from services.classifier.intent import INTENTS
     cases = _read_jsonl("intent.jsonl")
-    # 学习指南 0.3 / 14.1 与 README 均按"22 条"口径宣传，改动需三处同步
-    assert len(cases) == 22
+    # 口径来源：docs/EVALUATION_REPORT.md §4.1「50/50 命中 = 100%」、
+    # 论匠学习指南「5 个数据集 / 138 条样本」。改动需两处文档与数据集三方同步。
+    assert len(cases) == 50
     for c in cases:
         assert c["text"].strip() and c["intent"] in INTENTS
 
@@ -103,10 +104,11 @@ def test_intent_dataset_matches_documented_scope():
 def test_retrieval_datasets_expect_existing_corpus_files():
     import infrastructure.paths as paths
     corpus = paths.PROJECT_ROOT / "data" / "corpus"
-    # (数据集, 文档承诺的条数)：常规集 8 条见第 14 课；两个困难集为 ab.py 实验组
-    # （paper_hard 26 条，25/26 命中 = 96.2%，即文档记录的 Recall@5）
-    for name, documented in [("retrieval.jsonl", 8), ("retrieval_hard.jsonl", 8),
-                             ("retrieval_paper_hard.jsonl", 26)]:
+    # (数据集, 文档承诺的条数)。当前全量基线口径见 evals/AB_REPORT.md 顶部变更标注：
+    # 意图 50 / 简单 20 / 长尾 20 / 学术 40 / hold-out 8 = 138 条。
+    # 早期的 8+8+26 小样本口径已废弃（当时为 ab.py 实验组），勿再沿用。
+    for name, documented in [("retrieval.jsonl", 20), ("retrieval_hard.jsonl", 20),
+                             ("retrieval_paper_hard.jsonl", 40), ("holdout.jsonl", 8)]:
         cases = _read_jsonl(name)
         assert len(cases) == documented, f"{name} 条数与文档口径不一致"
         for c in cases:

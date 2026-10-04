@@ -17,7 +17,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?style=flat-square&logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-89%20passed-2EA44F?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-93%20passed-2EA44F?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-9C27B0?style=flat-square)
 
 **本地优先** · 对话与嵌入均走 Ollama（`qwen3:4b-ctx4096` + `bge-m3`），断网可跑，数据不出本机
@@ -190,8 +190,16 @@ sequenceDiagram
 | Python（推荐 conda） | 3.11 | `conda --version` | 后端运行时 |
 | Node.js | 18+（CI 用 22） | `node -v` | 前端构建（Vite 5） |
 | PostgreSQL（含 **pgvector** 扩展） | 15+（实测基线 16） | `psql --version` | 业务表 + 向量记忆 + 知识库，端口 **5433** |
-| Redis | 6+ | `redis-server --version` | 短期记忆 / 限流窗口 / 分布式锁，端口 6379 |
+| Redis | 7+（实测基线 8.10） | `redis-server --version`（Windows 见下方 ⚠️） | 短期记忆 / 限流窗口 / 熔断状态 / 分布式锁，端口 6379 |
 | Ollama | 最新版 | `ollama --version` | 本地对话与嵌入模型，端口 11434 |
+
+> ⚠️ **Windows 用户特别注意**：Redis 官方**不提供** Windows 原生版，`redis-server` 既不随系统自带、装完也**不会自动进 PATH**。三选一：
+> 1. **便携版**（推荐）：[redis-windows/releases](https://github.com/redis-windows/redis-windows/releases) 下载解压，**把解压目录手动加进 PATH**，否则终端敲 `redis-server` 必报
+>    「无法将"redis-server"项识别为 cmdlet、函数、脚本文件或可运行程序的名称」；
+> 2. **注册为 Windows 服务**：便携版自带 `RedisService.exe install ...` 后 `net start Redis`，开机自启、无需管 PATH；
+> 3. **Docker / WSL**：见下方 [分支 A](#quickstart) 的 `docker compose up -d`。
+>
+> 装在非默认目录时，`scripts\dev_up.ps1` 顶部的 `$RedisExe` 要改成完整路径（该变量默认按 PATH 找 `redis-server`）。
 
 **0.2 安装项目依赖**：
 
@@ -247,12 +255,23 @@ envs\lunjiang\python.exe scripts/ingest_corpus.py    # ② 语料入库（data/c
 # 1) PostgreSQL（独立实例，端口 5433；路径按你的安装位置替换）
 <你的PG安装目录>\Library\bin\pg_ctl -D <你的PG数据目录> start
 
-# 2) Redis
-redis-server                       # 或 net start Redis（已注册为服务时）
+# 2) Redis —— 先探测：已在跑就别再启动（重复启动必然端口冲突）
+redis-cli -p 6379 ping                          # 返回 PONG = 已在运行，跳过本步
+net start Redis                                 # ① 服务模式（推荐，开机自启）
+redis-server <你的Redis目录>\redis.conf          # ② 手动模式：必须带配置文件
+docker compose up -d redis                      # ③ Docker 路线，见下方分支 A
 
 # 3) Ollama（新开窗口常驻）
 ollama serve
 ```
+
+> ⚠️ **Redis 三种方式互斥，不要叠加**：注册为服务后已开机自启，再去敲 `redis-server` 会因 6379 已被占用而失败
+> （`Could not create server TCP listening socket 127.0.0.1:6379: bind: Address already in use`）——
+> 这不是故障，是你的 Redis 其实早就跑起来了。先用 `redis-cli -p 6379 ping` 探测，返回 `PONG` 就跳过本步。
+>
+> 手动模式另有两坑：① 裸跑 `redis-server` **不带配置文件**时，`dump.rdb` 会落到当前工作目录，数据分散且与服务的 `data\`
+> 目录不一致；② redis-windows 的 msys2 版命令行路径必须用 Cygwin 格式（`--dir /cygdrive/d/data`，不能写 `D:\data`），
+> 嫌麻烦就直接用 `RedisService.exe install ...` 走服务模式。
 
 > 示例（作者机器实测基线）：`D:\Develop\DB\PostgreSQL16\Library\bin\pg_ctl -D D:\Develop\DB\PostgreSQL16\data start`
 
@@ -262,7 +281,7 @@ ollama serve
 
 > ⚠️ 为什么必须先起依赖：后端启动时 lifespan 会**立即**连接 PostgreSQL 建表，依赖没起就直接 `ConnectionRefusedError: [WinError 1225]`。
 
-**这一步挂了？** → [PG/Redis 连接被拒](#faq) · [pg_ctl 提示 another server might be running](#faq) · [端口被占用](#faq)
+**这一步挂了？** → [PG/Redis 连接被拒](#faq) · [redis-server 命令不存在](#faq) · [Redis 端口已被占用](#faq) · [pg_ctl 提示 another server might be running](#faq)
 
 ### 第 2 步 · 每次开机：起后端 + 前端（两个终端窗口）
 
@@ -313,7 +332,7 @@ docker compose up -d --scale app=2   # 端口 8001 / 8002
 <summary><strong>深度自检（可选）：离线单测与全部冒烟脚本</strong></summary>
 
 ```powershell
-envs\lunjiang\python.exe -m pytest tests/ -q        # 89 个离线用例，无需外部依赖
+envs\lunjiang\python.exe -m pytest tests/ -q        # 93 个离线用例，无需外部依赖
 envs\lunjiang\python.exe scripts/smoke_memory.py       # 四层记忆 + 压缩（需 PG）
 envs\lunjiang\python.exe scripts/smoke_rag.py          # 三阶段检索（需 PG+Ollama，语料已入库）
 envs\lunjiang\python.exe scripts/smoke_governance.py   # 治理栈（需 PG/Redis/Ollama）
@@ -433,7 +452,7 @@ Lun-Assistant/
 ├── data/                    corpus/（公共语料）+ uploads/（知识库原始文件，已 gitignore）
 ├── evals/                   评测 Harness + A/B + 七大场景回归 + 报告图表
 ├── scripts/                 初始化 + 冒烟 + 压测 + 一键启停（dev_up / dev_down / preflight）
-├── tests/                   离线单元测试（89 用例，无外部依赖）
+├── tests/                   离线单元测试（93 用例，无外部依赖）
 ├── frontend/                React 18 + Vite（落地页 ×8 + 工作台 / SSE 对话 / 时间线 / 知识库 / Trace / 八套设计语言）
 ├── docs/                    文档（学习指南 / 优化记录 / 前端版本线 frontend-versions/）
 ├── alembic/                 SQLAlchemy 迁移（异步 env.py 聚合全部模型）
@@ -467,7 +486,7 @@ Lun-Assistant/
 
 | 项目 | 结果 | 说明 |
 | :--- | :--- | :--- |
-| 离线单测 | **89 passed** | `pytest tests/ -q`，无外部依赖 |
+| 离线单测 | **93 passed** | `pytest tests/ -q`，无外部依赖 |
 | 冒烟脚本 | **11 / 11 通过** | check_env 5/5；记忆 / RAG / 治理 / Trace / 图 / API 全绿 |
 | 意图分类准确率 | **50 / 50 = 100%** | 规则层 16 / 向量层 34 / LLM 兜底 0；平均 56 ms/条 |
 | RAG Recall@5（简单集） | **100%** | 含主题关键词的查询 |
@@ -563,7 +582,7 @@ conda run -p envs/lunjiang pip install -r requirements.txt
 
 ### 11.3 提交前检查清单
 
-- [ ] `python -m pytest tests/ -q` —— 89 用例全绿，新增功能需补充离线用例
+- [ ] `python -m pytest tests/ -q` —— 93 用例全绿，新增功能需补充离线用例
 - [ ] `python -m ruff check .` —— 无告警
 - [ ] `python -m mypy`（可选，仅校验已注解代码）
 - [ ] 涉及的冒烟脚本跑通（改动哪个子系统就跑对应 `scripts/smoke_*.py`）
@@ -579,6 +598,37 @@ conda run -p envs/lunjiang pip install -r requirements.txt
 <summary><strong>后端启动报 <code>ConnectionRefusedError: [WinError 1225]</code></strong></summary>
 
 应用启动时会立即连接 PostgreSQL 建表，该错误说明 **PostgreSQL（或 Redis）未启动**。按 [快速开始第 1 步](#quickstart) 的连通性自检确认监听，依次启动依赖后重启；日常可直接 `scripts\dev_up.ps1 -infra-only`。另一高频同症状原因：`.env` 里 `PG_PORT` 写成了 5432（全仓库口径是 5433）。
+
+</details>
+
+<details>
+<summary><strong>Windows 敲 <code>redis-server</code> 报「无法将"redis-server"项识别为 cmdlet、函数、脚本文件或可运行程序」</strong></summary>
+
+不是 Redis 没装、也不是没启动，而是**安装目录没进 PATH**（Redis 官方无 Windows 原生版，装完不会自动加 PATH）。三种解法：
+
+1. 把 Redis 安装目录（例：`D:\Develop\Redis-8.10.0-Windows-x64-msys2-with-Service`）追加到用户环境变量 `Path`，**重开终端**生效；
+2. 不配 PATH 也行——注册为服务后 `net start Redis` 启动，用 `redis-cli -p 6379 ping` 验证（返回 `PONG` 即正常）；
+3. 走 Docker：`docker compose up -d`（需先装 Docker Desktop）。
+
+顺带：确认是否已在跑，用 `netstat -ano | findstr :6379`，或 `redis-cli -p 6379 ping`。本项目 Redis 是**懒连接**（`infrastructure/redis_client.py` 只构造对象不握手），所以 Redis 没起时后端照样能启动，只在真正用到时才炸——别用"服务起没起来"判断 Redis 是否正常。
+
+</details>
+
+<details>
+<summary><strong>敲 <code>redis-server</code> 报 Address already in use / 端口已被占用</strong></summary>
+
+说明 **Redis 已经在跑了**，不需要再启动一次——最常见于已用 `RedisService.exe install` 注册为 Windows 服务（开机自启）的情况，
+服务模式下你再手动敲 `redis-server` 必然冲突。
+
+先探测再决定：
+
+```powershell
+redis-cli -p 6379 ping            # 返回 PONG → 已在运行，什么都不用做
+netstat -ano | findstr :6379      # 看是哪个 PID 在监听
+```
+
+确实需要重启时，服务模式用 `net stop Redis` + `net start Redis`（不要直接杀进程，否则丢未持久化数据）；
+手动模式用 `redis-cli SHUTDOWN` 优雅关闭再启动。
 
 </details>
 
@@ -600,6 +650,26 @@ conda run -p envs/lunjiang pip install -r requirements.txt
 <summary><strong>服务起来了但检索永远返回空</strong></summary>
 
 不是报错，是「安静地查不到」。两个最常见原因：① 没跑 `scripts/ingest_corpus.py` 语料入库（[第 0 步 0.5](#quickstart)）；② BM25 / 交叉编码器还在后台预热——看日志里有没有「预热完成：BM25 索引 N 篇文档」。
+
+</details>
+
+<details>
+<summary><strong>Redis 没起 / 挂了，系统还能用吗？</strong></summary>
+
+**对话能用，工具不能用**，且两者的降级方式不同——这是刻意设计：
+
+| 链路 | Redis 不可用时 | 表现 |
+| :--- | :--- | :--- |
+| 对话 | **降级跳过** | 能正常聊天，但**没有上下文记忆**（每轮都当新会话） |
+| 登录 | **fail-open** | 限流放行，不会把用户锁在系统外面 |
+| 工具调用（14 个） | **fail-closed 拒绝** | 抛 `GovernanceUnavailable`，调用失败 |
+
+工具链路之所以拒绝而非放行，是因为限流 / 熔断 / 分布式锁的 fail-closed 恰好等于
+「不超额 / 不打下游 / 不并发」，即**保护生效**的方向；若改为 fail-open 等于让三道防线同时失效。
+无论拒绝还是失败，审计一律落库（`ok=False`），不会因 Redis 故障丢失安全留痕。
+
+判断 Redis 是否正常用 `redis-cli -p 6379 ping`（返回 `PONG` 即正常）。注意本项目是**懒连接**，
+后端启动时不会因 Redis 缺失而报错，所以要主动探测，别用"服务起没起来"来判断。
 
 </details>
 
