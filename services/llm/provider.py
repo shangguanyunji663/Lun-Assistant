@@ -9,7 +9,9 @@
 请求无限挂起，导致前端 SSE 连接"卡死"。
 """
 import json
+from collections.abc import Awaitable, Callable
 from typing import Any, AsyncIterator, Iterable, cast
+from uuid import uuid4
 
 from openai import AsyncOpenAI
 
@@ -150,8 +152,14 @@ class LLMProvider:
         *,
         max_rounds: int = 3,
         temperature: float | None = None,
+        on_token: Callable[[str], Awaitable[None]] | None = None,
     ) -> dict:
-        """带工具调用的多轮对话。
+        """带工具调用的多轮对话（流式）。
+
+        每一轮都以流式发起：增量文本经 on_token 逐字上报（未传则不上报），
+        tool_calls 增量块在本地拼装、轮末统一执行。最终答案在生成的同时
+        就逐字下发——此前整段非流式等待（生成完才返回 + 60s 总超时）是
+        工具循环期间 SSE 长时间「零输出」的直接原因。
 
         tool_executor(name, args_json) -> Any：由调用方提供（通常接 ToolRegistry 治理栈）。
         返回 {"content": 最终文本, "tool_calls": [{name, args, result}], "rounds": int}
@@ -159,37 +167,82 @@ class LLMProvider:
         all_calls: list[dict] = []
         msgs = list(messages)
         for round_i in range(max_rounds):
-            kwargs = self._extra()
-            resp = await self._client.chat.completions.create(
-                model=self.chat_model, messages=cast(Any, msgs), tools=cast(Any, tools),
-                temperature=temperature if temperature is not None else self.temperature,
-                timeout=_timeout("chat"),
-                **kwargs,
-            )
-            msg = resp.choices[0].message
-            if not msg.tool_calls:
-                return {"content": msg.content or "", "tool_calls": all_calls,
+            content, tool_deltas = await self._stream_round(
+                msgs, tools, temperature, on_token)
+            if not tool_deltas:
+                return {"content": content, "tool_calls": all_calls,
                         "rounds": round_i + 1}
-            msgs.append(msg.model_dump(exclude_none=True))
-            for tc in msg.tool_calls:
-                # 兼容 CustomToolCall（无 function 属性），缺失时跳过
-                fn = getattr(tc, "function", None)
-                if fn is None:
+            msgs.append(_assistant_tool_msg(content, tool_deltas))
+            for tc in tool_deltas:
+                # 兼容缺失 function 段的分片（理论上 name 会先到，防御一下）
+                if not tc["name"]:
                     continue
-                name = fn.name
+                name = tc["name"]
                 try:
-                    args = self._extract_json(fn.arguments) \
-                        if fn.arguments.strip().startswith("{") else {}
+                    args = self._extract_json(tc["args"]) \
+                        if tc["args"].strip().startswith("{") else {}
                     args = args if isinstance(args, dict) else {}
                 except Exception:
                     args = {}
                 result = await tool_executor(name, args)
                 all_calls.append({"name": name, "args": args, "result": result})
-                msgs.append({"role": "tool", "tool_call_id": tc.id,
+                msgs.append({"role": "tool", "tool_call_id": tc["id"],
                              "content": _stringify(result)})
-        # 超出轮次：不带工具再收尾一次
-        final = await self.chat(msgs, temperature=temperature, max_tokens=1500)
-        return {"content": final, "tool_calls": all_calls, "rounds": max_rounds}
+        # 超出轮次：不带工具流式收尾
+        content, _ = await self._stream_round(msgs, None, temperature, on_token)
+        return {"content": content, "tool_calls": all_calls, "rounds": max_rounds}
+
+    async def _stream_round(
+        self,
+        msgs: list[dict],
+        tools: list[dict] | None,
+        temperature: float | None,
+        on_token: Callable[[str], Awaitable[None]] | None,
+    ) -> tuple[str, list[dict]]:
+        """流式执行一轮对话：文本增量经 on_token 上报，tool_calls 增量拼装。
+
+        返回 (完整文本, 工具调用列表)。工具调用形如 {"id", "name", "args"}，
+        args 是尚未解析的原始 JSON 字符串——流式协议按分片下发，必须
+        累积完毕后才能一次性解析。
+        """
+        kwargs = self._extra()
+        create_kw: dict = {
+            "model": self.chat_model,
+            "messages": cast(Any, msgs),
+            "temperature": temperature if temperature is not None else self.temperature,
+            "stream": True,
+            "timeout": _timeout("chat_stream"),
+        }
+        if tools:
+            create_kw["tools"] = cast(Any, tools)
+        stream = await self._client.chat.completions.create(**create_kw, **kwargs)
+        parts: list[str] = []
+        acc: dict[int, dict] = {}
+        async for chunk in cast(Any, stream):
+            if not chunk.choices:
+                continue
+            delta = chunk.choices[0].delta
+            text = getattr(delta, "content", None)
+            if text:
+                parts.append(text)
+                if on_token is not None:
+                    await on_token(text)
+            for tcd in (getattr(delta, "tool_calls", None) or []):
+                slot = acc.setdefault(tcd.index or 0, {"id": "", "name": "", "args": ""})
+                if tcd.id and not slot["id"]:
+                    slot["id"] = tcd.id
+                fn = getattr(tcd, "function", None)
+                if fn is None:
+                    continue
+                if fn.name:
+                    slot["name"] += fn.name
+                if fn.arguments:
+                    slot["args"] += fn.arguments
+        tool_calls = [acc[i] for i in sorted(acc)]
+        for i, tc in enumerate(tool_calls):
+            if not tc["id"]:
+                tc["id"] = f"call_{uuid4().hex[:8]}{i}"
+        return "".join(parts), tool_calls
 
     # ---------- 内部 ----------
     def _extra(self) -> dict:
@@ -210,6 +263,17 @@ class LLMProvider:
         if start == -1 or end == -1:
             raise ValueError(f"LLM 未返回 JSON: {text[:200]}")
         return json.loads(text[start:end + 1])
+
+
+def _assistant_tool_msg(content: str, tool_calls: list[dict]) -> dict:
+    """流式轮次拼装出的 assistant 消息（带 tool_calls），回填对话历史用。"""
+    msg: dict = {"role": "assistant", "tool_calls": [
+        {"id": tc["id"], "type": "function",
+         "function": {"name": tc["name"], "arguments": tc["args"]}}
+        for tc in tool_calls]}
+    if content:
+        msg["content"] = content
+    return msg
 
 
 def _stringify(result) -> str:

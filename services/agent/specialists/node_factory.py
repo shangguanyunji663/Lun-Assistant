@@ -4,6 +4,7 @@
 （工具执行统一经 ToolRegistry 治理栈: RBAC→限流→熔断→容错→审计→行为观测）。
 """
 import logging
+import time
 from typing import Any, Callable
 
 from langgraph.types import interrupt
@@ -47,15 +48,31 @@ def make_specialist_node(spec: SpecialistSpec) -> Callable:
                                  "content": f"[近期对话]\n{history_text}"})
             messages.append({"role": "user", "content": user_input})
 
-            # ---- 治理栈托管的工具执行器 ----
+            # ---- 治理栈托管的工具执行器（进度上报时间线，工具循环期前端不再空白）----
             async def executor(name: str, args: dict) -> Any:
-                return await tool_registry.call(
-                    name, user_id=state.get("user_id"), user_role=state.get("user_role", "student"),
-                    call_context={"agent": spec.name}, **args)
+                t0 = time.monotonic()
+                await hub.emit("step_event", {"tool": name, "status": "running",
+                                              "action": f"正在调用 {name}"}, node=spec.name)
+                try:
+                    result = await tool_registry.call(
+                        name, user_id=state.get("user_id"), user_role=state.get("user_role", "student"),
+                        call_context={"agent": spec.name}, **args)
+                except Exception:
+                    await hub.emit("step_event", {"tool": name, "status": "error",
+                                                  "action": f"{name} 调用失败"}, node=spec.name)
+                    raise
+                await hub.emit("step_event", {
+                    "tool": name, "status": "ok", "action": f"{name} 完成",
+                    "elapsed_s": round(time.monotonic() - t0, 1)}, node=spec.name)
+                return result
+
+            async def on_token(chunk: str) -> None:
+                await hub.emit_token(chunk, node=spec.name)
 
             provider = LLMProvider()
             result = await provider.chat_tools(
-                messages, build_tool_schemas(spec.tools), executor, max_rounds=3)
+                messages, build_tool_schemas(spec.tools), executor, max_rounds=3,
+                on_token=on_token)
 
             output = result["content"]
             sp.set_io(output={"tools": [c["name"] for c in result["tool_calls"]],
@@ -70,13 +87,16 @@ def make_specialist_node(spec: SpecialistSpec) -> Callable:
                 })
                 # resume 后携带用户反馈，综合产出最终结论
                 if feedback:
-                    final = await provider.chat([
-                        {"role": "system", "content": spec.system},
-                        {"role": "user", "content":
-                            f"原方案:\n{output}\n\n用户反馈:\n{feedback}\n\n"
-                            "请根据反馈输出最终选题结论（保留被认可部分）。"}],
-                        max_tokens=1200)
-                    output = final
+                    # resume 后携带用户反馈，综合产出最终结论（流式逐字下发）
+                    chunks: list[str] = []
+                    async for delta in provider.chat_stream([
+                            {"role": "system", "content": spec.system},
+                            {"role": "user", "content":
+                                f"原方案:\n{output}\n\n用户反馈:\n{feedback}\n\n"
+                                "请根据反馈输出最终选题结论（保留被认可部分）。"}]):
+                        chunks.append(delta)
+                        await hub.emit_token(delta, node=spec.name)
+                    output = "".join(chunks)
 
             await hub.flush_tokens(spec.name)
             await hub.emit("node_end", {"agent": spec.name, "title": spec.title,
