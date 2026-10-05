@@ -18,8 +18,8 @@ import { useSkin } from './hooks/useSkin.js'
 import { useStickyScroll } from './hooks/useStickyScroll.js'
 
 /* ============================================================
-   主应用 · v18「六套设计语言」
-     · 皮肤：<html data-skin="a…f">，6 套完整设计语言（配色/字体/排版/材质/动效性格）
+   主应用 · v18「八套设计语言」（v18 的 A–F + ROUND20 补记的 G/H）
+     · 皮肤：<html data-skin="a…h">，8 套完整设计语言（配色/字体/排版/材质/动效性格）
        整套切换，见 src/skins/*.css 与 skins/registry.js。
      · 结构：三栏（会话卷册 / 对话主区 / 右栏三 tab）；可观测为独立视图。
      · 逻辑层沿用 v12 起的自定义 hooks（对话 SSE / 会话 / 项目），本版未改其内核。
@@ -124,7 +124,7 @@ function VolumeList({ sessions, activeId, disabled, onSelect, onRemove, onReorde
 }
 
 /* 开发预览模式（?demo=1）：仅 DEV 构建生效，见 src/demo.js。
-   用途是「不起后端也能逐套检查六种设计语言」，生产构建下恒为 false。 */
+   用途是「不起后端也能逐套检查八种设计语言」，生产构建下恒为 false。 */
 const DEMO = isDemo()
 
 export default function App() {
@@ -133,7 +133,7 @@ export default function App() {
   const [tab, setTab] = useState('chat')
   const [sideTab, setSideTab] = useState('timeline')
 
-  // ---- 皮肤（6 套设计语言）----
+  // ---- 皮肤（8 套设计语言）----
   const skinCtl = useSkin()
 
   // ---- 会话卷册 ----

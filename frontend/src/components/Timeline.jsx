@@ -2,7 +2,7 @@
    执行时间线 · v18
      数据源不变（后端 node_start / node_end / intent / route / plan /
      step_event / interrupt / error 事件），仅把标记换成皮肤契约里的
-     .wb-tl-* 语义类，让六套设计语言各自排版。
+     .wb-tl-* 语义类，让八套设计语言各自排版。
    ============================================================ */
 
 const LABEL = {

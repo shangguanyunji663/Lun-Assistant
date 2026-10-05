@@ -35,7 +35,7 @@ async function demoChat(sid, text, resume, { feedTyper, patchSession, setInterru
  * - 通过 patchSession 增量更新当前流式文本、时间线事件；
  * - interrupt 中断态由调用方展示"确认条"，resume 续跑复用 send；
  * - demo（开发预览）：不发请求，用固定的应答文本走同一条打字机管线，
- *   以便在不起后端的情况下验证六套皮肤下的流式观感。
+ *   以便在不起后端的情况下验证八套皮肤下的流式观感。
  */
 export function useChat({ active, patchSession, projectId, setArchiveKey, demo = null }) {
   const [streaming, setStreaming] = useState(false)

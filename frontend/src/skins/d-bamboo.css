@@ -936,7 +936,7 @@ html[data-skin="d"] .wb-tl-title { font-size: 14.5px; }
 html[data-skin="d"] .wb-vol-del { width: 30px; height: 30px; display: grid; place-items: center; }
 html[data-skin="d"] .wb-side-tab { padding: 15px 0; font-size: 13.5px; }
 
-/* ⑦ 空态 = 一片竖排的竹简：六套里唯一整块改 writing-mode 的皮肤 */
+/* ⑦ 空态 = 一片竖排的竹简：八套里唯一整块改 writing-mode 的皮肤 */
 html[data-skin="d"] .wb-empty {
   /* vertical-rl 下 flex 的主轴是行内轴（从右向左），故用 row 而非 row-reverse：
      这样 seal → 标题 → 说明 → 提纲 的顺序正好是传统竖排的从右往左。 */

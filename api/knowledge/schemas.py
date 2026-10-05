@@ -7,7 +7,7 @@ class KnowledgeSearchIn(BaseModel):
     top_k: int = Field(default=5, ge=1, le=20)
     # mode:
     #   - hybrid  公共语料 + 项目知识库融合
-    #   - project 仅项目知识库（空库自动回退内置）
+    #   - project 仅项目知识库（空库直接返回空结果，不回退；前端在有文档但无命中时才改用 hybrid 重查）
     #   - builtin 仅公共语料（强制不看项目库）
     mode: str = Field(default="hybrid", pattern="^(hybrid|project|builtin)$")
 

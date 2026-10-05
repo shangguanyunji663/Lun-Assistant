@@ -862,7 +862,7 @@ html[data-skin="c"] .wb-tl-title { font-size: 15px; font-weight: 700; }
 html[data-skin="c"] .wb-vol-del { width: 32px; height: 32px; display: grid; place-items: center; }
 html[data-skin="c"] .wb-side-tab { padding: 15px 0; font-size: 14px; font-weight: 700; }
 
-/* ⑦ 空态 = 巨幅海报：这是六套里唯一该把标题放到 64px 的皮肤 */
+/* ⑦ 空态 = 巨幅海报：这是八套里唯一该把标题放到 64px 的皮肤 */
 html[data-skin="c"] .wb-empty { text-align: left; padding: 56px 0 30px; }
 html[data-skin="c"] .wb-empty .seal { margin: 0 0 24px; border-radius: 0; }
 html[data-skin="c"] .wb-empty h2 {

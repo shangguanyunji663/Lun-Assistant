@@ -8,6 +8,8 @@
 > 状态：已落地
 
 > 这是 ROUND9 末尾扩展（求职作品集 R-4 + R-5 落地）的部署说明。改 `frontend/vite.config.js` 加 `base` 切换 + 写 `.github/workflows/deploy.yml` 实现 `main` 分支 push → 自动 build → 部署到 GitHub Pages。
+>
+> ⚠️ **变更标注（2026-10-05 · 代码同步审计）**：§四 步骤链按当前 `deploy.yml` 补齐（新增 eslint 步骤与 Print public URL），`test-backend` 的依赖安装口径与离线用例数同步为 **93**（原文档写 89，且多写了单独安装 ruff）。
 
 ## 一、最终访问 URL
 
@@ -77,21 +79,24 @@ cat dist/index.html | head -20                    # 看 base href 和资源路�
 - push 到 main 分支
 - 或 Actions UI 手动 `workflow_dispatch`
 
-### 步骤链
+### 步骤链（`build-deploy` job，与 workflow 文件逐步对应）
 1. **Checkout** —— 拉 main 分支代码
-2. **Setup Node 22** —— 装 Node.js v22 + cache npm
+2. **Setup Node 22** —— 装 Node.js v22 + cache npm（cache 指向 `frontend/package-lock.json`）
 3. **Install deps** —— `npm ci` 装 frontend 依赖
-4. **Build** —— `npm run build`（vite 自动用 `NODE_ENV=production` 切 base 到 `/Lun-Assistant/`）
-5. **Setup Pages** —— GitHub 提供的 Pages 初始化
-6. **Upload artifact** —— 把 `frontend/dist/` 上传为 Pages artifact
-7. **Deploy** —— 部署 artifact 到 GitHub Pages
+4. **Lint (eslint)** —— `npm run lint`（配置见 `frontend/eslint.config.js`）
+5. **Build** —— `npm run build`（vite 自动用 `NODE_ENV=production` 切 base 到 `/Lun-Assistant/`）
+6. **Setup Pages** —— `actions/configure-pages@v5`，带 `enablement: true`（仓库未启用 Pages 时自动启用，避免 404）
+7. **Upload artifact** —— 把 `frontend/dist/` 上传为 Pages artifact
+8. **Deploy** —— 部署 artifact 到 GitHub Pages
+9. **Print public URL** —— 把访问地址写入 Job Summary（并提示公网预览无后端）
 
 ### 后端校验 job（test-backend）
 
 同一 workflow 内并行运行 `test-backend` job（跑在云端 Ubuntu，与本机 Windows 无关）：
-1. **Setup Python 3.11** —— `pip install -r requirements.txt ruff`
-2. **Lint (ruff)** —— `ruff check .`（规则见根目录 `ruff.toml`）
-3. **Run unit tests** —— `pytest tests/ -q`（89 个离线单测，全部 mock 外部依赖；`.env` 缺失时配置层自动回退 `.env.example` 占位值，无需在 CI 造 `.env`）
+1. **Setup Python 3.11** —— `actions/setup-python@v5`，cache 用 pip
+2. **Install dependencies** —— `pip install -r requirements.txt`（ruff / mypy / pytest 已在依赖清单内，无需额外安装）
+3. **Lint (ruff)** —— `ruff check .`（规则见根目录 `ruff.toml`）
+4. **Run unit tests** —— `pytest tests/ -q`（93 个离线单测，全部 mock 外部依赖；`.env` 缺失时配置层自动回退 `.env.example` 占位值，无需在 CI 造 `.env`）
 
 ### 关键设计
 - **不用 gh-pages 分支 / actions-gh-pages**：直接用官方 `actions/deploy-pages@v4` + `actions/upload-pages-artifact@v3`，更安全（OIDC token，无 write 权限泄露）

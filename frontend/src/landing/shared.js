@@ -4,7 +4,7 @@
       拿到完全一致的四件事，避免 6 份重复实现：
 
         1. 皮肤同步   ：把本页皮肤写进 localStorage.lj_skin，工作台跟随
-        2. 皮肤切换器 ：注入左下角 .sw（六套设计语言互跳）
+        2. 皮肤切换器 ：注入左下角 .sw（八套设计语言互跳，条目读 registry）
         3. 入场编排   ：[data-reveal] 进视口揭示 / [data-count] 数字滚动 /
                         [data-typewriter] 逐字打字
         4. 彩蛋机关   ：三门手势（手速 / 精读 / 书写），含「落笔处」砚纸
@@ -80,7 +80,7 @@ function mountSkinSwitcher() {
         const id = btn.dataset.go
         if (id === PAGE_SKIN) { close(); return }
         saveSkin(id)
-        // 落地页每套皮肤一个独立 HTML（六种版式无法靠 CSS 换肤）→ 这里是跳转
+        // 落地页每套皮肤一个独立 HTML（八种版式无法靠 CSS 换肤）→ 这里是跳转
         const target = id === 'a' ? './index.html' : `./landing-${id}.html`
         // 用主题色遮罩过渡：先铺一层满屏色块再跳，避免白屏硬切
         transitionTo(target)

@@ -14,6 +14,8 @@
 >
 > ⚠️ **变更标注（2026-10-01 · 落地页一致性修复 + 彩蛋轮）**：随前端 ROUND18（落地页双结构一致性修复 + 三枚彩蛋机关）落地，§3 frontend 结构树已补 `public/easter/`、彩蛋机关说明与 `index.html` 入口说明；工作台与后端零改动。轮次详情见 [`frontend-versions/OPTIMIZATION_ROUND18.md`](frontend-versions/OPTIMIZATION_ROUND18.md)。（注：彩蛋机关脚本在 v18 皮肤重构中已由 `src/landing.js` 迁移至 `src/landing/shared.js`。）
 >
+> ⚠️ **变更标注（2026-10-05 · 代码同步审计）**：`tests/` 用例数 93 与 `data/corpus/` 81 篇经复核维持一致；订正 §1 部署描述、§2 `.github/workflows/` 职责（补 `test-backend` job）、§2 `skins/patterns/` 现状（v18 起纹样素材无引用）、§3 `frontend/scripts/` 清单。§3 另按 2026-10-04 的前端改动同步：工作台**切项目即另起新会话**（时间线随项目上下文归零）、`Timeline` 渲染 `step_event` 工具进度（进行中 / 完成+耗时 / 异常）、落地页切换器文案统一「切换皮肤」且展开 8 套、`/app.html?demo=1`（免登录预览）与 `/app.html`（登录入口）语义分离。
+>
 > ⚠️ **变更标注（2026-10-03 · 八套皮肤轮）**：随 ROUND20 补记（两页新语言落地为第 7/8 套皮肤）与 v18 皮肤体系定稿，§2/§3/§5 的皮肤数量、frontend 结构树与维护约定已按当前代码同步：皮肤 6 → **8 套**（新增 `g-score.css` / `h-contact.css`），落地页 6 → **8 张**（新增 `how-it-works.html` / `dossier.html`），vite 入口 7 → **9 个**；`docs/design-concepts/` 与 `frontend/design-samples/` 的实际内容亦按当前目录订正。轮次详情见 [`frontend-versions/ROUND20-ADDENDUM.md`](frontend-versions/ROUND20-ADDENDUM.md)。
 
 ---
@@ -25,7 +27,7 @@
 
 - 入口：`main.py`（后端 uvicorn）/ `frontend/`（前端 npm）
 - 语言：Python 3.11（`envs/lunjiang`）+ JavaScript/JSX
-- 部署：`.github/workflows/deploy.yml`（GitHub Pages，push 时 CI 自动 `vite build`）
+- 部署：`.github/workflows/deploy.yml` 两个 job——`build-deploy`（push 时自动 `vite build` 并发布 GitHub Pages）与 `test-backend`（Ubuntu 上 `ruff check .` + `pytest tests/ -q`）
 
 ---
 
@@ -48,7 +50,7 @@
 | `frontend/design-samples/` | 设计档案（v15 proposal-1…10 + sample-a…d + round20-pages 样张，零依赖静态 HTML） | ★★ | 设计档案，未进 vite 构建；样图→生产还原差异见 CHANGELOG-v15 / ROUND20 |
 | `frontend/` | React 前端（Vite） | ★★★ | 见 §3 |
 | `envs/` | 本地运行环境：`lunjiang`(venv) + `ollama_models`(模型) + `pkgs_cache`(conda 缓存) | ★★★ | **全部 gitignore**，勿提交 |
-| `.github/workflows/` | GitHub Pages CI | ★★★ | 自动构建部署 |
+| `.github/workflows/` | CI：前端 eslint + build + GitHub Pages 发布；后端 ruff + pytest（93 离线用例） | ★★★ | 两个 job 并行，见 `docs/DEPLOY.md` §四 |
 | `Dockerfile` / `.dockerignore` / `docker-compose.yml` | 容器化：后端镜像（非 root + /health）+ PG/Redis/app 编排，`--scale app=2` 起多实例 | ★★ | R13 新增 app 服务；详见 [ROUND13](OPTIMIZATION_ROUND13.md) |
 | `README.md` | 项目说明 | ★★★ | 更新于 2026-09-02 |
 | `.editorconfig` / `.gitignore` / `pytest.ini` / `ruff.toml` / `pyproject.toml` / `requirements.txt` | 工程规范 | ★★★ | ruff/mypy 规则见 `pyproject.toml` + `ruff.toml` |
@@ -65,40 +67,39 @@
 frontend/
 ├── src/
 │   ├── main.jsx           # React 入口；样式加载顺序：base → panels → fx → skins/*（八份）→ layout
-│   ├── App.jsx            # 工作台主壳（.wb-* 语义标记）：三栏 + 皮肤接入 + 会话拖拽重排 + 采纳盖章
+│   ├── App.jsx            # 工作台主壳（.wb-* 语义标记）：三栏 + 皮肤接入 + 会话拖拽重排 + 采纳盖章；切换项目即另起新会话（时间线随项目上下文归零，流式期间不切）
 │   ├── fx.js              # 动效工具箱（粒子 / 换肤遮罩 / 成就条 / 3D 倾斜 / 磁吸 / 盖章）
 │   ├── fx.css             # 动效层样式（入场编排 / 指针特效 / 氛围 / 高光时刻 / 弱动效降级）
 │   ├── api.js             # REST + SSE 封装
 │   ├── constants.js       # 状态枚举文案映射
-│   ├── demo.js            # 仅 DEV 的演示数据（?demo=1，生产不进入该分支）
+│   ├── demo.js            # 仅 DEV 的演示数据：`app.html?demo=1`（生产构建不进入该分支）
 │   ├── hooks/             # useChat / useProjects / useSessions / useSkin / useStickyScroll
-│   ├── components/        # AuthPage / Timeline / TracePanel / KnowledgePanel
+│   ├── components/        # AuthPage / Timeline（节点事件 + step_event 工具进度）/ TracePanel / KnowledgePanel
 │   │                      # ProjectArchive / ProjectDialog / SkinPicker / decor(Seal·Rule·AmbientLines·Markdown)
 │   ├── skins/             # ★ 皮肤（单一真源注册 + 八套完整设计语言 + 契约文档）
 │   │   ├── registry.js    #   八套皮肤注册（id / 名称 / 色点 / 落地页 / theme-color）
 │   │   ├── CONTRACT.md    #   皮肤契约：令牌表 + 类名表 + 书写规范 + 自检清单
-│   │   ├── patterns/      #   可选 CSS/SVG 纹样素材（lotus-scroll.svg / meander.svg）
+│   │   ├── patterns/      #   历史纹样素材（lotus-scroll.svg / meander.svg）；v18 起皮肤材质全走 CSS，两图当前无引用（见该目录 README）
 │   │   └── a-letterpress / b-console / c-poster / d-bamboo / e-riso / f-archive / g-score / h-contact .css
 │   ├── styles/            # 共享底座（与皮肤无关）
 │   │   ├── base.css       #   重置 / 焦点 / 滚动条 / 弹窗骨架 / markdown 结构 / 令牌契约说明
 │   │   ├── panels.css     #   共享组件层：知识库 / 档案 / 可观测 / 登录页（只吃皮肤令牌）
 │   │   └── layout.css     #   工作台外壳与滚动契约（须置于 skins/*.css 之后）
 │   └── landing/           # 落地页共享行为与样式（八页共用）
-│       ├── shared.js      #   皮肤切换器 / 入场编排 / 数字滚动 / 打字机 / 彩蛋三门 / 落笔处
+│       ├── shared.js      #   皮肤切换器（触发按钮文案固定「切换皮肤」，展开 8 套）/ 入场编排 / 数字滚动 / 打字机 / 彩蛋三门 / 落笔处
 │       └── shared.css     #   上述共享物的样式（取色走 --lb-* 落地页令牌）
 ├── index.html             # 落地页 · 皮肤 A「铅字印刷」（站根；含皮肤记忆跳转）
 ├── landing-b…f.html       # 落地页 · 皮肤 B–F（每皮肤一页）
 ├── how-it-works.html      # 落地页 · 皮肤 G「编队总谱」（第 7 套，含出声音符 / 演奏全曲 / fermata 停拍）
 ├── dossier.html           # 落地页 · 皮肤 H「论文底片」（第 8 套，含逐条解密 / 阵风 / 打字机音效）
-├── app.html               # 工作台入口（首帧前写入 <html data-skin>）
+├── app.html               # 工作台入口（首帧前写入 <html data-skin>）；不带参数=登录入口，`?demo=1`=免登录预览入口
 ├── public/
 │   ├── fig/              # 落地页配图（3 张黑白摄影，本地资产，不依赖外部出图接口）
 │   └── easter/            # 彩蛋页：dispatch / hunt / brush（落地页三门触发的独立静态页，不进构建）
 ├── design-samples/        # 设计档案（v15 proposal-1…10 + sample-a…d + round20-pages，零依赖静态 HTML，不参与构建）
 ├── scripts/
-│   ├── shot-app.mjs             # 主应用回归（mock 登录 + 截图）
-│   ├── shot-audit.mjs / verify-*.mjs   # 皮肤与响应式回归
-│   └── verify-upload-msg.mjs    # 上传提示验证
+│   ├── shot-app.mjs / shot-audit.mjs / shot-before-after.mjs   # 主应用与皮肤截图回归
+│   └── verify-{chat-layout,interrupt-mobile,responsive,state,upload-msg}.mjs  # 布局 / 状态 / 上传验证
 ├── vite.config.js         # base=/Lun-Assistant/（GitHub Pages）+ 九入口（站根 / 工作台 / 8 张落地页）
 ├── package.json / package-lock.json
 └── node_modules/          # gitignore，勿提交
@@ -113,9 +114,9 @@ frontend/
 | `src/skins/*.css` | ★★★ 八套设计语言的完整实现（铅字印刷 / 夜航仪表 / 学术海报 / 木牍竖排 / 孔版双色 / 索引档案 / 编队总谱 / 论文底片） |
 | `src/styles/base.css` + `panels.css` + `layout.css` | ★★★ 共享底座与次级面板（只吃皮肤令牌，八套皮肤自动适配） |
 | `src/fx.css` + `src/fx.js` | ★★★ 动效层：入场编排 / 指针特效 / 氛围 / 高光时刻，JS 工具箱与样式分家 |
-| `src/landing/shared.{js,css}` | ★★★ 八张落地页的共享行为与样式（切换器 / 彩蛋三门 / 落笔处） |
-| `index.html` + `landing-{b…f}.html` + `how-it-works.html` + `dossier.html` | ★★★ 八张落地页（每套皮肤一张，vite 九入口构建） |
-| `src/demo.js` | ★★ 开发预览数据：`npm run dev` 后访问 `app.html?demo=1` 可无后端逐套核对皮肤 |
+| `src/landing/shared.{js,css}` | ★★★ 八张落地页的共享行为与样式（切换器 / 彩蛋三门 / 落笔处）；切换器触发按钮文案统一「切换皮肤」，条目由 `registry.js` 动态渲染 8 套 |
+| `index.html` + `landing-{b…f}.html` + `how-it-works.html` + `dossier.html` | ★★★ 八张落地页（每套皮肤一张，vite 九入口构建）；G/H 两页与六张旧页之间的内容互链已拆除，仅由切换器提供 8 套导航 |
+| `src/demo.js` | ★★ 开发预览数据：`npm run dev` 后访问 `app.html?demo=1` 可无后端逐套核对皮肤；**不带 `?demo=1` 的 `/app.html` 是登录入口**（两者语义不同，落地页链接已按锚文本分开） |
 | `design-samples/` | ★ v15/v18 设计档案（历史参照，不参与构建） |
 | `scripts/shot-app.mjs` | ★ 回归脚本 |
 
@@ -162,7 +163,7 @@ frontend/
    新增皮肤还要扩 `vite.config.js` 的入口与 `src/main.jsx` 的样式引入，并在 `src/skins/CONTRACT.md` 留下记录。
 4. **皮肤回归验证**：`npm run dev` 后跑 `node scripts/shot-app.mjs`；
    另一个更轻的办法是访问 `app.html?demo=1`（仅 DEV 生效的演示数据），
-   不起后端即可逐套核对八套设计语言。
+   不起后端即可逐套核对八套设计语言（登录路径是不带参数的 `/app.html`）。
 5. `npm run lint` + `npm run build` 必须通过（CI 会执行，见 `.github/workflows/deploy.yml`）——
    产物含九个入口（站根落地页 / 工作台 / 8 张皮肤落地页），改 `vite.config.js` 的 `input` 时注意同步。
 

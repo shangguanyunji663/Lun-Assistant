@@ -49,7 +49,7 @@
 | :--- | :--- |
 | 通用大模型不了解**你的**文献与草稿 | 项目级私有知识库：上传 PDF/DOCX/TXT/MD → 自动解析分块向量化，跨项目隔离 |
 | 一个 prompt 干不完「查文献 + 写综述 + 排版」这类复合任务 | Plan-Execute-Replan 规划器拆解为 TODO，Supervisor 分发给专项 Agent，最大 3 跳防回环 |
-| 工具调用失控：无限流、无审计、失败就崩 | 治理栈七层串联：RBAC → 限流 → 熔断 → 三级容错 → 分布式锁 → 审计 → 行为观测 |
+| 工具调用失控：无限流、无审计、失败就崩 | 治理栈七步串联：RBAC → 限流 → 熔断 → 分布式锁 → 三级容错 → 审计 → 行为观测 |
 | 上下文越聊越贵，长对话必然溢出 | 四层记忆 + 压缩（实测压缩比 **0.214**，目标 ≤ 0.3） |
 | 结果不可信、过程不可追溯 | 全链路 Trace/Log/Memory/Action 统一 Span，支持树形回放与逐节点排查 |
 | 需要人类拍板的环节 AI 自作主张 | LangGraph `interrupt` 挂起 → 前端确认 → `/resume` 续跑 |
@@ -70,7 +70,7 @@
 | **三阶段 RAG** | 难度自适应 Query 改写（`off/auto/on` + 规则兜底 + 防漂移）→ 稠密 + 稀疏 + **相邻窗口**多路 RRF 融合 → 交叉精排降噪 | `services/rag/` |
 | **结构化产物** | 文献综述初稿 / 开题报告 / 答辩大纲：模板骨架 + RAG 证据注入，而非自由生成 | `services/governance/artifacts.py` |
 | **学术工具生态** | 翻译 / 润色 / 方法推荐 / 参考文献格式化（GB7714）/ 摘要生成 / 术语解析 | `services/governance/academic_tools.py` |
-| **工具治理栈** | RBAC → 限流 → 熔断 → 三级容错（重试 / 降级 / 人机兜底）→ 分布式锁 → 审计 → 行为观测 → Skill；**14 个工具**统一纳管，同步 handler 自动线程池化 | `services/governance/` |
+| **工具治理栈** | RBAC → 限流 → 熔断 → 分布式锁 → 三级容错（重试 / 降级 / 人机兜底）→ 审计 → 行为观测 → Skill；**14 个工具**统一纳管，同步 handler 自动线程池化 | `services/governance/` |
 | **四层记忆** | 短期（Redis）/ 结构化 / 长期（pgvector）/ 偏好 + 压缩 | `services/memory/` |
 | **SSE 流式** | EventHub 事件总线 + token 微缓冲，打字机式输出 | `services/streaming/hub.py` |
 | **人机介入** | LangGraph `interrupt` 挂起 → `/resume` 续跑 | `api/agent/router.py` |
@@ -309,7 +309,7 @@ envs\lunjiang\python.exe scripts\preflight.py
 | :--- | :--- |
 | 检索一直为空（不报错） | [FAQ：检索永远返回空](#faq) —— 多半没跑 0.5 的语料入库，或预热未完成 |
 | 对话报 404 model not found | 第 0.4 步的 `ctx4096` 镜像没建，[FAQ](#faq) |
-| 第一次检索特别慢 | 正常：交叉编码器 CPU 首载 10~60s，看日志「预热完成」 |
+| 第一次检索特别慢 | 正常：交叉编码器 CPU 首载 + 首次推理 10~60s。启动期已后台预热，成功看日志「预热完成：交叉编码器已加载（Ns）」；若看到「交叉编码器预加载失败」，冷启动成本会落到首次检索上 |
 
 <details>
 <summary><strong>分支 A：Docker 一键起依赖（不想装原生 PostgreSQL / Redis 时）</strong></summary>
@@ -365,7 +365,8 @@ envs\lunjiang\python.exe -m ruff check .               # 静态检查
 | 变量 | 说明 |
 | :--- | :--- |
 | `SECRET_KEY` | JWT 签名密钥，**生产环境必须修改** |
-| `APP_HOST` / `APP_PORT` / `APP_DEBUG` | 监听地址、端口与调试开关 |
+| `APP_HOST` / `APP_PORT` / `APP_DEBUG` | 监听地址、端口与调试开关（`APP_DEBUG` 兼作 SQL 回显开关） |
+| `APP_RELOAD` | uvicorn 热重载开关：仅 `envs\lunjiang\python.exe main.py` 这条启动路径读取（经 `cast_bool` 解析，与 `APP_DEBUG` 解耦）；直接敲 `uvicorn main:app` 或走 `scripts\dev_up.ps1` 时以命令行为准（后者固定带 `--reload --reload-exclude envs --reload-exclude frontend`） |
 | `PG_HOST` / `PG_PORT` / `PG_USER` / `PG_PASSWORD` / `PG_DB` | PostgreSQL 连接信息（本项目端口为 **5433**） |
 | `REDIS_HOST` / `REDIS_PORT` / `REDIS_DB` | Redis 连接信息（默认 6379 / 0） |
 | `DEEPSEEK_API_KEY` / `ZHIPU_API_KEY` / `QWEN_API_KEY` | 云底座密钥（切换 provider 时填写） |
@@ -473,6 +474,7 @@ Lun-Assistant/
 | **Knowledge** | `POST/GET/DELETE /api/projects/{id}/knowledge[/{doc_id}]`、`POST .../knowledge/search` | Bearer |
 | **Agent** | `POST /api/agent/chat`（SSE 流式）、`POST /api/agent/resume` | Bearer |
 | **Trace** | `GET /api/observability/traces`、`GET /api/observability/traces/{trace_id}`、`GET /api/observability/metrics` | admin |
+| **System** | `GET /`（服务自描述：app / version / docs / health）、`GET /health`（`{"status":"ok","app":"..."}`） | 免鉴权（同时被审计中间件排除） |
 
 完整交互式文档：启动后端后访问 <http://127.0.0.1:8000/docs>。
 
@@ -578,7 +580,7 @@ conda run -p envs/lunjiang pip install -r requirements.txt
 | 新增配置项 | 写入 `configs/settings.yaml` 并在 README「配置说明」同步登记 |
 | 类型与静态检查 | `mypy` 仅强制已写注解的代码（`pyproject.toml` 配置），`ruff` 规则见 `ruff.toml` |
 | 文档 | 文档格式见 `docs/FORMAT_STANDARD.md`；前端版本演进写入 `docs/frontend-versions/`（套用 `TEMPLATE.md`） |
-| CI 范围 | 当前 CI（`.github/workflows/deploy.yml`）仅覆盖前端 eslint + build + Pages 部署；**后端检查请在本地执行** |
+| CI 范围 | `.github/workflows/deploy.yml` 含两个 job：`build-deploy`（前端 eslint + vite build + GitHub Pages 部署）与 `test-backend`（Ubuntu 上 `ruff check .` + `pytest tests/ -q`）；本地仍建议提交前跑同两条命令 |
 
 ### 11.3 提交前检查清单
 

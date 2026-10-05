@@ -17,7 +17,7 @@
 > - 顶层 `design-concepts/` 已删除，设计资产归入 `docs/design-concepts/`（仅 4 张 PNG + 1 张 JPG，无 preview/tuner.html）；
 > - 学习文档已由 `docs/LEARNING_GUIDE.md` + `docs/LEARNING_PATH.md` 合并为根目录 `论匠学习指南.md`；
 > - `frontend/src/InkBackground.jsx` 已随 v18 皮肤重构删除（§五 问题 5、§六 第二批建议 2 不再适用）；
-> - 离线单测由 59 → **89** 用例（15 个测试文件）；
+> - 离线单测由 59 → **93** 用例（15 个测试文件；2026-10-05 复核 `pytest --collect-only`，README / EVALUATION_REPORT 已同步为 93）；
 > - `docs/` 后端轮次现为 ROUND1-6 / ROUND12 / ROUND13；前端版本线归入 `docs/frontend-versions/`（v8→v18）；
 > - `services/governance/artifacts.py` 已于 ROUND6 迁入 governance（§五 问题 8 属有意妥协）。
 >
