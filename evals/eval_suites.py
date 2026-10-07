@@ -2,12 +2,13 @@
 
 为什么单独有这个入口：
     `evals/harness.py` 主基线只跑 `retrieval.jsonl`（简单集 20 条），
-    而落地页与文档还宣称了「口语长尾集 80% / 学术刁钻集 95% / 泛化 75%」——
-    这三组数字此前**没有任何产物支撑**（evals/ 下查不到），属于"口头水位"。
+    而落地页与文档还引用「口语长尾集 / 学术刁钻集 / 泛化 hold-out」三组数字——
+    2026-10-07 之前它们仅有 09-04 快照、无产物支撑（"口头水位"）。
 
     本脚本用与主基线**完全相同**的口径（same pipeline / rewrite_mode=on / top_k=5 /
     同一评分函数 score_rag）把三组补测出来，并写入带 provenance 的产物，
     使每个页面数字都能对应到 `evals/results_extra.json` 里的一条记录。
+    首轮补测结果（2026-10-07）：长尾 85%（17/20）/ 学术 97.5%（39/40）/ 泛化 75%（6/8）。
 
 口径（与 harness 一致，勿单独修改）：
     - 召回判定：期望语料文件名出现在 Top-5 结果的 meta.file 集合里即算召回；
@@ -76,7 +77,8 @@ async def main(suites: list[str]) -> None:
               f"平均{report['avg_ms']}ms/条, miss={len(report['misses'])})")
 
     provenance = build_provenance({s: f"{s}.jsonl" for s in suites},
-                                 elapsed_s=time.perf_counter() - t_start)
+                                 elapsed_s=time.perf_counter() - t_start,
+                                 command="envs\\lunjiang\\python.exe -m evals.eval_suites " + " ".join(suites))
     payload = {"_provenance": provenance, **out}
     OUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     print("\n== 产物身份证（provenance）==")

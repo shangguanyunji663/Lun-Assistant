@@ -116,12 +116,14 @@ def model_fingerprint() -> dict:
     return models
 
 
-def build_provenance(suites: dict[str, str], *, elapsed_s: float | None = None) -> dict:
+def build_provenance(suites: dict[str, str], *, elapsed_s: float | None = None,
+                     command: str | None = None) -> dict:
     """构造 provenance 块。
 
     Args:
         suites: 评测项名 → 数据集文件名，如 {"intent": "intent.jsonl"}
         elapsed_s: 整轮评测墙钟耗时（秒），便于与 avg_ms 交叉核对。
+        command: 实际执行的复现命令；缺省按 evals.harness 入口拼装（仅主基线适用）。
     """
     prov: dict = {
         "schema": SCHEMA,
@@ -134,7 +136,7 @@ def build_provenance(suites: dict[str, str], *, elapsed_s: float | None = None) 
         "models": model_fingerprint(),
         "suites": {name: dataset_fingerprint(fn) for name, fn in suites.items()},
         "eval_elapsed_s": round(elapsed_s, 1) if elapsed_s is not None else None,
-        "reproduce": "envs\\lunjiang\\python.exe -m evals.harness " + " ".join(suites),
+        "reproduce": command or ("envs\\lunjiang\\python.exe -m evals.harness " + " ".join(suites)),
     }
     return prov
 

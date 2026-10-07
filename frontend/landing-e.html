@@ -425,8 +425,8 @@
           </div>
           <div class="ro" data-reveal>
             <span class="v"><span data-count="100">100</span><u>%</u></span>
-            <span class="k">Recall@5</span>
-            <span class="d">稠密 + 稀疏 + 句窗三路融合</span>
+            <span class="k">Recall@5 · 简单集</span>
+            <span class="d">20/20 · 长尾 85% · 学术 97.5% · 泛化 75%</span>
           </div>
           <div class="ro" data-reveal>
             <span class="v"><span data-count="103">103</span><u>项</u></span>
@@ -501,13 +501,12 @@
           <div data-reveal>
             <p class="honesty">
               <b>水位如实标注</b>
-              口语长尾集 80% · 学术刁钻集 95% · hold-out 泛化 75%（6/8）——
-              这三项是 2026-09-04 快照，**仓库中暂无独立产物**，补测入口已备。
-              意图 92%、简单集 Recall@5 100%（20/20）与离线用例 97 项均带产物：
-              数据集指纹、代码版本与模型底座记于
-              <code>evals/results_latest.json</code> 的 <code>_provenance</code> 字段；
-              明细与复现命令见 <code>docs/EVALUATION_REPORT.md</code>。
-            </p>
+              难度分层：简单集 100%（20/20）· 口语长尾集 85%（17/20）· 学术刁钻集 97.5%（39/40）· hold-out 泛化 75%
+              （6/8，样本小，定位是泛化冒烟而非统计结论）。
+              四组数字全部带产物：数据集指纹、代码版本与模型底座记于
+              <code>evals/results_latest.json</code> 与 <code>evals/results_extra.json</code> 的 <code>_provenance</code> 字段；
+              miss 明细与复现命令见 <code>docs/EVALUATION_REPORT.md</code>。
+              </p>
           </div>
         </div>
       </section>

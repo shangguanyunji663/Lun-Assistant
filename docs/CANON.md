@@ -56,9 +56,9 @@ A 铅字印刷 / B 夜航仪表 / C 学术海报 / D 木牍竖排 / E 孔版双�
 | 意图分类（50 条集） | **92.0%（46/50）** | rule 23 / vector 26 / llm 1 | `evals/results_latest.json` |
 | 意图分类（hold-out 92 条） | **76.1%（70/92）** | 零原型句重叠；分层错误率 rule 0% / vector 38.1% / llm 12.2% | `evals/results_intent_holdout.json`（样本内嵌于 `evals/eval_intent_holdout.py` 的 `TEXTS`，未单独落 jsonl） |
 | RAG Recall@5（简单集 20） | **100%（20/20）**，平均 **108.2s/条** | 期望文件出现在 Top-5 的 `meta.file`。**该耗时随 CPU 负载波动大（历次 62.0s / 108.2s），引用时须与产物时间戳同时给出** | `evals/results_latest.json`（21:40:44 那轮） |
-| RAG Recall@5（口语长尾 20） | **80%** | 09-04 快照，**产物待补** | — |
-| RAG Recall@5（学术刁钻 40） | **95%** | 09-04 快照，**产物待补** | — |
-| 泛化（hold-out 8） | **75%（6/8）** | 09-04 快照，**产物待补** | — |
+| RAG Recall@5（口语长尾 20） | **85%（17/20）** | 2026-10-07 重跑，平均 45.0s/条 | `evals/results_extra.json` |
+| RAG Recall@5（学术刁钻 40） | **97.5%（39/40）** | 2026-10-07 重跑，平均 48.8s/条 | `evals/results_extra.json` |
+| 泛化（hold-out 8） | **75%（6/8）** | 2026-10-07 重跑；n 小，冒烟定位 | `evals/results_extra.json` |
 | 难度画像（字面重合） | 简单 **67.5%** / 长尾 **29.2%** / 学术 **43.1%** / 泛化 **31.5%** | 查询与期望语料 2-gram 重合率 | `scripts/_audit_dataset_difficulty.py` |
 | 压缩率（合成 fixture） | **0.214** | `"背景填充"*120`，keep_recent=4 | `evals/results_latest.json` |
 | 压缩率（真实语料·生产路径） | **0.035** | keep_recent=0，12 轮 / 11943 字 | `evals/results_compression_real.json` |

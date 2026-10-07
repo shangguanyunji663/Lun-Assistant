@@ -1,0 +1,132 @@
+{
+  "_provenance": {
+    "schema": "evals/provenance@1",
+    "generated_at": "2026-10-07T13:57:02+08:00",
+    "git": {
+      "revision": "227b840",
+      "branch": "feat/skins-g-h-i",
+      "dirty": true,
+      "dirty_files": [
+        "M frontend/index.html",
+        " M frontend/landing-b.html",
+        " M frontend/landing-c.html",
+        " M frontend/landing-d.html",
+        " M frontend/landing-e.html",
+        " M frontend/landing-f.html"
+      ]
+    },
+    "host": {
+      "platform": "Windows-10-10.0.22631-SP0",
+      "python": "3.11.16"
+    },
+    "models": {
+      "chat": "qwen3:4b-ctx4096",
+      "embedding": "bge-m3",
+      "embedding_dim": 1024,
+      "rerank": "BAAI/bge-reranker-base"
+    },
+    "suites": {
+      "retrieval_hard": {
+        "dataset": "evals/datasets/retrieval_hard.jsonl",
+        "exists": true,
+        "cases": 20,
+        "sha256": "64093320f5af8ffd"
+      },
+      "retrieval_paper_hard": {
+        "dataset": "evals/datasets/retrieval_paper_hard.jsonl",
+        "exists": true,
+        "cases": 40,
+        "sha256": "48cbf3a5f0297de2"
+      },
+      "holdout": {
+        "dataset": "evals/datasets/holdout.jsonl",
+        "exists": true,
+        "cases": 8,
+        "sha256": "37c722d9e8ceee2c"
+      }
+    },
+    "eval_elapsed_s": 3194.1,
+    "reproduce": "envs\\lunjiang\\python.exe -m evals.eval_suites retrieval_hard retrieval_paper_hard holdout"
+  },
+  "retrieval_hard": {
+    "suite": "rag@5",
+    "cases": 20,
+    "recall": 0.85,
+    "avg_ms": 45000,
+    "use_rewrite": true,
+    "misses": [
+      {
+        "query": "聊天窗口关了再开它就忘了我说过的写作要求",
+        "expect": "llm_writing.txt",
+        "got": [
+          "academic_english.txt",
+          "literature_review.txt"
+        ]
+      },
+      {
+        "query": "引用外文文献是翻译过来的会不会算学术不端",
+        "expect": "reference_management.txt",
+        "got": [
+          "academic_integrity.txt",
+          "citation_formats.txt",
+          "plagiarism.txt"
+        ]
+      },
+      {
+        "query": "审稿意见批评我数据处理不透明怎么办",
+        "expect": "data_management.txt",
+        "got": [
+          "peer_review.txt",
+          "rebuttal.txt",
+          "submission_process.txt"
+        ]
+      }
+    ]
+  },
+  "retrieval_paper_hard": {
+    "suite": "rag@5",
+    "cases": 40,
+    "recall": 0.975,
+    "avg_ms": 48776,
+    "use_rewrite": true,
+    "misses": [
+      {
+        "query": "样本量太小导师说统计功效不够，那我该补多少样本用哪种检验才严谨",
+        "expect": "statistics_method.txt",
+        "got": [
+          "experimental_design.txt",
+          "research_method.txt"
+        ]
+      }
+    ]
+  },
+  "holdout": {
+    "suite": "rag@5",
+    "cases": 8,
+    "recall": 0.75,
+    "avg_ms": 42527,
+    "use_rewrite": true,
+    "misses": [
+      {
+        "query": "我导说我实验做得不扎实让我再补实验",
+        "expect": "research_method.txt",
+        "got": [
+          "academic_integrity.txt",
+          "rebuttal.txt",
+          "revision_strategy.txt"
+        ]
+      },
+      {
+        "query": "帮我记一下我写论文的行文要求",
+        "expect": "llm_writing.txt",
+        "got": [
+          "academic_english.txt",
+          "citation_formats.txt",
+          "conference_paper.txt",
+          "defense.txt",
+          "paper_table_figure.txt"
+        ]
+      }
+    ]
+  }
+}

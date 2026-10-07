@@ -496,9 +496,9 @@ Lun-Assistant/
 | 意图分类准确率 | **46 / 50 = 92%** | 规则层 23 / 向量层 26 / LLM 兜底 1；4 条未命中见下 |
 | 意图分类（hold-out 92 条） | **70 / 92 = 76.1%** | **零原型句重叠**独立集，用于排除测试集泄漏；分层错误率 rule 0% / vector 38.1% / llm 12.2% |
 | RAG Recall@5（简单集） | **100%（20/20）** | 平均 **108.2s/条**（21:40 那轮；本地 CPU 推理，耗时随负载波动）；产物已带 `_provenance` 身份证 |
-| RAG Recall@5（口语长尾集） | **80%** | 20 条刻意避开语料关键词；**2026-09-04 快照，产物待补**（`evals/eval_suites.py` 可重测） |
-| RAG Recall@5（学术刁钻集） | **95%** | 40 条学术表述 + 术语改写；**同上，产物待补** |
-| 泛化能力（hold-out） | **6 / 8 = 75%** | 8 条未见口语查询；**同上，产物待补** |
+| RAG Recall@5（口语长尾集） | **85%（17/20）** | 20 条刻意避开语料关键词；2026-10-07 重测，产物 `evals/results_extra.json`（带 `_provenance`） |
+| RAG Recall@5（学术刁钻集） | **97.5%（39/40）** | 40 条学术表述 + 术语改写；2026-10-07 重测，产物同上 |
+| 泛化能力（hold-out） | **6 / 8 = 75%** | 8 条未见口语查询；2026-10-07 补测，产物同上（n 小，定位是泛化冒烟） |
 | 记忆压缩比 | **0.213（合成 fixture）/ 0.035（真实语料·生产路径）** | 合成 fixture 掩盖了两个缺陷，已修复，见下 |
 | 回归测试 | **16 / 16 真断言 PASS** | 每项均可失败：相邻窗口召回 `[1,3]`、拒答回退、图 10 节点装配、产物骨架渲染等 |
 | 并发压测 | 成功率 **100%**，QPS **1.9**，P95 **5574 ms** | CPU 底座，延迟主要来自本地推理 |
@@ -519,8 +519,8 @@ Lun-Assistant/
 > 两者不可直接并列，也不应只引用其中一个。
 
 > **每个数字的口径**：数据集文件、条数、sha256 指纹与代码 git 版本记录在
-> `evals/results_latest.json` 的 `_provenance` 字段；复现命令
-> `envs\lunjiang\python.exe -m evals.harness intent rag compression`。
+> `evals/results_latest.json` 与 `evals/results_extra.json`（难集三组）的 `_provenance` 字段；复现命令
+> `envs\lunjiang\python.exe -m evals.harness intent rag compression` 与 `envs\lunjiang\python.exe -m evals.eval_suites`。
 > 数字与产物对不上即为可检测缺陷——这是刻意的设计，不是装饰。
 
 ### 压缩率：合成 fixture 掩盖的两个真实缺陷（已定位并修复）
@@ -572,7 +572,7 @@ if keep_recent and len(rest) > keep_recent:     # 0 为 falsy → 走"全部保�
 > 复现：`envs\lunjiang\python.exe -m evals.eval_compression_real`
 > 产物：`evals/results_compression_real.json`（含逐条误判归因）
 
-> 我们刻意保留不完美的数字：意图 92%、长尾集 80%、hold-out 75%、意图 hold-out 76.1%。
+> 我们刻意保留不完美的数字：意图 92%、长尾集 85%、hold-out 75%、意图 hold-out 76.1%。
 > **能说出 miss 在哪的人，别人才信他的 hit。**
 
 ---
