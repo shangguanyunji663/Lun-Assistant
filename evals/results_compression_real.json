@@ -48,7 +48,7 @@
       }
     },
     "eval_elapsed_s": null,
-    "reproduce": "envs\\lunjiang\\python.exe -m evals.harness compression_real"
+    "reproduce": "envs\\lunjiang\\python.exe -m evals.eval_compression_real"
   },
   "fixture": {
     "source": "data/corpus（真实论文段落）",

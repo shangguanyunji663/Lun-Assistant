@@ -81,7 +81,7 @@ function mountSkinSwitcher() {
         if (id === PAGE_SKIN) { close(); return }
         saveSkin(id)
         // 落地页每套皮肤一个独立 HTML（八种版式无法靠 CSS 换肤）→ 这里是跳转
-        const target = id === 'a' ? './index.html' : `./landing-${id}.html`
+        const target = SKINS.find(s => s.id === id)?.landing || './index.html'
         // 用主题色遮罩过渡：先铺一层满屏色块再跳，避免白屏硬切
         transitionTo(target)
       })

@@ -50,7 +50,7 @@
 | 通用大模型不了解**你的**文献与草稿 | 项目级私有知识库：上传 PDF/DOCX/TXT/MD → 自动解析分块向量化，跨项目隔离 |
 | 一个 prompt 干不完「查文献 + 写综述 + 排版」这类复合任务 | Plan-Execute-Replan 规划器拆解为 TODO，Supervisor 分发给专项 Agent，最大 3 跳防回环 |
 | 工具调用失控：无限流、无审计、失败就崩 | 治理栈七步串联：RBAC → 限流 → 熔断 → 分布式锁 → 三级容错 → 审计 → 行为观测 |
-| 上下文越聊越贵，长对话必然溢出 | 四层记忆 + 压缩（压缩比 0.213 合成 / 0.035 真实语料，目标 ≤ 0.3） |
+| 上下文越聊越贵，长对话必然溢出 | 四层记忆 + 压缩（压缩比 0.214 合成 / 0.035 真实语料，目标 ≤ 0.3） |
 | 结果不可信、过程不可追溯 | 全链路 Trace/Log/Memory/Action 统一 Span，支持树形回放与逐节点排查 |
 | 需要人类拍板的环节 AI 自作主张 | LangGraph `interrupt` 挂起 → 前端确认 → `/resume` 续跑 |
 
@@ -161,7 +161,7 @@ sequenceDiagram
 
     U->>C: POST /api/agent/chat (SSE)
     C->>CL: 规则 → 向量原型 → LLM
-    CL-->>C: intent（56ms / 条）
+    CL-->>C: intent（559ms / 条）
     C->>P: 复合任务？拆解为 TODO
     C->>SUP: 按 intent 路由
     SUP->>SP: 分发步骤
@@ -487,19 +487,19 @@ Lun-Assistant/
 
 ## 九、评测与基线 Evaluation
 
-> 数据为 **2026-09-04 全本地 CPU 底座**（`qwen3:4b-ctx4096` + `bge-m3` + `bge-reranker-base`）一次完整跑通快照，**非理想环境下的最好成绩**。完整明细与通过特征见 [📊 冒烟与评测基线报告](docs/EVALUATION_REPORT.md)。
+> 基线快照 **2026-09-04 全本地 CPU 底座**（`qwen3:4b-ctx4096` + `bge-m3` + `bge-reranker-base`），**非理想环境下的最好成绩**；意图 hold-out、难集三档与泛化扩充于 **2026-10-05 ~ 10-07** 重测（见下表各行标注）。完整明细与通过特征见 [📊 冒烟与评测基线报告](docs/EVALUATION_REPORT.md)。
 
 | 项目 | 结果 | 说明 |
 | :--- | :--- | :--- |
 | 离线单测 | **103 passed** | `pytest tests/ -q`，无外部依赖 |
-| 冒烟脚本 | **11 / 11 通过** | check_env 5/5；记忆 / RAG / 治理 / Trace / 图 / API 全绿 |
+| 冒烟脚本 | **11 / 11 通过** | check_env 5/5；记忆 / RAG / 治理 / Trace / 图 / API 全绿；另有 3 个评测入口（eval_intent_holdout / eval_compression_real / eval_suites）不计入此口径 |
 | 意图分类准确率 | **46 / 50 = 92%** | 规则层 23 / 向量层 26 / LLM 兜底 1；4 条未命中见下 |
 | 意图分类（hold-out 92 条） | **70 / 92 = 76.1%** | **零原型句重叠**独立集，用于排除测试集泄漏；分层错误率 rule 0% / vector 38.1% / llm 12.2% |
 | RAG Recall@5（简单集） | **100%（20/20）** | 平均 **108.2s/条**（21:40 那轮；本地 CPU 推理，耗时随负载波动）；产物已带 `_provenance` 身份证 |
 | RAG Recall@5（口语长尾集） | **85%（17/20）** | 20 条刻意避开语料关键词；2026-10-07 重测，产物 `evals/results_extra.json`（带 `_provenance`） |
 | RAG Recall@5（学术刁钻集） | **97.5%（39/40）** | 40 条学术表述 + 术语改写；2026-10-07 重测，产物同上 |
 | 泛化能力（hold-out） | **25 / 30 = 83.3%** | 30 条未见口语查询（原 8 条，2026-10-07 扩充重测）；产物同上 |
-| 记忆压缩比 | **0.213（合成 fixture）/ 0.035（真实语料·生产路径）** | 合成 fixture 掩盖了两个缺陷，已修复，见下 |
+| 记忆压缩比 | **0.214（合成 fixture）/ 0.035（真实语料·生产路径）** | 合成 fixture 掩盖了两个缺陷，已修复，见下 |
 | 回归测试 | **16 / 16 真断言 PASS** | 每项均可失败：相邻窗口召回 `[1,3]`、拒答回退、图 10 节点装配、产物骨架渲染等 |
 | 并发压测 | 成功率 **100%**，QPS **1.9**，P95 **5574 ms** | CPU 底座，延迟主要来自本地推理 |
 
@@ -530,12 +530,12 @@ Lun-Assistant/
 
 | 口径 | 修复前 | 修复后 | 判定 |
 | :--- | :--- | :--- | :--- |
-| 合成重复文本（harness 口径） | 0.212 | 0.213 | ✅（对该 bug 不敏感，见下） |
+| 合成重复文本（harness 口径） | 0.212 | 0.214 | ✅（对该 bug 不敏感，见下） |
 | 真实语料 · `keep_recent=0`（**生产路径**） | **1.000** | **0.035** | ❌ → ✅ |
 | 真实语料 · `keep_recent=4`（历史发布口径） | 0.767 | 0.191 | ❌ → ✅ |
 | 真实语料 · `keep_recent=None`（375） | 1.000 | 1.000 | 窗口大于内容，本轮不压缩（正确） |
 
-**缺陷 1：高价值判定用裸子串匹配**（`services/memory/compressor.py:18`）
+**缺陷 1：高价值判定用裸子串匹配**（修复前实现；现行三档词表 `_CORRECTION_MARKERS` / `_GENERIC_MARKERS` / `_PERSIST_MARKERS` 见 `services/memory/compressor.py:34-41`）
 
 ```python
 _HIGH_VALUE_MARKERS = ("纠正", "不对", "改成", "记住", "重要", "必须", "要求")
@@ -567,12 +567,12 @@ if keep_recent and len(rest) > keep_recent:     # 0 为 falsy → 走"全部保�
 同时补上 `len(rest) > keep_recent` 条件（窗口大于内容时应原样保留，而非把短会话压成摘要）。
 
 **为什么合成 fixture 发现不了**：它用「背景填充」重复文本，**一个高价值标记词都不含**，
-恰好绕过缺陷 1；又走 `keep_recent=4`，绕过缺陷 2。所以它两次都报 PASS（0.212 / 0.213）。
+恰好绕过缺陷 1；又走 `keep_recent=4`，绕过缺陷 2。所以它两次都报 PASS（0.212 / 0.214）。
 
 > 复现：`envs\lunjiang\python.exe -m evals.eval_compression_real`
 > 产物：`evals/results_compression_real.json`（含逐条误判归因）
 
-> 我们刻意保留不完美的数字：意图 92%、长尾集 85%、hold-out 83.3%、意图 hold-out 76.1%。
+> 我们刻意保留不完美的数字：意图 92%、口语长尾集 85%、泛化集 83.3%、意图 hold-out 76.1%。
 > **能说出 miss 在哪的人，别人才信他的 hit。**
 
 ---
@@ -598,8 +598,8 @@ if keep_recent and len(rest) > keep_recent:     # 0 为 falsy → 走"全部保�
 | [📐 目录结构审查](docs/ARCHITECTURE_REVIEW.md) | 目录合理性评估（问题清单 + 优化建议） |
 | [📂 项目结构说明](docs/PROJECT_STRUCTURE.md) | 目录与关键文件用途说明 |
 | [📐 统一格式规范](docs/FORMAT_STANDARD.md) | 全部 Markdown 文档的格式规范 |
-| [🛠 优化记录](docs/OPTIMIZATION_ROUND1.md) | Round 1–6：性能 / OOM / 前端排障 / RAG / 学术工具 / 工程化治理 |
-| [🛠 优化记录十二 / 十三](docs/OPTIMIZATION_ROUND12.md) | CI 静态检查 / 依赖锁定 / 前端 Hooks / 可移植性；审计合规 / 改写自适应 / 记忆排序 / 多实例部署 |
+| [🛠 优化记录](docs/OPTIMIZATION_ROUND1.md) | Round 1–6（分见 [ROUND1](docs/OPTIMIZATION_ROUND1.md) ~ [ROUND6](docs/OPTIMIZATION_ROUND6.md)）：性能 / OOM / 前端排障 / RAG / 学术工具 / 工程化治理 |
+| [🛠 优化记录十二](docs/OPTIMIZATION_ROUND12.md) / [十三](docs/OPTIMIZATION_ROUND13.md) | CI 静态检查 / 依赖锁定 / 前端 Hooks / 可移植性；审计合规 / 改写自适应 / 记忆排序 / 多实例部署 |
 
 **前端版本线**（[总索引](docs/frontend-versions/README.md) · v8 → v18）
 

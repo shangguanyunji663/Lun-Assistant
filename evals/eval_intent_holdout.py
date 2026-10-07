@@ -97,7 +97,9 @@ async def main(validate_only: bool) -> None:
                      "review": ""})   # review 留给人工复核填写
 
     payload = {
-        "_provenance": build_provenance({}, elapsed_s=None),
+        "_provenance": build_provenance(
+        {}, elapsed_s=None,
+        command="envs\\lunjiang\\python.exe -m evals.eval_intent_holdout"),
         "note": "盲标集合：intent 标签未预设，predicted 为分类器盲跑结果，review 待人工复核",
         "cases": len(rows),
         "layer_distribution": layers,

@@ -116,11 +116,11 @@ _COLLOQUIAL_MARKERS = ("怎么破", "站不住脚", "没底", "太像", ...)
 
 ### 🟠 P1 · 压缩率测在合成重复文本上
 
-`evals/harness.py:86-94` 的 fixture 是 `"背景填充" * 120`、`"内容填充" * 120`，
-且 `harness.py:135` 显式传 `keep_recent=4`（生产默认为 `compress_trigger_tokens // 8 = 375`）。
+`evals/harness.py:96-103` 的 fixture 是 `"背景填充" * 120`、`"内容填充" * 120`，
+且 `harness.py:146` 显式传 `keep_recent=4`（生产默认为 `compress_trigger_tokens // 8 = 375`）。
 **任何压缩算法在高度重复文本上都能拿到漂亮数字**，且 `keep_recent` 一改结果就变。
 
-压缩器实现本身是真的（分级留存 + 冗余去重 + 窗口截断 + **真 LLM 摘要**，`services/memory/compressor.py:102`）——
+压缩器实现本身是真的（分级留存 + 冗余去重 + 窗口截断 + **真 LLM 摘要**，`services/memory/compressor.py:106`）——
 坏的是输入，不是算法。**修复**：换成真实多轮对话（可用 `frontend/src/demo.js` 的会话文本或语料片段），重测。
 
 ### 🟠 P1 · 意图测试集与 L2 原型句同源
@@ -148,7 +148,7 @@ _COLLOQUIAL_MARKERS = ("怎么破", "站不住脚", "没底", "太像", ...)
 | :--- | :--- |
 | `services/governance/tools_impl.py:86-115` | `check_plagiarism` 是与 81 篇本地语料的字符 bigram Jaccard，**不能查库外文本**；附带 bug：`likely_source` 取 `dense[0]` 而非 `best` 的候选 |
 | `services/governance/tools_impl.py:135-145` | `detect_ai_text` = 0.4×启发式（8 个硬编码词 + 句长方差）+ 0.6×本地 4B 模型**自报** |
-| `docs/EVALUATION_REPORT.md:128` | 「基线 62.5% (5/8)」实为 `AB_REPORT.md:13` 的 **TOP1 命中数**，Recall 与 TOP1 口径混用 |
+| `docs/EVALUATION_REPORT.md:128` | 「基线 62.5% (5/8)」实为 `AB_REPORT.md:15` 的 **TOP1 命中数**，Recall 与 TOP1 口径混用 |
 | `frontend/landing-b.html:456` | 「RRF 融合 412ms · 命中 **50** 篇」，而 `configs/settings.yaml:102-103` 是 `recall_top_k:20` / `final_top_k:5`，50 不可能 |
 | `evals/load_report.json:4-6` | `total:40` 但实际发 320 请求（`qps 1.9 × 168.37s ≈ 320`）；文档写 320 是诚实的，产物字段错 |
 | `frontend/design-samples/*`、`frontend/public/easter/hunt.html` | 设计稿与彩蛋页也带 100% / 16/16 / 95% 等未核验数字（已修 `hunt.html`） |
@@ -186,9 +186,9 @@ _COLLOQUIAL_MARKERS = ("怎么破", "站不住脚", "没底", "太像", ...)
 | ❌ 不要这样写 | ✅ 改成这样写 |
 | :--- | :--- |
 | 意图分类准确率 100% | 三层意图预分类（规则→向量→LLM）：50 条集实测 **92%**，规则层零 token 覆盖 **46%**；4 条 miss 均已定位到向量层误判（开放式提问被闲聊原型抢走） |
-| RAG Recall@5 100% | 三阶段 RAG（改写→多路 RRF 融合→交叉精排），简单集 Recall@5 **100%（20/20，平均 62s/条，CPU）**；同时如实给出难度分层：口语长尾集 85%（17/20）/ 学术刁钻集 97.5%（39/40）/ hold-out 泛化 83.3%（25/30）——四档均带产物（results_latest / results_extra） |
+| RAG Recall@5 100% | 三阶段 RAG（改写→多路 RRF 融合→交叉精排），简单集 Recall@5 **100%（20/20，平均 108.2s/条，CPU；历次 62.0s ~ 108.2s 见产物时间戳）**；同时如实给出难度分层：口语长尾集 85%（17/20）/ 学术刁钻集 97.5%（39/40）/ hold-out 泛化 83.3%（25/30）——四档均带产物（results_latest / results_extra） |
 | 回归 16/16 全通 | 7 场景 16 项断言，**每项均可失败**（相邻窗口召回 `[1,3]`、拒答回退、图 10 节点装配、产物骨架渲染）；最初 4 项为恒真空转，审计后已改写 |
-| 压缩率 0.214 | 四层记忆分级留存 + 真 LLM 摘要压缩。合成 fixture 0.213，真实语料复测发现**生产路径实为 1.000（从未压缩）**，定位两个根因并修复（现 0.035），补 6 个离线用例锁定语义 |
+| 压缩率 0.214 | 四层记忆分级留存 + 真 LLM 摘要压缩。合成 fixture 0.214，真实语料复测发现**生产路径实为 1.000（从未压缩）**，定位两个根因并修复（现 0.035），补 6 个离线用例锁定语义 |
 | 查重降重 / AI 检测 | 本地语料相似度自查（81 篇，字符 bigram Jaccard）/ AI 痕迹提示（0.4 启发式 + 0.6 模型自报，**不作判定依据**） |
 | 工具调用治理完善 | 14 个工具统一纳管于七步治理栈；**Redis 故障时 fail-closed 且审计必落库，该行为由 13 个单测锁定** |
 
@@ -224,7 +224,7 @@ envs\lunjiang\python.exe scripts\_audit_l1_coverage.py   # → 23/50 = 46.0%，�
 envs\lunjiang\python.exe scripts\_audit_corpus_count.py  # → 81 篇，缺失 0
 
 # 4) 产物身份证
-envs\lunjiang\python.exe scripts\_audit_provenance.py
+# provenance 直接查看 evals\results_*.json 的 _provenance 字段（_audit_provenance.py 已按 CANON §三 清理）
 
 # 5) 全量评测（需 PG/Ollama，约 22 分钟）
 envs\lunjiang\python.exe -m evals.harness intent rag compression

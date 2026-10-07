@@ -17,7 +17,7 @@
 | 工具治理 | 七步治理栈 | 治理流水线 6 步（早期口径，已废） | `services/governance/tool_registry.py` |
 | 检索管线 | 三阶段 RAG（改写 → 多路 RRF 融合 → 交叉编码器精排） | 三路召回（易与「三引擎」混淆） | `services/rag/pipeline.py` |
 | 召回三引擎 | 稠密（bge-m3）/ 稀疏（BM25+jieba）/ 相邻句窗 | 三路检索 | `services/rag/retriever.py` |
-| 召回路数 | **六路**（稠密、稀疏、关键词、原查询保底、项目私有库、相邻窗口） | — | `services/rag/pipeline.py:64` |
+| 召回路数 | **六路**（稠密、稀疏、关键词、原查询保底、项目私有库、相邻窗口） | — | `services/rag/pipeline.py:5-11` |
 
 > **「三引擎」与「六路召回」不矛盾**：三引擎指**召回机制**（稠密 / 稀疏 / 句窗扩展），
 > 六路指**装配到 RRF 融合的具体召回路**。文档中同时出现时须各用其名，勿混称。
@@ -38,7 +38,7 @@ A 铅字印刷 / B 夜航仪表 / C 学术海报 / D 木牍竖排 / E 孔版双�
 
 | 指标 | 值 | 产物 / 出处 |
 | :--- | :--- | :--- |
-| 离线用例 | **103 passed** | `pytest tests/ -q`（15 个测试文件） |
+| 离线用例 | **103 passed** | `pytest tests/ -q`（14 个 `test_*.py` + `conftest.py`） |
 | 工具数 | **14**（8 通用 + 6 学术） | `services/governance/tools_impl.py` |
 | 治理栈 | **七步** | `services/governance/tool_registry.py` |
 | 专项 Agent | **6** | `services/agent/specialists/specs.py` |
@@ -46,7 +46,7 @@ A 铅字印刷 / B 夜航仪表 / C 学术海报 / D 木牍竖排 / E 孔版双�
 | 语料 | **81 篇**（库内 1376 块） | `data/corpus/`；`scripts/_audit_corpus_count.py` |
 | 评测样本总量 | **160 条** | 50+20+20+40+30；`evals/datasets/` |
 | 皮肤 / 落地页 | **8 套 / 8 张** | `frontend/src/skins/registry.js` |
-| vite 入口 | **9 个**（站根 + 工作台 + 8 落地页） | `frontend/vite.config.js` |
+| vite 入口 | **9 个**（8 落地页——站根 index.html 即其一——+ 工作台 app.html） | `frontend/vite.config.js` |
 
 ### 评测指标
 
@@ -54,7 +54,7 @@ A 铅字印刷 / B 夜航仪表 / C 学术海报 / D 木牍竖排 / E 孔版双�
 | :--- | :--- | :--- | :--- |
 | 意图分类 L1 覆盖 | **23/50 = 46%** | 规则层独立命中（零 token） | `scripts/_audit_l1_coverage.py` |
 | 意图分类（50 条集） | **92.0%（46/50）** | rule 23 / vector 26 / llm 1 | `evals/results_latest.json` |
-| 意图分类（hold-out 92 条） | **76.1%（70/92）** | 零原型句重叠；分层错误率 rule 0% / vector 38.1% / llm 12.2% | `evals/results_intent_holdout.json`（样本内嵌于 `evals/eval_intent_holdout.py` 的 `TEXTS`，未单独落 jsonl） |
+| 意图分类（hold-out 92 条） | **76.1%（70/92）** | 零原型句重叠；分层错误率 rule 0% / vector 38.1% / llm 12.2% | `evals/results_intent_holdout.json`（样本 92 条见 `evals/datasets/intent_holdout.jsonl`） |
 | RAG Recall@5（简单集 20） | **100%（20/20）**，平均 **108.2s/条** | 期望文件出现在 Top-5 的 `meta.file`。**该耗时随 CPU 负载波动大（历次 62.0s / 108.2s），引用时须与产物时间戳同时给出** | `evals/results_latest.json`（21:40:44 那轮） |
 | RAG Recall@5（口语长尾 20） | **85%（17/20）** | 2026-10-07 重跑，平均 45.0s/条 | `evals/results_extra.json` |
 | RAG Recall@5（学术刁钻 40） | **97.5%（39/40）** | 2026-10-07 重跑，平均 48.8s/条 | `evals/results_extra.json` |
@@ -64,7 +64,7 @@ A 铅字印刷 / B 夜航仪表 / C 学术海报 / D 木牍竖排 / E 孔版双�
 | 压缩率（真实语料·生产路径） | **0.035** | keep_recent=0，12 轮 / 11943 字 | `evals/results_compression_real.json` |
 | 压缩率（真实语料·keep_recent=4） | **0.191** | 历史发布口径 | 同上 |
 | 回归 | **16/16 真断言 PASS**，无 SKIP | 每项均可失败 | `evals/regression.py` |
-| A/B MRR（长尾困难集） | **0.744 → 0.917** | 改写关闭 → 改写开+防漂移修复 | `evals/ab_report.json`（逐条 rank 可复算） |
+| A/B MRR（口语长尾集 · 8 条旧口径） | **0.744 → 0.917** | 改写关闭 → 改写开+防漂移修复；ab_report 实跑于 8 条旧版长尾集（现集 20 条） | `evals/ab_report.json`（逐条 rank 可复算） |
 | A/B 耗时 | 简单集改写纯开销 **2.2s → 61s** | — | `evals/ab_report.json` |
 
 ### ⚠️ 不可再引用的数字（已证伪或有争议）
@@ -88,7 +88,7 @@ A 铅字印刷 / B 夜航仪表 / C 学术海报 / D 木牍竖排 / E 孔版双�
 | :--- | :--- | :--- | :--- |
 | 1 | 新增产物身份证（provenance） | `evals/provenance.py`（新） | README、EVALUATION_REPORT、PROJECT_STRUCTURE、学习指南 |
 | 2 | harness 产物加 `_provenance`；**子集运行改为合并**不再截断 | `evals/harness.py` | 同上 |
-| 3 | 新增 hold-out 意图集与盲跑脚本 | `evals/eval_intent_holdout.py`（新，92 条样本内嵌于 `TEXTS`） | README、PROJECT_STRUCTURE、EVALUATION_REPORT |
+| 3 | 新增 hold-out 意图集与盲跑脚本 | `evals/eval_intent_holdout.py`（新，92 条样本见 `datasets/intent_holdout.jsonl`） | README、PROJECT_STRUCTURE、EVALUATION_REPORT |
 | 4 | 新增难度分层补测入口 | `evals/eval_suites.py`（新） | 同上 |
 | 5 | 新增真实语料压缩重测 | `evals/eval_compression_real.py`（新） | 同上 |
 | 6 | 回归 4 处恒真断言改为真断言（16 项不变） | `evals/regression.py` | EVALUATION_REPORT、学习指南（回归口径） |

@@ -16,6 +16,8 @@
 >
 > ⚠️ **变更标注（2026-10-05 · 文档全域同步）**：§2 `tests/` 用例数 **93 → 103**（实测 `pytest tests/ -q`）；`evals/` 用途补全——新增 `eval_intent_holdout` / `eval_suites` / `eval_compression_real` 三个专项入口与 `provenance.py`（产物身份证），产物增至 3 个 `results_*.json`；§2 `.github/workflows/` 用例数同步 103。数字与术语基准见 [`CANON.md`](CANON.md)，评测口径定稿见 [`METRICS_FINAL.md`](METRICS_FINAL.md)，本次审计全过程见 [`DATA_INTEGRITY_AUDIT.md`](DATA_INTEGRITY_AUDIT.md)。
 >
+> ⚠️ **变更标注（2026-10-07 · hold-out 扩充）**：`datasets/holdout.jsonl` 扩至 30 条并解除 gitignore 入库（此前该数据集一直未进仓库）；`evals/` 产物增至 **4 个** `results_*.json`（新增 `results_extra.json`，难集三组带 provenance）。
+>
 > ⚠️ **变更标注（2026-10-05 · 代码同步审计）**：`data/corpus/` 81 篇经复核维持一致（`tests/` 用例数当日先后为 93 → 97 → **103**，最终值见上一条标注）；订正 §1 部署描述、§2 `.github/workflows/` 职责（补 `test-backend` job）、§2 `skins/patterns/` 现状（v18 起纹样素材无引用）、§3 `frontend/scripts/` 清单。§3 另按 2026-10-04 的前端改动同步：工作台**切项目即另起新会话**（时间线随项目上下文归零）、`Timeline` 渲染 `step_event` 工具进度（进行中 / 完成+耗时 / 异常）、落地页切换器文案统一「切换皮肤」且展开 8 套、`/app.html?demo=1`（免登录预览）与 `/app.html`（登录入口）语义分离。
 >
 > ⚠️ **变更标注（2026-10-03 · 八套皮肤轮）**：随 ROUND20 补记（两页新语言落地为第 7/8 套皮肤）与 v18 皮肤体系定稿，§2/§3/§5 的皮肤数量、frontend 结构树与维护约定已按当前代码同步：皮肤 6 → **8 套**（新增 `g-score.css` / `h-contact.css`），落地页 6 → **8 张**（新增 `how-it-works.html` / `dossier.html`），vite 入口 7 → **9 个**；`docs/design-concepts/` 与 `frontend/design-samples/` 的实际内容亦按当前目录订正。轮次详情见 [`frontend-versions/ROUND20-ADDENDUM.md`](frontend-versions/ROUND20-ADDENDUM.md)。
@@ -42,19 +44,19 @@
 | `services/` | 业务层（agent/llm/rag/memory/checkpoint/governance/classifier/observability/streaming） | ★★★ | 核心业务逻辑 |
 | `infrastructure/` | 基础设施（models 模型定义 / rbac 权限） | ★★★ | 数据模型与权限 |
 | `configs/` | 配置（settings.yaml / rbac.yaml / tools.yaml / ollama Modelfile） | ★★★ | 运行时配置 |
-| `scripts/` | 运维/冒烟脚本（check_env / preflight / smoke_* / ingest_corpus / load_test + dev_up / dev_down 启停） | ★★ | 手动运维用 |
-| `tests/` | pytest 测试（15 文件 / **103 用例**） | ★★★ | 含治理/模型/改写/API 集成/评测口径（`test_evals_scoring.py`）/记忆压缩语义（`test_memory_pure.py`）等 |
-| `evals/` | 评测：`harness.py`（三指标）+ `ab.py`（A/B）+ `regression.py`（16 项回归）+ 3 个专项入口（`eval_intent_holdout` / `eval_suites` / `eval_compression_real`）+ `provenance.py`（产物身份证）+ `datasets/` | ★★★ | 含 `__init__.py` 为包；产物 `results_latest.json` / `results_intent_holdout.json` / `results_compression_real.json` |
+| `scripts/` | 运维/冒烟脚本（check_env / preflight / smoke_* / ingest_corpus / load_test + dev_up / dev_down 启停）+ 一次性审计脚本（`_audit_*` ×5 见 CANON §三；`_contrast_audit.py` 前端对比度） | ★★ | 手动运维用 |
+| `tests/` | pytest 测试（14 个 `test_*.py` + `conftest.py` / **103 用例**） | ★★★ | 含治理/模型/改写/API 集成/评测口径（`test_evals_scoring.py`）/记忆压缩语义（`test_memory_pure.py`）等 |
+| `evals/` | 评测：`harness.py`（三指标）+ `ab.py`（A/B）+ `regression.py`（16 项回归）+ 3 个专项入口（`eval_intent_holdout` / `eval_suites` / `eval_compression_real`）+ `provenance.py`（产物身份证）+ `datasets/` | ★★★ | 含 `__init__.py` 为包；产物 `results_latest.json` / `results_intent_holdout.json` / `results_compression_real.json` / `results_extra.json`（难集三组）+ `charts/` |
 | `data/` | 语料库（corpus 81 个 txt）+ 运行时上传目录（uploads） | ★★★ | uploads 已 gitignore |
 | `docs/` | 架构 / 部署 / 学习 / 优化记录 / 格式规范 / **术语与数字单一真源 `CANON.md`** | ★★★ | 后端线 ROUND1-13 + 通用文档留在根；前端版本线文档见 `frontend-versions/` |
 | `docs/frontend-versions/` | 前端版本演进文档（v8→v18 全部版本档案 + 索引 + 模板） | ★★★ | 前端文档单一真源（文档治理轮新建） |
 | `docs/design-concepts/` | 前端设计基线资产（4 张山水 PNG + 1 张 JPG） | ★★ | 设计基线，非生产代码；版本线正文见 frontend-versions/ |
 | `frontend/design-samples/` | 设计档案（v15 proposal-1…10 + sample-a…d + round20-pages 样张，零依赖静态 HTML） | ★★ | 设计档案，未进 vite 构建；样图→生产还原差异见 CHANGELOG-v15 / ROUND20 |
 | `frontend/` | React 前端（Vite） | ★★★ | 见 §3 |
-| `envs/` | 本地运行环境：`lunjiang`(venv) + `ollama_models`(模型) + `pkgs_cache`(conda 缓存) | ★★★ | **全部 gitignore**，勿提交 |
+| `envs/` | 本地运行环境：`lunjiang`(conda) + `ollama_models`(模型) + `pkgs_cache`(conda 缓存) | ★★★ | **全部 gitignore**，勿提交 |
 | `.github/workflows/` | CI：前端 eslint + build + GitHub Pages 发布；后端 ruff + pytest（103 离线用例） | ★★★ | 两个 job 并行，见 `docs/DEPLOY.md` §四 |
 | `Dockerfile` / `.dockerignore` / `docker-compose.yml` | 容器化：后端镜像（非 root + /health）+ PG/Redis/app 编排，`--scale app=2` 起多实例 | ★★ | R13 新增 app 服务；详见 [ROUND13](OPTIMIZATION_ROUND13.md) |
-| `README.md` | 项目说明 | ★★★ | 更新于 2026-10-05（评测口径与压缩缺陷修复同步） |
+| `README.md` | 项目说明 | ★★★ | 更新于 2026-10-07（难集产物与 hold-out 扩充同步） |
 | `.editorconfig` / `.gitignore` / `pytest.ini` / `ruff.toml` / `pyproject.toml` / `requirements.txt` | 工程规范 | ★★★ | ruff/mypy 规则见 `pyproject.toml` + `ruff.toml` |
 | `.env` / `.env.example` | 环境变量（密钥/端口） | ★★★ | `.env` 已 gitignore，勿提交 |
 | `.workbuddy/` | WorkBuddy 会话记忆 | ★★ | 工具数据，勿删 memory/ |

@@ -183,7 +183,8 @@ async def main(dry_run: bool) -> None:
     payload = {
         "_provenance": build_provenance(
             {"compression_real": "retrieval.jsonl"},
-            elapsed_s=None),
+            elapsed_s=None,
+            command="envs\\lunjiang\\python.exe -m evals.eval_compression_real"),
         "fixture": {
             "source": "data/corpus（真实论文段落）",
             "rounds": ROUNDS,

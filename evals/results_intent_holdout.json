@@ -41,7 +41,7 @@
     },
     "suites": {},
     "eval_elapsed_s": null,
-    "reproduce": "envs\\lunjiang\\python.exe -m evals.harness "
+    "reproduce": "envs\\lunjiang\\python.exe -m evals.eval_intent_holdout"
   },
   "note": "盲标集合：intent 标签未预设，predicted 为分类器盲跑结果，review 待人工复核",
   "cases": 92,

@@ -1,0 +1,30 @@
+{"query": "我导说我实验做得不扎实让我再补实验", "expected": "research_method.txt"}
+{"query": "系统里的agent老是自己调用没授权的工具怎么限制", "expected": "multi_agent.txt"}
+{"query": "审稿人让我报效应量和置信区间我不会算", "expected": "statistics_method.txt"}
+{"query": "参考文献格式我老搞乱想统一管起来", "expected": "reference_management.txt"}
+{"query": "综述部分导师说我只会抄标题没有自己的归纳", "expected": "literature_review.txt"}
+{"query": "帮我记一下我写论文的行文要求", "expected": "llm_writing.txt"}
+{"query": "老师说我答辩幻灯片字太多", "expected": "defense.txt"}
+{"query": "开题时他们老问我的方案能不能落地", "expected": "proposal.txt"}
+{"query": "摘要写了好几版导师还说没突出重点", "expected": "paper_abstract.txt"}
+{"query": "引言铺垫太长一直进不到我自己的工作", "expected": "paper_introduction.txt"}
+{"query": "最后一章除了重复结果不知道还能写啥", "expected": "paper_conclusion.txt"}
+{"query": "图注跟图里的曲线老是对不上被批了", "expected": "paper_table_figure.txt"}
+{"query": "LaTeX 里图片总乱跑编译还报错怎么办", "expected": "latex_typeset.txt"}
+{"query": "参考文献一会儿数字一会儿作者年份混着来", "expected": "citation_formats.txt"}
+{"query": "纠结这篇稿子先投 SCI 还是核心期刊", "expected": "journal_selection.txt"}
+{"query": "英文表达全是中式直译怎么改得地道点", "expected": "academic_english.txt"}
+{"query": "数据库搜出来一堆不相关的怎么精准找文献", "expected": "literature_retrieval.txt"}
+{"query": "原始数据随手乱放现在要核查全找不到了", "expected": "data_management.txt"}
+{"query": "审稿人措辞很冲的返修意见不知道怎么回", "expected": "rebuttal.txt"}
+{"query": "让给同门的稿子提修改意见从哪下手", "expected": "peer_review.txt"}
+{"query": "发问卷前是不是要先过伦理那一关", "expected": "research_ethics.txt"}
+{"query": "申课题的书里研究基础那块不会写", "expected": "research_proposal.txt"}
+{"query": "量表发出去信度老是上不去怎么办", "expected": "research_survey.txt"}
+{"query": "大修意见几十条不知道先改哪个", "expected": "revision_strategy.txt"}
+{"query": "投稿系统里一个月没动静要不要催", "expected": "submission_process.txt"}
+{"query": "毕业要求里会议和期刊怎么选更划算", "expected": "conference_paper.txt"}
+{"query": "对照组实验组混在一起被说变量没控住", "expected": "experimental_design.txt"}
+{"query": "句子顺序换了几个词查重就过了算合规吗", "expected": "plagiarism.txt"}
+{"query": "Word 里多级标题编号全乱了怎么自动修", "expected": "word_formatting.txt"}
+{"query": "助手给的答案有时对不上出处怎么更可靠", "expected": "rag_survey.txt"}

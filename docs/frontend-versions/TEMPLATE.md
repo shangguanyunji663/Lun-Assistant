@@ -1,7 +1,7 @@
 # 论匠前端 · CHANGELOG-v{N} 版本变更模板
 
 > 复制本文件为 `CHANGELOG-v{N}.md` 后填写。格式规范见 [`../FORMAT_STANDARD.md`](../FORMAT_STANDARD.md)。
-> 若改动同时覆盖设计稿（preview/tuner.html）与生产代码（frontend/），按「双档案模式」：本模板用于设计稿侧 + 追加 `OPTIMIZATION_ROUND{N}.md` 用于生产侧。
+> 若改动同时覆盖设计稿（preview/tuner.html，v18 起已删除）与生产代码（frontend/），按「双档案模式」：本模板用于设计稿侧 + 追加 `OPTIMIZATION_ROUND{N}.md` 用于生产侧。
 
 ---
 
@@ -86,7 +86,7 @@
 
 ## 六、同步与状态保留
 
-- 持久化键：`localStorage.lj_theme` …
+- 持久化键：`localStorage.lj_skin`（v18 起键名；v18 前为 `lj_theme`） …
 - 跨页签联动：…
 
 ---

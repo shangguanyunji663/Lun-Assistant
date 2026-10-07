@@ -131,7 +131,7 @@
 
 - **新增后端/通用轮次** → 复制 `docs/OPTIMIZATION_ROUND{N}.md` 骨架（取 ROUND6 形态：`## 一、本轮改进总览` 开头），套 §二 元信息头。
 
-- 每次新建文档后同步更新 `README.md` 文档导航表（保持两组：frontend-versions / backend-general）。
+- 每次新建文档后同步更新 `README.md` 文档导航表（保持现有分组：入门必读 / 工程与架构 / 前端版本线）。
 
 ***
 
