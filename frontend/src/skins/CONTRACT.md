@@ -1,7 +1,8 @@
 # 皮肤契约（skins/CONTRACT.md）
 
 > v18 前端 · 八套设计语言的实现规约
-> 本文件是**单一时真源**：新增皮肤、修改皮肤、审查皮肤，一律以本文件为准。
+> 本文件是**单一真源**：新增皮肤、修改皮肤、审查皮肤，一律以本文件为准。
+> 项目级术语与数字基准另见 [`docs/CANON.md`](../../../docs/CANON.md)。
 
 ## 一、两套作用域
 
@@ -27,6 +28,22 @@
 
 > 落地页触发按钮**不显示当前皮肤名**（2026-10-04 统一为「切换皮肤」），工作台仍显示当前皮肤名以便一眼确认当前语言。
 > 两侧数据都来自 `src/skins/registry.js`，新增皮肤无需改切换器代码。
+
+### 注册表字段契约（`src/skins/registry.js`）
+
+新增一套皮肤 = 在 `SKINS` 数组追加一条（**数组顺序 = 弹层与落地页切换器的展示顺序**；`id` 取 `a`…`h`，与 `<html data-skin>` 取值一致）。字段固定 7 项：
+
+| 字段 | 取值 | 消费方 |
+| --- | --- | --- |
+| `id` | `'a'…'h'`，即 `<html data-skin>` 取值与 `localStorage.lj_skin` 存储值 | `src/hooks/useSkin.js` / 两侧切换器 |
+| `label` | 中文皮肤名 | 工作台 `.sp-label`、落地页切换器条目 |
+| `en` | 英文名 | `.sp-name > em` |
+| `chip` | 色点颜色 | `.sp-chip` 内联 `background` |
+| `desc` | 一句话设计语言描述 | `.sp-desc` |
+| `landing` | 该皮肤落地页相对路径 | `.sp-foot` 的 `href` |
+| `themeColor` | `<meta name="theme-color">` 用色 | `src/hooks/useSkin.js` |
+
+导出面（`registry.js:86`–`:108`）：`SKINS`、`SKIN_IDS`、`DEFAULT_SKIN = 'a'`、`findSkin(id)`、`loadSkin()` / `saveSkin(id)`、`LS_SKIN = 'lj_skin'`。
 
 ---
 
@@ -65,8 +82,8 @@ z-index 不走皮肤令牌，用下面的固定档位；新增浮层时从档位
 ```
  0        背景氛围层（.ambient-lines / .wb::after 扫描线）
  5        流内 sticky 元素（.wb-jump）与拖拽中的会话行
- 20       列头 / 卷册等局部粘性元素（各皮肤自定）
- 60       顶栏与皮肤弹层（.wb-top / .skin-pop）
+ 20       顶栏 `.wb-top`（八套皮肤实测一致）与列头 / 卷册等局部粘性元素
+ 60       皮肤弹层 `.skin-pop`
  100      模态遮罩（.modal-mask，base.css）
  120      fx 全屏层（.fx-layer：粒子 / 换肤遮罩）
  130      顶部成就条（.ach-bar，最高优先展示层）
@@ -107,7 +124,7 @@ z-index 不走皮肤令牌，用下面的固定档位；新增浮层时从档位
     .sp-head > .sp-title + .sp-hint
     .sp-grid > button.sp-item(.on)
         .sp-chip + .sp-body > .sp-name(内含 em 英文名) + .sp-desc  + .sp-check
-    a.sp-foot             跳「在落地页查看该皮肤」
+    a.sp-foot             跳「在落地页查看「<皮肤名>」→」（href = 该皮肤的 `landing`）
 .wb-views > button.wb-view(.is-on)
 .wb-user > b(用户名) + i(角色)
 button.wb-btn.wb-btn-ghost.wb-exit

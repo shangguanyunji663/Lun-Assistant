@@ -9,7 +9,7 @@
 
 > 这是 ROUND9 末尾扩展（求职作品集 R-4 + R-5 落地）的部署说明。改 `frontend/vite.config.js` 加 `base` 切换 + 写 `.github/workflows/deploy.yml` 实现 `main` 分支 push → 自动 build → 部署到 GitHub Pages。
 >
-> ⚠️ **变更标注（2026-10-05 · 代码同步审计）**：§四 步骤链按当前 `deploy.yml` 补齐（新增 eslint 步骤与 Print public URL），`test-backend` 的依赖安装口径与离线用例数同步为 **93**（原文档写 89，且多写了单独安装 ruff）。
+> ⚠️ **变更标注（2026-10-05 · 代码同步审计）**：§四 步骤链按当前 `deploy.yml` 补齐（新增 eslint 步骤与 Print public URL），`test-backend` 的依赖安装口径与离线用例数同步为 **103**（原文档写 89；`pytest tests/ -q` 实测 **103 passed**，数字真源见 [`CANON.md`](./CANON.md) §二）。另有两处旧口径已就地处理：§三 的预期输出片段加「构建入口」标注、§八 第 2 条的 dist 体积按当前 build 产物重测。
 
 ## 一、最终访问 URL
 
@@ -73,6 +73,14 @@ cat dist/index.html | head -20                    # 看 base href 和资源路�
 
 所有资源路径都有 `/Lun-Assistant/` 前缀 → 在 GitHub Pages 上能正常解析。
 
+> ⚠️ **变更标注（2026-10-05 · 构建入口核对）**：上面的预期输出是 **v18 之前**（`index.html` 即 React 工作台）的形态。v18 起根入口拆成「站根落地页 + 工作台 `app.html`」——当前 `frontend/dist/index.html` 是**落地页 A（铅字印刷）**，React 工作台产物是 `frontend/dist/app.html`（`frontend/vite.config.js` 的 9 个入口，见 [`CANON.md`](./CANON.md) §二）。本节判定标准仍成立：**确认资源路径带 `/Lun-Assistant/` 前缀**即可，资源哈希每次 build 都不同，不必逐字比对：
+
+```bash
+cd frontend
+grep -o '/Lun-Assistant/assets/[^"]*' dist/index.html | head -5   # 落地页 A
+grep -o '/Lun-Assistant/assets/[^"]*' dist/app.html  | head -5   # 工作台
+```
+
 ## 四、工作流详解（`.github/workflows/deploy.yml`）
 
 ### 触发
@@ -93,10 +101,11 @@ cat dist/index.html | head -20                    # 看 base href 和资源路�
 ### 后端校验 job（test-backend）
 
 同一 workflow 内并行运行 `test-backend` job（跑在云端 Ubuntu，与本机 Windows 无关）：
-1. **Setup Python 3.11** —— `actions/setup-python@v5`，cache 用 pip
-2. **Install dependencies** —— `pip install -r requirements.txt`（ruff / mypy / pytest 已在依赖清单内，无需额外安装）
-3. **Lint (ruff)** —— `ruff check .`（规则见根目录 `ruff.toml`）
-4. **Run unit tests** —— `pytest tests/ -q`（93 个离线单测，全部 mock 外部依赖；`.env` 缺失时配置层自动回退 `.env.example` 占位值，无需在 CI 造 `.env`）
+1. **Checkout** —— 拉 main 分支代码
+2. **Setup Python 3.11** —— `actions/setup-python@v5`，cache 用 pip
+3. **Install dependencies** —— `pip install -r requirements.txt`（ruff / mypy / pytest 已在依赖清单内，无需额外安装）
+4. **Lint (ruff)** —— `ruff check .`（规则见根目录 `ruff.toml`）
+5. **Run unit tests** —— `pytest tests/ -q`（103 个离线用例，全部 mock 外部依赖；`.env` 缺失时配置层自动回退 `.env.example` 占位值，无需在 CI 造 `.env`）
 
 ### 关键设计
 - **不用 gh-pages 分支 / actions-gh-pages**：直接用官方 `actions/deploy-pages@v4` + `actions/upload-pages-artifact@v3`，更安全（OIDC token，无 write 权限泄露）
@@ -137,7 +146,7 @@ const REPO_NAME = 'lun-jiang'  // 改这里
 1. **后端不部署**：dist 是纯静态，登录后所有 API 调用都会失败。
    - 若要给面试官演示完整功能，本地 `npm run dev` + 启后端（`uvicorn main:app --port 8000`）即可。
    - 公网预览**只展示视觉**，作为简历"作品截图"。
-2. **dist 体积**：当前 36 KB CSS + 105 KB JS gzip 后总体积非常小，GitHub Pages 100 GB 月流量额度绰绰有余。
+2. **dist 体积**：本机 `npm run build` 产物实测 —— `frontend/dist/` 全量 **37.7 MB / 1228 个文件**（2026-10-05 build），大头是 ROUND20 起自托管的 CJK 字体（**1206 个文件 / 35.1 MB**，替代 Google Fonts）；JS 本体 gzip 约 **112 KB**、CSS 本体 gzip 约 **319 KB**（含 `fonts.css` 292 KB 的 `@font-face` 声明）。旧口径「36 KB CSS + 105 KB JS」是字体自托管之前的值，已停止引用；字体走 CDN 缓存，GitHub Pages 100 GB 月流量额度下仍有余量。
 3. **HTTPS 自动**：GitHub Pages 默认提供 Let's Encrypt 证书。
 
 ## 九、部署成功的标志

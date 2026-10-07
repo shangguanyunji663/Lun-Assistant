@@ -46,11 +46,19 @@ async def main() -> None:
     parent_of_tool = next(s for s in spans if s["name"] == "search_literature")
     parent_agent = next(s for s in spans if s["span_id"] == parent_of_tool["parent"])
 
+    llm_span = next((s for s in spans if s["kind"] == "llm_call"), None)
+    ok_tokens = bool(llm_span) and llm_span.get("tokens_in") == 210 and llm_span.get("tokens_out") == 128
+
     print(f"[Trace落库] PASS - trace={tid[:12]}... spans={len(spans)} kinds={kinds}")
     print(f"[父子关系] {'PASS' if parent_agent['name'] == 'supervisor' else 'FAIL'} - "
           f"tool_call.parent={parent_agent['name']}")
-    print(f"[Token统计] {'PASS' if spans[0] else 'PASS'} - llm_call tokens_in/out 已记录")
+    # 上方 span 显式写入 tokens_in=210/tokens_out=128，此处必须原值读回：
+    # 落库丢 token 是可观测性缺陷，不能因为"有 span"就判 PASS。
+    print(f"[Token统计] {'PASS' if ok_tokens else 'FAIL'} - llm_call "
+          f"tokens_in={llm_span.get('tokens_in') if llm_span else 'N/A'}/"
+          f"tokens_out={llm_span.get('tokens_out') if llm_span else 'N/A'}（期望 210/128）")
     print(f"[Trace列表] PASS - {len(await list_traces(limit=5))} 条聚合")
+    assert ok_tokens, "llm_call 的 tokens_in/out 未按写入值落库"
 
     # 树形回放（复用 API 层逻辑）
     from api.observability.router import _build_tree

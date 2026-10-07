@@ -595,12 +595,13 @@
             <i class="clip" aria-hidden="true"></i>
             <div class="doc-head"><b>评测留痕</b><span>FILE 08 · EVALUATION</span></div>
             <div class="doc-body">
-              <span class="nl">意图分类 <span class="rx" tabindex="0">50/50 命中，准确率 100%</span>，平均 56ms/条（规则层 16 / 向量层 34，LLM 未触发）。</span>
-              <span class="nl">检索 Recall@5：简单集 100%、口语长尾集 80%、学术刁钻集 95%，泛化集 6/8。</span>
-              <span class="nl">七大必测场景回归 16/16 全通；上下文压缩率 0.214（9920 → 2121 字）。</span>
-              <span class="nl">离线单测 93 例全绿，全部不依赖 PG / Redis / Ollama，可在无环境机器一键执行。</span>
+              <span class="nl">意图分类 <span class="rx" tabindex="0">50 条集实测 92%</span>（规则层 23 / 向量层 26 / LLM 兜底 1，未触发层的查询零 token）。</span>
+              <span class="nl">检索 Recall@5：简单集 <span class="rx" tabindex="0">100%（20 条）</span>；口语长尾集 80%（20 条）、学术刁钻集 95%（40 条）为 2026-09-04 快照，产物待补。</span>
+              <span class="nl">回归 16 项断言全部为可失败的真断言（含相邻窗口召回、拒答回退、图装配、产物骨架渲染）。</span>
+              <span class="nl">离线单测 <span class="rx" tabindex="0">103 例全绿</span>，不依赖 PG / Redis / Ollama，可在无环境机器一键执行。</span>
+              <span class="nl">压缩率：合成 fixture 0.213、真实语料 0.035（生产路径）—— 合成集曾掩盖两个缺陷，已定位并修复。</span>
+              <span class="nl">每个数字的口径、数据集指纹与代码版本记于 <code>evals/results_latest.json</code> 的 <code>_provenance</code> 字段。</span>
             </div>
-            <span class="stamp" aria-label="已核对">已核对</span>
           </article>
 
           <article class="sheet-doc">

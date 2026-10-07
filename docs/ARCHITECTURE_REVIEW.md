@@ -17,11 +17,19 @@
 > - 顶层 `design-concepts/` 已删除，设计资产归入 `docs/design-concepts/`（仅 4 张 PNG + 1 张 JPG，无 preview/tuner.html）；
 > - 学习文档已由 `docs/LEARNING_GUIDE.md` + `docs/LEARNING_PATH.md` 合并为根目录 `论匠学习指南.md`；
 > - `frontend/src/InkBackground.jsx` 已随 v18 皮肤重构删除（§五 问题 5、§六 第二批建议 2 不再适用）；
-> - 离线单测由 59 → **93** 用例（15 个测试文件；2026-10-05 复核 `pytest --collect-only`，README / EVALUATION_REPORT 已同步为 93）；
+> - 离线单测由 59 → **103** 用例（2026-10-05 复核：`pytest tests/ -q` → **103 passed**，`tests/` 内 14 个 `test_*.py` + `conftest.py`；同日修复前一度记为 93，README / EVALUATION_REPORT 已同步为 103，真源见 `docs/CANON.md` §二）；
 > - `docs/` 后端轮次现为 ROUND1-6 / ROUND12 / ROUND13；前端版本线归入 `docs/frontend-versions/`（v8→v18）；
 > - `services/governance/artifacts.py` 已于 ROUND6 迁入 governance（§五 问题 8 属有意妥协）。
 >
 > 分层结论（services/infrastructure 0 处反向 import、api 只向下依赖）经复核**仍然成立**。
+>
+> ⚠️ **变更标注（2026-10-05 · 压缩器行为修复登记）**：本报告正文未评价压缩实现，但 §二 目录树列有 `services/memory/` 的 `compressor`，其实现当日有三处行为修复（`services/memory/compressor.py`），引用该模块时以新语义为准：
+>
+> - **高价值判定三档化**（`:20`–`:41`）：① 非 user 角色一律可压（assistant 正文不再是「用户纠正」）→ ② 显式纠正词（纠正 / 不对 / 改成 / 改为）命中即高价值 → ③ 泛化词（重要 / 必须 / 要求 / 记住）单独命中**不算**，须与持久化动作（别改 / 不要改 / 别忘 / 务必 / 一定 / 以后都）同现。旧实现是全篇裸子串匹配，实测把 8 条 assistant 正文误判为高价值（7775 字），压缩率结构上无法降到 0.3 以下。
+> - **`keep_recent` 三态语义**（`:133`–`:148`）：`is None` → 取配置默认 `max(6, 触发阈值//8)`；`== 0` → **整段压缩**（生产路径 `compress_window_if_needed` 用它）；`> 0` → 保留最近 N 条。旧实现 `keep_recent or …` + `if keep_recent and …` 因 0 为 falsy，使生产压缩链路实际从未压缩（实测 ratio=1.0、摘要 0 字）。
+> - **摘要 300 字硬上限**（`:47` / `:166`）：`_SUMMARY_MAX_CHARS = 300` 按字符硬截断，压缩率不再随模型漂移。
+>
+> 压缩率产物：`evals/results_compression_real.json`（真实语料 keep_recent=0 → **0.035**；keep_recent=4 → **0.191**）、`evals/results_latest.json`（合成 fixture → **0.214**）。
 
 ## 一、总体结论
 

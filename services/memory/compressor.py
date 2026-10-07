@@ -14,11 +14,38 @@ from services.memory.short_term import short_term_memory
 
 logger = logging.getLogger("lunjiang.memory")
 
-# 分级留存：包含这些标记的内容视为高价值，全量保留
-_HIGH_VALUE_MARKERS = ("纠正", "不对", "改成", "记住", "重要", "必须", "要求")
-_TOOL_ROLES = ("tool", "function")
+# 分级留存：纠正类词表 —— **仅在用户消息中**判定，且分为三档严密程度。
+#
+# 为什么改成这样（2026-10-05 审计修复）：
+#   原实现是 `any(m in content for m in ("纠正","不对","改成","记住","重要","必须","要求"))`
+#   的**全篇裸子串匹配**，而「要求 / 重要 / 必须」是中文论文正文的高频词。
+#   用真实语料 fixture 复测（evals/eval_compression_real.py）暴露：
+#     高价值消息 11/24 条、7903 字 = 占全文 66.2%，全部强制保留、永不压缩；
+#     其中 8 条（7775 字）是 assistant 正文因含「要求/重要/必须」被**误判**，
+#     真实用户纠正只有 3 条（284 字）。
+#   → 压缩率从结构上不可能达到 0.3（实测 0.767 FAIL）。
+#   合成 fixture 用「背景填充」重复文本，一个标记词都不含，恰好绕过了该瓶颈。
+#
+# 新判定规则（三档，从严到宽）：
+#   1. 非 user 角色 → 一律可压（assistant 正文不是"用户纠正"）；
+#   2. 显式纠正词（纠正/不对/改成/改为）→ 命中即高价值；
+#   3. 泛化词（重要/必须/要求/记住）单独命中**不算**，必须与"持久化动作"同现
+#      （如「这个很重要，别改」），避免把论文正文里的普通用词判成用户约束。
+_CORRECTION_MARKERS = ("纠正", "不对", "改成", "改为")
+_GENERIC_MARKERS = ("重要", "必须", "要求", "记住")
+_PERSIST_MARKERS = ("别改", "不要改", "别忘", "务必", "一定", "以后都", "后续都")
+# 「记住/别忘」的常见变体（"别改了" 也属持久化动作）
+_PERSIST_PATTERN = re.compile(r"别[改忘]|不要改|记(住|好)|务必|一定")
+
+# 向后兼容：旧名保留为三档词表的并集，供诊断脚本枚举用
+_HIGH_VALUE_MARKERS = _CORRECTION_MARKERS + _GENERIC_MARKERS
 
 _SUMMARY_SYSTEM = "你是论文助手的上下文压缩器。把对话历史压缩为要点摘要，保留:任务目标、已确定的结论、用户要求与纠正、未完成事项。直接输出摘要正文，不超过300字。"
+
+# 摘要硬上限：max_tokens 限制不到中文（1 token 可能落成 1 个汉字甚至更多），
+# 故再按字符数硬截断 —— 让压缩率只由 keep_recent 与内容决定，不随模型漂移。
+_SUMMARY_MAX_CHARS = 300
+_SUMMARY_MAX_TOKENS = 400
 
 
 @dataclass
@@ -35,10 +62,21 @@ class CompressResult:
 
 
 def _is_high_value(msg: dict) -> bool:
+    """判断消息是否承载"用户约束/纠正"，必须全量保留。
+
+    三档判定见上方 `_CORRECTION_MARKERS` 注释。核心变化：**只有用户消息**才可能
+    是高价值约束；assistant 正文即使含「要求/重要/必须」也可正常压缩。
+    """
+    if msg.get("role") != "user":
+        return False          # assistant / tool 输出默认可压缩
     content = msg.get("content", "")
-    if msg.get("role") in _TOOL_ROLES:
-        return False  # 工具输出默认可压缩，除非带高价值标记
-    return any(m in content for m in _HIGH_VALUE_MARKERS)
+    if any(m in content for m in _CORRECTION_MARKERS):
+        return True           # 显式纠正：命中即保留
+    # 泛化词需与"持久化动作"同现，避免误判论文正文里的普通用词
+    has_generic = any(m in content for m in _GENERIC_MARKERS)
+    has_persist = any(m in content for m in _PERSIST_MARKERS) \
+        or bool(_PERSIST_PATTERN.search(content))
+    return has_generic and has_persist
 
 
 def _dedup(messages: list[dict]) -> list[dict]:
@@ -68,7 +106,12 @@ class ContextCompressor:
     async def compress(self, messages: list[dict], *, keep_recent: int | None = None,
                        use_llm: bool = True, force: bool = False) -> CompressResult:
         cfg_keep = int(get_value("memory", "compress_trigger_tokens", default=3000)) // 8
-        keep_recent = keep_recent or max(6, cfg_keep)
+        # 必须用 `is None` 而非 `or`（2026-10-05 修复）：
+        #   生产路径 compress_window_if_needed 传 keep_recent=0，语义是"被逐出消息整体压缩"。
+        #   原先写作 `keep_recent or max(6, cfg_keep)`，0 是 falsy → 被静默替换成 375，
+        #   生产意图"整段压缩"被改写为"保留最近 375 条"，压缩路径实际上从未压缩。
+        if keep_recent is None:
+            keep_recent = max(6, cfg_keep)
         original_chars = sum(len(m.get("content", "")) for m in messages)
         result = CompressResult(messages=[], original_chars=original_chars)
 
@@ -85,13 +128,24 @@ class ContextCompressor:
         # 2. 冗余去重
         rest = _dedup(rest)
 
-        # 3. 窗口截断：rest 仅保留最近 keep_recent 条（keep_recent=0 表示整段压缩）
-        if keep_recent and len(rest) > keep_recent:
-            evicted = rest[:-keep_recent]
-            kept_recent = rest[-keep_recent:]
+        # 3. 窗口截断：rest 仅保留最近 keep_recent 条。
+        #
+        # keep_recent 语义（三者互斥，2026-10-05 修正）：
+        #   keep_recent is None → 未指定，取配置默认 max(6, 触发阈值//8)（已在上方归一）
+        #   keep_recent == 0    → **整段压缩**，全部逐出交给 LLM 摘要（生产路径用它）
+        #   keep_recent > 0     → 保留最近 N 条，其余逐出
+        #
+        # 原实现是 `if keep_recent and len(rest) > keep_recent:` —— 0 为 falsy，
+        # 于是"整段压缩"被解释成"全部保留（不压缩）"，加上上方 `or` 的二次改写，
+        # 导致生产压缩链路实际从未压缩过（实测 ratio=1.0、摘要 0 字）。
+        # 同时 len(rest) > keep_recent 这个条件也不可少：窗口大于内容时应原样保留，
+        # 而非把整段对话压成摘要（生产默认 375 远超 24 条消息的会话）。
+        if keep_recent == 0:
+            evicted, kept_recent = rest, []
+        elif len(rest) > keep_recent:
+            evicted, kept_recent = rest[:-keep_recent], rest[-keep_recent:]
         else:
-            evicted = rest
-            kept_recent = []
+            evicted, kept_recent = [], rest
 
         # 4. LLM 摘要被逐出的内容
         summary = ""
@@ -102,11 +156,14 @@ class ContextCompressor:
                 summary = await self.provider.chat(
                     [{"role": "system", "content": _SUMMARY_SYSTEM},
                      {"role": "user", "content": transcript}],
-                    temperature=0.2, max_tokens=400,
+                    temperature=0.2, max_tokens=_SUMMARY_MAX_TOKENS,
                 )
             except Exception:
                 logger.exception("上下文摘要失败，退化为截断式首尾保留")
                 summary = evicted[0].get("content", "")[:150] + " ……（后续已截断）"
+            # 硬上限：提示词里的「不超过300字」是软约束，实测会超（19:12 那轮 400 字）。
+            # 不加硬截断则压缩率随模型状态漂移，指标不可复现。
+            summary = summary.strip()[:_SUMMARY_MAX_CHARS]
 
         # 摘要放最前，随后高价值消息，最后近期窗口
         compressed: list[dict] = []

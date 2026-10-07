@@ -159,19 +159,87 @@ async def s3_multi_road() -> None:
     ids = [f["id"] for f in fused]
     _record("S3", "RRF融合", ids == [2, 1, 3], f"fused order={ids}")
 
-    sib = await hybrid_retriever.sibling_search(
-        [{"meta": {"file": "kb_test.md", "chunk": 1}}], window=1, top_k=10)
-    _record("S3", "相邻窗口查询语法", True, f"sibling call ok (rows={len(sib)}, DB依赖登记为S1)")
+    # 相邻窗口召回：自造同源 4 个临时块（chunk=1..4，唯一 doc_key），以 chunk=2 命中，
+    # 断言恰好召回相邻块 [1, 3]（自身与跨窗的 4 均不得召回）；依赖 DB，跑完即清理
+    if not await _db_ok():
+        _record("S3", "相邻窗口查询语法", False, "DB 不可用", "skip")
+        return
+
+    from sqlalchemy import delete, func
+
+    from infrastructure.config import get_embedding_dim
+    from infrastructure.db import get_session_factory
+    from infrastructure.models.memory import MemoryItem
+
+    doc_key = f"udoc:__reg_s3_{time.time_ns()}__"  # 唯一来源键，避免与真实数据混淆
+    factory = get_session_factory()
+    inserted = False
+    try:
+        async with factory() as db:
+            db.add_all([
+                MemoryItem(project_id=None, user_id=None, kind="user_doc",
+                           content=f"__regression__ 相邻窗口临时块 chunk={i}",
+                           embedding=[0.0] * get_embedding_dim(), importance=0.6,
+                           # meta 复刻 ingest 落库形态：项目文档块以 doc_key 定位同源
+                           meta={"filename": "__reg_s3__.md", "doc_id": 0, "chunk": i,
+                                 "doc_key": doc_key, "title": "__reg_s3__"})
+                for i in (1, 2, 3, 4)
+            ])
+            await db.commit()
+            inserted = True
+
+        sib = await hybrid_retriever.sibling_search(
+            [{"meta": {"doc_key": doc_key, "chunk": 2}}], window=1, top_k=10)
+        chunks = sorted((r.get("meta") or {}).get("chunk") for r in sib)
+        same_src = all((r.get("meta") or {}).get("doc_key") == doc_key for r in sib)
+        _record("S3", "相邻窗口查询语法", chunks == [1, 3] and same_src,
+                f"chunk=2 window=1 实召回 {chunks}（期望[1, 3]：邻块召回、自身与跨窗块剔除）")
+    finally:
+        # 清理临时数据：断言失败或异常也不留下脏数据
+        if inserted:
+            async with factory() as db:
+                await db.execute(delete(MemoryItem).where(
+                    func.json_extract_path_text(MemoryItem.meta, "doc_key") == doc_key))
+                await db.commit()
 
 
 async def s4_rewrite() -> None:
-    from services.rag.query_rewrite import _rule_rewrite
+    from services.rag.query_rewrite import _rule_rewrite, rewrite_query
 
     rw = _rule_rewrite("怎么做好大模型微调的开题报告")
     kws = rw["keywords"]
     _record("S4", "规则改写", len(kws) >= 3 and ("开题报告" in rw["rewritten"]),
             f"keywords={kws[:4]} rewritten含场景前缀={('开题报告' in rw['rewritten'])}")
-    _record("S4", "改写策略回退", True, "LLM 拒答路径逻辑已内置（服务依赖场景见冒烟）")
+
+    # 改写策略回退：① 拒答识别函数判定 ② 端到端回退分支（桩 Provider，零外部依赖）
+    from services.rag.pipeline import _is_rejection
+
+    query = "怎么做好大模型微调的开题报告"
+    reject_txt = "抱歉，我无法回答这个问题。"
+    normal_txt = "如何高质量完成大模型微调方向的开题报告撰写"
+
+    class _StubProvider:
+        """桩 LLM：按预设 payload 返回，用于驱动真实的分支判定。"""
+
+        def __init__(self, payload: dict) -> None:
+            self._payload = payload
+
+        async def chat(self, messages, **kwargs) -> dict:
+            return self._payload
+
+    refused = await rewrite_query(
+        query, provider=_StubProvider({"rewritten": reject_txt, "keywords": []}), mode="on")
+    adopted = await rewrite_query(
+        query, provider=_StubProvider(
+            {"rewritten": normal_txt, "keywords": ["大模型微调", "开题报告"]}), mode="on")
+    ok = (_is_rejection(reject_txt) is True          # 拒答话术 → 判为拒答
+          and _is_rejection(normal_txt) is False     # 正常改写 → 不判拒答
+          and refused["strategy"] == "rule_fallback"  # 拒答 → 回退规则改写
+          and refused["rewritten"] == rw["rewritten"]  # 回退内容即规则改写产物
+          and adopted["strategy"] == "llm")           # 正常改写 → 采纳 LLM 结果
+    _record("S4", "改写策略回退", ok,
+            f"拒答识别={_is_rejection(reject_txt)}/正常识别={_is_rejection(normal_txt)}；"
+            f"拒答→{refused['strategy']}（期望rule_fallback）/正常→{adopted['strategy']}（期望llm）")
 
 
 async def s5_complex_task() -> None:
@@ -186,22 +254,75 @@ async def s5_complex_task() -> None:
         got = is_complex_task(text)
         _record("S5", f"复杂任务识别: {text[:16]}...", got == expect,
                 f"expect={expect} got={got}")
-    # 图装配校验（planner 节点已注册）
+    # 图装配校验：真实编译 LangGraph 图，断言 planner 与 6 个专项 Agent 节点已注册且接线
     try:
-        import services.agent.builder  # noqa
-        _record("S5", "Planner 节点装配", True, "builder 导入成功")
+        from services.agent.builder import build_graph
+        from services.agent.specialists import SPECIALISTS
+
+        draw = build_graph().get_graph()
+        nodes = set(draw.nodes)
+        missing = sorted({"supervisor", "planner", *SPECIALISTS} - nodes)
+        cond = {(e.source, e.target) for e in draw.edges if e.conditional}
+        edges = {(e.source, e.target) for e in draw.edges if not e.conditional}
+        planner_wired = ("supervisor", "planner") in cond and ("planner", "supervisor") in edges
+        loops = all((n, "supervisor") in edges for n in SPECIALISTS)
+        _record("S5", "Planner 节点装配", not missing and planner_wired and loops,
+                f"实编译图 {len(nodes)} 节点，缺={missing or '无'}，"
+                f"planner接线={'ok' if planner_wired else '断'}，"
+                f"{len(SPECIALISTS)}个专项Agent回环={'ok' if loops else '断'}")
     except Exception as e:
         _record("S5", "Planner 节点装配", False, str(e)[:120])
 
 
+# S6 必填段落：独立于服务端模板硬编码，模板漏段/改名即 FAIL
+_S6_REQUIRED_SECTIONS: dict[str, tuple[str, ...]] = {
+    "review_draft": ("引言", "研究现状", "研究方法", "研究空白", "参考文献"),
+    "proposal_report": ("选题背景", "研究现状", "研究内容", "可行性", "预期成果", "进度安排"),
+    "defense_outline": ("开场白", "研究背景", "研究方法", "创新点", "不足", "QA清单"),
+}
+
+
 async def s6_artifact() -> None:
-    # 仅校验模板覆盖与参数校验（真实 LLM 生成在冒烟中验证）
-    from services.governance.artifacts import KINDS
-    ok = set(KINDS) == {"review_draft", "proposal_report", "defense_outline"}
-    _record("S6", "产物模板覆盖", ok, f"KINDS={KINDS}")
+    # 真渲染校验：桩掉 LLM 与 RAG，跑通三种产物的模板渲染，断言必填段落齐全
+    import services.governance.artifacts as artifacts
+
+    captured: list[str] = []
+
+    class _StubProvider:
+        """桩 LLM：记录提示词（含渲染骨架）并返回占位内容。"""
+
+        async def chat(self, messages, **kwargs) -> str:
+            captured.append(messages[-1]["content"])
+            return "（桩生成内容）"
+
+    class _StubPipeline:
+        async def search(self, topic, **kwargs) -> dict:
+            return {"results": [{"content": "证据A", "meta": {"title": "t", "source": "s"}}]}
+
+    orig_provider, orig_pipeline = artifacts.LLMProvider, artifacts.rag_pipeline
+    artifacts.LLMProvider, artifacts.rag_pipeline = _StubProvider, _StubPipeline()
     try:
-        await __import__("services.governance.artifacts", fromlist=["generate_artifact"]).generate_artifact(
-            kind="xx", topic="t")
+        problems: list[str] = []
+        if set(artifacts.KINDS) != set(_S6_REQUIRED_SECTIONS):
+            problems.append(f"KINDS覆盖不全: {sorted(artifacts.KINDS)}")
+        for kind, sections in _S6_REQUIRED_SECTIONS.items():
+            captured.clear()
+            out = await artifacts.generate_artifact(kind=kind, topic="大模型微调")
+            prompt = captured[0] if captured else ""
+            lacking = [s for s in sections if s not in prompt]
+            if lacking:
+                problems.append(f"{kind} 渲染骨架缺段落{lacking}")
+            elif out.get("kind") != kind or not out.get("content") \
+                    or out.get("evidence_count") != 1:
+                problems.append(f"{kind} 返回结构异常: {sorted(out)}")
+        _record("S6", "产物模板覆盖", not problems,
+                f"离线桩渲染 {len(_S6_REQUIRED_SECTIONS)} 种产物，必填段落齐全且返回结构正常"
+                if not problems else "; ".join(problems))
+    finally:
+        artifacts.LLMProvider, artifacts.rag_pipeline = orig_provider, orig_pipeline
+
+    try:
+        await artifacts.generate_artifact(kind="xx", topic="t")
         _record("S6", "参数校验", False, "非法 kind 未抛错")
     except ValueError:
         _record("S6", "参数校验", True, "非法 kind 正确拒绝")

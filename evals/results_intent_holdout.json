@@ -1,0 +1,1033 @@
+{
+  "_provenance": {
+    "schema": "evals/provenance@1",
+    "generated_at": "2026-10-05T19:44:45+08:00",
+    "git": {
+      "revision": "c622764",
+      "branch": "feat/skins-g-h-i",
+      "dirty": true,
+      "dirty_files": [
+        "M README.md",
+        " M docs/EVALUATION_REPORT.md",
+        " M evals/AB_REPORT.md",
+        " M evals/harness.py",
+        " M evals/regression.py",
+        " M evals/results_latest.json",
+        " M frontend/dossier.html",
+        " M frontend/how-it-works.html",
+        " M frontend/index.html",
+        " M frontend/landing-b.html",
+        " M frontend/landing-c.html",
+        " M frontend/landing-d.html",
+        " M frontend/landing-e.html",
+        " M frontend/landing-f.html",
+        " M frontend/public/easter/hunt.html",
+        " M scripts/smoke_trace.py",
+        " M tests/test_evals_scoring.py",
+        "?? docs/DATA_INTEGRITY_AUDIT.md",
+        "?? docs/RESUME_READINESS_AUDIT.md",
+        "?? evals/eval_compression_real.py"
+      ]
+    },
+    "host": {
+      "platform": "Windows-10-10.0.22631-SP0",
+      "python": "3.11.16"
+    },
+    "models": {
+      "chat": "qwen3:4b-ctx4096",
+      "embedding": "bge-m3",
+      "embedding_dim": 1024,
+      "rerank": "BAAI/bge-reranker-base"
+    },
+    "suites": {},
+    "eval_elapsed_s": null,
+    "reproduce": "envs\\lunjiang\\python.exe -m evals.harness "
+  },
+  "note": "盲标集合：intent 标签未预设，predicted 为分类器盲跑结果，review 待人工复核",
+  "cases": 92,
+  "layer_distribution": {
+    "rule": 1,
+    "vector": 42,
+    "llm": 49
+  },
+  "predictions": [
+    {
+      "text": "我快被导师逼疯了不知道往哪做",
+      "predicted": "topic_analysis",
+      "layer": "vector",
+      "confidence": 0.622,
+      "review": "correct",
+      "gold": "topic_analysis"
+    },
+    {
+      "text": "手头这个课题还有没有搞头",
+      "predicted": "topic_analysis",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "topic_analysis"
+    },
+    {
+      "text": "想找个能做下去的切入点",
+      "predicted": "topic_analysis",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "topic_analysis"
+    },
+    {
+      "text": "同门都在卷大模型我该跟风吗",
+      "predicted": "topic_analysis",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "topic_analysis"
+    },
+    {
+      "text": "这个思路会不会已经被做烂了",
+      "predicted": "topic_analysis",
+      "layer": "vector",
+      "confidence": 0.64,
+      "review": "correct",
+      "gold": "topic_analysis"
+    },
+    {
+      "text": "有没有那种不太卷又能发文章的小方向",
+      "predicted": "topic_analysis",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "topic_analysis"
+    },
+    {
+      "text": "导师给的题我不喜欢怎么办",
+      "predicted": "format_check",
+      "layer": "vector",
+      "confidence": 0.644,
+      "review": "wrong",
+      "gold": "topic_analysis"
+    },
+    {
+      "text": "怎么判断一个坑值不值得跳",
+      "predicted": "chitchat",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "wrong",
+      "gold": "topic_analysis"
+    },
+    {
+      "text": "师兄说这个没前途我该听吗",
+      "predicted": "topic_analysis",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "topic_analysis"
+    },
+    {
+      "text": "我想做点不一样的但怕做不出来",
+      "predicted": "topic_analysis",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "topic_analysis"
+    },
+    {
+      "text": "这个领域还有没有空白可以钻",
+      "predicted": "topic_analysis",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "topic_analysis"
+    },
+    {
+      "text": "怎么才能找到一个能毕业的点",
+      "predicted": "topic_analysis",
+      "layer": "vector",
+      "confidence": 0.677,
+      "review": "correct",
+      "gold": "topic_analysis"
+    },
+    {
+      "text": "我怕自己选的路走不通",
+      "predicted": "topic_analysis",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "topic_analysis"
+    },
+    {
+      "text": "别人都做烂了我还能碰吗",
+      "predicted": "topic_analysis",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "topic_analysis"
+    },
+    {
+      "text": "想看看别人都是怎么处理这个问题的",
+      "predicted": "chitchat",
+      "layer": "vector",
+      "confidence": 0.7,
+      "review": "wrong",
+      "gold": "literature_search"
+    },
+    {
+      "text": "这个领域最近有什么新动静",
+      "predicted": "literature_search",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "literature_search"
+    },
+    {
+      "text": "有没有现成的综述可以参考一下",
+      "predicted": "literature_search",
+      "layer": "vector",
+      "confidence": 0.652,
+      "review": "correct",
+      "gold": "literature_search"
+    },
+    {
+      "text": "国外那边做到什么程度了",
+      "predicted": "topic_analysis",
+      "layer": "llm",
+      "confidence": 0.9,
+      "review": "wrong",
+      "gold": "literature_search"
+    },
+    {
+      "text": "我需要一些能站得住脚的依据",
+      "predicted": "chitchat",
+      "layer": "vector",
+      "confidence": 0.622,
+      "review": "wrong",
+      "gold": "literature_search"
+    },
+    {
+      "text": "帮我扒一下相关的工作",
+      "predicted": "chitchat",
+      "layer": "vector",
+      "confidence": 0.66,
+      "review": "wrong",
+      "gold": "literature_search"
+    },
+    {
+      "text": "前人工作在哪能摸到",
+      "predicted": "literature_search",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "literature_search"
+    },
+    {
+      "text": "想快速摸清一个陌生领域的底细",
+      "predicted": "literature_search",
+      "layer": "vector",
+      "confidence": 0.635,
+      "review": "correct",
+      "gold": "literature_search"
+    },
+    {
+      "text": "这块东西谁做过",
+      "predicted": "literature_search",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "literature_search"
+    },
+    {
+      "text": "有没有权威的说法能引用",
+      "predicted": "literature_search",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "literature_search"
+    },
+    {
+      "text": "我想看看业界的通行做法",
+      "predicted": "literature_search",
+      "layer": "llm",
+      "confidence": 0.85,
+      "review": "correct",
+      "gold": "literature_search"
+    },
+    {
+      "text": "相关资料去哪凑齐",
+      "predicted": "literature_search",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "literature_search"
+    },
+    {
+      "text": "这段话读起来太干巴了想顺一顺",
+      "predicted": "plagiarism_reduce",
+      "layer": "vector",
+      "confidence": 0.657,
+      "review": "wrong",
+      "gold": "writing"
+    },
+    {
+      "text": "帮我把这段串起来别那么散",
+      "predicted": "writing",
+      "layer": "vector",
+      "confidence": 0.63,
+      "review": "correct",
+      "gold": "writing"
+    },
+    {
+      "text": "我这部分是不是太啰嗦了",
+      "predicted": "plagiarism_reduce",
+      "layer": "vector",
+      "confidence": 0.631,
+      "review": "wrong",
+      "gold": "writing"
+    },
+    {
+      "text": "开头总感觉抓不住人",
+      "predicted": "writing",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "writing"
+    },
+    {
+      "text": "结尾应该怎么收才有力",
+      "predicted": "writing",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "writing"
+    },
+    {
+      "text": "过渡句老是接不顺怎么办",
+      "predicted": "writing",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "writing"
+    },
+    {
+      "text": "这段逻辑感觉接不上",
+      "predicted": "writing",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "writing"
+    },
+    {
+      "text": "怎么让表达更学术一点",
+      "predicted": "writing",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "writing"
+    },
+    {
+      "text": "字数不够能往哪儿补",
+      "predicted": "writing",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "writing"
+    },
+    {
+      "text": "这几段顺序调一下会不会更顺",
+      "predicted": "writing",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "writing"
+    },
+    {
+      "text": "整体读下来太平了没有起伏",
+      "predicted": "writing",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "writing"
+    },
+    {
+      "text": "表达太口语了想正式一点",
+      "predicted": "writing",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "writing"
+    },
+    {
+      "text": "这段和上一段重复了意思",
+      "predicted": "plagiarism_reduce",
+      "layer": "vector",
+      "confidence": 0.709,
+      "review": "wrong",
+      "gold": "writing"
+    },
+    {
+      "text": "怎么把这段话讲清楚一点",
+      "predicted": "writing",
+      "layer": "vector",
+      "confidence": 0.701,
+      "review": "correct",
+      "gold": "writing"
+    },
+    {
+      "text": "老师说我这个提交上去会被打回来",
+      "predicted": "format_check",
+      "layer": "llm",
+      "confidence": 0.9,
+      "review": "correct",
+      "gold": "format_check"
+    },
+    {
+      "text": "学校模板那些条条框框在哪对",
+      "predicted": "format_check",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "format_check"
+    },
+    {
+      "text": "标点全半角混着用会有问题吗",
+      "predicted": "format_check",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "format_check"
+    },
+    {
+      "text": "脚注和尾注到底该用哪个",
+      "predicted": "writing",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "wrong",
+      "gold": "format_check"
+    },
+    {
+      "text": "图表下面那行字有讲究吗",
+      "predicted": "format_check",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "format_check"
+    },
+    {
+      "text": "行距字号这些有硬性要求吗",
+      "predicted": "format_check",
+      "layer": "vector",
+      "confidence": 0.635,
+      "review": "correct",
+      "gold": "format_check"
+    },
+    {
+      "text": "引用的标注位置有规矩吗",
+      "predicted": "format_check",
+      "layer": "vector",
+      "confidence": 0.676,
+      "review": "correct",
+      "gold": "format_check"
+    },
+    {
+      "text": "封面那些信息填错会怎样",
+      "predicted": "format_check",
+      "layer": "vector",
+      "confidence": 0.635,
+      "review": "correct",
+      "gold": "format_check"
+    },
+    {
+      "text": "附录要不要单独起一页",
+      "predicted": "format_check",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "format_check"
+    },
+    {
+      "text": "标题层级叠太多会不会乱",
+      "predicted": "format_check",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "format_check"
+    },
+    {
+      "text": "这段被人说跟别人撞了很慌",
+      "predicted": "chitchat",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "wrong",
+      "gold": "plagiarism_reduce"
+    },
+    {
+      "text": "相似度太高了怎么救",
+      "predicted": "plagiarism_reduce",
+      "layer": "vector",
+      "confidence": 0.642,
+      "review": "correct",
+      "gold": "plagiarism_reduce"
+    },
+    {
+      "text": "怎么改才能过那道坎",
+      "predicted": "plagiarism_reduce",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "plagiarism_reduce"
+    },
+    {
+      "text": "我这段话是不是太像原文了",
+      "predicted": "plagiarism_reduce",
+      "layer": "vector",
+      "confidence": 0.675,
+      "review": "correct",
+      "gold": "plagiarism_reduce"
+    },
+    {
+      "text": "改了几个词还是过不了怎么办",
+      "predicted": "plagiarism_reduce",
+      "layer": "vector",
+      "confidence": 0.682,
+      "review": "correct",
+      "gold": "plagiarism_reduce"
+    },
+    {
+      "text": "引用别人的观点算不算问题",
+      "predicted": "format_check",
+      "layer": "vector",
+      "confidence": 0.626,
+      "review": "wrong",
+      "gold": "plagiarism_reduce"
+    },
+    {
+      "text": "意思一样但话不一样算不算事",
+      "predicted": "plagiarism_reduce",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "plagiarism_reduce"
+    },
+    {
+      "text": "怎么换个说法又不丢原意",
+      "predicted": "plagiarism_reduce",
+      "layer": "vector",
+      "confidence": 0.702,
+      "review": "correct",
+      "gold": "plagiarism_reduce"
+    },
+    {
+      "text": "这段跟已有工作重叠太多",
+      "predicted": "plagiarism_reduce",
+      "layer": "vector",
+      "confidence": 0.677,
+      "review": "correct",
+      "gold": "plagiarism_reduce"
+    },
+    {
+      "text": "过不了那道机器检查怎么办",
+      "predicted": "ai_detect",
+      "layer": "llm",
+      "confidence": 0.9,
+      "review": "correct",
+      "gold": "ai_detect"
+    },
+    {
+      "text": "导师一眼就看出这是机器生成的",
+      "predicted": "ai_detect",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "ai_detect"
+    },
+    {
+      "text": "怎么让它读起来更像人弄的",
+      "predicted": "plagiarism_reduce",
+      "layer": "vector",
+      "confidence": 0.645,
+      "review": "wrong",
+      "gold": "ai_detect"
+    },
+    {
+      "text": "这段是不是太规整了有点可疑",
+      "predicted": "ai_detect",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "ai_detect"
+    },
+    {
+      "text": "句式太统一会不会被怀疑",
+      "predicted": "plagiarism_reduce",
+      "layer": "vector",
+      "confidence": 0.642,
+      "review": "wrong",
+      "gold": "ai_detect"
+    },
+    {
+      "text": "感觉一股子机器味儿",
+      "predicted": "ai_detect",
+      "layer": "vector",
+      "confidence": 0.668,
+      "review": "correct",
+      "gold": "ai_detect"
+    },
+    {
+      "text": "怎么加点人味进去",
+      "predicted": "ai_detect",
+      "layer": "rule",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "ai_detect"
+    },
+    {
+      "text": "这段太顺了反而不像人弄的",
+      "predicted": "ai_detect",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "ai_detect"
+    },
+    {
+      "text": "要不要故意留点小毛病",
+      "predicted": "ai_detect",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "ai_detect"
+    },
+    {
+      "text": "今天天气不错适合干点正事",
+      "predicted": "chitchat",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "chitchat"
+    },
+    {
+      "text": "我有点焦虑不知道能不能按时交",
+      "predicted": "chitchat",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "chitchat"
+    },
+    {
+      "text": "你说我能顺利毕业吗",
+      "predicted": "topic_analysis",
+      "layer": "vector",
+      "confidence": 0.638,
+      "review": "wrong",
+      "gold": "chitchat"
+    },
+    {
+      "text": "陪我聊聊我实在撑不下去了",
+      "predicted": "plagiarism_reduce",
+      "layer": "vector",
+      "confidence": 0.646,
+      "review": "wrong",
+      "gold": "chitchat"
+    },
+    {
+      "text": "介绍一下你自己呗",
+      "predicted": "chitchat",
+      "layer": "vector",
+      "confidence": 0.742,
+      "review": "correct",
+      "gold": "chitchat"
+    },
+    {
+      "text": "你都能干些啥",
+      "predicted": "chitchat",
+      "layer": "vector",
+      "confidence": 0.909,
+      "review": "correct",
+      "gold": "chitchat"
+    },
+    {
+      "text": "我该怎么称呼你",
+      "predicted": "chitchat",
+      "layer": "vector",
+      "confidence": 0.688,
+      "review": "correct",
+      "gold": "chitchat"
+    },
+    {
+      "text": "夸我两句让我有动力",
+      "predicted": "plagiarism_reduce",
+      "layer": "vector",
+      "confidence": 0.659,
+      "review": "wrong",
+      "gold": "chitchat"
+    },
+    {
+      "text": "讲个笑话缓解一下",
+      "predicted": "plagiarism_reduce",
+      "layer": "vector",
+      "confidence": 0.679,
+      "review": "wrong",
+      "gold": "chitchat"
+    },
+    {
+      "text": "现在几点了",
+      "predicted": "chitchat",
+      "layer": "vector",
+      "confidence": 0.677,
+      "review": "correct",
+      "gold": "chitchat"
+    },
+    {
+      "text": "你累不累",
+      "predicted": "chitchat",
+      "layer": "vector",
+      "confidence": 0.655,
+      "review": "correct",
+      "gold": "chitchat"
+    },
+    {
+      "text": "我心情不太好",
+      "predicted": "chitchat",
+      "layer": "vector",
+      "confidence": 0.655,
+      "review": "correct",
+      "gold": "chitchat"
+    },
+    {
+      "text": "这段像机器生成的而且跟别人撞了先弄哪个",
+      "predicted": "chitchat",
+      "layer": "llm",
+      "confidence": 0.3,
+      "review": "wrong",
+      "gold": "plagiarism_reduce"
+    },
+    {
+      "text": "导师让我推倒重来但又不说改哪儿",
+      "predicted": "writing",
+      "layer": "llm",
+      "confidence": 0.95,
+      "review": "correct",
+      "gold": "writing"
+    },
+    {
+      "text": "能不能帮我把这堆材料变成一章",
+      "predicted": "writing",
+      "layer": "vector",
+      "confidence": 0.641,
+      "review": "correct",
+      "gold": "writing"
+    },
+    {
+      "text": "我怕被问到答不上来",
+      "predicted": "chitchat",
+      "layer": "vector",
+      "confidence": 0.653,
+      "review": "wrong",
+      "gold": "writing"
+    },
+    {
+      "text": "怎么准备才能不慌",
+      "predicted": "chitchat",
+      "layer": "llm",
+      "confidence": 0.85,
+      "review": "correct",
+      "gold": "chitchat"
+    },
+    {
+      "text": "我全都要弄好但不知道从哪下手",
+      "predicted": "chitchat",
+      "layer": "vector",
+      "confidence": 0.65,
+      "review": "correct",
+      "gold": "chitchat"
+    },
+    {
+      "text": "帮我通读一遍看有没有明显毛病",
+      "predicted": "format_check",
+      "layer": "vector",
+      "confidence": 0.675,
+      "review": "correct",
+      "gold": "format_check"
+    },
+    {
+      "text": "这篇还有救吗",
+      "predicted": "chitchat",
+      "layer": "vector",
+      "confidence": 0.672,
+      "review": "wrong",
+      "gold": "writing"
+    },
+    {
+      "text": "整个流程走下来要多久",
+      "predicted": "chitchat",
+      "layer": "llm",
+      "confidence": 0.85,
+      "review": "correct",
+      "gold": "chitchat"
+    },
+    {
+      "text": "这东西到底难在哪",
+      "predicted": "chitchat",
+      "layer": "llm",
+      "confidence": 0.85,
+      "review": "correct",
+      "gold": "chitchat"
+    },
+    {
+      "text": "有没有一种省事的办法",
+      "predicted": "writing",
+      "layer": "llm",
+      "confidence": 0.9,
+      "review": "wrong",
+      "gold": "chitchat"
+    },
+    {
+      "text": "我该从哪一步开始",
+      "predicted": "chitchat",
+      "layer": "vector",
+      "confidence": 0.629,
+      "review": "correct",
+      "gold": "chitchat"
+    }
+  ],
+  "review": {
+    "protocol": "先按场景定参考标签，再与盲跑预测比对（标签独立于预测）",
+    "cases": 92,
+    "accuracy": 0.761,
+    "layer_distribution": {
+      "vector": 42,
+      "llm": 49,
+      "rule": 1
+    },
+    "layer_hits": {
+      "vector": 26,
+      "llm": 43,
+      "rule": 1
+    },
+    "layer_error_rate": {
+      "vector": 0.381,
+      "llm": 0.122,
+      "rule": 0.0
+    },
+    "top_confusions": [
+      {
+        "gold": "literature_search",
+        "predicted": "chitchat",
+        "count": 3
+      },
+      {
+        "gold": "writing",
+        "predicted": "plagiarism_reduce",
+        "count": 3
+      },
+      {
+        "gold": "chitchat",
+        "predicted": "plagiarism_reduce",
+        "count": 3
+      },
+      {
+        "gold": "plagiarism_reduce",
+        "predicted": "chitchat",
+        "count": 2
+      },
+      {
+        "gold": "ai_detect",
+        "predicted": "plagiarism_reduce",
+        "count": 2
+      },
+      {
+        "gold": "writing",
+        "predicted": "chitchat",
+        "count": 2
+      },
+      {
+        "gold": "topic_analysis",
+        "predicted": "format_check",
+        "count": 1
+      },
+      {
+        "gold": "topic_analysis",
+        "predicted": "chitchat",
+        "count": 1
+      }
+    ],
+    "misses": [
+      {
+        "n": 7,
+        "text": "导师给的题我不喜欢怎么办",
+        "gold": "topic_analysis",
+        "predicted": "format_check",
+        "layer": "vector",
+        "confidence": 0.644
+      },
+      {
+        "n": 8,
+        "text": "怎么判断一个坑值不值得跳",
+        "gold": "topic_analysis",
+        "predicted": "chitchat",
+        "layer": "llm",
+        "confidence": 0.95
+      },
+      {
+        "n": 15,
+        "text": "想看看别人都是怎么处理这个问题的",
+        "gold": "literature_search",
+        "predicted": "chitchat",
+        "layer": "vector",
+        "confidence": 0.7
+      },
+      {
+        "n": 18,
+        "text": "国外那边做到什么程度了",
+        "gold": "literature_search",
+        "predicted": "topic_analysis",
+        "layer": "llm",
+        "confidence": 0.9
+      },
+      {
+        "n": 19,
+        "text": "我需要一些能站得住脚的依据",
+        "gold": "literature_search",
+        "predicted": "chitchat",
+        "layer": "vector",
+        "confidence": 0.622
+      },
+      {
+        "n": 20,
+        "text": "帮我扒一下相关的工作",
+        "gold": "literature_search",
+        "predicted": "chitchat",
+        "layer": "vector",
+        "confidence": 0.66
+      },
+      {
+        "n": 27,
+        "text": "这段话读起来太干巴了想顺一顺",
+        "gold": "writing",
+        "predicted": "plagiarism_reduce",
+        "layer": "vector",
+        "confidence": 0.657
+      },
+      {
+        "n": 29,
+        "text": "我这部分是不是太啰嗦了",
+        "gold": "writing",
+        "predicted": "plagiarism_reduce",
+        "layer": "vector",
+        "confidence": 0.631
+      },
+      {
+        "n": 39,
+        "text": "这段和上一段重复了意思",
+        "gold": "writing",
+        "predicted": "plagiarism_reduce",
+        "layer": "vector",
+        "confidence": 0.709
+      },
+      {
+        "n": 44,
+        "text": "脚注和尾注到底该用哪个",
+        "gold": "format_check",
+        "predicted": "writing",
+        "layer": "llm",
+        "confidence": 0.95
+      },
+      {
+        "n": 51,
+        "text": "这段被人说跟别人撞了很慌",
+        "gold": "plagiarism_reduce",
+        "predicted": "chitchat",
+        "layer": "llm",
+        "confidence": 0.95
+      },
+      {
+        "n": 56,
+        "text": "引用别人的观点算不算问题",
+        "gold": "plagiarism_reduce",
+        "predicted": "format_check",
+        "layer": "vector",
+        "confidence": 0.626
+      },
+      {
+        "n": 62,
+        "text": "怎么让它读起来更像人弄的",
+        "gold": "ai_detect",
+        "predicted": "plagiarism_reduce",
+        "layer": "vector",
+        "confidence": 0.645
+      },
+      {
+        "n": 64,
+        "text": "句式太统一会不会被怀疑",
+        "gold": "ai_detect",
+        "predicted": "plagiarism_reduce",
+        "layer": "vector",
+        "confidence": 0.642
+      },
+      {
+        "n": 71,
+        "text": "你说我能顺利毕业吗",
+        "gold": "chitchat",
+        "predicted": "topic_analysis",
+        "layer": "vector",
+        "confidence": 0.638
+      },
+      {
+        "n": 72,
+        "text": "陪我聊聊我实在撑不下去了",
+        "gold": "chitchat",
+        "predicted": "plagiarism_reduce",
+        "layer": "vector",
+        "confidence": 0.646
+      },
+      {
+        "n": 76,
+        "text": "夸我两句让我有动力",
+        "gold": "chitchat",
+        "predicted": "plagiarism_reduce",
+        "layer": "vector",
+        "confidence": 0.659
+      },
+      {
+        "n": 77,
+        "text": "讲个笑话缓解一下",
+        "gold": "chitchat",
+        "predicted": "plagiarism_reduce",
+        "layer": "vector",
+        "confidence": 0.679
+      },
+      {
+        "n": 81,
+        "text": "这段像机器生成的而且跟别人撞了先弄哪个",
+        "gold": "plagiarism_reduce",
+        "predicted": "chitchat",
+        "layer": "llm",
+        "confidence": 0.3
+      },
+      {
+        "n": 84,
+        "text": "我怕被问到答不上来",
+        "gold": "writing",
+        "predicted": "chitchat",
+        "layer": "vector",
+        "confidence": 0.653
+      },
+      {
+        "n": 88,
+        "text": "这篇还有救吗",
+        "gold": "writing",
+        "predicted": "chitchat",
+        "layer": "vector",
+        "confidence": 0.672
+      },
+      {
+        "n": 91,
+        "text": "有没有一种省事的办法",
+        "gold": "chitchat",
+        "predicted": "writing",
+        "layer": "llm",
+        "confidence": 0.9
+      }
+    ],
+    "key_finding": "向量层错误率 38.1% 是 LLM 层 12.2% 的三倍。更深一层：向量层 correct 的置信度均值 0.672、wrong 均值 0.655 —— **两者区间完全重叠（0.622~0.709），置信度无法区分对错**。这说明余弦相似度在 0.62 附近不是一个有效的置信度门：42 条向量层判定全部落在 0.62~0.71，全部被放行，LLM 兜底层从未被启用。可执行结论：不应微调阈值，而应把 L2 判定改送 LLM 复核（或改用 margin/长度归一化等真正有区分度的信号）。",
+    "scope_caveat": "本集合为**刻意构造的零 L1 命中**集合（样本避开了全部规则触发字），因此 76.1% 测的是'规则层覆盖不到的那部分'（长尾占比 54/92 ≈ 59%），比生产流量分布更差：生产查询含关键词时规则层以 0 成本兜住 46%。故 76.1% 是**下限**而非总体水位，不应与含关键词的 50 条集 92% 直接并列。"
+  }
+}

@@ -115,3 +115,48 @@ def test_retrieval_datasets_expect_existing_corpus_files():
             assert c["query"].strip()
             assert (corpus / c["expected"]).is_file(), \
                 f"{name} 期望文件不在语料库: {c['expected']}（评测会静默虚降）"
+
+
+# ---------------- 产物身份证（provenance）：数字可追溯，防"数据集扩了但没重跑" ----
+
+def test_provenance_records_code_version_and_models():
+    from evals.provenance import build_provenance
+    prov = build_provenance({"intent": "intent.jsonl"})
+    assert prov["schema"] == "evals/provenance@1"
+    assert prov["generated_at"]                      # 时间是复现的第一前提
+    assert prov["git"]["revision"]                   # 无 git 时也应回落 "(no-git)"
+    assert isinstance(prov["git"]["dirty"], bool)    # 脏工作区必须被标记
+    # 换底座会改变全部指标，模型名必须进产物
+    assert prov["models"]["embedding"] == "bge-m3"
+    assert prov["models"]["rerank"] == "BAAI/bge-reranker-base"
+    assert prov["models"]["embedding_dim"] == 1024
+
+
+def test_provenance_dataset_fingerprint_catches_scope_drift():
+    """条数 + sha256 双指纹：条数暴露"扩了没重跑"，sha256 暴露"样本被换过"。"""
+    from evals.provenance import dataset_fingerprint
+    info = dataset_fingerprint("intent.jsonl")
+    assert info["exists"] is True
+    assert info["cases"] == 50                       # 与 test_intent_dataset_matches_documented_scope 同口径
+    assert len(info["sha256"]) == 16 and all(
+        ch in "0123456789abcdef" for ch in info["sha256"])
+
+
+def test_provenance_missing_dataset_is_reported_not_raised():
+    """数据集缺失时 provenance 要如实标记，不能抛异常让整轮评测崩掉。"""
+    from evals.provenance import dataset_fingerprint
+    assert dataset_fingerprint("__not_exist__.jsonl") == {
+        "dataset": "evals/datasets/__not_exist__.jsonl", "exists": False}
+
+
+def test_provenance_summary_surfaces_dirty_worktree():
+    """摘要必须显式提示"含未提交改动"——否则脏工作区的数字会被误当成已绑定版本。"""
+    from evals.provenance import summarize_provenance
+    prov = {
+        "generated_at": "2026-10-05T18:00:00+08:00",
+        "git": {"revision": "abc1234", "dirty": True, "dirty_files": ["M x.py"]},
+        "suites": {"intent": {"cases": 50, "sha256": "deadbeefdeadbeef"}},
+    }
+    line = summarize_provenance(prov)
+    assert "abc1234" in line and "含未提交改动" in line
+    assert "intent 50 条 sha256:deadbeefdeadbeef" in line

@@ -12,6 +12,80 @@ def test_high_value_detection():
     assert not _is_high_value({"role": "tool", "content": "记住"})  # 工具输出默认可压
 
 
+# ---------- 2026-10-05 修复：高价值误判导致 66% 正文被强制保留 ----------
+# 真实语料复测（evals/eval_compression_real.py）发现：原实现全篇裸子串匹配，
+# 「要求/重要/必须」是论文正文高频词 → 8 条 assistant 正文（7775 字）被判高价值，
+# 压缩率 0.767 FAIL。以下四个用例锁定修复后的判定边界。
+
+def test_high_value_only_for_user_role():
+    """assistant 正文即使含纠正词也不是"用户约束"，必须可压。"""
+    assert not _is_high_value(
+        {"role": "assistant", "content": "本实验必须采用对照实验，要求样本量不少于30。"})
+    assert not _is_high_value({"role": "tool", "content": "重要：结果已保存"})
+    # 同一句话，角色不同结论不同 —— 这正是原实现缺失的维度
+    text = "要求：后续都按 GB/T 7714 引用"
+    assert _is_high_value({"role": "user", "content": text})
+    assert not _is_high_value({"role": "assistant", "content": text})
+
+
+def test_generic_marker_alone_is_not_high_value():
+    """泛化词单独出现不算用户约束 —— 论文正文里「要求/重要/必须」遍地都是。"""
+    assert not _is_high_value({"role": "user", "content": "这篇论文有哪些格式要求"})
+    assert not _is_high_value({"role": "user", "content": "这部分是不是很重要"})
+    assert not _is_high_value({"role": "user", "content": "实验必须做几次"})
+    # 但显式纠正词命中即保留
+    assert _is_high_value({"role": "user", "content": "这段不对"})
+    assert _is_high_value({"role": "user", "content": "改成实证研究路线"})
+
+
+def test_generic_marker_with_persist_action_is_high_value():
+    """泛化词 + 持久化动作（记住/别改/务必）= 用户约束，必须保留。"""
+    assert _is_high_value({"role": "user", "content": "这个很重要，别改"})
+    assert _is_high_value({"role": "user", "content": "要求：以后都按这个风格"})
+    assert _is_high_value({"role": "user", "content": "务必记住我的写作偏好"})
+    assert _is_high_value({"role": "user", "content": "后续都必须带上引用编号"})
+
+
+def test_high_value_rejects_empty_and_malformed():
+    assert not _is_high_value({})
+    assert not _is_high_value({"role": "user"})
+    assert not _is_high_value({"content": "记住这件事"})   # 缺 role 不当作 user
+
+
+# ---------- 2026-10-05 修复：窗口大于内容时不应截断 ----------
+
+def test_compress_keeps_all_when_window_exceeds_messages():
+    """生产默认 keep_recent=375 远超对话长度：本轮应原样保留，不该压成摘要。
+
+    原实现无 `len(rest) > keep_recent` 判断，24 条消息的会话被逐出 21 条、
+    只保留 4 条（压缩率 0.029），近期上下文被无谓丢弃。
+    """
+    import asyncio
+
+    from services.memory.compressor import ContextCompressor
+
+    msgs = [{"role": "user" if i % 2 == 0 else "assistant",
+             "content": f"第{i}轮内容" + "正文" * 50} for i in range(12)]
+    out = asyncio.run(ContextCompressor().compress(msgs, keep_recent=375, force=True))
+    assert out.removed == [], "窗口大于消息数时不应逐出任何消息"
+    assert out.summary == "", "无逐出则无需 LLM 摘要"
+    assert len(out.messages) == len(msgs)
+    assert out.compressed_chars == out.original_chars   # 本轮无压缩
+
+
+def test_compress_truncates_when_window_is_smaller():
+    """窗口小于消息数时仍按 keep_recent 截断，且近期消息保序保留。"""
+    import asyncio
+
+    from services.memory.compressor import ContextCompressor
+
+    msgs = [{"role": "user", "content": f"第{i}轮提问内容" + "正文" * 50} for i in range(10)]
+    out = asyncio.run(ContextCompressor().compress(msgs, keep_recent=3, use_llm=False,
+                                                   force=True))
+    assert [m["content"][:3] for m in out.messages] == ["第7轮", "第8轮", "第9轮"]
+    assert len(out.removed) == 7
+
+
 def test_dedup_merges_near_identical():
     msgs = [
         {"role": "user", "content": "帮我写摘要"},

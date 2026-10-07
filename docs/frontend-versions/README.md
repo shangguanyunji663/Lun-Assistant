@@ -76,7 +76,9 @@ R20·补 两页新语言落地为第 7/8 套皮肤（八套体系） → ROUND20
      编队总谱（g-score.css / how-it-works.html）+ 论文底片（h-contact.css / dossier.html）
 ```
 
-> ⚠️ **变更标注（2026-10-05 · 代码同步审计）**：R20·补（八套体系）之后，2026-10-04 的三笔前端改动已同步进本目录文档——落地页切换器文案统一「切换皮肤」+ 条目 6 → 8 条（`53e66d3`）、`/app.html?demo=1`（预览）与 `/app.html`（登录）入口语义分离（`c145c1a`）、工作台切项目即另起新会话且时间线渲染 `step_event` 工具进度（`b320004`）。详见 [`ROUND20-ADDENDUM.md`](./ROUND20-ADDENDUM.md) 顶部的变更标注。本目录文件清单仍为 21 份正文 + 索引 + 模板。
+> ⚠️ **变更标注（2026-10-05 · 代码同步审计）**：R20·补（八套体系）之后，2026-10-04 的三笔前端改动已同步进本目录文档——落地页切换器文案统一「切换皮肤」+ 条目 6 → 8 条（`53e66d3`）、`/app.html?demo=1`（预览）与 `/app.html`（登录）入口语义分离（`c145c1a`）、工作台切项目即另起新会话且时间线渲染 `step_event` 工具进度（`b320004`）。详见 [`ROUND20-ADDENDUM.md`](./ROUND20-ADDENDUM.md) 顶部的变更标注。本目录文件清单仍为 21 份正文 + 索引 + 模板（`OPTIMIZATION_ROUND15.md` 原缺于「三、版本索引」，本轮补入）。
+>
+> 2026-10-05 追加（前端读数同步）：**6 张落地页读数区数字与水位声明更新**（`frontend/index.html` + `landing-{b…f}.html`，另涉 `how-it-works.html` / `dossier.html`）——意图分类由 100% 订正为 **92%**（50 条集）、回归改为「16 项真断言 · 每项均可失败」，口语长尾 80% / 学术刁钻 95% / hold-out 泛化 75% 三项明确标注为 2026-09-04 快照且**产物待补**。落地页读数一律以 [`../CANON.md`](../CANON.md) §二 为唯一基准，与之不一致即为缺陷。
 >
 > v16（6 主题 + 柔化开关）与 v17（动效层）落在 v15 与 v18 之间，作为**过程版本**
 > 未单独出档；其成果的去留见 [`CHANGELOG-v18.md`](./CHANGELOG-v18.md) §四。
@@ -99,6 +101,7 @@ R20·补 两页新语言落地为第 7/8 套皮肤（八套体系） → ROUND20
 | v12      | [`CHANGELOG-v12.md`](./CHANGELOG-v12.md)                             | 版本变更 | v12 B 黑白瑞士 · 设计稿侧                         |
 | v12      | [`OPTIMIZATION_ROUND11.md`](./OPTIMIZATION_ROUND11.md)               | 轮次记录 | v12 B 黑白瑞士 · 生产侧落档                        |
 | v13      | [`CHANGELOG-v13.md`](./CHANGELOG-v13.md)                             | 版本变更 | v13 新增三主题 E/F/G · 生产侧（ROUND14）             |
+| R15      | [`OPTIMIZATION_ROUND15.md`](./OPTIMIZATION_ROUND15.md)               | 轮次记录 | R15 落地页（静态多页 + 双主题；工作台入口迁 `app.html`，零新依赖） |
 | v14      | [`CHANGELOG-v14.md`](./CHANGELOG-v14.md)                             | 版本变更 | v14 顶栏容量修复 + 落地页 mock 化 + tuner 追平（ROUND16） |
 | v14      | [`OPTIMIZATION_ROUND16.md`](./OPTIMIZATION_ROUND16.md)               | 轮次记录 | ROUND16 · 一致性收尾 / 顶栏修复 / C1~C3 / a11y       |
 | v15      | [`CHANGELOG-v15.md`](./CHANGELOG-v15.md)                             | 版本变更 | v15 现代艺术四主题 H/I/J/K · 工作台 11 主题（ROUND17） |
@@ -117,7 +120,7 @@ R20·补 两页新语言落地为第 7/8 套皮肤（八套体系） → ROUND20
 | --------------- | ------------------------------------------------------------ |
 | 设计稿资源（HTML/PNG） | `docs/design-concepts/`（山水参考图 \*.png / \*.jpg；顶层 `design-concepts/` 已删除）      |
 | 设计样图（v15/v18 历史档案） | `frontend/design-samples/`（proposal-1…10 · sample-{a-editorial,b-konstrukt,c-nightflight,d-riso}.html · round20-pages/，不参与构建） |
-| **皮肤契约（v18 起单一真源）** | `frontend/src/skins/CONTRACT.md`（令牌表 + 类名表 + 书写规范 + 自检清单） |
+| **皮肤契约（v18 起单一真源）** | `frontend/src/skins/CONTRACT.md`（注册表字段 + 令牌表 + 层级档位 + 类名表 + 书写规范 + 自检清单） |
 | **生产代码（v18 · 八套）** | 工作台样式 `frontend/src/skins/{a-letterpress…h-contact}.css` + 共享底座 `src/styles/{base,panels,layout}.css` + 动效层 `src/fx.css`；皮肤注册 `src/skins/registry.js`；落地页 `frontend/index.html` + `landing-{b…f}.html` + `how-it-works.html` + `dossier.html` + 共享行为 `src/landing/shared.{js,css}` |
 | 彩蛋页（落地页入口） | `frontend/public/easter/`（dispatch · hunt · brush，落地页三门触发的独立静态页，见 ROUND18） |
 | 后端 / 通用轮次       | `docs/OPTIMIZATION_ROUND{1-6}.md` 等                          |

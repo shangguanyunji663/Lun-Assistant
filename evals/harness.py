@@ -8,24 +8,34 @@
 评分算术抽为纯函数（score_intent / score_rag / build_compression_fixture），
 离线单测见 tests/test_evals_scoring.py——不需要 PG/LLM 即可验证口径本身。
 
+产物带 provenance（"身份证"）：时间 + git 版本 + 数据集指纹 + 模型底座，
+见 evals/provenance.py。落地页/README 引用数字时必须能与该产物对账。
+
 用法:
     python evals/harness.py            # 全部评测
     python evals/harness.py intent rag # 指定评测项
 """
 import asyncio
 import json
+import logging
 import sys
 import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from evals.provenance import build_provenance, summarize_provenance
 from infrastructure.paths import PROJECT_ROOT
 
 if sys.platform == "win32":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
+logger = logging.getLogger("lunjiang.evals")
+
 DATASET_DIR = PROJECT_ROOT / "evals" / "datasets"
+
+# 评测项 → 数据集文件：provenance 用它记录本轮每个指标的口径来源
+SUITE_DATASETS = {"intent": "intent.jsonl", "rag": "retrieval.jsonl"}
 
 
 def _load(name: str) -> list[dict]:
@@ -147,6 +157,7 @@ async def main(suites: list[str]) -> None:
     from infrastructure.config import get_value
     target_recall = float(get_value("rag", "recall_target_at5", default=0.9))
 
+    t_start = time.perf_counter()
     results = {}
     if "intent" in suites:
         print("== 意图分类评测 ==")
@@ -171,8 +182,35 @@ async def main(suites: list[str]) -> None:
               f"(ratio={r['ratio']}, 目标≤{r['target_ratio']}, {'PASS' if r['pass'] else 'FAIL'})")
 
     out_path = DATASET_DIR.parent / "results_latest.json"
+    # 合并既有产物：只跑子集（如 `harness.py compression`）时不应丢掉其它指标，
+    # 否则一次子集运行就会把完整产物截成单项，页面数字随之失去产物支撑。
+    merged: dict = {}
+    if out_path.exists():
+        try:
+            prev = json.loads(out_path.read_text(encoding="utf-8"))
+            merged = {k: v for k, v in prev.items() if not k.startswith("_")}
+        except json.JSONDecodeError:
+            logger.warning("既有产物解析失败，本次以全新结果覆盖：%s", out_path)
+    stale = sorted(set(merged) - set(results))
+    merged.update(results)
+
+    # provenance 放在首位：读产物的人第一眼就该看到"这是哪次、哪版代码、哪份数据跑出来的"
+    provenance = build_provenance(
+        {name: SUITE_DATASETS[name] for name in merged if name in SUITE_DATASETS},
+        elapsed_s=time.perf_counter() - t_start,
+    )
+    payload = {"_provenance": provenance, **merged}
     with open(out_path, "w", encoding="utf-8") as f:
-        json.dump(results, f, ensure_ascii=False, indent=2)
+        json.dump(payload, f, ensure_ascii=False, indent=2)
+
+    print("\n== 产物身份证（provenance）==")
+    print(f"    {summarize_provenance(provenance)}")
+    if stale:
+        print(f"    ℹ 本轮未重跑、沿用既有产物的指标：{', '.join(stale)}"
+              "（其数字来自上一次运行，provenance 时间戳非其观测时间）")
+    if provenance["git"]["dirty"]:
+        print("    ⚠︎ 工作区有未提交改动，本次数字尚未与代码版本绑定："
+              f"{', '.join(provenance['git']['dirty_files'][:5])}")
     print(f"\n结果已写入 {out_path}")
 
 

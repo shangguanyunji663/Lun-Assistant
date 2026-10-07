@@ -77,7 +77,7 @@ jobs:
 
   # 后端工程校验：跑在云端 Ubuntu，与本机 Windows 无关。
   # config.py 在无 .env 时自动回退 .env.example 占位值，因此无需在 CI 里造 .env；
-  # 93 个离线单测全部 mock 外部依赖（Redis/PG/LLM），不依赖任何运行中的服务。
+  # 103 个离线用例全部 mock 外部依赖（Redis/PG/LLM），不依赖任何运行中的服务。
   test-backend:
     name: Backend unit tests
     runs-on: ubuntu-latest

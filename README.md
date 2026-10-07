@@ -17,7 +17,7 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?style=flat-square&logo=postgresql&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=flat-square&logo=redis&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black)
-![Tests](https://img.shields.io/badge/tests-93%20passed-2EA44F?style=flat-square)
+![Tests](https://img.shields.io/badge/tests-103%20passed-2EA44F?style=flat-square)
 ![License](https://img.shields.io/badge/license-MIT-9C27B0?style=flat-square)
 
 **本地优先** · 对话与嵌入均走 Ollama（`qwen3:4b-ctx4096` + `bge-m3`），断网可跑，数据不出本机
@@ -50,7 +50,7 @@
 | 通用大模型不了解**你的**文献与草稿 | 项目级私有知识库：上传 PDF/DOCX/TXT/MD → 自动解析分块向量化，跨项目隔离 |
 | 一个 prompt 干不完「查文献 + 写综述 + 排版」这类复合任务 | Plan-Execute-Replan 规划器拆解为 TODO，Supervisor 分发给专项 Agent，最大 3 跳防回环 |
 | 工具调用失控：无限流、无审计、失败就崩 | 治理栈七步串联：RBAC → 限流 → 熔断 → 分布式锁 → 三级容错 → 审计 → 行为观测 |
-| 上下文越聊越贵，长对话必然溢出 | 四层记忆 + 压缩（实测压缩比 **0.214**，目标 ≤ 0.3） |
+| 上下文越聊越贵，长对话必然溢出 | 四层记忆 + 压缩（压缩比 0.213 合成 / 0.035 真实语料，目标 ≤ 0.3） |
 | 结果不可信、过程不可追溯 | 全链路 Trace/Log/Memory/Action 统一 Span，支持树形回放与逐节点排查 |
 | 需要人类拍板的环节 AI 自作主张 | LangGraph `interrupt` 挂起 → 前端确认 → `/resume` 续跑 |
 
@@ -65,7 +65,7 @@
 | 能力 | 说明 | 关键实现 |
 | :--- | :--- | :--- |
 | **多智能体编排** | 1 个 Supervisor 调度 **6 类专项 Agent**（选题 / 文献 / 写作 / 格式 / 查重 / AI 检测）+ Plan-Execute-Replan 规划器，最大 3 跳防回环 | `services/agent/` |
-| **三级意图分类** | 规则 → 向量原型 → LLM 兜底；实测 **50/50 = 100%**（规则层 16 / 向量层 34，LLM 未触发），平均 **56 ms/条** | `services/classifier/intent.py` |
+| **三级意图分类** | 规则 → 向量原型 → LLM 兜底；50 条集实测 **92%**（规则层 23 / 向量层 26 / LLM 1）。规则层独立覆盖 **23/50 = 46%**，这部分零 token 开销 | `services/classifier/intent.py` |
 | **项目级知识库** | 多格式上传 → 解析 → 分块 → 向量化入库；MD5 去重 / 扫描件拒绝 / 跨项目隔离；`hybrid`（默认，公共语料 + 库内融合）/ `project`（仅库内）/ `builtin`（仅公共语料）三检索模式 | `services/rag/ingest/` |
 | **三阶段 RAG** | 难度自适应 Query 改写（`off/auto/on` + 规则兜底 + 防漂移）→ 稠密 + 稀疏 + **相邻窗口**多路 RRF 融合 → 交叉精排降噪 | `services/rag/` |
 | **结构化产物** | 文献综述初稿 / 开题报告 / 答辩大纲：模板骨架 + RAG 证据注入，而非自由生成 | `services/governance/artifacts.py` |
@@ -332,15 +332,18 @@ docker compose up -d --scale app=2   # 端口 8001 / 8002
 <summary><strong>深度自检（可选）：离线单测与全部冒烟脚本</strong></summary>
 
 ```powershell
-envs\lunjiang\python.exe -m pytest tests/ -q        # 93 个离线用例，无需外部依赖
+envs\lunjiang\python.exe -m pytest tests/ -q        # 103 个离线用例，无需外部依赖
 envs\lunjiang\python.exe scripts/smoke_memory.py       # 四层记忆 + 压缩（需 PG）
 envs\lunjiang\python.exe scripts/smoke_rag.py          # 三阶段检索（需 PG+Ollama，语料已入库）
 envs\lunjiang\python.exe scripts/smoke_governance.py   # 治理栈（需 PG/Redis/Ollama）
 envs\lunjiang\python.exe scripts/smoke_trace.py        # Trace 回放（需 PG）
 envs\lunjiang\python.exe scripts/smoke_graph.py        # Agent 图编译检查（需 LLM 底座可达）
 envs\lunjiang\python.exe scripts/smoke_api.py --topic  # 端到端（需 uvicorn 已启动）
-envs\lunjiang\python.exe evals/harness.py              # 三项指标评测（需 PG+Ollama）
-envs\lunjiang\python.exe evals/regression.py           # 七大场景回归（需 PG+LLM 底座）
+envs\lunjiang\python.exe evals/harness.py              # 三项指标评测（需 PG+Ollama），产物带 _provenance 身份证
+envs\lunjiang\python.exe evals/regression.py           # 七大场景 16 项回归（需 PG+LLM 底座）
+envs\lunjiang\python.exe -m evals.eval_intent_holdout  # 意图 hold-out 盲跑（需 Ollama，约 25 分钟）
+envs\lunjiang\python.exe -m evals.eval_compression_real # 真实语料压缩重测（需 Ollama，约 5 分钟）
+envs\lunjiang\python.exe -m evals.eval_suites          # 长尾/学术/泛化三档补测（需 PG+Ollama，约 1.8 小时）
 envs\lunjiang\python.exe scripts/load_test.py          # 知识库检索并发压测（需 uvicorn 已启动）
 envs\lunjiang\python.exe -m ruff check .               # 静态检查
 ```
@@ -451,9 +454,9 @@ Lun-Assistant/
 │   └── models/              ORM（users / projects / memory / trace / audit / skill / knowledge）
 ├── configs/                 settings.yaml · rbac.yaml · tools.yaml · ollama/Modelfile
 ├── data/                    corpus/（公共语料）+ uploads/（知识库原始文件，已 gitignore）
-├── evals/                   评测 Harness + A/B + 七大场景回归 + 报告图表
+├── evals/                   评测（harness / ab / regression / 3 个专项入口）+ datasets + provenance 身份证
 ├── scripts/                 初始化 + 冒烟 + 压测 + 一键启停（dev_up / dev_down / preflight）
-├── tests/                   离线单元测试（93 用例，无外部依赖）
+├── tests/                   离线单元测试（103 用例，无外部依赖）
 ├── frontend/                React 18 + Vite（落地页 ×8 + 工作台 / SSE 对话 / 时间线 / 知识库 / Trace / 八套设计语言）
 ├── docs/                    文档（学习指南 / 优化记录 / 前端版本线 frontend-versions/）
 ├── alembic/                 SQLAlchemy 迁移（异步 env.py 聚合全部模型）
@@ -488,18 +491,89 @@ Lun-Assistant/
 
 | 项目 | 结果 | 说明 |
 | :--- | :--- | :--- |
-| 离线单测 | **93 passed** | `pytest tests/ -q`，无外部依赖 |
+| 离线单测 | **103 passed** | `pytest tests/ -q`，无外部依赖 |
 | 冒烟脚本 | **11 / 11 通过** | check_env 5/5；记忆 / RAG / 治理 / Trace / 图 / API 全绿 |
-| 意图分类准确率 | **50 / 50 = 100%** | 规则层 16 / 向量层 34 / LLM 兜底 0；平均 56 ms/条 |
-| RAG Recall@5（简单集） | **100%** | 含主题关键词的查询 |
-| RAG Recall@5（口语长尾集） | **80%** | 刻意避开语料关键词；引入 `_TOPIC_POOL` 主题词表后由 62.5% 提升 |
-| RAG Recall@5（学术刁钻集） | **95%** | 学术表述 + 术语改写 |
-| 泛化能力（hold-out） | **6 / 8 = 75%** | 8 条未见口语查询，**仍有提升空间** |
-| 记忆压缩比 | **0.214** | 目标 ≤ 0.3 |
-| 回归测试（七大场景） | **16 / 16 PASS** | 入库去重 / 跨项目隔离 / RRF 融合 / 改写回退 / 治理 / 记忆 / Trace |
+| 意图分类准确率 | **46 / 50 = 92%** | 规则层 23 / 向量层 26 / LLM 兜底 1；4 条未命中见下 |
+| 意图分类（hold-out 92 条） | **70 / 92 = 76.1%** | **零原型句重叠**独立集，用于排除测试集泄漏；分层错误率 rule 0% / vector 38.1% / llm 12.2% |
+| RAG Recall@5（简单集） | **100%（20/20）** | 平均 **108.2s/条**（21:40 那轮；本地 CPU 推理，耗时随负载波动）；产物已带 `_provenance` 身份证 |
+| RAG Recall@5（口语长尾集） | **80%** | 20 条刻意避开语料关键词；**2026-09-04 快照，产物待补**（`evals/eval_suites.py` 可重测） |
+| RAG Recall@5（学术刁钻集） | **95%** | 40 条学术表述 + 术语改写；**同上，产物待补** |
+| 泛化能力（hold-out） | **6 / 8 = 75%** | 8 条未见口语查询；**同上，产物待补** |
+| 记忆压缩比 | **0.213（合成 fixture）/ 0.035（真实语料·生产路径）** | 合成 fixture 掩盖了两个缺陷，已修复，见下 |
+| 回归测试 | **16 / 16 真断言 PASS** | 每项均可失败：相邻窗口召回 `[1,3]`、拒答回退、图 10 节点装配、产物骨架渲染等 |
 | 并发压测 | 成功率 **100%**，QPS **1.9**，P95 **5574 ms** | CPU 底座，延迟主要来自本地推理 |
 
-我们刻意保留不完美的数字：长尾集 80% 与 hold-out 75% 说明 Query 改写机制有效但尚未收敛，这是本项目当前最明确的优化方向。
+**意图分类 4 条未命中（真实失效模式，不是凑数）**：
+
+| 查询 | 期望 | 实得 | 原因 |
+| :--- | :--- | :--- | :--- |
+| 我对大模型感兴趣能研究点啥 | topic_analysis | literature_search | 开放式提问被「文献」类原型抢走 |
+| 这个领域好多人做过了我能做什么创新 | topic_analysis | chitchat | 无关键词命中，落向量层误判 |
+| 帮我补充一段背景介绍 | writing | chitchat | 「背景」未进写作规则，语义偏闲聊 |
+| 论文有一段跟教材很像我该怎么处理 | plagiarism_reduce | format_check | 「像我」触发格式规则误判 |
+
+> **两个意图口径分别测什么（重要，否则会被误读为矛盾）**：
+> 50 条集含可直接触发 L1 规则的查询，92% 反映**真实流量分布**下的表现；
+> 92 条 hold-out 集**刻意避开全部 L1 触发字**，测的是「规则层覆盖不到的那部分长尾流量」
+> （占该集 91/92），故 76.1% 是**该难度的下限**而非总体水位。
+> 两者不可直接并列，也不应只引用其中一个。
+
+> **每个数字的口径**：数据集文件、条数、sha256 指纹与代码 git 版本记录在
+> `evals/results_latest.json` 的 `_provenance` 字段；复现命令
+> `envs\lunjiang\python.exe -m evals.harness intent rag compression`。
+> 数字与产物对不上即为可检测缺陷——这是刻意的设计，不是装饰。
+
+### 压缩率：合成 fixture 掩盖的两个真实缺陷（已定位并修复）
+
+把 fixture 从合成填充文本（`"背景填充" * 120`）换成 `data/corpus` 的真实论文段落
+（12 轮 / 11943 字，`evals/eval_compression_real.py`），暴露了**两个生产路径上的缺陷**：
+
+| 口径 | 修复前 | 修复后 | 判定 |
+| :--- | :--- | :--- | :--- |
+| 合成重复文本（harness 口径） | 0.212 | 0.213 | ✅（对该 bug 不敏感，见下） |
+| 真实语料 · `keep_recent=0`（**生产路径**） | **1.000** | **0.035** | ❌ → ✅ |
+| 真实语料 · `keep_recent=4`（历史发布口径） | 0.767 | 0.191 | ❌ → ✅ |
+| 真实语料 · `keep_recent=None`（375） | 1.000 | 1.000 | 窗口大于内容，本轮不压缩（正确） |
+
+**缺陷 1：高价值判定用裸子串匹配**（`services/memory/compressor.py:18`）
+
+```python
+_HIGH_VALUE_MARKERS = ("纠正", "不对", "改成", "记住", "重要", "必须", "要求")
+```
+
+「要求 / 重要 / 必须」是中文论文正文高频词。实测归因：
+
+- 高价值消息 **11/24 条、7903 字 → 占全文 66.2%**，全部强制保留、永不压缩；
+- 其中 **8 条误判**（assistant 正文含「要求」「重要」「必须」）共 **7775 字**；
+  真实用户纠正只有 3 条、284 字；标记命中：`要求 ×8`、`重要 ×4`、`必须 ×4`。
+- 即：**3 条真实纠正（284 字）连带把 7775 字正文钉死在窗口里**。
+
+*修复*：判定改为三档 —— ① 非 `user` 角色一律可压（assistant 正文不是"用户约束"）；
+② 显式纠正词（纠正/不对/改成/改为）命中即保留；③ 泛化词（重要/必须/要求/记住）
+必须与持久化动作（别改/务必/以后都…）同现才算约束。修复后误判 **0 条**，
+高价值占比 66.2% → **1.1%**。
+
+**缺陷 2：`keep_recent` 用真值判断，导致生产压缩链路从未压缩**
+
+```python
+keep_recent = keep_recent or max(6, cfg_keep)   # 传 0 → 被替换成 375
+if keep_recent and len(rest) > keep_recent:     # 0 为 falsy → 走"全部保留"
+```
+
+生产路径 `compress_window_if_needed()` 传的是 **`keep_recent=0`**（语义："被逐出消息整体压缩"），
+但 `0` 在两处都被当成"未指定"，于是生产压缩实际是**原样返回、摘要为空**（实测 ratio=1.000、摘要 0 字）。
+
+*修复*：改用 `is None` 判断，并显式分支 `keep_recent == 0 → 整段压缩`；
+同时补上 `len(rest) > keep_recent` 条件（窗口大于内容时应原样保留，而非把短会话压成摘要）。
+
+**为什么合成 fixture 发现不了**：它用「背景填充」重复文本，**一个高价值标记词都不含**，
+恰好绕过缺陷 1；又走 `keep_recent=4`，绕过缺陷 2。所以它两次都报 PASS（0.212 / 0.213）。
+
+> 复现：`envs\lunjiang\python.exe -m evals.eval_compression_real`
+> 产物：`evals/results_compression_real.json`（含逐条误判归因）
+
+> 我们刻意保留不完美的数字：意图 92%、长尾集 80%、hold-out 75%、意图 hold-out 76.1%。
+> **能说出 miss 在哪的人，别人才信他的 hit。**
 
 ---
 
@@ -584,7 +658,7 @@ conda run -p envs/lunjiang pip install -r requirements.txt
 
 ### 11.3 提交前检查清单
 
-- [ ] `python -m pytest tests/ -q` —— 93 用例全绿，新增功能需补充离线用例
+- [ ] `python -m pytest tests/ -q` —— 103 用例全绿，新增功能需补充离线用例
 - [ ] `python -m ruff check .` —— 无告警
 - [ ] `python -m mypy`（可选，仅校验已注解代码）
 - [ ] 涉及的冒烟脚本跑通（改动哪个子系统就跑对应 `scripts/smoke_*.py`）

@@ -355,14 +355,14 @@
       <section class="wrap">
         <div class="readout">
           <div class="ro" data-reveal>
-            <div class="n"><span data-count="100">100</span><u>%</u></div>
+            <div class="n"><span data-count="92">92</span><u>%</u></div>
             <div class="k">Intent Top-1</div>
-            <div class="d">意图分类 50 条集 · 56ms/条</div>
+            <div class="d">意图分类 50 条集 · 规则层零 token 覆盖 46%</div>
           </div>
           <div class="ro" data-reveal>
             <div class="n"><span data-count="16">16</span><u>/16</u></div>
             <div class="k">Regression</div>
-            <div class="d">S1–S7 七大必测场景全通</div>
+            <div class="d">每项均可失败的真断言 · 无空转</div>
           </div>
           <div class="ro" data-reveal>
             <div class="n"><span data-count="100">100</span><u>%</u></div>
@@ -370,9 +370,9 @@
             <div class="d">稠密 + 稀疏 + 句窗三路融合</div>
           </div>
           <div class="ro" data-reveal>
-            <div class="n"><span data-count="93">93</span><u>项</u></div>
+            <div class="n"><span data-count="103">103</span><u>项</u></div>
             <div class="k">Offline Cases</div>
-            <div class="d">治理 / 模型 / 改写 / API</div>
+            <div class="d">pytest 实测 · 治理 / 模型 / 改写 / API</div>
           </div>
         </div>
       </section>
@@ -441,9 +441,12 @@
 
           <div data-reveal>
             <p class="honesty">
-              水位如实标注：口语长尾集 80% · 学术刁钻集 95% · hold-out 泛化 75%（6/8）。
-              全部数字来自一次完整的全本地底座实测，复现命令见仓库
-              <code>docs/EVALUATION_REPORT.md</code>。
+              水位如实标注：口语长尾集 80% · 学术刁钻集 95% · hold-out 泛化 75%（6/8）——
+              这三项是 2026-09-04 快照，**仓库中暂无独立产物**，补测入口已备。
+              意图 92%、简单集 Recall@5 100%（20/20）与离线用例 97 项均带产物：
+              数据集指纹、代码版本与模型底座记于
+              <code>evals/results_latest.json</code> 的 <code>_provenance</code> 字段；
+              明细与复现命令见 <code>docs/EVALUATION_REPORT.md</code>。
             </p>
           </div>
         </div>

@@ -1,0 +1,151 @@
+{
+  "_provenance": {
+    "schema": "evals/provenance@1",
+    "generated_at": "2026-10-05T21:02:30+08:00",
+    "git": {
+      "revision": "c622764",
+      "branch": "feat/skins-g-h-i",
+      "dirty": true,
+      "dirty_files": [
+        "M README.md",
+        " M docs/EVALUATION_REPORT.md",
+        " M evals/AB_REPORT.md",
+        " M evals/harness.py",
+        " M evals/regression.py",
+        " M evals/results_latest.json",
+        " M frontend/dossier.html",
+        " M frontend/how-it-works.html",
+        " M frontend/index.html",
+        " M frontend/landing-b.html",
+        " M frontend/landing-c.html",
+        " M frontend/landing-d.html",
+        " M frontend/landing-e.html",
+        " M frontend/landing-f.html",
+        " M frontend/public/easter/hunt.html",
+        " M scripts/smoke_trace.py",
+        " M services/memory/compressor.py",
+        " M tests/test_evals_scoring.py",
+        " M tests/test_memory_pure.py",
+        "?? docs/DATA_INTEGRITY_AUDIT.md"
+      ]
+    },
+    "host": {
+      "platform": "Windows-10-10.0.22631-SP0",
+      "python": "3.11.16"
+    },
+    "models": {
+      "chat": "qwen3:4b-ctx4096",
+      "embedding": "bge-m3",
+      "embedding_dim": 1024,
+      "rerank": "BAAI/bge-reranker-base"
+    },
+    "suites": {
+      "compression_real": {
+        "dataset": "evals/datasets/retrieval.jsonl",
+        "exists": true,
+        "cases": 20,
+        "sha256": "f53037e7b9f6862d"
+      }
+    },
+    "eval_elapsed_s": null,
+    "reproduce": "envs\\lunjiang\\python.exe -m evals.harness compression_real"
+  },
+  "fixture": {
+    "source": "data/corpus（真实论文段落）",
+    "rounds": 12,
+    "messages": 24,
+    "original_chars": 11943,
+    "note": "替代 evals/harness.py 的合成重复文本 fixture，用于暴露真实压缩水位"
+  },
+  "high_value_attribution": {
+    "high_value_messages": 3,
+    "high_value_chars": 128,
+    "high_value_char_share": 0.011,
+    "false_positive_messages": 0,
+    "false_positive_chars": 0,
+    "marker_hit_counts": {
+      "纠正": 0,
+      "不对": 1,
+      "改成": 1,
+      "改为": 0,
+      "重要": 1,
+      "必须": 1,
+      "要求": 2,
+      "记住": 1
+    },
+    "detail": [
+      {
+        "index": 4,
+        "role": "user",
+        "verdict": "真实纠正",
+        "markers_hit": [
+          "要求",
+          "记住"
+        ],
+        "chars": 50,
+        "preview": "第3轮提问：混合检索为什么用RRF融合要求：后续章节都按 GB/T 7714 格式引用，记住这一点。"
+      },
+      {
+        "index": 10,
+        "role": "user",
+        "verdict": "真实纠正",
+        "markers_hit": [
+          "不对",
+          "改成"
+        ],
+        "chars": 41,
+        "preview": "第6轮提问：实验设计如何保证信度效度这段不对，我改成实证研究路线，不要纯理论综述。"
+      },
+      {
+        "index": 16,
+        "role": "user",
+        "verdict": "真实纠正",
+        "markers_hit": [
+          "重要",
+          "必须",
+          "要求"
+        ],
+        "chars": 37,
+        "preview": "第9轮提问：论文摘要怎么写重要：导师要求实验部分必须有对照实验，务必保留。"
+      }
+    ]
+  },
+  "variants": {
+    "keep_recent_0": {
+      "keep_recent": 0,
+      "original_chars": 11943,
+      "compressed_chars": 417,
+      "ratio": 0.035,
+      "target_ratio": 0.3,
+      "pass": true,
+      "kept_messages": 4,
+      "evicted_messages": 21,
+      "summary_chars": 282,
+      "llm_called": true
+    },
+    "keep_recent_4": {
+      "keep_recent": 4,
+      "original_chars": 11943,
+      "compressed_chars": 2283,
+      "ratio": 0.191,
+      "target_ratio": 0.3,
+      "pass": true,
+      "kept_messages": 8,
+      "evicted_messages": 17,
+      "summary_chars": 175,
+      "llm_called": true
+    },
+    "keep_recent_default(375)": {
+      "keep_recent": "default(375)",
+      "original_chars": 11943,
+      "compressed_chars": 11943,
+      "ratio": 1.0,
+      "target_ratio": 0.3,
+      "pass": false,
+      "kept_messages": 24,
+      "evicted_messages": 0,
+      "summary_chars": 0,
+      "llm_called": true
+    }
+  }
+}
