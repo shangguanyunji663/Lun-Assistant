@@ -105,10 +105,10 @@ def test_retrieval_datasets_expect_existing_corpus_files():
     import infrastructure.paths as paths
     corpus = paths.PROJECT_ROOT / "data" / "corpus"
     # (数据集, 文档承诺的条数)。当前全量基线口径见 evals/AB_REPORT.md 顶部变更标注：
-    # 意图 50 / 简单 20 / 长尾 20 / 学术 40 / hold-out 8 = 138 条。
-    # 早期的 8+8+26 小样本口径已废弃（当时为 ab.py 实验组），勿再沿用。
+    # 意图 50 / 简单 20 / 长尾 20 / 学术 40 / hold-out 30 = 160 条
+    # （hold-out 于 2026-10-07 由 8 扩至 30；早期的 8+8+26 小样本口径已废弃，勿再沿用）。
     for name, documented in [("retrieval.jsonl", 20), ("retrieval_hard.jsonl", 20),
-                             ("retrieval_paper_hard.jsonl", 40), ("holdout.jsonl", 8)]:
+                             ("retrieval_paper_hard.jsonl", 40), ("holdout.jsonl", 30)]:
         cases = _read_jsonl(name)
         assert len(cases) == documented, f"{name} 条数与文档口径不一致"
         for c in cases:

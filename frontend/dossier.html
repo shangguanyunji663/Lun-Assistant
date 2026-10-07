@@ -596,7 +596,7 @@
             <div class="doc-head"><b>评测留痕</b><span>FILE 08 · EVALUATION</span></div>
             <div class="doc-body">
               <span class="nl">意图分类 <span class="rx" tabindex="0">50 条集实测 92%</span>（规则层 23 / 向量层 26 / LLM 兜底 1，未触发层的查询零 token）。</span>
-              <span class="nl">检索 Recall@5：简单集 <span class="rx" tabindex="0">100%（20 条）</span>；口语长尾集 85%（17/20）、学术刁钻集 97.5%（39/40）、hold-out 泛化 75%（6/8），2026-10-07 全部重跑落产物（results_extra.json）。</span>
+              <span class="nl">检索 Recall@5：简单集 <span class="rx" tabindex="0">100%（20 条）</span>；口语长尾集 85%（17/20）、学术刁钻集 97.5%（39/40）、hold-out 泛化 83.3%（25/30），2026-10-07 全部重跑落产物（results_extra.json）。</span>
               <span class="nl">回归 16 项断言全部为可失败的真断言（含相邻窗口召回、拒答回退、图装配、产物骨架渲染）。</span>
               <span class="nl">离线单测 <span class="rx" tabindex="0">103 例全绿</span>，不依赖 PG / Redis / Ollama，可在无环境机器一键执行。</span>
               <span class="nl">压缩率：合成 fixture 0.213、真实语料 0.035（生产路径）—— 合成集曾掩盖两个缺陷，已定位并修复。</span>

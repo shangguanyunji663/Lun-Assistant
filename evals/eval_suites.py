@@ -8,7 +8,7 @@
     本脚本用与主基线**完全相同**的口径（same pipeline / rewrite_mode=on / top_k=5 /
     同一评分函数 score_rag）把三组补测出来，并写入带 provenance 的产物，
     使每个页面数字都能对应到 `evals/results_extra.json` 里的一条记录。
-    首轮补测结果（2026-10-07）：长尾 85%（17/20）/ 学术 97.5%（39/40）/ 泛化 75%（6/8）。
+    首轮补测结果（2026-10-07）：长尾 85%（17/20）/ 学术 97.5%（39/40）/ 泛化 83.3%（25/30，8→30 扩充后）。
 
 口径（与 harness 一致，勿单独修改）：
     - 召回判定：期望语料文件名出现在 Top-5 结果的 meta.file 集合里即算召回；
@@ -76,13 +76,18 @@ async def main(suites: list[str]) -> None:
         print(f"    Recall@5: {report['recall']:.1%} ({report['cases']} 条, "
               f"平均{report['avg_ms']}ms/条, miss={len(report['misses'])})")
 
-    provenance = build_provenance({s: f"{s}.jsonl" for s in suites},
+    # provenance 覆盖产物内全部 suite（指纹按数据集现文件计算）；未重跑的沿用既有记录
+    stale = sorted(set(out) - set(suites))
+    provenance = build_provenance({s: f"{s}.jsonl" for s in out},
                                  elapsed_s=time.perf_counter() - t_start,
                                  command="envs\\lunjiang\\python.exe -m evals.eval_suites " + " ".join(suites))
     payload = {"_provenance": provenance, **out}
     OUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     print("\n== 产物身份证（provenance）==")
     print(f"    {summarize_provenance(provenance)}")
+    if stale:
+        print(f"    ℹ 本轮未重跑、沿用既有产物的指标：{', '.join(stale)}"
+              "（其数字来自上一次运行，provenance 时间戳非其观测时间）")
     print(f"\n结果已写入 {OUT_PATH}")
 
 

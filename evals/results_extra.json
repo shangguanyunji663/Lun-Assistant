@@ -1,18 +1,14 @@
 {
   "_provenance": {
     "schema": "evals/provenance@1",
-    "generated_at": "2026-10-07T13:57:02+08:00",
+    "generated_at": "2026-10-07T14:47:12+08:00",
     "git": {
-      "revision": "227b840",
+      "revision": "880fa62",
       "branch": "feat/skins-g-h-i",
       "dirty": true,
       "dirty_files": [
-        "M frontend/index.html",
-        " M frontend/landing-b.html",
-        " M frontend/landing-c.html",
-        " M frontend/landing-d.html",
-        " M frontend/landing-e.html",
-        " M frontend/landing-f.html"
+        "M evals/eval_suites.py",
+        "?? scripts/_tmp_expand_sync.py"
       ]
     },
     "host": {
@@ -41,12 +37,12 @@
       "holdout": {
         "dataset": "evals/datasets/holdout.jsonl",
         "exists": true,
-        "cases": 8,
-        "sha256": "37c722d9e8ceee2c"
+        "cases": 30,
+        "sha256": "cdb71517544cae4d"
       }
     },
-    "eval_elapsed_s": 3194.1,
-    "reproduce": "envs\\lunjiang\\python.exe -m evals.eval_suites retrieval_hard retrieval_paper_hard holdout"
+    "eval_elapsed_s": 1111.2,
+    "reproduce": "envs\\lunjiang\\python.exe -m evals.eval_suites holdout"
   },
   "retrieval_hard": {
     "suite": "rag@5",
@@ -102,9 +98,9 @@
   },
   "holdout": {
     "suite": "rag@5",
-    "cases": 8,
-    "recall": 0.75,
-    "avg_ms": 42527,
+    "cases": 30,
+    "recall": 0.833,
+    "avg_ms": 36984,
     "use_rewrite": true,
     "misses": [
       {
@@ -125,6 +121,32 @@
           "conference_paper.txt",
           "defense.txt",
           "paper_table_figure.txt"
+        ]
+      },
+      {
+        "query": "让给同门的稿子提修改意见从哪下手",
+        "expect": "peer_review.txt",
+        "got": [
+          "rebuttal.txt",
+          "revision_strategy.txt"
+        ]
+      },
+      {
+        "query": "量表发出去信度老是上不去怎么办",
+        "expect": "research_survey.txt",
+        "got": [
+          "experimental_design.txt",
+          "research_method.txt"
+        ]
+      },
+      {
+        "query": "助手给的答案有时对不上出处怎么更可靠",
+        "expect": "rag_survey.txt",
+        "got": [
+          "ai008_hallucination.txt",
+          "literature_retrieval.txt",
+          "literature_review.txt",
+          "reference_management.txt"
         ]
       }
     ]
